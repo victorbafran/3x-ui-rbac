@@ -63,6 +63,9 @@ type ClientPageParams struct {
 	HasTgID    string `form:"hasTgId"`
 	HasComment string `form:"hasComment"`
 	Group      string `form:"group"`
+
+	// Set from the session, never bound from the request.
+	OwnerAdminId int
 }
 
 // ClientPageResponse is the shape returned by ListPaged. `Total` is the
@@ -164,6 +167,7 @@ func clientSearchCond(variants []string) (string, []any) {
 // 5 seconds, which is what made the table feel stuck on large panels.
 type clientQuery struct {
 	db               *gorm.DB
+	ownerId          int
 	joins            []clientQueryJoin
 	usedExpr         string
 	nowMs            int64
@@ -210,7 +214,7 @@ func (q clientQuery) from() *gorm.DB {
 	for _, j := range q.joins {
 		tx = tx.Joins(j.sql, j.args...)
 	}
-	return tx
+	return scopeToOwner(tx, q.ownerId)
 }
 
 func (q clientQuery) depletedExpr() string {
@@ -398,8 +402,10 @@ func (s *ClientService) ListPaged(inboundSvc *InboundService, settingSvc *Settin
 	onlines := inboundSvc.GetOnlineClients()
 	q := newClientQuery(db, time.Now().UnixMilli(), expireDiffMs, trafficDiffBytes)
 
+	q.ownerId = params.OwnerAdminId
+
 	var total int64
-	if err := db.Model(&model.ClientRecord{}).Count(&total).Error; err != nil {
+	if err := scopeToOwner(db.Table("clients AS c"), q.ownerId).Count(&total).Error; err != nil {
 		return nil, err
 	}
 

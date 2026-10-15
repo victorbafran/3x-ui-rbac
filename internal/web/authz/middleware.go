@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -15,6 +16,9 @@ import (
 // ActorKey holds the authorized caller for handlers and services that must
 // filter a collection themselves (ScopeOwnedListing).
 const ActorKey = "authz_actor"
+
+// apiPrefix is the path every registry key starts with.
+const apiPrefix = "/panel/api"
 
 var (
 	errBadParam  = errors.New("malformed resource identifier")
@@ -33,11 +37,23 @@ func Actor(c *gin.Context) *model.User {
 	return nil
 }
 
+// canonicalPath rewrites a matched route to the "/panel/api/..." form the
+// registry is keyed by. The panel may be served under a secret base path, and
+// every route is registered beneath it.
+func canonicalPath(apiBase, fullPath string) string {
+	if apiBase == "" || !strings.HasPrefix(fullPath, apiBase) {
+		return fullPath
+	}
+	return apiPrefix + strings.TrimPrefix(fullPath, apiBase)
+}
+
 // Middleware denies any API request whose route has no rule, whose caller's
 // role the rule excludes, or whose target resource the caller does not own.
-func Middleware() gin.HandlerFunc {
+// apiBase is the API group's own base path, which carries the panel's base
+// path with it.
+func Middleware(apiBase string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		rule, found := RuleFor(c.Request.Method, c.FullPath())
+		rule, found := RuleFor(c.Request.Method, canonicalPath(apiBase, c.FullPath()))
 		if !found {
 			abort(c, http.StatusForbidden, "route is not covered by an authorization rule")
 			return

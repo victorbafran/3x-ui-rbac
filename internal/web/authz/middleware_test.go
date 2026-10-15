@@ -41,7 +41,7 @@ func newAuthzEnv(t *testing.T) (*httptest.Server, *http.Client) {
 		c.Status(http.StatusOK)
 	})
 	api := engine.Group("/panel/api")
-	api.Use(Middleware())
+	api.Use(Middleware(api.BasePath()))
 	reached := func(c *gin.Context) { c.String(http.StatusOK, "reached") }
 	api.POST("/inbounds/del/:id", reached)
 	api.GET("/inbounds/list", reached)

@@ -88,6 +88,7 @@ func allModels() []any {
 		&model.OutboundSubscription{},
 		&model.SubBalancer{},
 		&model.TuicTrafficReceipt{},
+		&model.Relay{},
 	}
 }
 
@@ -3149,7 +3150,12 @@ func InitDB(dbPath string) error {
 	if err := initUser(); err != nil {
 		return err
 	}
-	return runSeeders(isUsersEmpty)
+	if err := runSeeders(isUsersEmpty); err != nil {
+		return err
+	}
+	// Must run after runSeeders: an earlier history row makes
+	// history_of_seeders non-empty and skips its fresh-install fast path.
+	return seedSuperAdminRole()
 }
 
 func normalizeApiTokenCreatedAtSeconds() error {

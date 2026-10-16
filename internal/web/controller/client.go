@@ -203,7 +203,7 @@ func (a *ClientController) create(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
 	}
-	if a.denyForeign(c, payload.InboundIds, nil) {
+	if a.denyForeign(c, payload.InboundIds, nil) || a.denyUnlimited(c, payload.Client) {
 		return
 	}
 	needRestart, err := a.clientService.Create(&a.inboundService, &payload)
@@ -232,6 +232,9 @@ func (a *ClientController) update(c *gin.Context) {
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
+		return
+	}
+	if a.denyUnlimited(c, req.Client) {
 		return
 	}
 	inboundFilter := parseInboundIdsQuery(c.Query("inboundIds"))
@@ -480,7 +483,7 @@ func (a *ClientController) bulkCreate(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
 	}
-	if a.denyForeign(c, inboundIdsOf(payloads), nil) {
+	if a.denyForeign(c, inboundIdsOf(payloads), nil) || a.denyUnlimited(c, clientsOf(payloads)...) {
 		return
 	}
 	result, needRestart, err := a.clientService.BulkCreate(&a.inboundService, payloads)
@@ -538,7 +541,7 @@ func (a *ClientController) importClients(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
 	}
-	if a.denyForeign(c, inboundIdsOf(items), nil) {
+	if a.denyForeign(c, inboundIdsOf(items), nil) || a.denyUnlimited(c, clientsOf(items)...) {
 		return
 	}
 	result, needRestart, err := a.clientService.ImportClients(&a.inboundService, items)

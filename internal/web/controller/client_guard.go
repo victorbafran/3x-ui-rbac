@@ -5,6 +5,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
+	"github.com/mhsanaei/3x-ui/v3/internal/web/authz"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 )
 
@@ -156,4 +158,34 @@ func inboundIdsOf(payloads []service.ClientCreatePayload) []int {
 		ids = append(ids, payloads[i].InboundIds...)
 	}
 	return ids
+}
+
+// denyUnlimited refuses a client with no data limit or no expiry from a caller
+// whose switches do not allow handing those out. Only an exact zero is
+// unlimited: a negative expiry is a delayed start and stays allowed.
+func (a *ClientController) denyUnlimited(c *gin.Context, clients ...model.Client) bool {
+	actor := authz.Actor(c)
+	if actor == nil || actor.Role == model.RoleSuperAdmin {
+		return false
+	}
+	perms := authz.Effective(actor)
+	for i := range clients {
+		if clients[i].TotalGB == 0 && !perms.Has(authz.ClientUnlimitedData) {
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"success": false, "msg": "missing permission: " + authz.ClientUnlimitedData})
+			return true
+		}
+		if clients[i].ExpiryTime == 0 && !perms.Has(authz.ClientUnlimitedExpiry) {
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"success": false, "msg": "missing permission: " + authz.ClientUnlimitedExpiry})
+			return true
+		}
+	}
+	return false
+}
+
+func clientsOf(payloads []service.ClientCreatePayload) []model.Client {
+	out := make([]model.Client, 0, len(payloads))
+	for i := range payloads {
+		out = append(out, payloads[i].Client)
+	}
+	return out
 }

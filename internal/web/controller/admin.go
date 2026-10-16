@@ -78,9 +78,15 @@ func (a *AdminController) me(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), nil)
 		return
 	}
+	usage, err := panel.UsageFor(user.Id)
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
+		return
+	}
 	jsonObj(c, entity.AdminMe{
 		Id: user.Id, Username: user.Username, Role: string(user.Role),
 		TrafficQuota: user.TrafficQuota, UsersLimit: user.UsersLimit, ExpireAt: user.ExpireAt,
+		UsedUp: usage.Up, UsedDown: usage.Down, ClientCount: usage.Clients,
 		Permissions: authz.Effective(user),
 	}, nil)
 }

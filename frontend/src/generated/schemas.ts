@@ -3,6 +3,11 @@ export const SCHEMAS: Record<string, unknown> = {
   "AdminMe": {
     "description": "AdminMe is what the signed-in admin learns about themselves: enough for the\nsidebar to hide what they may not open, and for the overview to show their\nown usage against their limits. Permissions here are effective.",
     "properties": {
+      "clientCount": {
+        "example": 0,
+        "format": "int64",
+        "type": "integer"
+      },
       "expireAt": {
         "example": 0,
         "format": "int64",
@@ -27,6 +32,16 @@ export const SCHEMAS: Record<string, unknown> = {
         "format": "int64",
         "type": "integer"
       },
+      "usedDown": {
+        "example": 0,
+        "format": "int64",
+        "type": "integer"
+      },
+      "usedUp": {
+        "example": 0,
+        "format": "int64",
+        "type": "integer"
+      },
       "username": {
         "example": "agent",
         "type": "string"
@@ -38,11 +53,14 @@ export const SCHEMAS: Record<string, unknown> = {
       }
     },
     "required": [
+      "clientCount",
       "expireAt",
       "id",
       "permissions",
       "role",
       "trafficQuota",
+      "usedDown",
+      "usedUp",
       "username",
       "usersLimit"
     ],
@@ -51,6 +69,11 @@ export const SCHEMAS: Record<string, unknown> = {
   "AdminView": {
     "description": "AdminView is an admin row without its password hash. Permissions holds only\nthe admin's own overrides; InboundIds only the inbounds handed to them.",
     "properties": {
+      "clientCount": {
+        "example": 0,
+        "format": "int64",
+        "type": "integer"
+      },
       "disabledReason": {
         "type": "string"
       },
@@ -88,6 +111,16 @@ export const SCHEMAS: Record<string, unknown> = {
         "format": "int64",
         "type": "integer"
       },
+      "usedDown": {
+        "example": 0,
+        "format": "int64",
+        "type": "integer"
+      },
+      "usedUp": {
+        "example": 0,
+        "format": "int64",
+        "type": "integer"
+      },
       "username": {
         "example": "agent",
         "type": "string"
@@ -99,6 +132,7 @@ export const SCHEMAS: Record<string, unknown> = {
       }
     },
     "required": [
+      "clientCount",
       "disabledReason",
       "enabled",
       "expireAt",
@@ -107,6 +141,8 @@ export const SCHEMAS: Record<string, unknown> = {
       "permissions",
       "role",
       "trafficQuota",
+      "usedDown",
+      "usedUp",
       "username",
       "usersLimit"
     ],
@@ -2257,6 +2293,10 @@ export const SCHEMAS: Record<string, unknown> = {
   "ClientSlim": {
     "description": "ClientSlim is the row-shape used by the clients page. It drops fields the\ntable never reads (UUID, password, auth, flow, security, reverse, tgId)\nso the list payload stays compact even when the panel manages thousands\nof clients. Modals that need the full record still call /get/:email.",
     "properties": {
+      "adminId": {
+        "example": 0,
+        "type": "integer"
+      },
       "comment": {
         "example": "Primary device",
         "type": "string"
@@ -2341,6 +2381,7 @@ export const SCHEMAS: Record<string, unknown> = {
       }
     },
     "required": [
+      "adminId",
       "createdAt",
       "email",
       "enable",

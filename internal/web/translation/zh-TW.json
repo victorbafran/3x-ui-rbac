@@ -301,7 +301,7 @@
         "quota": "配額",
         "remaining": "剩餘",
         "unlimited": "無限",
-        "inbounds": "入站",
+        "clients": "用戶端",
         "expires": "到期"
       }
     },
@@ -1018,7 +1018,9 @@
       "renewsUsed": "已用續期次數",
       "bulkAdTagHint": "輸入 32 位十六進位標籤以設定，或輸入 'none' 清除 MTProto 贊助頻道。",
       "renewIntervalDesc": "到期後從上次截止時間增加指定天數（每天 24 小時），並重置客戶端流量。若不需要額外重置，請關閉獨立的流量重置。",
-      "renewWeeklyDesc": "日曆續期按面板時區的午夜執行，並重置客戶端流量。若不需要額外重置，請關閉獨立的流量重置。"
+      "renewWeeklyDesc": "日曆續期按面板時區的午夜執行，並重置客戶端流量。若不需要額外重置，請關閉獨立的流量重置。",
+      "owner": "擁有者",
+      "ownerPanel": "面板"
     },
     "groups": {
       "name": "名稱",
@@ -2462,7 +2464,9 @@
         "usersLimit": "最大用戶端數 (0 = 無限)",
         "expireAt": "到期時間",
         "permissions": "權限",
-        "inbounds": "可管理的入站"
+        "inbounds": "可管理的入站",
+        "usage": "用量",
+        "clients": "用戶端"
       },
       "perms": {
         "sections": {

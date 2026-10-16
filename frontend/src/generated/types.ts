@@ -10,16 +10,20 @@ export type trafficLocalApplyAction = number;
 export type transportBits = number;
 
 export interface AdminMe {
+  clientCount: number;
   expireAt: number;
   id: number;
   permissions: Record<string, boolean>;
   role: string;
   trafficQuota: number;
+  usedDown: number;
+  usedUp: number;
   username: string;
   usersLimit: number;
 }
 
 export interface AdminView {
+  clientCount: number;
   disabledReason: string;
   enabled: boolean;
   expireAt: number;
@@ -28,6 +32,8 @@ export interface AdminView {
   permissions: Record<string, boolean>;
   role: string;
   trafficQuota: number;
+  usedDown: number;
+  usedUp: number;
   username: string;
   usersLimit: number;
 }
@@ -541,6 +547,7 @@ export interface ClientReverse {
 }
 
 export interface ClientSlim {
+  adminId: number;
   comment?: string;
   createdAt: number;
   email: string;

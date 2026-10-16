@@ -18,6 +18,21 @@ func seedInboundWithTraffic(t *testing.T, ownerId int, tag string, up, down int6
 	return ib.Id
 }
 
+// A quota counts the admin's own customers, so usage is seeded as client
+// traffic. Seeding the inbound instead charged every reseller sharing it.
+func seedClientWithTraffic(t *testing.T, adminId int, email string, up, down int64) {
+	t.Helper()
+	db := database.GetDB()
+	cr := model.ClientRecord{Email: email, Enable: true, AdminId: adminId}
+	if err := db.Create(&cr).Error; err != nil {
+		t.Fatalf("client %s: %v", email, err)
+	}
+	if err := db.Exec("INSERT INTO client_traffics (email, up, down, enable) VALUES (?, ?, ?, ?)",
+		email, up, down, true).Error; err != nil {
+		t.Fatalf("traffic %s: %v", email, err)
+	}
+}
+
 // Only the limits that were set count, only enabled non-super admins are
 // looked at, and assigned traffic counts the same as created traffic.
 func TestBreachesFindExpiryAndQuota(t *testing.T) {
@@ -25,15 +40,14 @@ func TestBreachesFindExpiryAndQuota(t *testing.T) {
 	const now = int64(1_800_000_000_000)
 
 	over, _ := s.Create(AdminSpec{Username: "over", Password: "pw-over-123", Role: model.RoleReseller, Enabled: true, TrafficQuota: 1000})
-	seedInboundWithTraffic(t, over.Id, "over-a", 600, 300)
-	// 100 more arrives on an inbound handed to them: 1000 used, quota met.
-	handed := seedInboundWithTraffic(t, firstAdminId(t), "handed", 50, 50)
-	if err := s.SetAssignments(over.Id, []int{handed}); err != nil {
-		t.Fatalf("assign: %v", err)
-	}
+	seedClientWithTraffic(t, over.Id, "over-1@example.com", 600, 300)
+	seedClientWithTraffic(t, over.Id, "over-2@example.com", 50, 50)
 
 	under, _ := s.Create(AdminSpec{Username: "under", Password: "pw-under-123", Role: model.RoleReseller, Enabled: true, TrafficQuota: 5000})
-	seedInboundWithTraffic(t, under.Id, "under-a", 600, 300)
+	seedClientWithTraffic(t, under.Id, "under-1@example.com", 600, 300)
+	// Another reseller's heavy customer on a shared inbound must not count
+	// against this one: charging by inbound did exactly that.
+	seedInboundWithTraffic(t, under.Id, "shared", 9_000_000, 9_000_000)
 
 	expired, _ := s.Create(AdminSpec{Username: "expired", Password: "pw-exp-123", Role: model.RoleReseller, Enabled: true, ExpireAt: now - 1})
 	s.Create(AdminSpec{Username: "future", Password: "pw-fut-123", Role: model.RoleReseller, Enabled: true, ExpireAt: now + 1})

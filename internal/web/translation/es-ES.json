@@ -301,7 +301,7 @@
         "quota": "Cuota",
         "remaining": "Restante",
         "unlimited": "Ilimitado",
-        "inbounds": "Inbounds",
+        "clients": "Clientes",
         "expires": "Caduca"
       }
     },
@@ -1018,7 +1018,9 @@
       "renewsUsed": "Renovaciones usadas",
       "bulkAdTagHint": "Introduce una etiqueta hexadecimal de 32 caracteres para asignar, o 'none' para borrarla en MTProto.",
       "renewIntervalDesc": "Tras expirar, añade el número configurado de días de 24 horas al vencimiento anterior y reinicia el tráfico del cliente. Mantén desactivados los reinicios de tráfico independientes salvo que quieras un reinicio adicional.",
-      "renewWeeklyDesc": "La renovación por calendario se realiza a medianoche en la zona horaria del panel y también reinicia el tráfico del cliente. Mantén desactivados los reinicios de tráfico independientes salvo que quieras un reinicio adicional."
+      "renewWeeklyDesc": "La renovación por calendario se realiza a medianoche en la zona horaria del panel y también reinicia el tráfico del cliente. Mantén desactivados los reinicios de tráfico independientes salvo que quieras un reinicio adicional.",
+      "owner": "Propietario",
+      "ownerPanel": "Panel"
     },
     "groups": {
       "name": "Nombre",
@@ -2462,7 +2464,9 @@
         "usersLimit": "Máx. clientes (0 = ilimitado)",
         "expireAt": "Caduca",
         "permissions": "Permisos",
-        "inbounds": "Inbounds que puede gestionar"
+        "inbounds": "Inbounds que puede gestionar",
+        "usage": "Uso",
+        "clients": "Clientes"
       },
       "perms": {
         "sections": {

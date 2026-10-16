@@ -301,7 +301,7 @@
         "quota": "Kuota",
         "remaining": "Sisa",
         "unlimited": "Tanpa batas",
-        "inbounds": "Inbound",
+        "clients": "Klien",
         "expires": "Kedaluwarsa"
       }
     },
@@ -1018,7 +1018,9 @@
       "renewsUsed": "Perpanjangan terpakai",
       "bulkAdTagHint": "Masukkan tag heksadesimal 32 karakter untuk mengatur, atau 'none' untuk menghapus pada MTProto.",
       "renewIntervalDesc": "Setelah kedaluwarsa, menambahkan jumlah hari yang ditentukan (24 jam per hari) ke batas waktu sebelumnya dan mereset trafik klien. Nonaktifkan reset trafik terpisah kecuali Anda menginginkan reset tambahan.",
-      "renewWeeklyDesc": "Perpanjangan kalender dilakukan pada tengah malam menurut zona waktu panel dan juga mereset trafik klien. Nonaktifkan reset trafik terpisah kecuali Anda menginginkan reset tambahan."
+      "renewWeeklyDesc": "Perpanjangan kalender dilakukan pada tengah malam menurut zona waktu panel dan juga mereset trafik klien. Nonaktifkan reset trafik terpisah kecuali Anda menginginkan reset tambahan.",
+      "owner": "Pemilik",
+      "ownerPanel": "Panel"
     },
     "groups": {
       "name": "Nama",
@@ -2462,7 +2464,9 @@
         "usersLimit": "Maks. klien (0 = tanpa batas)",
         "expireAt": "Kedaluwarsa",
         "permissions": "Izin",
-        "inbounds": "Inbound yang boleh dikelola"
+        "inbounds": "Inbound yang boleh dikelola",
+        "usage": "Pemakaian",
+        "clients": "Klien"
       },
       "perms": {
         "sections": {

@@ -34,6 +34,7 @@ import { useInboundOptions } from '@/api/queries/useInboundOptions';
 import AppSidebar from '@/layouts/AppSidebar';
 import { setMessageInstance } from '@/utils/messageBus';
 import { GB, type AdminPayload } from '@/schemas/api/admin';
+import { SizeFormatter } from '@/utils';
 import AdminFormModal from './AdminFormModal';
 
 const unlimited = (n: number | undefined, render: (n: number) => string) =>
@@ -148,6 +149,19 @@ export default function AdminsPage() {
         key: 'trafficQuota',
         responsive: ['md'],
         render: (n: number) => unlimited(n, (v) => `${Math.round((v / GB) * 100) / 100} GB`),
+      },
+      {
+        title: t('pages.admins.fields.usage'),
+        key: 'usage',
+        responsive: ['md'],
+        render: (_: unknown, admin: AdminView) =>
+          SizeFormatter.sizeFormat((admin.usedUp ?? 0) + (admin.usedDown ?? 0)),
+      },
+      {
+        title: t('pages.admins.fields.clients'),
+        dataIndex: 'clientCount',
+        key: 'clientCount',
+        responsive: ['md'],
       },
       {
         title: t('pages.admins.fields.expireAt'),

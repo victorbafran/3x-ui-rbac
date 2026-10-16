@@ -28,17 +28,21 @@ export const transportBitsSchema = z.number().int();
 export type transportBits = z.infer<typeof transportBitsSchema>;
 
 export const AdminMeSchema = z.object({
+  clientCount: z.number().int(),
   expireAt: z.number().int(),
   id: z.number().int(),
   permissions: z.record(z.string(), z.boolean()),
   role: z.string(),
   trafficQuota: z.number().int(),
+  usedDown: z.number().int(),
+  usedUp: z.number().int(),
   username: z.string(),
   usersLimit: z.number().int(),
 });
 export type AdminMe = z.infer<typeof AdminMeSchema>;
 
 export const AdminViewSchema = z.object({
+  clientCount: z.number().int(),
   disabledReason: z.string(),
   enabled: z.boolean(),
   expireAt: z.number().int(),
@@ -47,6 +51,8 @@ export const AdminViewSchema = z.object({
   permissions: z.record(z.string(), z.boolean()),
   role: z.string(),
   trafficQuota: z.number().int(),
+  usedDown: z.number().int(),
+  usedUp: z.number().int(),
   username: z.string(),
   usersLimit: z.number().int(),
 });
@@ -573,6 +579,7 @@ export const ClientReverseSchema = z.object({
 export type ClientReverse = z.infer<typeof ClientReverseSchema>;
 
 export const ClientSlimSchema = z.object({
+  adminId: z.number().int(),
   comment: z.string().optional(),
   createdAt: z.number().int(),
   email: z.string(),

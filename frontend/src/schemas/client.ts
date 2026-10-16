@@ -23,6 +23,7 @@ export const ClientTrafficSchema = z.object({
 
 export const ClientRecordSchema = z
   .object({
+    adminId: z.number().optional(),
     id: z.number().optional(),
     email: z.string(),
     subId: z.string().optional(),

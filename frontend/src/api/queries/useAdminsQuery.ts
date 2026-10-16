@@ -29,8 +29,12 @@ async function fetchCatalog(): Promise<PermissionCatalog> {
   return parseMsg(msg, PermissionCatalogSchema, 'admins/permissions').obj as PermissionCatalog;
 }
 
-export function useAdminsQuery() {
-  const query = useQuery({ queryKey: keys.admins.list(), queryFn: fetchAdmins });
+export function useAdminsQuery(options?: { enabled?: boolean }) {
+  const query = useQuery({
+    queryKey: keys.admins.list(),
+    queryFn: fetchAdmins,
+    enabled: options?.enabled ?? true,
+  });
   const admins = useMemo(() => query.data ?? [], [query.data]);
   return {
     admins,

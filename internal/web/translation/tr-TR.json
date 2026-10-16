@@ -301,7 +301,7 @@
         "quota": "Kota",
         "remaining": "Kalan",
         "unlimited": "Sınırsız",
-        "inbounds": "Inbound'lar",
+        "clients": "Müşteriler",
         "expires": "Bitiş"
       }
     },
@@ -1018,7 +1018,9 @@
       "renewsUsed": "Kullanılan yenileme",
       "bulkAdTagHint": "Aramak için 32 karakterlik onaltılık etiket girin veya MTProto üzerinde temizlemek için 'none' yazın.",
       "renewIntervalDesc": "Süre dolduktan sonra önceki bitiş zamanına belirlenen sayıda 24 saatlik gün ekler ve istemci trafiğini sıfırlar. Ek bir sıfırlama istemiyorsanız bağımsız trafik sıfırlamalarını devre dışı bırakın.",
-      "renewWeeklyDesc": "Takvim yenilemesi panelin saat diliminde gece yarısı gerçekleşir ve istemci trafiğini de sıfırlar. Ek bir sıfırlama istemiyorsanız bağımsız trafik sıfırlamalarını devre dışı bırakın."
+      "renewWeeklyDesc": "Takvim yenilemesi panelin saat diliminde gece yarısı gerçekleşir ve istemci trafiğini de sıfırlar. Ek bir sıfırlama istemiyorsanız bağımsız trafik sıfırlamalarını devre dışı bırakın.",
+      "owner": "Sahibi",
+      "ownerPanel": "Panel"
     },
     "groups": {
       "name": "İsim",
@@ -2462,7 +2464,9 @@
         "usersLimit": "En fazla müşteri (0 = sınırsız)",
         "expireAt": "Bitiş",
         "permissions": "İzinler",
-        "inbounds": "Yönetebileceği inbound'lar"
+        "inbounds": "Yönetebileceği inbound'lar",
+        "usage": "Kullanım",
+        "clients": "Müşteriler"
       },
       "perms": {
         "sections": {

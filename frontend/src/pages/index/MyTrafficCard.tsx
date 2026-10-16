@@ -1,23 +1,10 @@
-import { useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Card, Progress, Typography, theme } from 'antd';
 import { ArrowDownOutlined, ArrowUpOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 
-import { HttpUtil, SizeFormatter } from '@/utils';
-import { parseMsg } from '@/utils/zodValidate';
-import { SlimInboundListSchema } from '@/schemas/inbound';
-import { keys } from '@/api/queryKeys';
+import { SizeFormatter } from '@/utils';
 import type { AdminMe } from '@/api/queries/useMeQuery';
-
-// Same key, schema and shape as the inbounds page, so both read one cache entry.
-async function fetchSlimInbounds(): Promise<unknown[]> {
-  const msg = await HttpUtil.get('/panel/api/inbounds/list/slim', undefined, { silent: true });
-  if (!msg?.success) throw new Error(msg?.msg || 'Failed to fetch inbounds');
-  const validated = parseMsg(msg, SlimInboundListSchema, 'inbounds/list/slim');
-  return Array.isArray(validated.obj) ? validated.obj : [];
-}
 
 interface MyTrafficCardProps {
   me: AdminMe;
@@ -25,28 +12,17 @@ interface MyTrafficCardProps {
 }
 
 // The host's throughput belongs to the whole server. An admin who is not a
-// super_admin sees the traffic of the inbounds they own, against their quota.
+// super_admin sees the traffic of the customers they own, against their quota.
+// The figures come from /admins/me, which counts the same clients the quota
+// job counts -- summing their inbounds instead would include every other
+// reseller sharing one.
 export default function MyTrafficCard({ me, isMobile }: MyTrafficCardProps) {
   const { t } = useTranslation();
   const { token } = theme.useToken();
-  const { data } = useQuery({
-    queryKey: keys.inbounds.slim(),
-    queryFn: fetchSlimInbounds,
-    staleTime: Infinity,
-  });
 
-  const totals = useMemo(() => {
-    let up = 0;
-    let down = 0;
-    for (const ib of data ?? []) {
-      const rec = ib as { up?: number; down?: number };
-      up += rec.up || 0;
-      down += rec.down || 0;
-    }
-    return { up, down, count: (data ?? []).length };
-  }, [data]);
-
-  const used = totals.up + totals.down;
+  const up = me.usedUp ?? 0;
+  const down = me.usedDown ?? 0;
+  const used = up + down;
   const quota = me.trafficQuota ?? 0;
   const percent = quota > 0 ? Math.min(100, Math.round((used / quota) * 100)) : 0;
   const remaining = quota > 0 ? Math.max(0, quota - used) : 0;
@@ -56,18 +32,18 @@ export default function MyTrafficCard({ me, isMobile }: MyTrafficCardProps) {
       <div className="ov-wide-head">
         <div>
           <div className="ov-kicker">{t('pages.index.myTraffic.title')}</div>
-          <div className="ov-sub">{`${t('pages.index.myTraffic.inbounds')} · ${totals.count}`}</div>
+          <div className="ov-sub">{`${t('pages.index.myTraffic.clients')} · ${me.clientCount ?? 0}`}</div>
         </div>
         <div className="ov-wide-legend">
           <div className="ov-legend-label">
             <ArrowUpOutlined style={{ color: token.colorPrimary }} />
             {t('pages.index.myTraffic.upload')}
-            <span className="ov-legend-num">{SizeFormatter.sizeFormat(totals.up)}</span>
+            <span className="ov-legend-num">{SizeFormatter.sizeFormat(up)}</span>
           </div>
           <div className="ov-legend-label">
             <ArrowDownOutlined style={{ color: token.colorTextTertiary }} />
             {t('pages.index.myTraffic.download')}
-            <span className="ov-legend-num">{SizeFormatter.sizeFormat(totals.down)}</span>
+            <span className="ov-legend-num">{SizeFormatter.sizeFormat(down)}</span>
           </div>
         </div>
       </div>

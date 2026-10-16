@@ -301,7 +301,7 @@
         "quota": "Quota",
         "remaining": "Remaining",
         "unlimited": "Unlimited",
-        "inbounds": "Inbounds",
+        "clients": "Clients",
         "expires": "Expires"
       }
     },
@@ -1018,7 +1018,9 @@
       "renewsUsed": "Renewals used",
       "bulkAdTagHint": "Enter a 32-character hex tag to set, or 'none' to clear sponsor channel on MTProto inbounds.",
       "renewIntervalDesc": "Adds the configured number of 24-hour days to the previous cutoff after expiry and resets the client's traffic. Keep independent traffic resets disabled unless an additional reset is intended.",
-      "renewWeeklyDesc": "Calendar renewal uses midnight in the panel timezone and also resets the client's traffic. Keep independent traffic resets disabled unless an additional reset is intended."
+      "renewWeeklyDesc": "Calendar renewal uses midnight in the panel timezone and also resets the client's traffic. Keep independent traffic resets disabled unless an additional reset is intended.",
+      "owner": "Owner",
+      "ownerPanel": "Panel"
     },
     "groups": {
       "name": "Name",
@@ -1211,7 +1213,9 @@
         "usersLimit": "Max clients (0 = unlimited)",
         "expireAt": "Expires",
         "permissions": "Permissions",
-        "inbounds": "Inbounds they may manage"
+        "inbounds": "Inbounds they may manage",
+        "usage": "Usage",
+        "clients": "Clients"
       },
       "perms": {
         "sections": {

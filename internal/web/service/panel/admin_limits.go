@@ -53,15 +53,12 @@ func (s *AdminService) Breaches(nowMs int64) ([]LimitBreach, error) {
 	return out, nil
 }
 
-// usedTraffic sums up+down over the inbounds the admin created or was
-// assigned: the same set their overview card shows them.
+// usedTraffic sums the traffic of the clients this admin owns. Summing their
+// inbounds instead counted every reseller on a shared inbound against each
+// other's quota.
 func (s *AdminService) usedTraffic(adminId int) (int64, error) {
-	var used int64
-	err := database.GetDB().Model(&model.Inbound{}).
-		Scopes(database.OwnedInbounds(adminId)).
-		Select("COALESCE(SUM(up + down), 0)").
-		Scan(&used).Error
-	return used, err
+	usage, err := UsageFor(adminId)
+	return usage.Total(), err
 }
 
 // Deactivate switches a non-super admin off, ends their sessions and takes

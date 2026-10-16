@@ -20,6 +20,7 @@ import (
 // of clients. Modals that need the full record still call /get/:email.
 type ClientSlim struct {
 	Email        string              `json:"email" example:"alice@example.com"`
+	AdminId      int                 `json:"adminId" example:"0"`
 	SubID        string              `json:"subId" example:"abcd1234"`
 	Enable       bool                `json:"enable" example:"true"`
 	TotalGB      int64               `json:"totalGB" example:"53687091200"`
@@ -642,6 +643,7 @@ func sqlInt(v int64) string {
 func toClientSlim(c ClientWithAttachments) ClientSlim {
 	return ClientSlim{
 		Email:        c.Email,
+		AdminId:      c.AdminId,
 		SubID:        c.SubID,
 		Enable:       c.Enable,
 		TotalGB:      c.TotalGB,

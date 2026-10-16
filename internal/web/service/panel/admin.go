@@ -71,9 +71,17 @@ func (s *AdminService) List() ([]entity.AdminView, error) {
 	for _, l := range links {
 		byAdmin[l.AdminId] = append(byAdmin[l.AdminId], l.InboundId)
 	}
+	usage, err := UsageByAdmin()
+	if err != nil {
+		return nil, err
+	}
 	out := make([]entity.AdminView, 0, len(users))
 	for _, u := range users {
-		out = append(out, viewOf(u, byAdmin[u.Id]))
+		v := viewOf(u, byAdmin[u.Id])
+		if used, ok := usage[u.Id]; ok {
+			v.UsedUp, v.UsedDown, v.ClientCount = used.Up, used.Down, used.Clients
+		}
+		out = append(out, v)
 	}
 	return out, nil
 }

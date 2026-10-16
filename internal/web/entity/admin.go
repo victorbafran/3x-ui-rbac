@@ -11,6 +11,9 @@ type AdminView struct {
 	UsersLimit     int64           `json:"usersLimit" example:"0"`
 	ExpireAt       int64           `json:"expireAt" example:"0"`
 	DisabledReason string          `json:"disabledReason" example:""`
+	UsedUp         int64           `json:"usedUp" example:"0"`
+	UsedDown       int64           `json:"usedDown" example:"0"`
+	ClientCount    int64           `json:"clientCount" example:"0"`
 	Permissions    map[string]bool `json:"permissions"`
 	InboundIds     []int           `json:"inboundIds"`
 }
@@ -25,6 +28,9 @@ type AdminMe struct {
 	TrafficQuota int64           `json:"trafficQuota" example:"0"`
 	UsersLimit   int64           `json:"usersLimit" example:"0"`
 	ExpireAt     int64           `json:"expireAt" example:"0"`
+	UsedUp       int64           `json:"usedUp" example:"0"`
+	UsedDown     int64           `json:"usedDown" example:"0"`
+	ClientCount  int64           `json:"clientCount" example:"0"`
 	Permissions  map[string]bool `json:"permissions"`
 }
 

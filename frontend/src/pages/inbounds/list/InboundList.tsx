@@ -32,7 +32,7 @@ import { filterMenuByPermission } from '@/lib/permissions';
 import { HttpUtil } from '@/utils';
 import { activateOnKey } from '@/utils/a11y';
 
-import { buildRowActionsMenu } from './RowActions';
+import { buildRowActionsMenu, ROW_ACTION_PERMISSION } from './RowActions';
 import { useInboundColumns } from './useInboundColumns';
 import { buildHostRemarksByInboundId, formatHostRemarksLabel } from './helpers';
 import InboundStatsModal from './InboundStatsModal';
@@ -338,19 +338,24 @@ export default function InboundList({
                         <Switch
                           checked={record.enable}
                           size="small"
+                          disabled={!can('inbounds.edit')}
                           onChange={(next) => onSwitchEnable(record, next)}
                         />
                         <Dropdown
                           trigger={['click']}
                           placement="bottomRight"
                           menu={{
-                            items: buildRowActionsMenu({
-                              record,
-                              subEnable,
-                              t,
-                              isMobile: true,
-                              hasClients: (clientCount[record.id]?.clients || 0) > 0,
-                            }),
+                            items: filterMenuByPermission(
+                              buildRowActionsMenu({
+                                record,
+                                subEnable,
+                                t,
+                                isMobile: true,
+                                hasClients: (clientCount[record.id]?.clients || 0) > 0,
+                              }) ?? [],
+                              can,
+                              ROW_ACTION_PERMISSION,
+                            ),
                             onClick: ({ key }) =>
                               onRowAction({ key: key as RowAction, dbInbound: record }),
                           }}

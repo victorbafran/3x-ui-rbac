@@ -108,7 +108,7 @@ export function buildRowActionsMenu({
   return items;
 }
 
-const ROW_ACTION_PERMISSION: Record<string, string> = {
+export const ROW_ACTION_PERMISSION: Record<string, string> = {
   resetTraffic: 'inbounds.resetTraffic',
   delete: 'inbounds.delete',
   delAllClients: 'clients.delete',

@@ -64,3 +64,24 @@ func TestGetHostsForOwnerUnscopedSeesAll(t *testing.T) {
 		t.Fatalf("got %d host groups, want 2", len(groups))
 	}
 }
+
+// Hosts follow the same rule: an assigned inbound brings its host groups along.
+func TestGetHostsForOwnerIncludesAssignedInbounds(t *testing.T) {
+	dbtest.InitDB(t, filepath.Join(t.TempDir(), "x-ui.db"))
+	mineId := seedOwnedHost(t, "host-owner-a", "htag-a", "mine")
+	seedOwnedHost(t, "host-owner-b", "htag-b", "theirs")
+	var handed model.Inbound
+	if err := database.GetDB().Where("tag = ?", "htag-b").First(&handed).Error; err != nil {
+		t.Fatalf("find htag-b: %v", err)
+	}
+	if err := database.GetDB().Create(&model.AdminInbound{AdminId: mineId, InboundId: handed.Id}).Error; err != nil {
+		t.Fatalf("assign: %v", err)
+	}
+	groups, err := (&HostService{}).GetHostsForOwner(mineId)
+	if err != nil {
+		t.Fatalf("GetHostsForOwner: %v", err)
+	}
+	if len(groups) != 2 {
+		t.Fatalf("got %d host groups after assignment, want 2", len(groups))
+	}
+}

@@ -16,7 +16,7 @@ func (s *HostService) GetHostsForOwner(ownerId int) ([]*entity.HostGroup, error)
 	var hosts []*model.Host
 	err := database.GetDB().
 		Joins("JOIN inbounds ON inbounds.id = hosts.inbound_id").
-		Where("inbounds.user_id = ?", ownerId).
+		Where(database.OwnedInboundCond("inbounds"), ownerId, ownerId).
 		Order("hosts.inbound_id asc, hosts.sort_order asc, hosts.id asc").
 		Find(&hosts).Error
 	if err != nil {

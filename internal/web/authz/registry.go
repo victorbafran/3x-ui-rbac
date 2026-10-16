@@ -5,119 +5,115 @@ type prefixRule struct {
 	Rule   Rule
 }
 
-// Anything under these prefixes is super_admin only, including routes added
-// upstream later: a new global endpoint is closed, not open, until listed below.
+// Anything under these prefixes is closed to everyone but super_admin,
+// including routes added upstream later. An exact entry below opens a route.
 var prefixRules = []prefixRule{
-	{"/panel/api/server/", Rule{Roles: Admins}},
-	{"/panel/api/xray/", Rule{Roles: Admins}},
-	{"/panel/api/nodes", Rule{Roles: Admins}},
-	{"/panel/api/setting/", Rule{Roles: Admins}},
-	{"/panel/api/sub-balancers", Rule{Roles: Admins}},
-	{"/panel/api/hosts/", Rule{Roles: Managers}},
-	{"/panel/api/inbounds/", Rule{Roles: Admins}},
-	{"/panel/api/clients/", Rule{Roles: Admins}},
+	{"/panel/api/server/", Rule{Perm: PermSuperOnly}},
+	{"/panel/api/xray/", Rule{Perm: PermSuperOnly}},
+	{"/panel/api/nodes", Rule{Perm: PermSuperOnly}},
+	{"/panel/api/setting/", Rule{Perm: PermSuperOnly}},
+	{"/panel/api/sub-balancers", Rule{Perm: PermSuperOnly}},
+	{"/panel/api/inbounds/", Rule{Perm: PermSuperOnly}},
+	{"/panel/api/clients/", Rule{Perm: PermSuperOnly}},
+	// Host management is a page of its own; an admin with that section runs it.
+	{"/panel/api/hosts/", Rule{Perm: SecHosts}},
 }
 
-// Exact entries open a route wider than its prefix default, and name the
-// ownership check that replaces the blanket super_admin gate.
+// Exact entries name the switch a route needs and how its target is owned.
+// Perm "" is a deliberate choice, not an omission: the handler scopes the data.
 var exactRules = map[string]Rule{
-	"GET /panel/api/openapi.json": {Roles: Readers},
+	"GET /panel/api/openapi.json":   {},
+	"POST /panel/api/backuptotgbot": {Perm: PermSuperOnly},
 
-	// The panel shell cannot render without these; non-admins get the
-	// allowlisted view from AllSettingView.ForReseller.
-	"POST /panel/api/setting/all":             {Roles: Readers},
-	"POST /panel/api/setting/defaultSettings": {Roles: Readers},
+	// The panel shell cannot render without these. Settings come back
+	// allowlisted for non-admins; metrics are host load and the server's own
+	// address, which a reseller's clients already connect to.
+	"POST /panel/api/setting/all":                   {},
+	"POST /panel/api/setting/defaultSettings":       {},
+	"GET /panel/api/server/status":                  {},
+	"GET /panel/api/server/history/:metric/:bucket": {},
+	"GET /panel/api/server/cpuHistory/:bucket":      {},
+	"GET /panel/api/server/getPanelUpdateInfo":      {},
+	"GET /panel/api/hosts/list":                     {},
+	"GET /panel/api/nodes/list":                     {},
+	"GET /panel/api/hosts/byInbound/:inboundId":     {Perm: SecInbounds, Scope: ScopeInbound, Param: "inboundId"},
 
-	// The overview is the landing page for every role and polls these. They
-	// are host metrics and the server's own address, which a reseller already
-	// knows -- their clients connect to it. Everything else under /server/
-	// stays super_admin by the prefix rule.
-	"GET /panel/api/server/status":                  {Roles: Readers},
-	"GET /panel/api/server/history/:metric/:bucket": {Roles: Readers},
-	"GET /panel/api/server/cpuHistory/:bucket":      {Roles: Readers},
-	"GET /panel/api/server/getPanelUpdateInfo":      {Roles: Readers},
-	"POST /panel/api/backuptotgbot":                 {Roles: Admins},
+	// Inbounds. Lists filter by owner inside the service.
+	"GET /panel/api/inbounds/list":          {Perm: SecInbounds, Scope: ScopeOwnedListing},
+	"GET /panel/api/inbounds/list/slim":     {Perm: SecInbounds, Scope: ScopeOwnedListing},
+	"GET /panel/api/inbounds/options":       {Perm: SecInbounds, Scope: ScopeOwnedListing},
+	"GET /panel/api/inbounds/allLinks":      {Perm: SecInbounds, Scope: ScopeOwnedListing},
+	"GET /panel/api/inbounds/get/:id":       {Perm: SecInbounds, Scope: ScopeInbound, Param: "id"},
+	"GET /panel/api/inbounds/:id/fallbacks": {Perm: SecInbounds, Scope: ScopeInbound, Param: "id"},
 
-	// Inbounds: lists already filter by owner inside the service.
-	"GET /panel/api/inbounds/list":          {Roles: Readers, Scope: ScopeOwnedListing},
-	"GET /panel/api/inbounds/list/slim":     {Roles: Readers, Scope: ScopeOwnedListing},
-	"GET /panel/api/inbounds/options":       {Roles: Readers, Scope: ScopeOwnedListing},
-	"GET /panel/api/inbounds/allLinks":      {Roles: Readers, Scope: ScopeOwnedListing},
-	"GET /panel/api/inbounds/get/:id":       {Roles: Readers, Scope: ScopeInbound, Param: "id"},
-	"GET /panel/api/inbounds/:id/fallbacks": {Roles: Readers, Scope: ScopeInbound, Param: "id"},
-
-	"POST /panel/api/inbounds/add":                {Roles: Operators},
-	"POST /panel/api/inbounds/import":             {Roles: Operators},
-	"POST /panel/api/inbounds/update/:id":         {Roles: Operators, Scope: ScopeInbound, Param: "id"},
-	"POST /panel/api/inbounds/del/:id":            {Roles: Operators, Scope: ScopeInbound, Param: "id"},
-	"POST /panel/api/inbounds/setEnable/:id":      {Roles: Operators, Scope: ScopeInbound, Param: "id"},
-	"POST /panel/api/inbounds/:id/resetTraffic":   {Roles: Operators, Scope: ScopeInbound, Param: "id"},
-	"POST /panel/api/inbounds/:id/subSortIndex":   {Roles: Operators, Scope: ScopeInbound, Param: "id"},
-	"POST /panel/api/inbounds/:id/delAllClients":  {Roles: Operators, Scope: ScopeInbound, Param: "id"},
-	"POST /panel/api/inbounds/:id/fallbacks":      {Roles: Operators, Scope: ScopeInbound, Param: "id"},
-	"POST /panel/api/inbounds/bulkDel":            {Roles: Operators, Scope: ScopeOwnedListing},
-	"POST /panel/api/inbounds/resetAllTraffics":   {Roles: Managers},
-	"POST /panel/api/inbounds/pushClientTraffics": {Roles: Admins},
+	"POST /panel/api/inbounds/add":               {Perm: InboundCreate},
+	"POST /panel/api/inbounds/import":            {Perm: InboundCreate},
+	"POST /panel/api/inbounds/update/:id":        {Perm: InboundEdit, Scope: ScopeInbound, Param: "id"},
+	"POST /panel/api/inbounds/setEnable/:id":     {Perm: InboundEdit, Scope: ScopeInbound, Param: "id"},
+	"POST /panel/api/inbounds/:id/subSortIndex":  {Perm: InboundEdit, Scope: ScopeInbound, Param: "id"},
+	"POST /panel/api/inbounds/:id/fallbacks":     {Perm: InboundEdit, Scope: ScopeInbound, Param: "id"},
+	"POST /panel/api/inbounds/del/:id":           {Perm: InboundDelete, Scope: ScopeInbound, Param: "id"},
+	"POST /panel/api/inbounds/:id/resetTraffic":  {Perm: InboundResetTraffic, Scope: ScopeInbound, Param: "id"},
+	"POST /panel/api/inbounds/:id/delAllClients": {Perm: ClientDelete, Scope: ScopeInbound, Param: "id"},
+	"POST /panel/api/inbounds/bulkDel":           {Perm: InboundDelete, Scope: ScopeOwnedListing},
+	// These two act on every inbound on the panel; the services do not scope.
+	"POST /panel/api/inbounds/resetAllTraffics":   {Perm: PermSuperOnly},
+	"POST /panel/api/inbounds/pushClientTraffics": {Perm: PermSuperOnly},
 
 	// Clients addressed by email: ownership runs through their inbounds.
-	"GET /panel/api/clients/get/:email":            {Roles: Readers, Scope: ScopeClient, Param: "email"},
-	"GET /panel/api/clients/links/:email":          {Roles: Readers, Scope: ScopeClient, Param: "email"},
-	"GET /panel/api/clients/traffic/:email":        {Roles: Readers, Scope: ScopeClient, Param: "email"},
-	"POST /panel/api/clients/update/:email":        {Roles: Operators, Scope: ScopeClient, Param: "email"},
-	"POST /panel/api/clients/del/:email":           {Roles: Operators, Scope: ScopeClient, Param: "email"},
-	"POST /panel/api/clients/resetTraffic/:email":  {Roles: Operators, Scope: ScopeClient, Param: "email"},
-	"POST /panel/api/clients/updateTraffic/:email": {Roles: Operators, Scope: ScopeClient, Param: "email"},
-	"POST /panel/api/clients/clearIps/:email":      {Roles: Operators, Scope: ScopeClient, Param: "email"},
-	"POST /panel/api/clients/ips/:email":           {Roles: Readers, Scope: ScopeClient, Param: "email"},
-	"POST /panel/api/clients/:email/attach":        {Roles: Operators, Scope: ScopeClient, Param: "email"},
-	"POST /panel/api/clients/:email/detach":        {Roles: Operators, Scope: ScopeClient, Param: "email"},
-	"POST /panel/api/clients/:email/externalLinks": {Roles: Operators, Scope: ScopeClient, Param: "email"},
-	"POST /panel/api/clients/hwids/:email":         {Roles: Operators, Scope: ScopeClient, Param: "email"},
-	"DELETE /panel/api/clients/hwids/:email":       {Roles: Operators, Scope: ScopeClient, Param: "email"},
-	"DELETE /panel/api/clients/hwids/:email/:id":   {Roles: Operators, Scope: ScopeClient, Param: "email"},
+	"GET /panel/api/clients/get/:email":            {Perm: SecClients, Scope: ScopeClient, Param: "email"},
+	"GET /panel/api/clients/links/:email":          {Perm: ClientViewLinks, Scope: ScopeClient, Param: "email"},
+	"GET /panel/api/clients/traffic/:email":        {Perm: SecClients, Scope: ScopeClient, Param: "email"},
+	"POST /panel/api/clients/ips/:email":           {Perm: SecClients, Scope: ScopeClient, Param: "email"},
+	"POST /panel/api/clients/update/:email":        {Perm: ClientEdit, Scope: ScopeClient, Param: "email"},
+	"POST /panel/api/clients/updateTraffic/:email": {Perm: ClientEdit, Scope: ScopeClient, Param: "email"},
+	"POST /panel/api/clients/clearIps/:email":      {Perm: ClientEdit, Scope: ScopeClient, Param: "email"},
+	"POST /panel/api/clients/:email/attach":        {Perm: ClientEdit, Scope: ScopeClient, Param: "email"},
+	"POST /panel/api/clients/:email/detach":        {Perm: ClientEdit, Scope: ScopeClient, Param: "email"},
+	"POST /panel/api/clients/:email/externalLinks": {Perm: ClientEdit, Scope: ScopeClient, Param: "email"},
+	"POST /panel/api/clients/hwids/:email":         {Perm: ClientEdit, Scope: ScopeClient, Param: "email"},
+	"DELETE /panel/api/clients/hwids/:email":       {Perm: ClientEdit, Scope: ScopeClient, Param: "email"},
+	"DELETE /panel/api/clients/hwids/:email/:id":   {Perm: ClientEdit, Scope: ScopeClient, Param: "email"},
+	"POST /panel/api/clients/del/:email":           {Perm: ClientDelete, Scope: ScopeClient, Param: "email"},
+	"POST /panel/api/clients/resetTraffic/:email":  {Perm: ClientResetTraffic, Scope: ScopeClient, Param: "email"},
 
-	// Client collections: the service must filter these by owner.
-	"GET /panel/api/clients/list":              {Roles: Readers, Scope: ScopeOwnedListing},
-	"GET /panel/api/clients/list/paged":        {Roles: Readers, Scope: ScopeOwnedListing},
-	"GET /panel/api/clients/export":            {Roles: Managers, Scope: ScopeOwnedListing},
-	"POST /panel/api/clients/add":              {Roles: Operators, Scope: ScopeOwnedListing},
-	"POST /panel/api/clients/bulkCreate":       {Roles: Operators, Scope: ScopeOwnedListing},
-	"POST /panel/api/clients/bulkDel":          {Roles: Operators, Scope: ScopeOwnedListing},
-	"POST /panel/api/clients/bulkAdjust":       {Roles: Operators, Scope: ScopeOwnedListing},
-	"POST /panel/api/clients/bulkEnable":       {Roles: Operators, Scope: ScopeOwnedListing},
-	"POST /panel/api/clients/bulkDisable":      {Roles: Operators, Scope: ScopeOwnedListing},
-	"POST /panel/api/clients/bulkResetTraffic": {Roles: Operators, Scope: ScopeOwnedListing},
-	"POST /panel/api/clients/bulkAttach":       {Roles: Operators, Scope: ScopeOwnedListing},
-	"POST /panel/api/clients/bulkDetach":       {Roles: Operators, Scope: ScopeOwnedListing},
-	"POST /panel/api/clients/activeInbounds":   {Roles: Readers, Scope: ScopeOwnedListing},
-	"POST /panel/api/clients/onlines":          {Roles: Readers, Scope: ScopeOwnedListing},
-	"POST /panel/api/clients/onlinesByGuid":    {Roles: Readers, Scope: ScopeOwnedListing},
-	"POST /panel/api/clients/lastOnline":       {Roles: Readers, Scope: ScopeOwnedListing},
-	"POST /panel/api/clients/clientIpsByGuid":  {Roles: Readers, Scope: ScopeOwnedListing},
-	"POST /panel/api/clients/renewalPreview":   {Roles: Operators, Scope: ScopeOwnedListing},
-	"GET /panel/api/clients/subLinks/:subId":   {Roles: Readers, Scope: ScopeOwnedListing},
-	"GET /panel/api/clients/get/tgId/:tgId":    {Roles: Readers, Scope: ScopeOwnedListing},
-	"POST /panel/api/clients/happLink/:id":     {Roles: Readers, Scope: ScopeOwnedListing},
-	"POST /panel/api/clients/import":           {Roles: Managers},
-	"POST /panel/api/clients/delDepleted":      {Roles: Managers},
-	"POST /panel/api/clients/delOrphans":       {Roles: Admins},
-	"POST /panel/api/clients/resetAllTraffics": {Roles: Managers},
+	// Client collections: the service filters these by owner. The bulk
+	// writers also carry target inbound ids in the body, which the handler
+	// must still check against the caller's inbounds.
+	"GET /panel/api/clients/list":              {Perm: SecClients, Scope: ScopeOwnedListing},
+	"GET /panel/api/clients/list/paged":        {Perm: SecClients, Scope: ScopeOwnedListing},
+	"POST /panel/api/clients/activeInbounds":   {Perm: SecClients, Scope: ScopeOwnedListing},
+	"POST /panel/api/clients/onlines":          {Perm: SecClients, Scope: ScopeOwnedListing},
+	"POST /panel/api/clients/onlinesByGuid":    {Perm: SecClients, Scope: ScopeOwnedListing},
+	"POST /panel/api/clients/lastOnline":       {Perm: SecClients, Scope: ScopeOwnedListing},
+	"POST /panel/api/clients/clientIpsByGuid":  {Perm: SecClients, Scope: ScopeOwnedListing},
+	"POST /panel/api/clients/renewalPreview":   {Perm: SecClients, Scope: ScopeOwnedListing},
+	"GET /panel/api/clients/get/tgId/:tgId":    {Perm: SecClients, Scope: ScopeOwnedListing},
+	"GET /panel/api/clients/subLinks/:subId":   {Perm: ClientViewLinks, Scope: ScopeOwnedListing},
+	"POST /panel/api/clients/happLink/:id":     {Perm: ClientViewLinks, Scope: ScopeOwnedListing},
+	"POST /panel/api/clients/add":              {Perm: ClientCreate, Scope: ScopeOwnedListing},
+	"POST /panel/api/clients/bulkCreate":       {Perm: ClientCreate, Scope: ScopeOwnedListing},
+	"POST /panel/api/clients/import":           {Perm: ClientCreate, Scope: ScopeOwnedListing},
+	"POST /panel/api/clients/bulkAdjust":       {Perm: ClientEdit, Scope: ScopeOwnedListing},
+	"POST /panel/api/clients/bulkEnable":       {Perm: ClientEdit, Scope: ScopeOwnedListing},
+	"POST /panel/api/clients/bulkDisable":      {Perm: ClientEdit, Scope: ScopeOwnedListing},
+	"POST /panel/api/clients/bulkAttach":       {Perm: ClientEdit, Scope: ScopeOwnedListing},
+	"POST /panel/api/clients/bulkDetach":       {Perm: ClientEdit, Scope: ScopeOwnedListing},
+	"POST /panel/api/clients/bulkDel":          {Perm: ClientDelete, Scope: ScopeOwnedListing},
+	"POST /panel/api/clients/bulkResetTraffic": {Perm: ClientResetTraffic, Scope: ScopeOwnedListing},
+	// Panel-wide operations whose services do not scope: super_admin only.
+	"GET /panel/api/clients/export":            {Perm: PermSuperOnly},
+	"POST /panel/api/clients/delDepleted":      {Perm: PermSuperOnly},
+	"POST /panel/api/clients/delOrphans":       {Perm: PermSuperOnly},
+	"POST /panel/api/clients/resetAllTraffics": {Perm: PermSuperOnly},
 
-	// Client groups are a manager-level naming layer, not per-reseller.
-	"GET /panel/api/clients/groups":               {Roles: Readers},
-	"GET /panel/api/clients/groups/:name/emails":  {Roles: Readers},
-	"POST /panel/api/clients/groups/create":       {Roles: Managers},
-	"POST /panel/api/clients/groups/rename":       {Roles: Managers},
-	"POST /panel/api/clients/groups/delete":       {Roles: Managers},
-	"POST /panel/api/clients/groups/bulkAdd":      {Roles: Managers},
-	"POST /panel/api/clients/groups/bulkRemove":   {Roles: Managers},
-	"POST /panel/api/clients/groups/resetTraffic": {Roles: Managers},
-
-	// Both are read on the inbounds page by every role. The handlers narrow
-	// what comes back: hosts to the caller's own inbounds, nodes to nothing.
-	"GET /panel/api/hosts/list": {Roles: Readers},
-	"GET /panel/api/nodes/list": {Roles: Readers},
-
-	// Hosts hang off an inbound; reading one is scoped by that inbound.
-	"GET /panel/api/hosts/byInbound/:inboundId": {Roles: Readers, Scope: ScopeInbound, Param: "inboundId"},
+	// Client groups are a panel-wide naming layer: one section switch for all.
+	"GET /panel/api/clients/groups":               {Perm: SecGroups},
+	"GET /panel/api/clients/groups/:name/emails":  {Perm: SecGroups},
+	"POST /panel/api/clients/groups/create":       {Perm: SecGroups},
+	"POST /panel/api/clients/groups/rename":       {Perm: SecGroups},
+	"POST /panel/api/clients/groups/delete":       {Perm: SecGroups},
+	"POST /panel/api/clients/groups/bulkAdd":      {Perm: SecGroups},
+	"POST /panel/api/clients/groups/bulkRemove":   {Perm: SecGroups},
+	"POST /panel/api/clients/groups/resetTraffic": {Perm: SecGroups},
 }

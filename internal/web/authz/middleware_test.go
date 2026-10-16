@@ -44,6 +44,7 @@ func newAuthzEnv(t *testing.T) (*httptest.Server, *http.Client) {
 	api.Use(Middleware(api.BasePath()))
 	reached := func(c *gin.Context) { c.String(http.StatusOK, "reached") }
 	api.POST("/inbounds/del/:id", reached)
+	api.POST("/inbounds/update/:id", reached)
 	api.GET("/inbounds/list", reached)
 	api.GET("/server/status", reached)
 	api.GET("/server/getDb", reached)
@@ -68,12 +69,28 @@ func seedUser(t *testing.T, username string, role model.Role) int {
 
 func seedInbound(t *testing.T, ownerId int, tag string) int {
 	t.Helper()
-	ib := model.Inbound{UserId: ownerId, Tag: tag, Protocol: model.VLESS, Port: 0, Remark: tag,
+	ib := model.Inbound{UserId: ownerId, Tag: tag, Protocol: model.VLESS, Remark: tag,
 		Settings: "{}", StreamSettings: "{}", Sniffing: "{}"}
 	if err := database.GetDB().Create(&ib).Error; err != nil {
 		t.Fatalf("create inbound %s: %v", tag, err)
 	}
 	return ib.Id
+}
+
+// flipSwitch stores one override for an admin, the way the admins page will.
+func flipSwitch(t *testing.T, userId int, key string, on bool) {
+	t.Helper()
+	raw := EncodeOverrides(map[string]bool{key: on})
+	if err := database.GetDB().Model(&model.User{}).Where("id = ?", userId).Update("permissions", raw).Error; err != nil {
+		t.Fatalf("flip %s: %v", key, err)
+	}
+}
+
+func login(t *testing.T, c *http.Client, srv *httptest.Server, username string) {
+	t.Helper()
+	if code := do(t, c, http.MethodGet, srv.URL+"/login-as/"+username); code != http.StatusOK {
+		t.Fatalf("login %s: got %d", username, code)
+	}
 }
 
 func do(t *testing.T, c *http.Client, method, url string) int {
@@ -90,46 +107,66 @@ func do(t *testing.T, c *http.Client, method, url string) int {
 	return resp.StatusCode
 }
 
-// A reseller must not delete an inbound belonging to another admin. Without the
-// ownership check the handler is reached and the inbound is gone.
-func TestResellerCannotTouchForeignInbound(t *testing.T) {
+// Three gates in one flow. Another admin's inbound is refused on ownership.
+// The owner's own inbound is still refused because the reseller template has
+// no delete switch. Flipping that one switch for that one admin opens it.
+func TestResellerDeleteNeedsOwnershipAndTheSwitch(t *testing.T) {
 	srv, client := newAuthzEnv(t)
 	ownerId := seedUser(t, "owner", model.RoleReseller)
 	seedUser(t, "intruder", model.RoleReseller)
-	foreign := seedInbound(t, ownerId, "owned-by-owner")
+	inbound := seedInbound(t, ownerId, "owned-by-owner")
+	url := srv.URL + "/panel/api/inbounds/del/" + itoa(inbound)
 
-	if code := do(t, client, http.MethodGet, srv.URL+"/login-as/intruder"); code != http.StatusOK {
-		t.Fatalf("login: got %d", code)
-	}
-	url := srv.URL + "/panel/api/inbounds/del/" + itoa(foreign)
+	login(t, client, srv, "intruder")
 	if code := do(t, client, http.MethodPost, url); code != http.StatusForbidden {
-		t.Fatalf("intruder deleting inbound %d: got %d, want 403", foreign, code)
+		t.Fatalf("intruder deleting inbound %d: got %d, want 403", inbound, code)
 	}
 
-	if code := do(t, client, http.MethodGet, srv.URL+"/login-as/owner"); code != http.StatusOK {
-		t.Fatalf("login owner: got %d", code)
+	login(t, client, srv, "owner")
+	if code := do(t, client, http.MethodPost, url); code != http.StatusForbidden {
+		t.Fatalf("owner without inbounds.delete: got %d, want 403", code)
 	}
+	flipSwitch(t, ownerId, InboundDelete, true)
 	if code := do(t, client, http.MethodPost, url); code != http.StatusOK {
-		t.Fatalf("owner deleting own inbound %d: got %d, want 200", foreign, code)
+		t.Fatalf("owner with inbounds.delete: got %d, want 200", code)
 	}
 }
 
-// The role gate is separate from ownership: a server action belongs to nobody,
-// so only super_admin may reach it however many inbounds a reseller owns.
-// Reading host metrics is deliberately allowed -- the overview is every role's
-// landing page -- so this pins the line between the two rather than the group.
+// Assignment is how a super_admin hands an existing inbound to a reseller.
+// Until the row exists the inbound is foreign; once it does, the reseller's
+// own switches decide what they may do with it.
+func TestAssignedInboundBecomesEditable(t *testing.T) {
+	srv, client := newAuthzEnv(t)
+	bossId := seedUser(t, "boss", model.RoleSuperAdmin)
+	agentId := seedUser(t, "agent", model.RoleReseller)
+	flipSwitch(t, agentId, InboundEdit, true)
+	inbound := seedInbound(t, bossId, "built-by-boss")
+	url := srv.URL + "/panel/api/inbounds/update/" + itoa(inbound)
+
+	login(t, client, srv, "agent")
+	if code := do(t, client, http.MethodPost, url); code != http.StatusForbidden {
+		t.Fatalf("agent on unassigned inbound: got %d, want 403", code)
+	}
+	if err := database.GetDB().Create(&model.AdminInbound{AdminId: agentId, InboundId: inbound}).Error; err != nil {
+		t.Fatalf("assign: %v", err)
+	}
+	if code := do(t, client, http.MethodPost, url); code != http.StatusOK {
+		t.Fatalf("agent on assigned inbound: got %d, want 200", code)
+	}
+}
+
+// No switch exists for super_admin-only routes, so an override cannot open
+// them; reading host metrics is deliberately open to every role.
 func TestResellerReadsMetricsButCannotReachServerActions(t *testing.T) {
 	srv, client := newAuthzEnv(t)
-	seedUser(t, "agent", model.RoleReseller)
-	if code := do(t, client, http.MethodGet, srv.URL+"/login-as/agent"); code != http.StatusOK {
-		t.Fatalf("login: got %d", code)
-	}
+	agentId := seedUser(t, "agent", model.RoleReseller)
+	flipSwitch(t, agentId, PermSuperOnly, true)
+	login(t, client, srv, "agent")
 	if code := do(t, client, http.MethodGet, srv.URL+"/panel/api/server/status"); code != http.StatusOK {
 		t.Fatalf("reseller reading /server/status: got %d, want 200", code)
 	}
-	// Downloading the panel database would hand over every admin's rows.
 	if code := do(t, client, http.MethodGet, srv.URL+"/panel/api/server/getDb"); code != http.StatusForbidden {
-		t.Fatalf("reseller on /server/getDb: got %d, want 403", code)
+		t.Fatalf("reseller on /server/getDb despite a forged override: got %d, want 403", code)
 	}
 }
 
@@ -137,9 +174,7 @@ func TestResellerReadsMetricsButCannotReachServerActions(t *testing.T) {
 func TestDisabledAdminIsRefused(t *testing.T) {
 	srv, client := newAuthzEnv(t)
 	id := seedUser(t, "suspended", model.RoleSuperAdmin)
-	if code := do(t, client, http.MethodGet, srv.URL+"/login-as/suspended"); code != http.StatusOK {
-		t.Fatalf("login: got %d", code)
-	}
+	login(t, client, srv, "suspended")
 	if code := do(t, client, http.MethodGet, srv.URL+"/panel/api/inbounds/list"); code != http.StatusOK {
 		t.Fatalf("enabled super_admin listing: got %d, want 200", code)
 	}

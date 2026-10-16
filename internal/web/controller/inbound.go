@@ -97,7 +97,7 @@ func (a *InboundController) initRouter(g *gin.RouterGroup) {
 // getInbounds retrieves the list of inbounds for the logged-in user.
 func (a *InboundController) getInbounds(c *gin.Context) {
 	user := session.GetLoginUser(c)
-	inbounds, err := a.inboundService.GetInbounds(user.Id)
+	inbounds, err := a.inboundService.GetInbounds(scopeFor(user))
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.obtain"), err)
 		return
@@ -109,7 +109,7 @@ func (a *InboundController) getInbounds(c *gin.Context) {
 // payloads from settings.clients[]. Detail-view flows still use /get/:id.
 func (a *InboundController) getInboundsSlim(c *gin.Context) {
 	user := session.GetLoginUser(c)
-	inbounds, err := a.inboundService.GetInboundsSlim(user.Id)
+	inbounds, err := a.inboundService.GetInboundsSlim(scopeFor(user))
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.obtain"), err)
 		return
@@ -122,7 +122,7 @@ func (a *InboundController) getInboundsSlim(c *gin.Context) {
 // remark template (name-only display part) is applied consistently.
 func (a *InboundController) getAllInboundLinks(c *gin.Context) {
 	user := session.GetLoginUser(c)
-	links, err := a.inboundService.GetAllInboundLinks(resolveHost(c), user.Id)
+	links, err := a.inboundService.GetAllInboundLinks(resolveHost(c), scopeFor(user))
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.obtain"), err)
 		return
@@ -135,7 +135,7 @@ func (a *InboundController) getAllInboundLinks(c *gin.Context) {
 // Avoids shipping per-client settings and traffic stats just to fill a dropdown.
 func (a *InboundController) getInboundOptions(c *gin.Context) {
 	user := session.GetLoginUser(c)
-	options, err := a.inboundService.GetInboundOptions(user.Id)
+	options, err := a.inboundService.GetInboundOptions(scopeFor(user))
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.obtain"), err)
 		return
@@ -183,7 +183,7 @@ func (a *InboundController) addInbound(c *gin.Context) {
 	if needRestart {
 		a.xrayService.SetToNeedRestart()
 	}
-	a.broadcastInboundsUpdate(user.Id)
+	a.broadcastInboundsUpdate(scopeFor(user))
 	notifyClientsChanged()
 }
 
@@ -204,7 +204,7 @@ func (a *InboundController) delInbound(c *gin.Context) {
 		a.xrayService.SetToNeedRestart()
 	}
 	user := session.GetLoginUser(c)
-	a.broadcastInboundsUpdate(user.Id)
+	a.broadcastInboundsUpdate(scopeFor(user))
 	notifyClientsChanged()
 }
 
@@ -230,7 +230,7 @@ func (a *InboundController) bulkDelInbounds(c *gin.Context) {
 		a.xrayService.SetToNeedRestart()
 	}
 	user := session.GetLoginUser(c)
-	a.broadcastInboundsUpdate(user.Id)
+	a.broadcastInboundsUpdate(scopeFor(user))
 	notifyClientsChanged()
 }
 
@@ -264,7 +264,7 @@ func (a *InboundController) updateInbound(c *gin.Context) {
 		a.xrayService.SetToNeedRestart()
 	}
 	user := session.GetLoginUser(c)
-	a.broadcastInboundsUpdate(user.Id)
+	a.broadcastInboundsUpdate(scopeFor(user))
 	notifyClientsChanged()
 }
 
@@ -370,7 +370,7 @@ func (a *InboundController) delAllInboundClients(c *gin.Context) {
 		a.xrayService.SetToNeedRestart()
 	}
 	user := session.GetLoginUser(c)
-	a.broadcastInboundsUpdate(user.Id)
+	a.broadcastInboundsUpdate(scopeFor(user))
 	notifyClientsChanged()
 }
 
@@ -441,7 +441,7 @@ func (a *InboundController) importInbound(c *gin.Context) {
 	if needRestart {
 		a.xrayService.SetToNeedRestart()
 	}
-	a.broadcastInboundsUpdate(user.Id)
+	a.broadcastInboundsUpdate(scopeFor(user))
 	notifyClientsChanged()
 }
 

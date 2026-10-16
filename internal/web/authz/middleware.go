@@ -47,10 +47,9 @@ func canonicalPath(apiBase, fullPath string) string {
 	return apiPrefix + strings.TrimPrefix(fullPath, apiBase)
 }
 
-// Middleware denies any API request whose route has no rule, whose caller's
-// role the rule excludes, or whose target resource the caller does not own.
-// apiBase is the API group's own base path, which carries the panel's base
-// path with it.
+// Middleware denies any API request whose route has no rule, whose caller
+// lacks the rule's switch, or whose target the caller does not own. A
+// super_admin passes every check; a disabled account passes none.
 func Middleware(apiBase string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		rule, found := RuleFor(c.Request.Method, canonicalPath(apiBase, c.FullPath()))
@@ -67,12 +66,11 @@ func Middleware(apiBase string) gin.HandlerFunc {
 			abort(c, http.StatusForbidden, "account is disabled")
 			return
 		}
-		if !rule.Allows(user.Role) {
-			abort(c, http.StatusForbidden, "role may not call this endpoint")
-			return
-		}
-		// A super_admin owns everything, so per-resource lookups are skipped.
 		if user.Role != model.RoleSuperAdmin {
+			if rule.Perm != "" && !Effective(user).Has(rule.Perm) {
+				abort(c, http.StatusForbidden, "missing permission: "+rule.Perm)
+				return
+			}
 			if err := checkOwnership(c, rule, user); err != nil {
 				abort(c, http.StatusForbidden, err.Error())
 				return
@@ -98,45 +96,49 @@ func checkOwnership(c *gin.Context, rule Rule, user *model.User) error {
 	}
 }
 
-// ownsInbound reports whether inbound id carries this user's owner tag.
+// ownsInbound passes when the inbound exists and the admin created it or was
+// assigned it. Both are decided by the one shared condition.
 func ownsInbound(userId, inboundId int) error {
 	db := database.GetDB()
-	var ownerId int
-	err := db.Model(&model.Inbound{}).
-		Where("id = ?", inboundId).
-		Pluck("user_id", &ownerId).Error
-	if err != nil {
+	var exists int64
+	if err := db.Model(&model.Inbound{}).Where("id = ?", inboundId).Count(&exists).Error; err != nil || exists == 0 {
 		return errNoInbound
 	}
-	if ownerId != userId {
+	var owned int64
+	err := db.Model(&model.Inbound{}).Where("id = ?", inboundId).
+		Scopes(database.OwnedInbounds(userId)).Count(&owned).Error
+	if err != nil {
+		return err
+	}
+	if owned == 0 {
 		return errNotOwner
 	}
 	return nil
 }
 
-// ownsClient requires every inbound the client sits on to be this user's. A
-// client shared onto someone else's inbound is not this user's to touch.
+// ownsClient requires every inbound the client sits on to be the admin's. A
+// client shared onto someone else's inbound is not this admin's to touch.
 func ownsClient(userId int, email string) error {
 	if email == "" {
 		return errBadParam
 	}
 	db := database.GetDB()
-	var ownerIds []int
+	var inboundIds []int
 	err := db.Model(&model.ClientInbound{}).
 		Joins("JOIN clients ON clients.id = client_inbounds.client_id").
-		Joins("JOIN inbounds ON inbounds.id = client_inbounds.inbound_id").
 		Where("clients.email = ?", email).
-		Pluck("inbounds.user_id", &ownerIds).Error
+		Pluck("client_inbounds.inbound_id", &inboundIds).Error
+	if err != nil || len(inboundIds) == 0 {
+		return errNoClient
+	}
+	var owned int64
+	err = db.Model(&model.Inbound{}).Where("id IN ?", inboundIds).
+		Scopes(database.OwnedInbounds(userId)).Count(&owned).Error
 	if err != nil {
-		return errNoClient
+		return err
 	}
-	if len(ownerIds) == 0 {
-		return errNoClient
-	}
-	for _, id := range ownerIds {
-		if id != userId {
-			return errNotOwner
-		}
+	if int(owned) != len(inboundIds) {
+		return errNotOwner
 	}
 	return nil
 }

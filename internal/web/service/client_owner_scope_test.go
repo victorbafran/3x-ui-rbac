@@ -92,3 +92,25 @@ func TestListPagedWithoutOwnerSeesAll(t *testing.T) {
 		t.Fatalf("total = %d, want 2", resp.Total)
 	}
 }
+
+// Assignment widens the view: a client on an inbound the super_admin handed
+// to this admin shows up alongside the clients on inbounds they created.
+func TestListForOwnerIncludesAssignedInbounds(t *testing.T) {
+	dbtest.InitDB(t, filepath.Join(t.TempDir(), "x-ui.db"))
+	mineId := seedOwnedClient(t, "owner-a", "tag-a", "a@example.com")
+	seedOwnedClient(t, "owner-b", "tag-b", "b@example.com")
+	var handed model.Inbound
+	if err := database.GetDB().Where("tag = ?", "tag-b").First(&handed).Error; err != nil {
+		t.Fatalf("find tag-b: %v", err)
+	}
+	if err := database.GetDB().Create(&model.AdminInbound{AdminId: mineId, InboundId: handed.Id}).Error; err != nil {
+		t.Fatalf("assign: %v", err)
+	}
+	rows, err := (&ClientService{}).ListForOwner(mineId)
+	if err != nil {
+		t.Fatalf("ListForOwner: %v", err)
+	}
+	if len(rows) != 2 {
+		t.Fatalf("got %d clients after assignment, want 2", len(rows))
+	}
+}

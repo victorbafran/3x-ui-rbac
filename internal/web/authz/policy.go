@@ -1,4 +1,4 @@
-// Package authz decides which panel users may call which API routes.
+// Package authz decides which panel admins may call which API routes.
 // Unknown routes are denied: a route added upstream is closed until a rule
 // admits it, so a rebase cannot silently open a hole.
 package authz
@@ -6,15 +6,17 @@ package authz
 import (
 	"slices"
 	"strings"
-
-	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 )
 
-// Scope says how ownership is checked once the role gate passes.
+// PermSuperOnly marks a route no switch can open. It is deliberately absent
+// from AllPermissions, so no template grants it and no override can add it.
+const PermSuperOnly = "super_admin.only"
+
+// Scope says how ownership is checked once the permission gate passes.
 type Scope int
 
 const (
-	// ScopeGlobal is a resource nobody owns; the role gate is the whole check.
+	// ScopeGlobal is a resource nobody owns; the permission gate is the whole check.
 	ScopeGlobal Scope = iota
 	// ScopeInbound reads an inbound id from Param and requires the caller to own it.
 	ScopeInbound
@@ -26,24 +28,12 @@ const (
 	ScopeOwnedListing
 )
 
-// Rule is the decision for one route.
+// Rule is the decision for one route. Perm is the switch a non-super_admin
+// must hold; "" admits any enabled admin and leaves scoping to the handler.
 type Rule struct {
-	Roles []model.Role
+	Perm  string
 	Scope Scope
 	Param string
-}
-
-// Role sets, widest last. Readonly may read but never write.
-var (
-	Admins    = []model.Role{model.RoleSuperAdmin}
-	Managers  = []model.Role{model.RoleSuperAdmin, model.RoleManager}
-	Operators = []model.Role{model.RoleSuperAdmin, model.RoleManager, model.RoleReseller}
-	Readers   = []model.Role{model.RoleSuperAdmin, model.RoleManager, model.RoleReseller, model.RoleReadOnly}
-)
-
-// Allows reports whether role may pass this rule's role gate.
-func (r Rule) Allows(role model.Role) bool {
-	return slices.Contains(r.Roles, role)
 }
 
 // RuleFor resolves a route to its rule. An exact entry wins over a prefix

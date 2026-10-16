@@ -44,6 +44,7 @@ func migrationModels() []any {
 		&model.Relay{},
 		&model.ApiToken{},
 		&model.Inbound{},
+		&model.AdminInbound{},
 		&xray.ClientTraffic{},
 		&model.OutboundTraffics{},
 		&model.InboundClientIps{},

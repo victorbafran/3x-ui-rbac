@@ -46,6 +46,9 @@ type User struct {
 	Role         Role   `json:"role" gorm:"type:varchar(32);not null;default:readonly"`
 	Enabled      bool   `json:"enabled" gorm:"not null;default:true"`
 	TrafficQuota int64  `json:"trafficQuota" gorm:"not null;default:0"`
+	Permissions  string `json:"permissions" gorm:"type:text;not null;default:''"`
+	UsersLimit   int64  `json:"usersLimit" gorm:"not null;default:0"`
+	ExpireAt     int64  `json:"expireAt" gorm:"not null;default:0"`
 }
 
 // Inbound represents an Xray inbound configuration with traffic statistics and settings.

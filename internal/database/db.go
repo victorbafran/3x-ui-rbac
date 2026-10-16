@@ -89,6 +89,7 @@ func allModels() []any {
 		&model.SubBalancer{},
 		&model.TuicTrafficReceipt{},
 		&model.Relay{},
+		&model.AdminInbound{},
 	}
 }
 

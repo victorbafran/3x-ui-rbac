@@ -37,3 +37,13 @@ type Relay struct {
 	Enabled   bool   `json:"enabled" gorm:"not null;default:true" example:"true"`
 	CreatedAt int64  `json:"createdAt" gorm:"autoCreateTime" example:"1760000000"`
 }
+
+// AdminInbound hands an inbound to an admin who did not create it. Ownership
+// is "created by, or assigned to"; a default reseller only ever has the latter.
+type AdminInbound struct {
+	AdminId   int   `json:"adminId" gorm:"primaryKey;column:admin_id;index"`
+	InboundId int   `json:"inboundId" gorm:"primaryKey;column:inbound_id;index"`
+	CreatedAt int64 `json:"createdAt" gorm:"autoCreateTime"`
+}
+
+func (AdminInbound) TableName() string { return "admin_inbounds" }

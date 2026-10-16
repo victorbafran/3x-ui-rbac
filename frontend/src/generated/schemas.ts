@@ -2011,6 +2011,9 @@ export const SCHEMAS: Record<string, unknown> = {
       "adTag": {
         "type": "string"
       },
+      "adminId": {
+        "type": "integer"
+      },
       "allowedIPs": {
         "type": "string"
       },
@@ -2113,6 +2116,7 @@ export const SCHEMAS: Record<string, unknown> = {
     },
     "required": [
       "adTag",
+      "adminId",
       "allowedIPs",
       "auth",
       "comment",

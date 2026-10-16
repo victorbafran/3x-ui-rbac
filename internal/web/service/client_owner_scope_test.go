@@ -22,7 +22,7 @@ func seedOwnedClient(t *testing.T, username, tag, email string) int {
 	if err := db.Create(&ib).Error; err != nil {
 		t.Fatalf("create inbound %s: %v", tag, err)
 	}
-	cr := model.ClientRecord{Email: email, Enable: true}
+	cr := model.ClientRecord{Email: email, Enable: true, AdminId: u.Id}
 	if err := db.Create(&cr).Error; err != nil {
 		t.Fatalf("create client %s: %v", email, err)
 	}
@@ -93,9 +93,10 @@ func TestListPagedWithoutOwnerSeesAll(t *testing.T) {
 	}
 }
 
-// Assignment widens the view: a client on an inbound the super_admin handed
-// to this admin shows up alongside the clients on inbounds they created.
-func TestListForOwnerIncludesAssignedInbounds(t *testing.T) {
+// Assignment hands over an inbound, never the customers already on it. Two
+// resellers sharing an inbound must not inherit each other's client lists --
+// deriving ownership from the inbound is exactly the bug this replaced.
+func TestAssignmentDoesNotHandOverExistingClients(t *testing.T) {
 	dbtest.InitDB(t, filepath.Join(t.TempDir(), "x-ui.db"))
 	mineId := seedOwnedClient(t, "owner-a", "tag-a", "a@example.com")
 	seedOwnedClient(t, "owner-b", "tag-b", "b@example.com")
@@ -110,7 +111,7 @@ func TestListForOwnerIncludesAssignedInbounds(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ListForOwner: %v", err)
 	}
-	if len(rows) != 2 {
-		t.Fatalf("got %d clients after assignment, want 2", len(rows))
+	if len(rows) != 1 || rows[0].Email != "a@example.com" {
+		t.Fatalf("got %v after being assigned another admin's inbound, want only a@example.com", rows)
 	}
 }

@@ -2037,6 +2037,9 @@
           "adTag": {
             "type": "string"
           },
+          "adminId": {
+            "type": "integer"
+          },
           "allowedIPs": {
             "type": "string"
           },
@@ -2139,6 +2142,7 @@
         },
         "required": [
           "adTag",
+          "adminId",
           "allowedIPs",
           "auth",
           "comment",

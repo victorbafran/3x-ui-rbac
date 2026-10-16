@@ -41,10 +41,7 @@ func (s *ClientService) ForeignInbounds(ownerId int, inboundIds []int) ([]int, e
 func (s *ClientService) OwnedEmailSet(ownerId int) (map[string]bool, error) {
 	var emails []string
 	err := database.GetDB().Table("clients AS c").
-		Where(ownedClientsCond, ownerId, ownerId).
-		Where("NOT EXISTS ("+
-			"SELECT 1 FROM client_inbounds ci2 JOIN inbounds i2 ON i2.id = ci2.inbound_id "+
-			"WHERE ci2.client_id = c.id AND NOT "+database.OwnedInboundCond("i2")+")", ownerId, ownerId).
+		Where(ownedClientsCond, ownerId).
 		Pluck("c.email", &emails).Error
 	if err != nil {
 		return nil, err

@@ -32,7 +32,8 @@ func seedGuardWorld(t *testing.T) guardWorld {
 		t.Fatalf("inbound b: %v", err)
 	}
 	w.inA, w.inB = inA.Id, inB.Id
-	shared := model.ClientRecord{Email: w.shared, Enable: true}
+	// Owned by B, attached to both inbounds: reachable by B alone.
+	shared := model.ClientRecord{Email: w.shared, Enable: true, AdminId: w.b}
 	if err := db.Create(&shared).Error; err != nil {
 		t.Fatalf("shared client: %v", err)
 	}
@@ -62,8 +63,8 @@ func TestForeignInboundsNamesWhatTheAdminMayNotTouch(t *testing.T) {
 	}
 }
 
-// A client that also sits on another admin's inbound is not this admin's to
-// touch, and an email nobody has is refused rather than silently skipped.
+// A client owned by another admin is not this admin's to touch, even when it
+// sits on an inbound they share, and an unknown email is refused outright.
 func TestForeignEmailsRefusesSharedAndUnknownClients(t *testing.T) {
 	w := seedGuardWorld(t)
 	svc := &ClientService{}
@@ -82,8 +83,8 @@ func TestForeignEmailsRefusesSharedAndUnknownClients(t *testing.T) {
 	}
 }
 
-// Assignment widens the set the same way it does for lists.
-func TestOwnedEmailSetFollowsAssignment(t *testing.T) {
+// Being handed an inbound does not hand over the customers on it.
+func TestOwnedEmailSetIgnoresAssignment(t *testing.T) {
 	w := seedGuardWorld(t)
 	svc := &ClientService{}
 	if err := database.GetDB().Create(&model.AdminInbound{AdminId: w.a, InboundId: w.inB}).Error; err != nil {
@@ -93,9 +94,12 @@ func TestOwnedEmailSetFollowsAssignment(t *testing.T) {
 	if err != nil {
 		t.Fatalf("OwnedEmailSet: %v", err)
 	}
-	for _, e := range []string{w.emailA, w.emailB, w.shared} {
-		if !set[e] {
-			t.Fatalf("after assignment %s should be owned; set = %v", e, set)
+	if !set[w.emailA] {
+		t.Fatalf("own client missing after assignment; set = %v", set)
+	}
+	for _, e := range []string{w.emailB, w.shared} {
+		if set[e] {
+			t.Fatalf("%s came with the assigned inbound; it belongs to the other admin", e)
 		}
 	}
 }

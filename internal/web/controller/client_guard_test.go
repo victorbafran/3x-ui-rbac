@@ -43,7 +43,7 @@ func seedAdminWithInbound(t *testing.T, username, tag, email string) (adminId, i
 	if err := db.Create(&ib).Error; err != nil {
 		t.Fatalf("inbound: %v", err)
 	}
-	cr := model.ClientRecord{Email: email, Enable: true}
+	cr := model.ClientRecord{Email: email, Enable: true, AdminId: u.Id}
 	if err := db.Create(&cr).Error; err != nil {
 		t.Fatalf("client: %v", err)
 	}

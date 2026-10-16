@@ -508,6 +508,7 @@ export type ClientPageResponse = z.infer<typeof ClientPageResponseSchema>;
 
 export const ClientRecordSchema = z.object({
   adTag: z.string(),
+  adminId: z.number().int(),
   allowedIPs: z.string(),
   auth: z.string(),
   comment: z.string(),

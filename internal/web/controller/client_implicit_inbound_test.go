@@ -54,7 +54,7 @@ func TestCreateWithoutInboundIdsUsesTheAssignedOnes(t *testing.T) {
 	if !resp.Success {
 		t.Fatalf("create reported failure: %s", rec.Body.String())
 	}
-	got := attachedInboundIds(t, "new@example.com")
+	got := attachedInboundIds(t, prefixedEmail(resellerId, "new@example.com"))
 	if len(got) != 2 || got[0] != ownInbound || got[1] != bossInbound {
 		t.Fatalf("client landed on %v, want both owned inbounds [%d %d]", got, ownInbound, bossInbound)
 	}
@@ -74,7 +74,7 @@ func TestExplicitInboundIdsAreNotOverridden(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("explicit own inbound: %d %s", rec.Code, rec.Body.String())
 	}
-	if got := attachedInboundIds(t, "new@example.com"); len(got) != 1 || got[0] != ownInbound {
+	if got := attachedInboundIds(t, prefixedEmail(resellerId, "new@example.com")); len(got) != 1 || got[0] != ownInbound {
 		t.Fatalf("client landed on %v, want only [%d]", got, ownInbound)
 	}
 

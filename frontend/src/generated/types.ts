@@ -480,6 +480,7 @@ export interface ClientPageResponse {
 
 export interface ClientRecord {
   adTag: string;
+  adminId: number;
   allowedIPs: string;
   auth: string;
   comment: string;

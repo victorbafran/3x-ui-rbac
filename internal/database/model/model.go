@@ -970,6 +970,7 @@ type Client struct {
 
 type ClientRecord struct {
 	Id              int    `json:"id" gorm:"primaryKey;autoIncrement"`
+	AdminId         int    `json:"adminId" gorm:"column:admin_id;not null;default:0;index"`
 	Email           string `json:"email" gorm:"uniqueIndex;not null"`
 	SubID           string `json:"subId" gorm:"index;column:sub_id"`
 	UUID            string `json:"uuid" gorm:"column:uuid"`

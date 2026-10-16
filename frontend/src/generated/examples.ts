@@ -521,6 +521,7 @@ export const EXAMPLES: Record<string, unknown> = {
   },
   "ClientRecord": {
     "adTag": "",
+    "adminId": 0,
     "allowedIPs": "",
     "auth": "",
     "comment": "",

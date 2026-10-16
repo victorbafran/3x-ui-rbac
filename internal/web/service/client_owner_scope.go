@@ -6,14 +6,10 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 )
 
-// ownedClientsCond restricts a query over "clients AS c" to clients on inbounds
-// the admin created or was assigned. EXISTS rather than a join, so a client on
-// several inbounds is not counted twice. Binds ownerId twice.
-var ownedClientsCond = `EXISTS (
-	SELECT 1 FROM client_inbounds ci
-	JOIN inbounds i ON i.id = ci.inbound_id
-	WHERE ci.client_id = c.id AND ` + database.OwnedInboundCond("i") + `
-)`
+// ownedClientsCond restricts a query over "clients AS c" to the clients this
+// admin created. Deriving it from the inbound instead handed every reseller on
+// a shared inbound the whole customer list, and the right to edit it.
+const ownedClientsCond = `c.admin_id = ?`
 
 // scopeToOwner applies the ownership restriction when ownerId is set. An
 // ownerId of 0 means an unscoped caller, such as a super_admin.
@@ -21,7 +17,7 @@ func scopeToOwner(tx *gorm.DB, ownerId int) *gorm.DB {
 	if ownerId <= 0 {
 		return tx
 	}
-	return tx.Where(ownedClientsCond, ownerId, ownerId)
+	return tx.Where(ownedClientsCond, ownerId)
 }
 
 // ListForOwner is List narrowed to one admin's clients.

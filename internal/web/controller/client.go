@@ -203,6 +203,9 @@ func (a *ClientController) create(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
 	}
+	one := []service.ClientCreatePayload{payload}
+	a.applyOwnerPrefix(c, one)
+	payload.Client.Email = one[0].Client.Email
 	payload.InboundIds = a.fillOwnedInbounds(c, payload.InboundIds)
 	if a.denyForeign(c, payload.InboundIds, nil) || a.denyUnlimited(c, payload.Client) || a.denyOverUsersLimit(c, 1) {
 		return
@@ -222,6 +225,7 @@ func (a *ClientController) create(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
 	}
+	a.stampOwner(c, payload.Client.Email)
 	jsonMsgObj(c, I18nWeb(c, "pages.inbounds.toasts.inboundClientAddSuccess"), pendingNodeObj(a.inboundService.AnyNodePending(payload.InboundIds)), nil)
 }
 
@@ -484,11 +488,13 @@ func (a *ClientController) bulkCreate(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
 	}
+	a.applyOwnerPrefix(c, payloads)
 	a.fillOwnedInboundsAll(c, payloads)
 	if a.denyForeign(c, inboundIdsOf(payloads), nil) || a.denyUnlimited(c, clientsOf(payloads)...) || a.denyOverUsersLimit(c, len(payloads)) {
 		return
 	}
 	result, needRestart, err := a.clientService.BulkCreate(&a.inboundService, payloads)
+	a.stampOwner(c, emailsOf(payloads)...)
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
@@ -543,11 +549,13 @@ func (a *ClientController) importClients(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
 	}
+	a.applyOwnerPrefix(c, items)
 	a.fillOwnedInboundsAll(c, items)
 	if a.denyForeign(c, inboundIdsOf(items), nil) || a.denyUnlimited(c, clientsOf(items)...) || a.denyOverUsersLimit(c, len(items)) {
 		return
 	}
 	result, needRestart, err := a.clientService.ImportClients(&a.inboundService, items)
+	a.stampOwner(c, emailsOf(items)...)
 	// Flagged before the error check: a failed traffic restore still leaves the
 	// clients created before it committed, and those need the restart and refresh.
 	if needRestart {

@@ -30,6 +30,7 @@ import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
 import { Controller, FormProvider, useForm, useWatch, useFieldArray } from 'react-hook-form';
 
+import { useMeQuery } from '@/api/queries/useMeQuery';
 import { HttpUtil, IntlUtil, RandomUtil, Wireguard } from '@/utils';
 import { formatInboundLabel } from '@/lib/inbounds/label';
 import { generateMtprotoSecret } from '@/lib/xray/inbound-defaults';
@@ -256,6 +257,7 @@ export default function ClientFormModal({
   onOpenChange,
 }: ClientFormModalProps) {
   const { t } = useTranslation();
+  const { can } = useMeQuery();
   const [messageApi, messageContextHolder] = message.useMessage();
   const isEdit = mode === 'edit';
 
@@ -875,7 +877,7 @@ export default function ClientFormModal({
                             tooltip={t('pages.clients.totalGBDesc')}
                             transform={{ output: (v) => Number(v) || 0 }}
                           >
-                            <InputNumber min={0} step={1} style={{ width: '100%' }} />
+                            <InputNumber min={can('clients.unlimitedData') ? 0 : 1} step={1} style={{ width: '100%' }} />
                           </FormField>
                         </Col>
                         <Col xs={24} md={12}>

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Popover, Switch, Tag, Tooltip, type TableColumnType } from 'antd';
 import { TeamOutlined } from '@ant-design/icons';
 
+import { useMeQuery } from '@/api/queries/useMeQuery';
 import { SizeFormatter, IntlUtil, ColorUtils } from '@/utils';
 import { InfinityIcon } from '@/components/ui';
 import { useDatepicker } from '@/hooks/useDatepicker';
@@ -40,6 +41,24 @@ interface UseInboundColumnsParams {
   trafficDiff: number;
   onRowAction: (action: { key: RowAction; dbInbound: DBInboundRecord }) => void;
   onSwitchEnable: (dbInbound: DBInboundRecord, next: boolean) => void;
+}
+
+// Toggling an inbound is an edit; without that switch the control is shown but inert.
+function EnableSwitch({
+  record,
+  onSwitchEnable,
+}: {
+  record: DBInboundRecord;
+  onSwitchEnable: (record: DBInboundRecord, next: boolean) => void;
+}) {
+  const { can } = useMeQuery();
+  return (
+    <Switch
+      checked={record.enable}
+      disabled={!can('inbounds.edit')}
+      onChange={(next) => onSwitchEnable(record, next)}
+    />
+  );
 }
 
 export function useInboundColumns({
@@ -129,9 +148,7 @@ export function useInboundColumns({
         key: 'enable',
         align: 'center',
         width: 80,
-        render: (_, record) => (
-          <Switch checked={record.enable} onChange={(next) => onSwitchEnable(record, next)} />
-        ),
+        render: (_, record) => <EnableSwitch record={record} onSwitchEnable={onSwitchEnable} />,
       },
     ];
 

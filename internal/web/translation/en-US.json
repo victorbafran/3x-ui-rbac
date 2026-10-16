@@ -1248,6 +1248,11 @@
         "passwordReset": "Password reset; their sessions were ended",
         "shortPassword": "Password must be at least 8 characters",
         "usernameRequired": "Username is required"
+      },
+      "reasons": {
+        "manual": "Disabled by admin",
+        "quota_exceeded": "Traffic quota used up",
+        "expired": "Expired"
       }
     },
     "nodes": {

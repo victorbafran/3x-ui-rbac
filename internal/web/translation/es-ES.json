@@ -2499,6 +2499,11 @@
         "passwordReset": "Contraseña restablecida; sus sesiones se cerraron",
         "shortPassword": "La contraseña debe tener al menos 8 caracteres",
         "usernameRequired": "El usuario es obligatorio"
+      },
+      "reasons": {
+        "manual": "Desactivado por el administrador",
+        "quota_exceeded": "Cuota de tráfico agotada",
+        "expired": "Caducado"
       }
     },
     "sponsors": {

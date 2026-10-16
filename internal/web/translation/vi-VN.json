@@ -2499,6 +2499,11 @@
         "passwordReset": "Đã đặt lại mật khẩu; các phiên đã kết thúc",
         "shortPassword": "Mật khẩu phải có ít nhất 8 ký tự",
         "usernameRequired": "Cần có tên đăng nhập"
+      },
+      "reasons": {
+        "manual": "Bị quản trị viên tắt",
+        "quota_exceeded": "Hết hạn mức lưu lượng",
+        "expired": "Đã hết hạn"
       }
     },
     "sponsors": {

@@ -2499,6 +2499,11 @@
         "passwordReset": "رمز عوض شد؛ نشست‌هایش بسته شدند",
         "shortPassword": "رمز باید دست‌کم ۸ کاراکتر باشد",
         "usernameRequired": "نام کاربری لازم است"
+      },
+      "reasons": {
+        "manual": "توسط مدیر غیرفعال شده",
+        "quota_exceeded": "سهمیه ترافیک تمام شده",
+        "expired": "منقضی شده"
       }
     },
     "sponsors": {

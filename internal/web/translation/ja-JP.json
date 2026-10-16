@@ -2499,6 +2499,11 @@
         "passwordReset": "パスワードをリセットし、セッションを終了しました",
         "shortPassword": "パスワードは8文字以上必要です",
         "usernameRequired": "ユーザー名は必須です"
+      },
+      "reasons": {
+        "manual": "管理者により無効化",
+        "quota_exceeded": "通信量上限に到達",
+        "expired": "期限切れ"
       }
     },
     "sponsors": {

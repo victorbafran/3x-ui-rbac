@@ -52,6 +52,7 @@ import {
   UsergroupAddOutlined,
   UsergroupDeleteOutlined,
 } from '@ant-design/icons';
+import { useMeQuery } from '@/api/queries/useMeQuery';
 import { activateOnKey } from '@/utils/a11y';
 
 import { useTheme } from '@/hooks/useTheme';
@@ -319,6 +320,7 @@ function sortValueFor(column: string | null, order: 'ascend' | 'descend' | null)
 
 export default function ClientsPage() {
   const { t } = useTranslation();
+  const { can } = useMeQuery();
   const { isDark, isUltra, antdThemeConfig } = useTheme();
   const { datepicker } = useDatepicker();
   const { isMobile } = useMediaQuery();
@@ -1391,14 +1393,16 @@ export default function ClientsPage() {
                       title={
                         <div className="card-toolbar">
                           {selectedRowKeys.length === 0 ? (
-                            <Button
-                              type="primary"
-                              icon={<PlusOutlined />}
-                              onClick={onAdd}
-                              aria-label={t('pages.clients.addClients')}
-                            >
-                              {!isMobile && t('pages.clients.addClients')}
-                            </Button>
+                            can('clients.create') && (
+                              <Button
+                                type="primary"
+                                icon={<PlusOutlined />}
+                                onClick={onAdd}
+                                aria-label={t('pages.clients.addClients')}
+                              >
+                                {!isMobile && t('pages.clients.addClients')}
+                              </Button>
+                            )
                           ) : (
                             <Tag
                               color="blue"
@@ -1516,7 +1520,7 @@ export default function ClientsPage() {
                               {!isMobile && t('more')}
                             </Button>
                           </Dropdown>
-                          {selectedRowKeys.length > 0 && (
+                          {selectedRowKeys.length > 0 && can('clients.delete') && (
                             <Button
                               danger
                               icon={<DeleteOutlined />}

@@ -2499,6 +2499,11 @@
         "passwordReset": "أُعيد تعيين كلمة المرور وأُنهيت جلساته",
         "shortPassword": "يجب ألا تقل كلمة المرور عن 8 أحرف",
         "usernameRequired": "اسم المستخدم مطلوب"
+      },
+      "reasons": {
+        "manual": "معطّل بواسطة المشرف",
+        "quota_exceeded": "نفدت حصة البيانات",
+        "expired": "منتهي"
       }
     },
     "sponsors": {

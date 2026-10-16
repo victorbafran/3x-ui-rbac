@@ -18,6 +18,7 @@ import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
 import { FormProvider, useForm, useWatch } from 'react-hook-form';
 
+import { useMeQuery } from '@/api/queries/useMeQuery';
 import { RandomUtil, SizeFormatter } from '@/utils';
 import { formatInboundLabel } from '@/lib/inbounds/label';
 import { TLS_FLOW_CONTROL, TRAFFIC_RESETS } from '@/schemas/primitives';
@@ -82,6 +83,7 @@ export default function ClientBulkAddModal({
   onSaved,
 }: ClientBulkAddModalProps) {
   const { t } = useTranslation();
+  const { can } = useMeQuery();
   const [messageApi, messageContextHolder] = message.useMessage();
   const { bulkCreate } = useClients({ list: false });
 
@@ -396,7 +398,7 @@ export default function ClientBulkAddModal({
               tooltip={t('pages.clients.totalGBDesc')}
               transform={{ output: (v) => Number(v) || 0 }}
             >
-              <InputNumber min={0} step={1} />
+              <InputNumber min={can('clients.unlimitedData') ? 0 : 1} step={1} />
             </FormField>
 
             <Form.Item label={t('pages.clients.delayedStart')}>

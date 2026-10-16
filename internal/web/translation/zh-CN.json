@@ -2499,6 +2499,11 @@
         "passwordReset": "密码已重置，其会话已结束",
         "shortPassword": "密码至少 8 个字符",
         "usernameRequired": "用户名为必填"
+      },
+      "reasons": {
+        "manual": "已被管理员禁用",
+        "quota_exceeded": "流量配额已用完",
+        "expired": "已过期"
       }
     },
     "sponsors": {

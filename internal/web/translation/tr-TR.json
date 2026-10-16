@@ -2499,6 +2499,11 @@
         "passwordReset": "Parola sıfırlandı; oturumları sonlandırıldı",
         "shortPassword": "Parola en az 8 karakter olmalı",
         "usernameRequired": "Kullanıcı adı gerekli"
+      },
+      "reasons": {
+        "manual": "Yönetici tarafından devre dışı",
+        "quota_exceeded": "Trafik kotası doldu",
+        "expired": "Süresi doldu"
       }
     },
     "sponsors": {

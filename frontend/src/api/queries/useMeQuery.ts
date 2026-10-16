@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 import { HttpUtil } from '@/utils';
@@ -22,9 +23,7 @@ export function useMeQuery() {
     staleTime: 60_000,
     refetchOnWindowFocus: false,
   });
-  return {
-    me: query.data,
-    loading: query.isLoading,
-    can: (permission: string) => Boolean(query.data?.permissions?.[permission]),
-  };
+  const permissions = query.data?.permissions;
+  const can = useCallback((permission: string) => Boolean(permissions?.[permission]), [permissions]);
+  return { me: query.data, loading: query.isLoading, can };
 }

@@ -2499,6 +2499,11 @@
         "passwordReset": "Senha redefinida; as sessões foram encerradas",
         "shortPassword": "A senha deve ter pelo menos 8 caracteres",
         "usernameRequired": "O usuário é obrigatório"
+      },
+      "reasons": {
+        "manual": "Desativado pelo administrador",
+        "quota_exceeded": "Cota de tráfego esgotada",
+        "expired": "Expirado"
       }
     },
     "sponsors": {

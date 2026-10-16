@@ -2499,6 +2499,11 @@
         "passwordReset": "Kata sandi diatur ulang; sesinya diakhiri",
         "shortPassword": "Kata sandi minimal 8 karakter",
         "usernameRequired": "Nama pengguna wajib diisi"
+      },
+      "reasons": {
+        "manual": "Dinonaktifkan oleh admin",
+        "quota_exceeded": "Kuota trafik habis",
+        "expired": "Kedaluwarsa"
       }
     },
     "sponsors": {

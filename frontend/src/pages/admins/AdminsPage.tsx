@@ -126,11 +126,13 @@ export default function AdminsPage() {
         title: t('pages.admins.fields.enabled'),
         dataIndex: 'enabled',
         key: 'enabled',
-        render: (enabled: boolean) =>
+        render: (enabled: boolean, admin: AdminView) =>
           enabled ? (
             <Tag color="success" icon={<CheckCircleOutlined />} />
           ) : (
-            <Tag color="error" icon={<StopOutlined />} />
+            <Tag color="error" icon={<StopOutlined />}>
+              {admin.disabledReason ? t('pages.admins.reasons.' + admin.disabledReason) : null}
+            </Tag>
           ),
       },
       {

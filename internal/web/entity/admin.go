@@ -15,12 +15,16 @@ type AdminView struct {
 }
 
 // AdminMe is what the signed-in admin learns about themselves: enough for the
-// sidebar to hide what they may not open. Permissions here are effective.
+// sidebar to hide what they may not open, and for the overview to show their
+// own usage against their limits. Permissions here are effective.
 type AdminMe struct {
-	Id          int             `json:"id" example:"2"`
-	Username    string          `json:"username" example:"agent"`
-	Role        string          `json:"role" example:"reseller"`
-	Permissions map[string]bool `json:"permissions"`
+	Id           int             `json:"id" example:"2"`
+	Username     string          `json:"username" example:"agent"`
+	Role         string          `json:"role" example:"reseller"`
+	TrafficQuota int64           `json:"trafficQuota" example:"0"`
+	UsersLimit   int64           `json:"usersLimit" example:"0"`
+	ExpireAt     int64           `json:"expireAt" example:"0"`
+	Permissions  map[string]bool `json:"permissions"`
 }
 
 // PermissionCatalog lists every switch and each role's template, so the

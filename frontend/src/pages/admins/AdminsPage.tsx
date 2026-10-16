@@ -21,6 +21,7 @@ import {
   EditOutlined,
   KeyOutlined,
   PlusOutlined,
+  SearchOutlined,
   StopOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
@@ -58,6 +59,7 @@ export default function AdminsPage() {
   const [formAdmin, setFormAdmin] = useState<AdminView | null>(null);
   const [resetTarget, setResetTarget] = useState<AdminView | null>(null);
   const [resetValue, setResetValue] = useState('');
+  const [query, setQuery] = useState('');
 
   const onAdd = useCallback(() => {
     setFormMode('add');
@@ -180,6 +182,17 @@ export default function AdminsPage() {
     [t, onEdit, onDelete],
   );
 
+  // Matches username or the translated role label, case-insensitively.
+  const visibleAdmins = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return admins;
+    return admins.filter(
+      (a) =>
+        a.username.toLowerCase().includes(q) ||
+        String(t('pages.admins.roles.' + a.role)).toLowerCase().includes(q),
+    );
+  }, [admins, query, t]);
+
   const pageClass = useMemo(() => {
     const classes = ['admins-page'];
     if (isDark) classes.push('is-dark');
@@ -210,9 +223,20 @@ export default function AdminsPage() {
                 size="small"
                 title={t('pages.admins.title')}
                 extra={
-                  <Button type="primary" icon={<PlusOutlined />} onClick={onAdd}>
-                    {t('pages.admins.addAdmin')}
-                  </Button>
+                  <Space size="small" wrap>
+                    <Input
+                      allowClear
+                      prefix={<SearchOutlined />}
+                      placeholder={t('search')}
+                      aria-label={t('search')}
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                      style={{ width: isMobile ? 160 : 240 }}
+                    />
+                    <Button type="primary" icon={<PlusOutlined />} onClick={onAdd}>
+                      {t('pages.admins.addAdmin')}
+                    </Button>
+                  </Space>
                 }
               >
                 <Table<AdminView>
@@ -220,7 +244,7 @@ export default function AdminsPage() {
                   size={isMobile ? 'small' : 'middle'}
                   loading={loading}
                   columns={columns}
-                  dataSource={admins}
+                  dataSource={visibleAdmins}
                   pagination={false}
                   scroll={{ x: true }}
                 />

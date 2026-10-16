@@ -292,7 +292,18 @@
       "accessBlocked": "BLOCKED",
       "accessProxy": "PROXY",
       "importKeepHostSettings": "保留本机设置",
-      "importKeepHostSettingsDesc": "保留本面板的监听地址、端口、基础路径、证书和节点身份，而不是使用上传文件中的值。"
+      "importKeepHostSettingsDesc": "保留本面板的监听地址、端口、基础路径、证书和节点身份，而不是使用上传文件中的值。",
+      "myTraffic": {
+        "title": "您的流量",
+        "upload": "上传",
+        "download": "下载",
+        "used": "已用",
+        "quota": "配额",
+        "remaining": "剩余",
+        "unlimited": "无限",
+        "inbounds": "入站",
+        "expires": "到期"
+      }
     },
     "inbounds": {
       "totalDownUp": "总上传 / 下载",

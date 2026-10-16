@@ -27,8 +27,13 @@
     },
     "schemas": {
       "AdminMe": {
-        "description": "AdminMe is what the signed-in admin learns about themselves: enough for the\nsidebar to hide what they may not open. Permissions here are effective.",
+        "description": "AdminMe is what the signed-in admin learns about themselves: enough for the\nsidebar to hide what they may not open, and for the overview to show their\nown usage against their limits. Permissions here are effective.",
         "properties": {
+          "expireAt": {
+            "example": 0,
+            "format": "int64",
+            "type": "integer"
+          },
           "id": {
             "example": 2,
             "type": "integer"
@@ -43,16 +48,29 @@
             "example": "reseller",
             "type": "string"
           },
+          "trafficQuota": {
+            "example": 0,
+            "format": "int64",
+            "type": "integer"
+          },
           "username": {
             "example": "agent",
             "type": "string"
+          },
+          "usersLimit": {
+            "example": 0,
+            "format": "int64",
+            "type": "integer"
           }
         },
         "required": [
+          "expireAt",
           "id",
           "permissions",
           "role",
-          "username"
+          "trafficQuota",
+          "username",
+          "usersLimit"
         ],
         "type": "object"
       },
@@ -12914,10 +12932,13 @@
                 "example": {
                   "success": true,
                   "obj": {
+                    "expireAt": 0,
                     "id": 2,
                     "permissions": {},
                     "role": "reseller",
-                    "username": "agent"
+                    "trafficQuota": 0,
+                    "username": "agent",
+                    "usersLimit": 0
                   }
                 }
               }

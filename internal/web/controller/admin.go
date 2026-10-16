@@ -77,6 +77,7 @@ func (a *AdminController) me(c *gin.Context) {
 	}
 	jsonObj(c, entity.AdminMe{
 		Id: user.Id, Username: user.Username, Role: string(user.Role),
+		TrafficQuota: user.TrafficQuota, UsersLimit: user.UsersLimit, ExpireAt: user.ExpireAt,
 		Permissions: authz.Effective(user),
 	}, nil)
 }

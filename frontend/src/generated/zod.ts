@@ -28,10 +28,13 @@ export const transportBitsSchema = z.number().int();
 export type transportBits = z.infer<typeof transportBitsSchema>;
 
 export const AdminMeSchema = z.object({
+  expireAt: z.number().int(),
   id: z.number().int(),
   permissions: z.record(z.string(), z.boolean()),
   role: z.string(),
+  trafficQuota: z.number().int(),
   username: z.string(),
+  usersLimit: z.number().int(),
 });
 export type AdminMe = z.infer<typeof AdminMeSchema>;
 

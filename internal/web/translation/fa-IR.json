@@ -292,7 +292,18 @@
       "accessBlocked": "BLOCKED",
       "accessProxy": "PROXY",
       "importKeepHostSettings": "حفظ تنظیمات این دستگاه",
-      "importKeepHostSettingsDesc": "آدرس‌ها و پورت‌های شنود، مسیر پایه، گواهی‌ها و هویت نودِ همین پنل را نگه می‌دارد و آن‌ها را از فایل بارگذاری‌شده نمی‌گیرد."
+      "importKeepHostSettingsDesc": "آدرس‌ها و پورت‌های شنود، مسیر پایه، گواهی‌ها و هویت نودِ همین پنل را نگه می‌دارد و آن‌ها را از فایل بارگذاری‌شده نمی‌گیرد.",
+      "myTraffic": {
+        "title": "ترافیک شما",
+        "upload": "آپلود",
+        "download": "دانلود",
+        "used": "مصرف‌شده",
+        "quota": "سهمیه",
+        "remaining": "باقی‌مانده",
+        "unlimited": "نامحدود",
+        "inbounds": "کانفیگ‌ها",
+        "expires": "انقضا"
+      }
     },
     "inbounds": {
       "totalDownUp": "دریافت/ارسال کل",

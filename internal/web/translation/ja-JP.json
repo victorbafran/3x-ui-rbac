@@ -292,7 +292,18 @@
       "accessBlocked": "BLOCKED",
       "accessProxy": "PROXY",
       "importKeepHostSettings": "このマシンの設定を保持する",
-      "importKeepHostSettingsDesc": "アップロードしたファイルの値ではなく、このパネルのリッスンアドレス、ポート、ベースパス、証明書、ノード ID を保持します。"
+      "importKeepHostSettingsDesc": "アップロードしたファイルの値ではなく、このパネルのリッスンアドレス、ポート、ベースパス、証明書、ノード ID を保持します。",
+      "myTraffic": {
+        "title": "あなたの通信量",
+        "upload": "アップロード",
+        "download": "ダウンロード",
+        "used": "使用済み",
+        "quota": "上限",
+        "remaining": "残り",
+        "unlimited": "無制限",
+        "inbounds": "インバウンド",
+        "expires": "有効期限"
+      }
     },
     "inbounds": {
       "totalDownUp": "総アップロード / ダウンロード",

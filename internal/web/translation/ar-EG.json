@@ -292,7 +292,18 @@
       "accessBlocked": "BLOCKED",
       "accessProxy": "PROXY",
       "importKeepHostSettings": "الاحتفاظ بإعدادات هذا الجهاز",
-      "importKeepHostSettingsDesc": "يحتفظ بعناوين الاستماع والمنافذ والمسار الأساسي والشهادات وهوية العقدة الخاصة بهذه اللوحة بدلًا من أخذها من الملف المرفوع."
+      "importKeepHostSettingsDesc": "يحتفظ بعناوين الاستماع والمنافذ والمسار الأساسي والشهادات وهوية العقدة الخاصة بهذه اللوحة بدلًا من أخذها من الملف المرفوع.",
+      "myTraffic": {
+        "title": "بياناتك",
+        "upload": "رفع",
+        "download": "تنزيل",
+        "used": "المستخدم",
+        "quota": "الحصة",
+        "remaining": "المتبقي",
+        "unlimited": "بلا حد",
+        "inbounds": "المداخل",
+        "expires": "ينتهي"
+      }
     },
     "inbounds": {
       "totalDownUp": "إجمالي المرسل/المستقبل",

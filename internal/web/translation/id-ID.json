@@ -292,7 +292,18 @@
       "accessBlocked": "BLOCKED",
       "accessProxy": "PROXY",
       "importKeepHostSettings": "Pertahankan pengaturan mesin ini",
-      "importKeepHostSettingsDesc": "Mempertahankan alamat dengar, port, path dasar, sertifikat, dan identitas node panel ini alih-alih mengambilnya dari berkas yang diunggah."
+      "importKeepHostSettingsDesc": "Mempertahankan alamat dengar, port, path dasar, sertifikat, dan identitas node panel ini alih-alih mengambilnya dari berkas yang diunggah.",
+      "myTraffic": {
+        "title": "Trafik Anda",
+        "upload": "Unggah",
+        "download": "Unduh",
+        "used": "Terpakai",
+        "quota": "Kuota",
+        "remaining": "Sisa",
+        "unlimited": "Tanpa batas",
+        "inbounds": "Inbound",
+        "expires": "Kedaluwarsa"
+      }
     },
     "inbounds": {
       "totalDownUp": "Total Terkirim/Diterima",

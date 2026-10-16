@@ -10,10 +10,13 @@ export type trafficLocalApplyAction = number;
 export type transportBits = number;
 
 export interface AdminMe {
+  expireAt: number;
   id: number;
   permissions: Record<string, boolean>;
   role: string;
+  trafficQuota: number;
   username: string;
+  usersLimit: number;
 }
 
 export interface AdminView {

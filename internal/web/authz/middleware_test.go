@@ -46,6 +46,7 @@ func newAuthzEnv(t *testing.T) (*httptest.Server, *http.Client) {
 	api.POST("/inbounds/del/:id", reached)
 	api.GET("/inbounds/list", reached)
 	api.GET("/server/status", reached)
+	api.GET("/server/getDb", reached)
 
 	srv := httptest.NewServer(engine)
 	t.Cleanup(srv.Close)
@@ -113,16 +114,22 @@ func TestResellerCannotTouchForeignInbound(t *testing.T) {
 	}
 }
 
-// The role gate is separate from ownership: server endpoints belong to nobody,
-// so only super_admin may reach them however many inbounds a reseller owns.
-func TestResellerCannotReachServerEndpoints(t *testing.T) {
+// The role gate is separate from ownership: a server action belongs to nobody,
+// so only super_admin may reach it however many inbounds a reseller owns.
+// Reading host metrics is deliberately allowed -- the overview is every role's
+// landing page -- so this pins the line between the two rather than the group.
+func TestResellerReadsMetricsButCannotReachServerActions(t *testing.T) {
 	srv, client := newAuthzEnv(t)
 	seedUser(t, "agent", model.RoleReseller)
 	if code := do(t, client, http.MethodGet, srv.URL+"/login-as/agent"); code != http.StatusOK {
 		t.Fatalf("login: got %d", code)
 	}
-	if code := do(t, client, http.MethodGet, srv.URL+"/panel/api/server/status"); code != http.StatusForbidden {
-		t.Fatalf("reseller on /server/status: got %d, want 403", code)
+	if code := do(t, client, http.MethodGet, srv.URL+"/panel/api/server/status"); code != http.StatusOK {
+		t.Fatalf("reseller reading /server/status: got %d, want 200", code)
+	}
+	// Downloading the panel database would hand over every admin's rows.
+	if code := do(t, client, http.MethodGet, srv.URL+"/panel/api/server/getDb"); code != http.StatusForbidden {
+		t.Fatalf("reseller on /server/getDb: got %d, want 403", code)
 	}
 }
 

@@ -88,6 +88,12 @@ func (a *NodeController) setMtlsTrustCA(c *gin.Context) {
 }
 
 func (a *NodeController) list(c *gin.Context) {
+	// Node rows carry addresses, ports and cert pins. Nothing a reseller does
+	// needs them, and the page renders fine without, so they see no nodes.
+	if ownerScopeOf(c) != 0 {
+		jsonObj(c, []any{}, nil)
+		return
+	}
 	nodes, err := a.nodeService.GetNodeTreeView()
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.nodes.toasts.list"), err)

@@ -37,7 +37,7 @@ func (a *HostController) initRouter(g *gin.RouterGroup) {
 }
 
 func (a *HostController) list(c *gin.Context) {
-	hosts, err := a.hostService.GetHosts()
+	hosts, err := a.hostService.GetHostsForOwner(ownerScopeOf(c))
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.hosts.toasts.list"), err)
 		return

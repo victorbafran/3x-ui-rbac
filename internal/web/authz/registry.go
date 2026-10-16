@@ -22,6 +22,20 @@ var prefixRules = []prefixRule{
 // ownership check that replaces the blanket super_admin gate.
 var exactRules = map[string]Rule{
 	"GET /panel/api/openapi.json": {Roles: Readers},
+
+	// The panel shell cannot render without these; non-admins get the
+	// allowlisted view from AllSettingView.ForReseller.
+	"POST /panel/api/setting/all":             {Roles: Readers},
+	"POST /panel/api/setting/defaultSettings": {Roles: Readers},
+
+	// The overview is the landing page for every role and polls these. They
+	// are host metrics and the server's own address, which a reseller already
+	// knows -- their clients connect to it. Everything else under /server/
+	// stays super_admin by the prefix rule.
+	"GET /panel/api/server/status":                  {Roles: Readers},
+	"GET /panel/api/server/history/:metric/:bucket": {Roles: Readers},
+	"GET /panel/api/server/cpuHistory/:bucket":      {Roles: Readers},
+	"GET /panel/api/server/getPanelUpdateInfo":      {Roles: Readers},
 	"POST /panel/api/backuptotgbot": {Roles: Admins},
 
 	// Inbounds: lists already filter by owner inside the service.
@@ -98,6 +112,11 @@ var exactRules = map[string]Rule{
 	"POST /panel/api/clients/groups/bulkAdd":       {Roles: Managers},
 	"POST /panel/api/clients/groups/bulkRemove":    {Roles: Managers},
 	"POST /panel/api/clients/groups/resetTraffic":  {Roles: Managers},
+
+	// Both are read on the inbounds page by every role. The handlers narrow
+	// what comes back: hosts to the caller's own inbounds, nodes to nothing.
+	"GET /panel/api/hosts/list": {Roles: Readers},
+	"GET /panel/api/nodes/list": {Roles: Readers},
 
 	// Hosts hang off an inbound; reading one is scoped by that inbound.
 	"GET /panel/api/hosts/byInbound/:inboundId": {Roles: Readers, Scope: ScopeInbound, Param: "inboundId"},

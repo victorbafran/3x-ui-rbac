@@ -8,6 +8,25 @@ export type staticEgressResolver = string;
 export type trafficLocalApplyAction = number;
 export type transportBits = number;
 
+export interface AdminMe {
+  id: number;
+  permissions: Record<string, boolean>;
+  role: string;
+  username: string;
+}
+
+export interface AdminView {
+  enabled: boolean;
+  expireAt: number;
+  id: number;
+  inboundIds: number[];
+  permissions: Record<string, boolean>;
+  role: string;
+  trafficQuota: number;
+  username: string;
+  usersLimit: number;
+}
+
 export interface AllSetting {
   datepicker: string;
   discordAdminIds: string;
@@ -943,6 +962,11 @@ export interface PeerActivity {
   up: number;
 }
 
+export interface PermissionCatalog {
+  keys: string[];
+  templates: Record<string, Record<string, boolean>>;
+}
+
 export interface ProbeResultUI {
   cpuPct: number;
   error: string;
@@ -1085,8 +1109,14 @@ export interface TuicServerSettings {
 }
 
 export interface User {
+  enabled: boolean;
+  expireAt: number;
   id: number;
   password: string;
+  permissions: string;
+  role: Role;
+  trafficQuota: number;
   username: string;
+  usersLimit: number;
 }
 

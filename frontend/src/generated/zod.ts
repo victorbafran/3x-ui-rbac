@@ -24,6 +24,27 @@ export type trafficLocalApplyAction = z.infer<typeof trafficLocalApplyActionSche
 export const transportBitsSchema = z.number().int();
 export type transportBits = z.infer<typeof transportBitsSchema>;
 
+export const AdminMeSchema = z.object({
+  id: z.number().int(),
+  permissions: z.record(z.string(), z.boolean()),
+  role: z.string(),
+  username: z.string(),
+});
+export type AdminMe = z.infer<typeof AdminMeSchema>;
+
+export const AdminViewSchema = z.object({
+  enabled: z.boolean(),
+  expireAt: z.number().int(),
+  id: z.number().int(),
+  inboundIds: z.array(z.number().int()),
+  permissions: z.record(z.string(), z.boolean()),
+  role: z.string(),
+  trafficQuota: z.number().int(),
+  username: z.string(),
+  usersLimit: z.number().int(),
+});
+export type AdminView = z.infer<typeof AdminViewSchema>;
+
 export const AllSettingSchema = z.object({
   datepicker: z.string(),
   discordAdminIds: z.string(),
@@ -1002,6 +1023,12 @@ export const PeerActivitySchema = z.object({
 });
 export type PeerActivity = z.infer<typeof PeerActivitySchema>;
 
+export const PermissionCatalogSchema = z.object({
+  keys: z.array(z.string()),
+  templates: z.record(z.string(), z.record(z.string(), z.boolean())),
+});
+export type PermissionCatalog = z.infer<typeof PermissionCatalogSchema>;
+
 export const ProbeResultUISchema = z.object({
   cpuPct: z.number(),
   error: z.string(),
@@ -1154,9 +1181,15 @@ export const TuicServerSettingsSchema = z.object({
 export type TuicServerSettings = z.infer<typeof TuicServerSettingsSchema>;
 
 export const UserSchema = z.object({
+  enabled: z.boolean(),
+  expireAt: z.number().int(),
   id: z.number().int(),
   password: z.string(),
+  permissions: z.string(),
+  role: z.lazy(() => RoleSchema),
+  trafficQuota: z.number().int(),
   username: z.string(),
+  usersLimit: z.number().int(),
 });
 export type User = z.infer<typeof UserSchema>;
 

@@ -67,6 +67,9 @@ func run(root, outDir string) error {
 				"AllSetting",
 				"AllSettingView",
 				"HostGroup",
+				"AdminView",
+				"AdminMe",
+				"PermissionCatalog",
 			),
 		},
 		{

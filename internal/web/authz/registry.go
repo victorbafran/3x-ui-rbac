@@ -13,6 +13,7 @@ var prefixRules = []prefixRule{
 	{"/panel/api/nodes", Rule{Perm: PermSuperOnly}},
 	{"/panel/api/setting/", Rule{Perm: PermSuperOnly}},
 	{"/panel/api/sub-balancers", Rule{Perm: PermSuperOnly}},
+	{"/panel/api/admins", Rule{Perm: PermSuperOnly}},
 	{"/panel/api/inbounds/", Rule{Perm: PermSuperOnly}},
 	{"/panel/api/clients/", Rule{Perm: PermSuperOnly}},
 	// Host management is a page of its own; an admin with that section runs it.
@@ -24,6 +25,11 @@ var prefixRules = []prefixRule{
 var exactRules = map[string]Rule{
 	"GET /panel/api/openapi.json":   {},
 	"POST /panel/api/backuptotgbot": {Perm: PermSuperOnly},
+
+	// Every admin may learn their own switches (the sidebar hides on them) and
+	// read the catalog; everything else under /admins is closed by the prefix.
+	"GET /panel/api/admins/me":          {},
+	"GET /panel/api/admins/permissions": {},
 
 	// The panel shell cannot render without these. Settings come back
 	// allowlisted for non-admins; metrics are host load and the server's own

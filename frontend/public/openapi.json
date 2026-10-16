@@ -77,6 +77,9 @@
       "AdminView": {
         "description": "AdminView is an admin row without its password hash. Permissions holds only\nthe admin's own overrides; InboundIds only the inbounds handed to them.",
         "properties": {
+          "disabledReason": {
+            "type": "string"
+          },
           "enabled": {
             "example": true,
             "type": "boolean"
@@ -122,6 +125,7 @@
           }
         },
         "required": [
+          "disabledReason",
           "enabled",
           "expireAt",
           "id",
@@ -4894,6 +4898,9 @@
       "User": {
         "description": "User represents a user account in the 3x-ui panel.",
         "properties": {
+          "disabledReason": {
+            "type": "string"
+          },
           "enabled": {
             "type": "boolean"
           },
@@ -4926,6 +4933,7 @@
           }
         },
         "required": [
+          "disabledReason",
           "enabled",
           "expireAt",
           "id",
@@ -13021,6 +13029,7 @@
                   "success": true,
                   "obj": [
                     {
+                      "disabledReason": "",
                       "enabled": true,
                       "expireAt": 0,
                       "id": 2,
@@ -13081,6 +13090,7 @@
                 "example": {
                   "success": true,
                   "obj": {
+                    "disabledReason": "",
                     "enabled": true,
                     "expireAt": 0,
                     "id": 2,
@@ -13153,6 +13163,7 @@
                 "example": {
                   "success": true,
                   "obj": {
+                    "disabledReason": "",
                     "enabled": true,
                     "expireAt": 0,
                     "id": 2,
@@ -13236,6 +13247,7 @@
                 "example": {
                   "success": true,
                   "obj": {
+                    "disabledReason": "",
                     "enabled": true,
                     "expireAt": 0,
                     "id": 2,

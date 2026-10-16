@@ -39,6 +39,7 @@ export const AdminMeSchema = z.object({
 export type AdminMe = z.infer<typeof AdminMeSchema>;
 
 export const AdminViewSchema = z.object({
+  disabledReason: z.string(),
   enabled: z.boolean(),
   expireAt: z.number().int(),
   id: z.number().int(),
@@ -1187,6 +1188,7 @@ export const TuicServerSettingsSchema = z.object({
 export type TuicServerSettings = z.infer<typeof TuicServerSettingsSchema>;
 
 export const UserSchema = z.object({
+  disabledReason: z.string(),
   enabled: z.boolean(),
   expireAt: z.number().int(),
   id: z.number().int(),

@@ -20,6 +20,7 @@ export interface AdminMe {
 }
 
 export interface AdminView {
+  disabledReason: string;
   enabled: boolean;
   expireAt: number;
   id: number;
@@ -1113,6 +1114,7 @@ export interface TuicServerSettings {
 }
 
 export interface User {
+  disabledReason: string;
   enabled: boolean;
   expireAt: number;
   id: number;

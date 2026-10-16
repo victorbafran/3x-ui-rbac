@@ -189,3 +189,22 @@ func clientsOf(payloads []service.ClientCreatePayload) []model.Client {
 	}
 	return out
 }
+
+// denyOverUsersLimit stops a reseller with a client limit from creating past
+// it. Clients they own, plus the ones in this request, must fit under it.
+func (a *ClientController) denyOverUsersLimit(c *gin.Context, adding int) bool {
+	actor := authz.Actor(c)
+	if actor == nil || actor.Role == model.RoleSuperAdmin || actor.UsersLimit <= 0 || adding <= 0 {
+		return false
+	}
+	owned, err := a.clientService.OwnedEmailSet(actor.Id)
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
+		return true
+	}
+	if int64(len(owned)+adding) > actor.UsersLimit {
+		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"success": false, "msg": "users limit reached"})
+		return true
+	}
+	return false
+}

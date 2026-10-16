@@ -203,7 +203,7 @@ func (a *ClientController) create(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
 	}
-	if a.denyForeign(c, payload.InboundIds, nil) || a.denyUnlimited(c, payload.Client) {
+	if a.denyForeign(c, payload.InboundIds, nil) || a.denyUnlimited(c, payload.Client) || a.denyOverUsersLimit(c, 1) {
 		return
 	}
 	needRestart, err := a.clientService.Create(&a.inboundService, &payload)
@@ -483,7 +483,7 @@ func (a *ClientController) bulkCreate(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
 	}
-	if a.denyForeign(c, inboundIdsOf(payloads), nil) || a.denyUnlimited(c, clientsOf(payloads)...) {
+	if a.denyForeign(c, inboundIdsOf(payloads), nil) || a.denyUnlimited(c, clientsOf(payloads)...) || a.denyOverUsersLimit(c, len(payloads)) {
 		return
 	}
 	result, needRestart, err := a.clientService.BulkCreate(&a.inboundService, payloads)
@@ -541,7 +541,7 @@ func (a *ClientController) importClients(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
 	}
-	if a.denyForeign(c, inboundIdsOf(items), nil) || a.denyUnlimited(c, clientsOf(items)...) {
+	if a.denyForeign(c, inboundIdsOf(items), nil) || a.denyUnlimited(c, clientsOf(items)...) || a.denyOverUsersLimit(c, len(items)) {
 		return
 	}
 	result, needRestart, err := a.clientService.ImportClients(&a.inboundService, items)

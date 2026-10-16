@@ -53,7 +53,7 @@ func viewOf(u model.User, inboundIds []int) entity.AdminView {
 	return entity.AdminView{
 		Id: u.Id, Username: u.Username, Role: string(u.Role), Enabled: u.Enabled,
 		TrafficQuota: u.TrafficQuota, UsersLimit: u.UsersLimit, ExpireAt: u.ExpireAt,
-		Permissions: overrides, InboundIds: inboundIds,
+		DisabledReason: u.DisabledReason, Permissions: overrides, InboundIds: inboundIds,
 	}
 }
 
@@ -154,6 +154,10 @@ func (s *AdminService) Update(id int, spec AdminSpec) error {
 		"users_limit":   spec.UsersLimit,
 		"expire_at":     spec.ExpireAt,
 		"permissions":   authz.EncodeOverrides(spec.Permissions),
+	}
+	// Switching an admin back on clears the reason the job or a hand recorded.
+	if spec.Enabled {
+		updates["disabled_reason"] = ""
 	}
 	// Losing a role or being switched off must end sessions already open.
 	if target.Role != spec.Role || target.Enabled != spec.Enabled {

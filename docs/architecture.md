@@ -389,6 +389,7 @@ All registered in `web.go` → `startTask()`. Each is a struct with a `Run()` me
 | `@hourly`           | `warp_ip_job`, `periodic_traffic_reset_job("hourly")`                                            | WARP IP rotation; traffic resets                                                      |
 | `@daily`            | `clear_logs_job`, `periodic_traffic_reset_job("daily")`, `periodic_traffic_reset_job("monthly")` | IP-limit and Xray access/error log cleanup; daily resets and due monthly resets       |
 | `@weekly`           | `periodic_traffic_reset_job("weekly")`                                                           | Weekly traffic resets                                                                 |
+| `@every 1m`         | `admin_limits_job`                                                                               | Switch off resellers past their expiry or traffic quota; take their created inbounds down     |
 | default `@every 1m` | `ldap_sync_job`                                                                                  | Only if LDAP enabled; schedule configurable                                           |
 | default `@daily`    | `stats_notify_job`                                                                               | Only if TG bot enabled; schedule configurable                                         |
 | default `@daily`    | `discord_notify_job`                                                                             | Only if Discord bot enabled; schedule configurable                                    |

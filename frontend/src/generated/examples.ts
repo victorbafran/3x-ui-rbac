@@ -10,6 +10,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "usersLimit": 0
   },
   "AdminView": {
+    "disabledReason": "",
     "enabled": true,
     "expireAt": 0,
     "id": 2,
@@ -1208,6 +1209,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "zero_rtt_handshake": false
   },
   "User": {
+    "disabledReason": "",
     "enabled": false,
     "expireAt": 0,
     "id": 0,

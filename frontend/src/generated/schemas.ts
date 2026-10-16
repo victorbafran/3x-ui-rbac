@@ -51,6 +51,9 @@ export const SCHEMAS: Record<string, unknown> = {
   "AdminView": {
     "description": "AdminView is an admin row without its password hash. Permissions holds only\nthe admin's own overrides; InboundIds only the inbounds handed to them.",
     "properties": {
+      "disabledReason": {
+        "type": "string"
+      },
       "enabled": {
         "example": true,
         "type": "boolean"
@@ -96,6 +99,7 @@ export const SCHEMAS: Record<string, unknown> = {
       }
     },
     "required": [
+      "disabledReason",
       "enabled",
       "expireAt",
       "id",
@@ -4868,6 +4872,9 @@ export const SCHEMAS: Record<string, unknown> = {
   "User": {
     "description": "User represents a user account in the 3x-ui panel.",
     "properties": {
+      "disabledReason": {
+        "type": "string"
+      },
       "enabled": {
         "type": "boolean"
       },
@@ -4900,6 +4907,7 @@ export const SCHEMAS: Record<string, unknown> = {
       }
     },
     "required": [
+      "disabledReason",
       "enabled",
       "expireAt",
       "id",

@@ -8,13 +8,16 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/authz"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/entity"
+	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service/panel"
 )
 
 // AdminController manages admin accounts, their switches and their assigned
 // inbounds. Everything but /me and /permissions is super_admin only.
 type AdminController struct {
-	adminService panel.AdminService
+	adminService   panel.AdminService
+	inboundService service.InboundService
+	xrayService    service.XrayService
 }
 
 func NewAdminController(g *gin.RouterGroup) *AdminController {
@@ -146,6 +149,16 @@ func (a *AdminController) update(c *gin.Context) {
 	if err := a.adminService.Update(id, form.spec()); err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
+	}
+	if !form.spec().Enabled {
+		needRestart, err := a.adminService.Deactivate(&a.inboundService, id, panel.ReasonManual)
+		if err != nil {
+			jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
+			return
+		}
+		if needRestart {
+			a.xrayService.SetToNeedRestart()
+		}
 	}
 	if form.InboundIds != nil {
 		if err := a.adminService.SetAssignments(id, form.InboundIds); err != nil {

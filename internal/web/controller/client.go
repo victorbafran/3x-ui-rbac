@@ -203,6 +203,9 @@ func (a *ClientController) create(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
 	}
+	if a.denyForeign(c, payload.InboundIds, nil) {
+		return
+	}
 	needRestart, err := a.clientService.Create(&a.inboundService, &payload)
 	// Flagged before the error check: a partly-applied create leaves clients
 	// committed on the inbounds that succeeded, and those still need the restart.
@@ -345,6 +348,9 @@ func (a *ClientController) bulkAdjust(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
 	}
+	if a.denyForeign(c, nil, req.Emails) {
+		return
+	}
 	result, needRestart, err := a.clientService.BulkAdjust(&a.inboundService, req.Emails, req.AddDays, req.AddBytes, req.Flow, req.LimitHwid, req.AdTag)
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
@@ -373,6 +379,9 @@ func (a *ClientController) bulkAttach(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
 	}
+	if a.denyForeign(c, req.InboundIds, req.Emails) {
+		return
+	}
 	result, needRestart, err := a.clientService.BulkAttach(&a.inboundService, req.Emails, req.InboundIds)
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
@@ -396,6 +405,9 @@ func (a *ClientController) bulkDetach(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
 	}
+	if a.denyForeign(c, req.InboundIds, req.Emails) {
+		return
+	}
 	result, needRestart, err := a.clientService.BulkDetach(&a.inboundService, req.Emails, req.InboundIds)
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
@@ -412,6 +424,9 @@ func (a *ClientController) bulkDelete(c *gin.Context) {
 	var req bulkDeleteRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
+		return
+	}
+	if a.denyForeign(c, nil, req.Emails) {
 		return
 	}
 	result, needRestart, err := a.clientService.BulkDelete(&a.inboundService, req.Emails, req.KeepTraffic)
@@ -444,6 +459,9 @@ func (a *ClientController) bulkSetEnable(c *gin.Context, enable bool) {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
 	}
+	if a.denyForeign(c, nil, req.Emails) {
+		return
+	}
 	result, needRestart, err := a.clientService.BulkSetEnable(&a.inboundService, req.Emails, enable)
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
@@ -460,6 +478,9 @@ func (a *ClientController) bulkCreate(c *gin.Context) {
 	var payloads []service.ClientCreatePayload
 	if err := c.ShouldBindJSON(&payloads); err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
+		return
+	}
+	if a.denyForeign(c, inboundIdsOf(payloads), nil) {
 		return
 	}
 	result, needRestart, err := a.clientService.BulkCreate(&a.inboundService, payloads)
@@ -515,6 +536,9 @@ func (a *ClientController) importClients(c *gin.Context) {
 	var items []service.ClientCreatePayload
 	if err := json.Unmarshal([]byte(req.Data), &items); err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
+		return
+	}
+	if a.denyForeign(c, inboundIdsOf(items), nil) {
 		return
 	}
 	result, needRestart, err := a.clientService.ImportClients(&a.inboundService, items)
@@ -585,7 +609,7 @@ func (a *ClientController) getIps(c *gin.Context) {
 
 func (a *ClientController) clientIpsByGuid(c *gin.Context) {
 	data, err := a.inboundService.GetClientIpsByGuid()
-	jsonObj(c, data, err)
+	jsonObj(c, keepEmailKeysByGuid(data, a.ownedEmailFilter(c)), err)
 }
 
 func (a *ClientController) clearIps(c *gin.Context) {
@@ -624,20 +648,20 @@ func (a *ClientController) deleteHwid(c *gin.Context) {
 }
 
 func (a *ClientController) onlines(c *gin.Context) {
-	jsonObj(c, a.inboundService.GetOnlineClients(), nil)
+	jsonObj(c, keepEmails(a.inboundService.GetOnlineClients(), a.ownedEmailFilter(c)), nil)
 }
 
 func (a *ClientController) onlinesByGuid(c *gin.Context) {
-	jsonObj(c, a.inboundService.GetOnlineClientsByGuid(), nil)
+	jsonObj(c, keepEmailsByGuid(a.inboundService.GetOnlineClientsByGuid(), a.ownedEmailFilter(c)), nil)
 }
 
 func (a *ClientController) activeInbounds(c *gin.Context) {
-	jsonObj(c, a.inboundService.GetActiveInboundsByGuid(), nil)
+	jsonObj(c, keepEmailsByGuid(a.inboundService.GetActiveInboundsByGuid(), a.ownedTagFilter(c)), nil)
 }
 
 func (a *ClientController) lastOnline(c *gin.Context) {
 	data, err := a.inboundService.GetClientsLastOnline()
-	jsonObj(c, data, err)
+	jsonObj(c, keepEmailKeys(data, a.ownedEmailFilter(c)), err)
 }
 
 func (a *ClientController) getTrafficByEmail(c *gin.Context) {
@@ -651,6 +675,9 @@ func (a *ClientController) getTrafficByEmail(c *gin.Context) {
 }
 
 func (a *ClientController) getSubLinks(c *gin.Context) {
+	if a.denyForeignSubId(c, c.Param("subId")) {
+		return
+	}
 	links, err := a.inboundService.GetSubLinks(resolveHost(c), c.Param("subId"))
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.obtain"), err)
@@ -673,6 +700,9 @@ func (a *ClientController) generateHappLink(c *gin.Context) {
 	clientID, err := strconv.Atoi(c.Param("id"))
 	if err != nil || clientID < 1 {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), service.ErrHappLinkUnavailable)
+		return
+	}
+	if a.denyForeignClientId(c, clientID) {
 		return
 	}
 	result, err := a.happGenerator.Generate(c.Request.Context(), clientID, c.Request.Host)
@@ -721,6 +751,9 @@ func (a *ClientController) bulkResetTraffic(c *gin.Context) {
 	var req bulkResetRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
+		return
+	}
+	if a.denyForeign(c, nil, req.Emails) {
 		return
 	}
 	affected, err := a.clientService.BulkResetTraffic(&a.inboundService, req.Emails)

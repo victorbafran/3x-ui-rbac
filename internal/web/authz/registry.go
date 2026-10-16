@@ -83,9 +83,9 @@ var exactRules = map[string]Rule{
 	"POST /panel/api/clients/del/:email":           {Perm: ClientDelete, Scope: ScopeClient, Param: "email"},
 	"POST /panel/api/clients/resetTraffic/:email":  {Perm: ClientResetTraffic, Scope: ScopeClient, Param: "email"},
 
-	// Client collections: the service filters these by owner. The bulk
-	// writers also carry target inbound ids in the body, which the handler
-	// must still check against the caller's inbounds.
+	// Client collections. Lists filter by owner in the service; the bulk
+	// writers name their targets in the body and the handler refuses foreign
+	// ones (controller/client_guard.go) before acting.
 	"GET /panel/api/clients/list":              {Perm: SecClients, Scope: ScopeOwnedListing},
 	"GET /panel/api/clients/list/paged":        {Perm: SecClients, Scope: ScopeOwnedListing},
 	"POST /panel/api/clients/activeInbounds":   {Perm: SecClients, Scope: ScopeOwnedListing},

@@ -122,6 +122,7 @@
     "donate": "Quyên góp",
     "sponsors": "Nhà tài trợ",
     "hosts": "Hosts",
+    "admins": "Quản trị viên",
     "docs": "Tài liệu",
     "openMenu": "Mở menu",
     "pinSidebar": "Ghim thanh bên",
@@ -2416,6 +2417,77 @@
         "delete": "Xóa host",
         "badTag": "Tag không hợp lệ",
         "badVlessRoute": "Nhập một số duy nhất từ 0 đến 65535"
+      }
+    },
+    "admins": {
+      "title": "Quản trị viên",
+      "addAdmin": "Thêm quản trị viên",
+      "editAdmin": "Sửa quản trị viên",
+      "resetPassword": "Đặt lại mật khẩu",
+      "newPassword": "Mật khẩu mới",
+      "deleteConfirmTitle": "Xóa quản trị viên này?",
+      "deleteConfirm": "Các inbound họ đã tạo được giữ lại và có thể gán lại.",
+      "resetToTemplate": "Về mặc định của vai trò",
+      "assigned": "Inbound được gán",
+      "noInbounds": "Chưa gán inbound nào",
+      "never": "Không bao giờ",
+      "roles": {
+        "super_admin": "Quản trị tối cao",
+        "manager": "Quản lý",
+        "reseller": "Đại lý",
+        "readonly": "Chỉ đọc"
+      },
+      "groups": {
+        "sections": "Trang có thể mở",
+        "clients": "Có thể làm gì với khách hàng",
+        "inbounds": "Có thể làm gì với inbound"
+      },
+      "fields": {
+        "username": "Tên đăng nhập",
+        "password": "Mật khẩu",
+        "role": "Vai trò",
+        "enabled": "Bật",
+        "trafficQuota": "Hạn mức lưu lượng (GB, 0 = không giới hạn)",
+        "usersLimit": "Số khách tối đa (0 = không giới hạn)",
+        "expireAt": "Hết hạn",
+        "permissions": "Quyền",
+        "inbounds": "Inbound được quản lý"
+      },
+      "perms": {
+        "sections": {
+          "inbounds": "Inbound",
+          "clients": "Khách hàng",
+          "groups": "Nhóm",
+          "hosts": "Host",
+          "nodes": "Node",
+          "outbounds": "Outbound",
+          "routing": "Định tuyến",
+          "xray": "Cấu hình Xray",
+          "settings": "Cài đặt bảng điều khiển",
+          "admins": "Quản trị viên"
+        },
+        "clients": {
+          "create": "Tạo khách hàng",
+          "edit": "Sửa khách hàng",
+          "delete": "Xóa khách hàng",
+          "resetTraffic": "Đặt lại lưu lượng khách",
+          "unlimitedData": "Cấp dữ liệu không giới hạn",
+          "unlimitedExpiry": "Cấp thời hạn không giới hạn",
+          "viewLinks": "Xem liên kết đăng ký"
+        },
+        "inbounds": {
+          "create": "Tạo inbound",
+          "edit": "Sửa inbound",
+          "delete": "Xóa inbound",
+          "resetTraffic": "Đặt lại lưu lượng inbound"
+        }
+      },
+      "toasts": {
+        "saved": "Đã lưu quản trị viên",
+        "deleted": "Đã xóa quản trị viên",
+        "passwordReset": "Đã đặt lại mật khẩu; các phiên đã kết thúc",
+        "shortPassword": "Mật khẩu phải có ít nhất 8 ký tự",
+        "usernameRequired": "Cần có tên đăng nhập"
       }
     },
     "sponsors": {

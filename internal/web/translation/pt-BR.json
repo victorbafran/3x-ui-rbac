@@ -122,6 +122,7 @@
     "donate": "Doar",
     "sponsors": "Patrocinadores",
     "hosts": "Hosts",
+    "admins": "Administradores",
     "docs": "Documentação",
     "openMenu": "Abrir menu",
     "pinSidebar": "Fixar barra lateral",
@@ -2416,6 +2417,77 @@
         "delete": "Excluir host",
         "badTag": "Tag inválida",
         "badVlessRoute": "Insira um único número entre 0 e 65535"
+      }
+    },
+    "admins": {
+      "title": "Administradores",
+      "addAdmin": "Adicionar administrador",
+      "editAdmin": "Editar administrador",
+      "resetPassword": "Redefinir senha",
+      "newPassword": "Nova senha",
+      "deleteConfirmTitle": "Excluir este administrador?",
+      "deleteConfirm": "Os inbounds que ele criou são mantidos e podem ser reatribuídos.",
+      "resetToTemplate": "Voltar ao padrão do papel",
+      "assigned": "Inbounds atribuídos",
+      "noInbounds": "Nenhum inbound atribuído",
+      "never": "Nunca",
+      "roles": {
+        "super_admin": "Superadministrador",
+        "manager": "Gerente",
+        "reseller": "Revendedor",
+        "readonly": "Somente leitura"
+      },
+      "groups": {
+        "sections": "Páginas que pode abrir",
+        "clients": "O que pode fazer com clientes",
+        "inbounds": "O que pode fazer com inbounds"
+      },
+      "fields": {
+        "username": "Usuário",
+        "password": "Senha",
+        "role": "Papel",
+        "enabled": "Ativo",
+        "trafficQuota": "Cota de tráfego (GB, 0 = ilimitado)",
+        "usersLimit": "Máx. de clientes (0 = ilimitado)",
+        "expireAt": "Expira em",
+        "permissions": "Permissões",
+        "inbounds": "Inbounds que pode gerenciar"
+      },
+      "perms": {
+        "sections": {
+          "inbounds": "Inbounds",
+          "clients": "Clientes",
+          "groups": "Grupos",
+          "hosts": "Hosts",
+          "nodes": "Nós",
+          "outbounds": "Outbounds",
+          "routing": "Roteamento",
+          "xray": "Configurações do Xray",
+          "settings": "Configurações do painel",
+          "admins": "Administradores"
+        },
+        "clients": {
+          "create": "Criar clientes",
+          "edit": "Editar clientes",
+          "delete": "Excluir clientes",
+          "resetTraffic": "Zerar tráfego do cliente",
+          "unlimitedData": "Conceder dados ilimitados",
+          "unlimitedExpiry": "Conceder validade ilimitada",
+          "viewLinks": "Ver links de assinatura"
+        },
+        "inbounds": {
+          "create": "Criar inbounds",
+          "edit": "Editar inbounds",
+          "delete": "Excluir inbounds",
+          "resetTraffic": "Zerar tráfego do inbound"
+        }
+      },
+      "toasts": {
+        "saved": "Administrador salvo",
+        "deleted": "Administrador excluído",
+        "passwordReset": "Senha redefinida; as sessões foram encerradas",
+        "shortPassword": "A senha deve ter pelo menos 8 caracteres",
+        "usernameRequired": "O usuário é obrigatório"
       }
     },
     "sponsors": {

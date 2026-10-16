@@ -122,6 +122,7 @@
     "donate": "捐赠",
     "sponsors": "赞助商",
     "hosts": "主机",
+    "admins": "管理员",
     "docs": "文档",
     "openMenu": "打开菜单",
     "pinSidebar": "固定侧边栏",
@@ -2416,6 +2417,77 @@
         "delete": "删除主机",
         "badTag": "无效的标签",
         "badVlessRoute": "请输入 0 到 65535 之间的单个数字"
+      }
+    },
+    "admins": {
+      "title": "管理员",
+      "addAdmin": "添加管理员",
+      "editAdmin": "编辑管理员",
+      "resetPassword": "重置密码",
+      "newPassword": "新密码",
+      "deleteConfirmTitle": "删除此管理员？",
+      "deleteConfirm": "其创建的入站将被保留，可重新分配。",
+      "resetToTemplate": "恢复角色默认值",
+      "assigned": "已分配的入站",
+      "noInbounds": "未分配入站",
+      "never": "永不",
+      "roles": {
+        "super_admin": "超级管理员",
+        "manager": "经理",
+        "reseller": "代理商",
+        "readonly": "只读"
+      },
+      "groups": {
+        "sections": "可打开的页面",
+        "clients": "对客户端的操作",
+        "inbounds": "对入站的操作"
+      },
+      "fields": {
+        "username": "用户名",
+        "password": "密码",
+        "role": "角色",
+        "enabled": "启用",
+        "trafficQuota": "流量配额 (GB，0 = 无限)",
+        "usersLimit": "最大客户端数 (0 = 无限)",
+        "expireAt": "到期时间",
+        "permissions": "权限",
+        "inbounds": "可管理的入站"
+      },
+      "perms": {
+        "sections": {
+          "inbounds": "入站",
+          "clients": "客户端",
+          "groups": "分组",
+          "hosts": "主机",
+          "nodes": "节点",
+          "outbounds": "出站",
+          "routing": "路由",
+          "xray": "Xray 配置",
+          "settings": "面板设置",
+          "admins": "管理员"
+        },
+        "clients": {
+          "create": "创建客户端",
+          "edit": "编辑客户端",
+          "delete": "删除客户端",
+          "resetTraffic": "重置客户端流量",
+          "unlimitedData": "授予无限流量",
+          "unlimitedExpiry": "授予无限期限",
+          "viewLinks": "查看订阅链接"
+        },
+        "inbounds": {
+          "create": "创建入站",
+          "edit": "编辑入站",
+          "delete": "删除入站",
+          "resetTraffic": "重置入站流量"
+        }
+      },
+      "toasts": {
+        "saved": "管理员已保存",
+        "deleted": "管理员已删除",
+        "passwordReset": "密码已重置，其会话已结束",
+        "shortPassword": "密码至少 8 个字符",
+        "usernameRequired": "用户名为必填"
       }
     },
     "sponsors": {

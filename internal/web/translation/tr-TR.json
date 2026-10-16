@@ -122,6 +122,7 @@
     "donate": "Bağış Yap",
     "sponsors": "Sponsorlar",
     "hosts": "Host'lar",
+    "admins": "Yöneticiler",
     "docs": "Belgeler",
     "openMenu": "Menüyü aç",
     "pinSidebar": "Kenar çubuğunu sabitle",
@@ -2416,6 +2417,77 @@
         "delete": "Host'u sil",
         "badTag": "Geçersiz etiket",
         "badVlessRoute": "0 ile 65535 arasında tek bir sayı girin"
+      }
+    },
+    "admins": {
+      "title": "Yöneticiler",
+      "addAdmin": "Yönetici ekle",
+      "editAdmin": "Yöneticiyi düzenle",
+      "resetPassword": "Parolayı sıfırla",
+      "newPassword": "Yeni parola",
+      "deleteConfirmTitle": "Bu yönetici silinsin mi?",
+      "deleteConfirm": "Oluşturduğu inbound'lar korunur ve yeniden atanabilir.",
+      "resetToTemplate": "Rol varsayılanlarına dön",
+      "assigned": "Atanan inbound'lar",
+      "noInbounds": "Atanmış inbound yok",
+      "never": "Asla",
+      "roles": {
+        "super_admin": "Süper yönetici",
+        "manager": "Müdür",
+        "reseller": "Bayi",
+        "readonly": "Salt okunur"
+      },
+      "groups": {
+        "sections": "Açabileceği sayfalar",
+        "clients": "Müşterilerle yapabilecekleri",
+        "inbounds": "Inbound'larla yapabilecekleri"
+      },
+      "fields": {
+        "username": "Kullanıcı adı",
+        "password": "Parola",
+        "role": "Rol",
+        "enabled": "Etkin",
+        "trafficQuota": "Trafik kotası (GB, 0 = sınırsız)",
+        "usersLimit": "En fazla müşteri (0 = sınırsız)",
+        "expireAt": "Bitiş",
+        "permissions": "İzinler",
+        "inbounds": "Yönetebileceği inbound'lar"
+      },
+      "perms": {
+        "sections": {
+          "inbounds": "Inbound'lar",
+          "clients": "Müşteriler",
+          "groups": "Gruplar",
+          "hosts": "Hostlar",
+          "nodes": "Düğümler",
+          "outbounds": "Outbound'lar",
+          "routing": "Yönlendirme",
+          "xray": "Xray ayarları",
+          "settings": "Panel ayarları",
+          "admins": "Yöneticiler"
+        },
+        "clients": {
+          "create": "Müşteri oluştur",
+          "edit": "Müşteri düzenle",
+          "delete": "Müşteri sil",
+          "resetTraffic": "Müşteri trafiğini sıfırla",
+          "unlimitedData": "Sınırsız veri ver",
+          "unlimitedExpiry": "Sınırsız süre ver",
+          "viewLinks": "Abonelik bağlantılarını gör"
+        },
+        "inbounds": {
+          "create": "Inbound oluştur",
+          "edit": "Inbound düzenle",
+          "delete": "Inbound sil",
+          "resetTraffic": "Inbound trafiğini sıfırla"
+        }
+      },
+      "toasts": {
+        "saved": "Yönetici kaydedildi",
+        "deleted": "Yönetici silindi",
+        "passwordReset": "Parola sıfırlandı; oturumları sonlandırıldı",
+        "shortPassword": "Parola en az 8 karakter olmalı",
+        "usernameRequired": "Kullanıcı adı gerekli"
       }
     },
     "sponsors": {

@@ -122,6 +122,7 @@
     "donate": "حمایت مالی",
     "sponsors": "اسپانسرها",
     "hosts": "میزبان‌ها",
+    "admins": "مدیران",
     "docs": "مستندات",
     "openMenu": "باز کردن منو",
     "pinSidebar": "ثابت کردن نوار کناری",
@@ -2416,6 +2417,77 @@
         "delete": "حذف میزبان",
         "badTag": "برچسب نامعتبر",
         "badVlessRoute": "یک عدد بین 0 تا 65535 وارد کنید"
+      }
+    },
+    "admins": {
+      "title": "مدیران",
+      "addAdmin": "افزودن مدیر",
+      "editAdmin": "ویرایش مدیر",
+      "resetPassword": "بازنشانی رمز",
+      "newPassword": "رمز جدید",
+      "deleteConfirmTitle": "این مدیر حذف شود؟",
+      "deleteConfirm": "کانفیگ‌هایی که ساخته نگه داشته می‌شوند و قابل واگذاری‌اند.",
+      "resetToTemplate": "بازگشت به پیش‌فرضِ نقش",
+      "assigned": "کانفیگ‌های واگذارشده",
+      "noInbounds": "کانفیگی واگذار نشده",
+      "never": "هرگز",
+      "roles": {
+        "super_admin": "مدیر کل",
+        "manager": "مدیر",
+        "reseller": "نماینده",
+        "readonly": "فقط‌خواندنی"
+      },
+      "groups": {
+        "sections": "صفحه‌هایی که می‌بیند",
+        "clients": "کارهایی که با مشتری‌ها می‌تواند بکند",
+        "inbounds": "کارهایی که با کانفیگ‌ها می‌تواند بکند"
+      },
+      "fields": {
+        "username": "نام کاربری",
+        "password": "رمز عبور",
+        "role": "نقش",
+        "enabled": "فعال",
+        "trafficQuota": "سهمیه ترافیک (گیگابایت، ۰ = نامحدود)",
+        "usersLimit": "حداکثر مشتری (۰ = نامحدود)",
+        "expireAt": "تاریخ انقضا",
+        "permissions": "دسترسی‌ها",
+        "inbounds": "کانفیگ‌هایی که مدیریت می‌کند"
+      },
+      "perms": {
+        "sections": {
+          "inbounds": "کانفیگ‌ها",
+          "clients": "مشتری‌ها",
+          "groups": "گروه‌ها",
+          "hosts": "هاست‌ها",
+          "nodes": "نودها",
+          "outbounds": "خروجی‌ها",
+          "routing": "مسیریابی",
+          "xray": "تنظیمات Xray",
+          "settings": "تنظیمات پنل",
+          "admins": "مدیران"
+        },
+        "clients": {
+          "create": "ساخت مشتری",
+          "edit": "ویرایش مشتری",
+          "delete": "حذف مشتری",
+          "resetTraffic": "صفر کردن ترافیک مشتری",
+          "unlimitedData": "دادن حجم نامحدود",
+          "unlimitedExpiry": "دادن زمان نامحدود",
+          "viewLinks": "دیدن لینک اشتراک"
+        },
+        "inbounds": {
+          "create": "ساخت کانفیگ",
+          "edit": "ویرایش کانفیگ",
+          "delete": "حذف کانفیگ",
+          "resetTraffic": "صفر کردن ترافیک کانفیگ"
+        }
+      },
+      "toasts": {
+        "saved": "مدیر ذخیره شد",
+        "deleted": "مدیر حذف شد",
+        "passwordReset": "رمز عوض شد؛ نشست‌هایش بسته شدند",
+        "shortPassword": "رمز باید دست‌کم ۸ کاراکتر باشد",
+        "usernameRequired": "نام کاربری لازم است"
       }
     },
     "sponsors": {

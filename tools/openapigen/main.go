@@ -41,7 +41,7 @@ func run(root, outDir string) error {
 				"Host",
 				"SubBalancer",
 			),
-			AliasAllow: setOf("Protocol"),
+			AliasAllow: setOf("Protocol", "Role"),
 			Overrides: map[string][]walkOverride{
 				"Inbound": {
 					{Field: "Settings", Kind: KindAny},

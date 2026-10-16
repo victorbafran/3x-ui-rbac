@@ -4866,7 +4866,9 @@ export const SCHEMAS: Record<string, unknown> = {
       "permissions": {
         "type": "string"
       },
-      "role": {},
+      "role": {
+        "type": "string"
+      },
       "trafficQuota": {
         "format": "int64",
         "type": "integer"

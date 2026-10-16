@@ -122,6 +122,7 @@
     "donate": "捐贈",
     "sponsors": "贊助商",
     "hosts": "主機",
+    "admins": "管理員",
     "docs": "文件",
     "openMenu": "開啟選單",
     "pinSidebar": "固定側邊欄",
@@ -2416,6 +2417,77 @@
         "delete": "刪除 Host",
         "badTag": "無效的標籤",
         "badVlessRoute": "請輸入 0 到 65535 之間的單一數字"
+      }
+    },
+    "admins": {
+      "title": "管理員",
+      "addAdmin": "新增管理員",
+      "editAdmin": "編輯管理員",
+      "resetPassword": "重設密碼",
+      "newPassword": "新密碼",
+      "deleteConfirmTitle": "刪除此管理員？",
+      "deleteConfirm": "其建立的入站將保留，可重新指派。",
+      "resetToTemplate": "還原角色預設值",
+      "assigned": "已指派的入站",
+      "noInbounds": "未指派入站",
+      "never": "永不",
+      "roles": {
+        "super_admin": "超級管理員",
+        "manager": "經理",
+        "reseller": "經銷商",
+        "readonly": "唯讀"
+      },
+      "groups": {
+        "sections": "可開啟的頁面",
+        "clients": "對用戶端的操作",
+        "inbounds": "對入站的操作"
+      },
+      "fields": {
+        "username": "使用者名稱",
+        "password": "密碼",
+        "role": "角色",
+        "enabled": "啟用",
+        "trafficQuota": "流量配額 (GB，0 = 無限)",
+        "usersLimit": "最大用戶端數 (0 = 無限)",
+        "expireAt": "到期時間",
+        "permissions": "權限",
+        "inbounds": "可管理的入站"
+      },
+      "perms": {
+        "sections": {
+          "inbounds": "入站",
+          "clients": "用戶端",
+          "groups": "群組",
+          "hosts": "主機",
+          "nodes": "節點",
+          "outbounds": "出站",
+          "routing": "路由",
+          "xray": "Xray 設定",
+          "settings": "面板設定",
+          "admins": "管理員"
+        },
+        "clients": {
+          "create": "建立用戶端",
+          "edit": "編輯用戶端",
+          "delete": "刪除用戶端",
+          "resetTraffic": "重設用戶端流量",
+          "unlimitedData": "授予無限流量",
+          "unlimitedExpiry": "授予無限期限",
+          "viewLinks": "檢視訂閱連結"
+        },
+        "inbounds": {
+          "create": "建立入站",
+          "edit": "編輯入站",
+          "delete": "刪除入站",
+          "resetTraffic": "重設入站流量"
+        }
+      },
+      "toasts": {
+        "saved": "管理員已儲存",
+        "deleted": "管理員已刪除",
+        "passwordReset": "密碼已重設，其工作階段已結束",
+        "shortPassword": "密碼至少 8 個字元",
+        "usernameRequired": "使用者名稱為必填"
       }
     },
     "sponsors": {

@@ -122,6 +122,7 @@
     "donate": "Donasi",
     "sponsors": "Sponsor",
     "hosts": "Host",
+    "admins": "Admin",
     "docs": "Dokumentasi",
     "openMenu": "Buka menu",
     "pinSidebar": "Sematkan bilah sisi",
@@ -2416,6 +2417,77 @@
         "delete": "Hapus host",
         "badTag": "Tag tidak valid",
         "badVlessRoute": "Masukkan satu angka antara 0 dan 65535"
+      }
+    },
+    "admins": {
+      "title": "Admin",
+      "addAdmin": "Tambah admin",
+      "editAdmin": "Ubah admin",
+      "resetPassword": "Atur ulang kata sandi",
+      "newPassword": "Kata sandi baru",
+      "deleteConfirmTitle": "Hapus admin ini?",
+      "deleteConfirm": "Inbound yang dibuatnya tetap ada dan bisa dialihkan.",
+      "resetToTemplate": "Kembalikan ke bawaan peran",
+      "assigned": "Inbound yang ditugaskan",
+      "noInbounds": "Belum ada inbound",
+      "never": "Tidak pernah",
+      "roles": {
+        "super_admin": "Admin utama",
+        "manager": "Manajer",
+        "reseller": "Reseller",
+        "readonly": "Hanya baca"
+      },
+      "groups": {
+        "sections": "Halaman yang bisa dibuka",
+        "clients": "Yang bisa dilakukan pada klien",
+        "inbounds": "Yang bisa dilakukan pada inbound"
+      },
+      "fields": {
+        "username": "Nama pengguna",
+        "password": "Kata sandi",
+        "role": "Peran",
+        "enabled": "Aktif",
+        "trafficQuota": "Kuota trafik (GB, 0 = tanpa batas)",
+        "usersLimit": "Maks. klien (0 = tanpa batas)",
+        "expireAt": "Kedaluwarsa",
+        "permissions": "Izin",
+        "inbounds": "Inbound yang boleh dikelola"
+      },
+      "perms": {
+        "sections": {
+          "inbounds": "Inbound",
+          "clients": "Klien",
+          "groups": "Grup",
+          "hosts": "Host",
+          "nodes": "Node",
+          "outbounds": "Outbound",
+          "routing": "Routing",
+          "xray": "Konfigurasi Xray",
+          "settings": "Pengaturan panel",
+          "admins": "Admin"
+        },
+        "clients": {
+          "create": "Buat klien",
+          "edit": "Ubah klien",
+          "delete": "Hapus klien",
+          "resetTraffic": "Reset trafik klien",
+          "unlimitedData": "Beri data tanpa batas",
+          "unlimitedExpiry": "Beri masa tanpa batas",
+          "viewLinks": "Lihat tautan langganan"
+        },
+        "inbounds": {
+          "create": "Buat inbound",
+          "edit": "Ubah inbound",
+          "delete": "Hapus inbound",
+          "resetTraffic": "Reset trafik inbound"
+        }
+      },
+      "toasts": {
+        "saved": "Admin disimpan",
+        "deleted": "Admin dihapus",
+        "passwordReset": "Kata sandi diatur ulang; sesinya diakhiri",
+        "shortPassword": "Kata sandi minimal 8 karakter",
+        "usernameRequired": "Nama pengguna wajib diisi"
       }
     },
     "sponsors": {

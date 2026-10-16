@@ -122,6 +122,7 @@
     "donate": "寄付",
     "sponsors": "スポンサー",
     "hosts": "ホスト",
+    "admins": "管理者",
     "docs": "ドキュメント",
     "openMenu": "メニューを開く",
     "pinSidebar": "サイドバーを固定",
@@ -2416,6 +2417,77 @@
         "delete": "ホストを削除",
         "badTag": "無効なタグ",
         "badVlessRoute": "0〜65535 の単一の数値を入力してください"
+      }
+    },
+    "admins": {
+      "title": "管理者",
+      "addAdmin": "管理者を追加",
+      "editAdmin": "管理者を編集",
+      "resetPassword": "パスワードをリセット",
+      "newPassword": "新しいパスワード",
+      "deleteConfirmTitle": "この管理者を削除しますか？",
+      "deleteConfirm": "作成したインバウンドは残り、再割り当てできます。",
+      "resetToTemplate": "ロールの既定値に戻す",
+      "assigned": "割り当て済みインバウンド",
+      "noInbounds": "割り当てなし",
+      "never": "なし",
+      "roles": {
+        "super_admin": "スーパー管理者",
+        "manager": "マネージャー",
+        "reseller": "リセラー",
+        "readonly": "閲覧のみ"
+      },
+      "groups": {
+        "sections": "開けるページ",
+        "clients": "クライアントに対する操作",
+        "inbounds": "インバウンドに対する操作"
+      },
+      "fields": {
+        "username": "ユーザー名",
+        "password": "パスワード",
+        "role": "ロール",
+        "enabled": "有効",
+        "trafficQuota": "通信量上限 (GB、0 = 無制限)",
+        "usersLimit": "最大クライアント数 (0 = 無制限)",
+        "expireAt": "有効期限",
+        "permissions": "権限",
+        "inbounds": "管理できるインバウンド"
+      },
+      "perms": {
+        "sections": {
+          "inbounds": "インバウンド",
+          "clients": "クライアント",
+          "groups": "グループ",
+          "hosts": "ホスト",
+          "nodes": "ノード",
+          "outbounds": "アウトバウンド",
+          "routing": "ルーティング",
+          "xray": "Xray 設定",
+          "settings": "パネル設定",
+          "admins": "管理者"
+        },
+        "clients": {
+          "create": "クライアント作成",
+          "edit": "クライアント編集",
+          "delete": "クライアント削除",
+          "resetTraffic": "クライアント通信量リセット",
+          "unlimitedData": "無制限データを付与",
+          "unlimitedExpiry": "無期限を付与",
+          "viewLinks": "購読リンクを表示"
+        },
+        "inbounds": {
+          "create": "インバウンド作成",
+          "edit": "インバウンド編集",
+          "delete": "インバウンド削除",
+          "resetTraffic": "インバウンド通信量リセット"
+        }
+      },
+      "toasts": {
+        "saved": "管理者を保存しました",
+        "deleted": "管理者を削除しました",
+        "passwordReset": "パスワードをリセットし、セッションを終了しました",
+        "shortPassword": "パスワードは8文字以上必要です",
+        "usernameRequired": "ユーザー名は必須です"
       }
     },
     "sponsors": {

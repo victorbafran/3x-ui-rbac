@@ -4892,7 +4892,9 @@
           "permissions": {
             "type": "string"
           },
-          "role": {},
+          "role": {
+            "type": "string"
+          },
           "trafficQuota": {
             "format": "int64",
             "type": "integer"

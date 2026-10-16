@@ -122,6 +122,7 @@
     "donate": "تبرع",
     "sponsors": "الرعاة",
     "hosts": "المضيفات",
+    "admins": "المشرفون",
     "docs": "التوثيق",
     "openMenu": "فتح القائمة",
     "pinSidebar": "تثبيت الشريط الجانبي",
@@ -2416,6 +2417,77 @@
         "delete": "حذف المضيف",
         "badTag": "وسم غير صالح",
         "badVlessRoute": "أدخل رقماً واحداً بين 0 و65535"
+      }
+    },
+    "admins": {
+      "title": "المشرفون",
+      "addAdmin": "إضافة مشرف",
+      "editAdmin": "تعديل المشرف",
+      "resetPassword": "إعادة تعيين كلمة المرور",
+      "newPassword": "كلمة مرور جديدة",
+      "deleteConfirmTitle": "حذف هذا المشرف؟",
+      "deleteConfirm": "تبقى المداخل التي أنشأها ويمكن إعادة إسنادها.",
+      "resetToTemplate": "إعادة إلى افتراضيات الدور",
+      "assigned": "المداخل المُسندة",
+      "noInbounds": "لا مداخل مُسندة",
+      "never": "أبدًا",
+      "roles": {
+        "super_admin": "مشرف أعلى",
+        "manager": "مدير",
+        "reseller": "موزّع",
+        "readonly": "قراءة فقط"
+      },
+      "groups": {
+        "sections": "الصفحات التي يمكنه فتحها",
+        "clients": "ما يمكنه فعله بالعملاء",
+        "inbounds": "ما يمكنه فعله بالمداخل"
+      },
+      "fields": {
+        "username": "اسم المستخدم",
+        "password": "كلمة المرور",
+        "role": "الدور",
+        "enabled": "مفعّل",
+        "trafficQuota": "حصة البيانات (GB، 0 = بلا حد)",
+        "usersLimit": "أقصى عدد عملاء (0 = بلا حد)",
+        "expireAt": "تاريخ الانتهاء",
+        "permissions": "الصلاحيات",
+        "inbounds": "المداخل التي يديرها"
+      },
+      "perms": {
+        "sections": {
+          "inbounds": "المداخل",
+          "clients": "العملاء",
+          "groups": "المجموعات",
+          "hosts": "المضيفون",
+          "nodes": "العقد",
+          "outbounds": "المخارج",
+          "routing": "التوجيه",
+          "xray": "إعدادات Xray",
+          "settings": "إعدادات اللوحة",
+          "admins": "المشرفون"
+        },
+        "clients": {
+          "create": "إنشاء عملاء",
+          "edit": "تعديل العملاء",
+          "delete": "حذف العملاء",
+          "resetTraffic": "تصفير بيانات العميل",
+          "unlimitedData": "منح بيانات غير محدودة",
+          "unlimitedExpiry": "منح مدة غير محدودة",
+          "viewLinks": "عرض روابط الاشتراك"
+        },
+        "inbounds": {
+          "create": "إنشاء مداخل",
+          "edit": "تعديل المداخل",
+          "delete": "حذف المداخل",
+          "resetTraffic": "تصفير بيانات المدخل"
+        }
+      },
+      "toasts": {
+        "saved": "تم حفظ المشرف",
+        "deleted": "تم حذف المشرف",
+        "passwordReset": "أُعيد تعيين كلمة المرور وأُنهيت جلساته",
+        "shortPassword": "يجب ألا تقل كلمة المرور عن 8 أحرف",
+        "usernameRequired": "اسم المستخدم مطلوب"
       }
     },
     "sponsors": {

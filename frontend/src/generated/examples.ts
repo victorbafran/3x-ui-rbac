@@ -1210,7 +1210,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "id": 0,
     "password": "",
     "permissions": "",
-    "role": {},
+    "role": "",
     "trafficQuota": 0,
     "username": "",
     "usersLimit": 0

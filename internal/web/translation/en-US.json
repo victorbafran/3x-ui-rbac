@@ -115,6 +115,7 @@
     "groups": "Groups",
     "nodes": "Nodes",
     "hosts": "Hosts",
+    "admins": "Admins",
     "settings": "Panel Settings",
     "xray": "Xray Configs",
     "routing": "Routing",
@@ -1165,6 +1166,77 @@
         "delete": "Host deleted successfully",
         "badTag": "Invalid tag",
         "badVlessRoute": "Enter a single number between 0 and 65535"
+      }
+    },
+    "admins": {
+      "title": "Admins",
+      "addAdmin": "Add admin",
+      "editAdmin": "Edit admin",
+      "resetPassword": "Reset password",
+      "newPassword": "New password",
+      "deleteConfirmTitle": "Delete this admin?",
+      "deleteConfirm": "The inbounds they created are kept and can be reassigned.",
+      "resetToTemplate": "Reset to role defaults",
+      "assigned": "Assigned inbounds",
+      "noInbounds": "No inbounds assigned",
+      "never": "Never",
+      "roles": {
+        "super_admin": "Super admin",
+        "manager": "Manager",
+        "reseller": "Reseller",
+        "readonly": "Read-only"
+      },
+      "groups": {
+        "sections": "Pages they can open",
+        "clients": "What they can do with clients",
+        "inbounds": "What they can do with inbounds"
+      },
+      "fields": {
+        "username": "Username",
+        "password": "Password",
+        "role": "Role",
+        "enabled": "Enabled",
+        "trafficQuota": "Traffic quota (GB, 0 = unlimited)",
+        "usersLimit": "Max clients (0 = unlimited)",
+        "expireAt": "Expires",
+        "permissions": "Permissions",
+        "inbounds": "Inbounds they may manage"
+      },
+      "perms": {
+        "sections": {
+          "inbounds": "Inbounds",
+          "clients": "Clients",
+          "groups": "Groups",
+          "hosts": "Hosts",
+          "nodes": "Nodes",
+          "outbounds": "Outbounds",
+          "routing": "Routing",
+          "xray": "Xray configs",
+          "settings": "Panel settings",
+          "admins": "Admins"
+        },
+        "clients": {
+          "create": "Create clients",
+          "edit": "Edit clients",
+          "delete": "Delete clients",
+          "resetTraffic": "Reset client traffic",
+          "unlimitedData": "Give unlimited data",
+          "unlimitedExpiry": "Give unlimited expiry",
+          "viewLinks": "View subscription links"
+        },
+        "inbounds": {
+          "create": "Create inbounds",
+          "edit": "Edit inbounds",
+          "delete": "Delete inbounds",
+          "resetTraffic": "Reset inbound traffic"
+        }
+      },
+      "toasts": {
+        "saved": "Admin saved",
+        "deleted": "Admin deleted",
+        "passwordReset": "Password reset; their sessions were ended",
+        "shortPassword": "Password must be at least 8 characters",
+        "usernameRequired": "Username is required"
       }
     },
     "nodes": {

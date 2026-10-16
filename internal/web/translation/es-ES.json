@@ -122,6 +122,7 @@
     "donate": "Donar",
     "sponsors": "Patrocinadores",
     "hosts": "Hosts",
+    "admins": "Administradores",
     "docs": "Documentación",
     "openMenu": "Abrir menú",
     "pinSidebar": "Fijar barra lateral",
@@ -2416,6 +2417,77 @@
         "delete": "Eliminar host",
         "badTag": "Etiqueta no válida",
         "badVlessRoute": "Introduce un único número entre 0 y 65535"
+      }
+    },
+    "admins": {
+      "title": "Administradores",
+      "addAdmin": "Añadir administrador",
+      "editAdmin": "Editar administrador",
+      "resetPassword": "Restablecer contraseña",
+      "newPassword": "Nueva contraseña",
+      "deleteConfirmTitle": "¿Eliminar este administrador?",
+      "deleteConfirm": "Los inbounds que creó se conservan y pueden reasignarse.",
+      "resetToTemplate": "Restablecer a los valores del rol",
+      "assigned": "Inbounds asignados",
+      "noInbounds": "Sin inbounds asignados",
+      "never": "Nunca",
+      "roles": {
+        "super_admin": "Superadministrador",
+        "manager": "Gestor",
+        "reseller": "Revendedor",
+        "readonly": "Solo lectura"
+      },
+      "groups": {
+        "sections": "Páginas que puede abrir",
+        "clients": "Qué puede hacer con los clientes",
+        "inbounds": "Qué puede hacer con los inbounds"
+      },
+      "fields": {
+        "username": "Usuario",
+        "password": "Contraseña",
+        "role": "Rol",
+        "enabled": "Activo",
+        "trafficQuota": "Cuota de tráfico (GB, 0 = ilimitado)",
+        "usersLimit": "Máx. clientes (0 = ilimitado)",
+        "expireAt": "Caduca",
+        "permissions": "Permisos",
+        "inbounds": "Inbounds que puede gestionar"
+      },
+      "perms": {
+        "sections": {
+          "inbounds": "Inbounds",
+          "clients": "Clientes",
+          "groups": "Grupos",
+          "hosts": "Hosts",
+          "nodes": "Nodos",
+          "outbounds": "Outbounds",
+          "routing": "Enrutamiento",
+          "xray": "Configuración de Xray",
+          "settings": "Ajustes del panel",
+          "admins": "Administradores"
+        },
+        "clients": {
+          "create": "Crear clientes",
+          "edit": "Editar clientes",
+          "delete": "Eliminar clientes",
+          "resetTraffic": "Reiniciar tráfico del cliente",
+          "unlimitedData": "Dar datos ilimitados",
+          "unlimitedExpiry": "Dar caducidad ilimitada",
+          "viewLinks": "Ver enlaces de suscripción"
+        },
+        "inbounds": {
+          "create": "Crear inbounds",
+          "edit": "Editar inbounds",
+          "delete": "Eliminar inbounds",
+          "resetTraffic": "Reiniciar tráfico del inbound"
+        }
+      },
+      "toasts": {
+        "saved": "Administrador guardado",
+        "deleted": "Administrador eliminado",
+        "passwordReset": "Contraseña restablecida; sus sesiones se cerraron",
+        "shortPassword": "La contraseña debe tener al menos 8 caracteres",
+        "usernameRequired": "El usuario es obligatorio"
       }
     },
     "sponsors": {

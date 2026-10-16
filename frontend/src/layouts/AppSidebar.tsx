@@ -37,8 +37,10 @@ import {
   TagsOutlined,
   TeamOutlined,
   ToolOutlined,
+  UserSwitchOutlined,
 } from '@ant-design/icons';
 
+import { useMeQuery } from '@/api/queries/useMeQuery';
 import { HttpUtil } from '@/utils';
 import { formatPanelVersion } from '@/lib/panel-version';
 import { pauseAnimationsUntilLeave, useTheme } from '@/hooks/useTheme';
@@ -63,6 +65,7 @@ type IconName =
   | 'dashboard'
   | 'inbound'
   | 'team'
+  | 'admins'
   | 'groups'
   | 'setting'
   | 'tool'
@@ -78,6 +81,7 @@ const iconByName: Record<IconName, ComponentType> = {
   dashboard: DashboardOutlined,
   inbound: ImportOutlined,
   team: TeamOutlined,
+  admins: UserSwitchOutlined,
   groups: TagsOutlined,
   setting: SettingOutlined,
   tool: ToolOutlined,
@@ -180,8 +184,23 @@ function saveSidebarPinned(pinned: boolean) {
   } catch {}
 }
 
+// Sidebar entries gated by a permission switch; the rest are always shown.
+const SECTION_OF: Record<string, string> = {
+  '/inbounds': 'sections.inbounds',
+  '/clients': 'sections.clients',
+  '/groups': 'sections.groups',
+  '/nodes': 'sections.nodes',
+  '/hosts': 'sections.hosts',
+  '/outbound': 'sections.outbounds',
+  '/routing': 'sections.routing',
+  '/settings': 'sections.settings',
+  '/xray': 'sections.xray',
+  '/admins': 'sections.admins',
+};
+
 export default function AppSidebar() {
   const { t } = useTranslation();
+  const { me } = useMeQuery();
   const { isDark, isUltra, toggleTheme, toggleUltra } = useTheme();
   const { open: openCommandPalette } = useCommandPalette();
   const navigate = useNavigate();
@@ -230,6 +249,7 @@ export default function AppSidebar() {
       { key: '/groups', icon: 'groups', title: t('menu.groups') },
       { key: '/nodes', icon: 'cluster', title: t('menu.nodes') },
       { key: '/hosts', icon: 'hosts', title: t('menu.hosts') },
+      { key: '/admins', icon: 'admins', title: t('menu.admins') },
       { key: '/outbound', icon: 'outbound', title: t('menu.outbounds') },
       { key: '/routing', icon: 'routing', title: t('menu.routing') },
       { key: '/settings', icon: 'setting', title: t('menu.settings') },
@@ -241,7 +261,15 @@ export default function AppSidebar() {
     [t],
   );
 
-  const navItems = useMemo(() => tabs.filter((tab) => tab.icon !== 'logout'), [tabs]);
+  const navItems = useMemo(
+    () =>
+      tabs.filter((tab) => {
+        if (tab.icon === 'logout') return false;
+        const section = SECTION_OF[tab.key];
+        return section ? Boolean(me?.permissions?.[section]) : true;
+      }),
+    [tabs, me],
+  );
   const utilItems = useMemo(() => tabs.filter((tab) => tab.icon === 'logout'), [tabs]);
 
   const settingsChildren = useMemo<NonNullable<MenuProps['items']>>(() => {

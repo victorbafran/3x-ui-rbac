@@ -401,6 +401,12 @@ export const ClientBulkAddFormSchema = z.object({
   inboundIds: z.array(z.number()).min(1, 'pages.clients.selectInbound'),
 });
 
+// An admin without the inbounds page cannot choose one; the server fills in
+// the inbounds assigned to them, so these twins drop the min(1) demand.
+export const ClientBulkAddFormSchemaNoInbounds = ClientBulkAddFormSchema.extend({
+  inboundIds: z.array(z.number()),
+});
+
 export type ClientRecord = z.infer<typeof ClientRecordSchema>;
 export type ClientTraffic = z.infer<typeof ClientTrafficSchema>;
 export type InboundOption = z.infer<typeof InboundOptionSchema>;

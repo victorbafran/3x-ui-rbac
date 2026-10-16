@@ -208,3 +208,25 @@ func (a *ClientController) denyOverUsersLimit(c *gin.Context, adding int) bool {
 	}
 	return false
 }
+
+// fillOwnedInbounds supplies the caller's own inbounds when the request names
+// none. A reseller whose super_admin took the inbounds page away cannot pick
+// one, so what they were assigned stands in for the choice. An unscoped
+// caller, or a request that already names inbounds, is left alone.
+func (a *ClientController) fillOwnedInbounds(c *gin.Context, ids []int) []int {
+	ownerId := ownerScopeOf(c)
+	if ownerId == 0 || len(ids) > 0 {
+		return ids
+	}
+	owned, err := a.clientService.OwnedInboundIds(ownerId)
+	if err != nil {
+		return ids
+	}
+	return owned
+}
+
+func (a *ClientController) fillOwnedInboundsAll(c *gin.Context, payloads []service.ClientCreatePayload) {
+	for i := range payloads {
+		payloads[i].InboundIds = a.fillOwnedInbounds(c, payloads[i].InboundIds)
+	}
+}

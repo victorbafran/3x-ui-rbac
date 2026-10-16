@@ -258,6 +258,7 @@ export default function ClientFormModal({
 }: ClientFormModalProps) {
   const { t } = useTranslation();
   const { can } = useMeQuery();
+  const canPickInbounds = can('sections.inbounds');
   const [messageApi, messageContextHolder] = message.useMessage();
   const isEdit = mode === 'edit';
 
@@ -642,7 +643,7 @@ export default function ClientFormModal({
 
   async function onSubmit() {
     const values = methods.getValues();
-    const schema = isEdit ? ClientFormSchema : ClientCreateFormSchema;
+    const schema = isEdit || !canPickInbounds ? ClientFormSchema : ClientCreateFormSchema;
     const validated = schema.safeParse({
       email: values.email,
       subId: values.subId,
@@ -1064,6 +1065,7 @@ export default function ClientFormModal({
                         </Row>
                       )}
 
+                      {canPickInbounds && (
                       <Form.Item label={t('pages.clients.attachedInbounds')} required={!isEdit}>
                         <SelectAllClearButtons
                           options={inboundOptions}
@@ -1087,6 +1089,7 @@ export default function ClientFormModal({
                           }}
                         />
                       </Form.Item>
+                      )}
 
                       <Form.Item>
                         <Switch

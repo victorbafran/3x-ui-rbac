@@ -27,7 +27,11 @@ import { FormField } from '@/components/form/rhf';
 import { useClients, type InboundOption } from '@/hooks/useClients';
 import { useFail2banStatusQuery, getLimitIpNotice } from '@/api/queries/useFail2banStatusQuery';
 import ClientRenewalFields from './ClientRenewalFields';
-import { ClientBulkAddFormSchema, type ClientBulkAddFormValues } from '@/schemas/client';
+import {
+  ClientBulkAddFormSchema,
+  ClientBulkAddFormSchemaNoInbounds,
+  type ClientBulkAddFormValues,
+} from '@/schemas/client';
 
 const FLOW_OPTIONS = Object.values(TLS_FLOW_CONTROL);
 
@@ -84,6 +88,7 @@ export default function ClientBulkAddModal({
 }: ClientBulkAddModalProps) {
   const { t } = useTranslation();
   const { can } = useMeQuery();
+  const canPickInbounds = can('sections.inbounds');
   const [messageApi, messageContextHolder] = message.useMessage();
   const { bulkCreate } = useClients({ list: false });
 
@@ -183,7 +188,8 @@ export default function ClientBulkAddModal({
 
   async function submit() {
     const current = methods.getValues();
-    const validated = ClientBulkAddFormSchema.safeParse(current);
+    const schema = canPickInbounds ? ClientBulkAddFormSchema : ClientBulkAddFormSchemaNoInbounds;
+    const validated = schema.safeParse(current);
     if (!validated.success) {
       messageApi.error(t(validated.error.issues[0]?.message ?? 'somethingWentWrong'));
       return;
@@ -256,6 +262,7 @@ export default function ClientBulkAddModal({
       >
         <FormProvider {...methods}>
           <Form colon={false} labelCol={{ sm: { span: 8 } }} wrapperCol={{ sm: { span: 14 } }}>
+            {canPickInbounds && (
             <Form.Item label={t('pages.clients.attachedInbounds')} required>
               <SelectAllClearButtons
                 options={inboundOptions}
@@ -274,6 +281,7 @@ export default function ClientBulkAddModal({
                 }}
               />
             </Form.Item>
+            )}
 
             <FormField name="emailMethod" label={t('pages.clients.method')}>
               <Select

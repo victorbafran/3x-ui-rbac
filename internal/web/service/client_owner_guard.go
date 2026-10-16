@@ -122,3 +122,14 @@ func (s *ClientService) OwnedInboundTagSet(ownerId int) (map[string]bool, error)
 	}
 	return set, nil
 }
+
+// OwnedInboundIds lists the inbounds the admin created or was assigned,
+// ascending. It is what stands in for a choice the admin cannot make.
+func (s *ClientService) OwnedInboundIds(ownerId int) ([]int, error) {
+	ids := []int{}
+	err := database.GetDB().Model(&model.Inbound{}).
+		Scopes(database.OwnedInbounds(ownerId)).
+		Order("id ASC").
+		Pluck("id", &ids).Error
+	return ids, err
+}

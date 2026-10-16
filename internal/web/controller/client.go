@@ -203,6 +203,7 @@ func (a *ClientController) create(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
 	}
+	payload.InboundIds = a.fillOwnedInbounds(c, payload.InboundIds)
 	if a.denyForeign(c, payload.InboundIds, nil) || a.denyUnlimited(c, payload.Client) || a.denyOverUsersLimit(c, 1) {
 		return
 	}
@@ -483,6 +484,7 @@ func (a *ClientController) bulkCreate(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
 	}
+	a.fillOwnedInboundsAll(c, payloads)
 	if a.denyForeign(c, inboundIdsOf(payloads), nil) || a.denyUnlimited(c, clientsOf(payloads)...) || a.denyOverUsersLimit(c, len(payloads)) {
 		return
 	}
@@ -541,6 +543,7 @@ func (a *ClientController) importClients(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
 	}
+	a.fillOwnedInboundsAll(c, items)
 	if a.denyForeign(c, inboundIdsOf(items), nil) || a.denyUnlimited(c, clientsOf(items)...) || a.denyOverUsersLimit(c, len(items)) {
 		return
 	}

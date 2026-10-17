@@ -51,6 +51,7 @@ export default function IndexPage() {
   const { me } = useMeQuery();
   // Host throughput is the whole server's; a non-super admin sees their own usage instead.
   const showOwnTraffic = me !== undefined && me.role !== 'super_admin';
+  const isSuperAdmin = me?.role === 'super_admin';
   const { isMobile } = useMediaQuery();
   const [messageApi, messageContextHolder] = message.useMessage();
   useEffect(() => {
@@ -199,6 +200,7 @@ export default function IndexPage() {
                 />
               ) : (
                 <div className="ov-page">
+                  {isSuperAdmin && (
                   <OverviewActionBar
                     status={status}
                     isMobile={isMobile}
@@ -218,6 +220,7 @@ export default function IndexPage() {
                     onOpenPanelUpdate={() => setPanelUpdateOpen(true)}
                     onOpenVersionSwitch={() => setVersionOpen(true)}
                   />
+                  )}
 
                   <SponsorSlot slot="dashboard" />
 
@@ -298,11 +301,13 @@ export default function IndexPage() {
                     />
                   </div>
 
-                  <SystemStrip
-                    status={status}
-                    showIp={showIp}
-                    onToggleIp={() => setShowIp((v) => !v)}
-                  />
+                  {isSuperAdmin && (
+                    <SystemStrip
+                      status={status}
+                      showIp={showIp}
+                      onToggleIp={() => setShowIp((v) => !v)}
+                    />
+                  )}
                 </div>
               )}
             </Spin>

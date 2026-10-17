@@ -431,7 +431,7 @@ func (s *ClientService) ListPaged(inboundSvc *InboundService, settingSvc *Settin
 		}
 	}
 
-	groups, err := s.listGroupNames()
+	groups, err := s.listGroupNames(q.ownerId)
 	if err != nil {
 		return nil, err
 	}
@@ -585,10 +585,14 @@ func (q clientQuery) onlineEmails(onlines []string) ([]string, int, error) {
 	count := 0
 	for _, batch := range chunkStrings(onlines, sqlInChunk) {
 		var page []string
-		if err := q.db.Model(&model.ClientRecord{}).
-			Where("COALESCE(enable, FALSE) = TRUE AND email IN ?", batch).
-			Order("id ASC").
-			Pluck("email", &page).Error; err != nil {
+		// The caller gets the global online list from xray; scoping here is
+		// what stops a reseller seeing another admin's customers in it.
+		tx := q.db.Model(&model.ClientRecord{}).
+			Where("COALESCE(enable, FALSE) = TRUE AND email IN ?", batch)
+		if q.ownerId > 0 {
+			tx = tx.Where("admin_id = ?", q.ownerId)
+		}
+		if err := tx.Order("id ASC").Pluck("email", &page).Error; err != nil {
 			return nil, 0, err
 		}
 		count += len(page)
@@ -603,15 +607,23 @@ func (q clientQuery) onlineEmails(onlines []string) ([]string, int, error) {
 // the stored groups plus any name a client still carries. ListGroups also sums
 // per-client traffic per group, which this page never reads and which costs a
 // full join over client_traffics on every poll.
-func (s *ClientService) listGroupNames() ([]string, error) {
+// listGroupNames is panel-wide for an unscoped caller. A scoped one sees
+// only the groups their own clients sit in: the stored group list names
+// every reseller's groups.
+func (s *ClientService) listGroupNames(ownerId int) ([]string, error) {
 	db := database.GetDB()
 	var stored []string
-	if err := db.Model(&model.ClientGroup{}).Pluck("name", &stored).Error; err != nil {
-		return nil, err
+	if ownerId <= 0 {
+		if err := db.Model(&model.ClientGroup{}).Pluck("name", &stored).Error; err != nil {
+			return nil, err
+		}
 	}
 	var used []string
-	if err := db.Model(&model.ClientRecord{}).
-		Where("group_name <> ''").
+	usedQ := db.Model(&model.ClientRecord{}).Where("group_name <> ''")
+	if ownerId > 0 {
+		usedQ = usedQ.Where("admin_id = ?", ownerId)
+	}
+	if err := usedQ.
 		Distinct().
 		Pluck("group_name", &used).Error; err != nil {
 		return nil, err

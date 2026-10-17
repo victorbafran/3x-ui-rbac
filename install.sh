@@ -1714,7 +1714,18 @@ resolve_latest_tag() {
         echo "$tag"
         return 0
     fi
-    curl -Ls --retry 5 --retry-delay 3 --connect-timeout 15 --max-time 60 "https://api.github.com/repos/${xui_repo}/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/'
+    tag=$(curl -Ls --retry 5 --retry-delay 3 --connect-timeout 15 --max-time 60 "https://api.github.com/repos/${xui_repo}/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+    if [[ -n "$tag" ]]; then
+        echo "$tag"
+        return 0
+    fi
+    # Neither lookup above sees a pre-release, and the release workflow marks
+    # every tagged build as one. A repository whose only releases are
+    # pre-releases — a fork that has promoted nothing yet — would resolve to
+    # nothing and fail with "Failed to fetch x-ui version" while its release
+    # page plainly shows a version. Fall back to the newest release of any
+    # kind, which for such a repository is the only thing there is.
+    curl -Ls --retry 5 --retry-delay 3 --connect-timeout 15 --max-time 60 "https://api.github.com/repos/${xui_repo}/releases?per_page=1" | grep '"tag_name":' | head -n1 | sed -E 's/.*"([^"]+)".*/\1/'
 }
 
 # Releases publish <asset>.sha256 next to each archive. A mismatch or a failed

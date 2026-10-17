@@ -1047,7 +1047,7 @@
       "renewWeeklyDesc": "A renovação por calendário ocorre à meia-noite no fuso horário do painel e também redefine o tráfego do cliente. Mantenha as redefinições independentes de tráfego desativadas, a menos que queira uma redefinição adicional.",
       "owner": "Proprietário",
       "ownerPanel": "Painel",
-      "limitIpNotForCisco": "Indisponível para Cisco: o limite de IP é contado pelas estatísticas do próprio Xray, e o tráfego Cisco não passa por ele. Use “Dispositivos por conta” na entrada."
+      "limitIpCisco": "No Cisco limita quantos dispositivos podem usar a conta ao mesmo tempo, aplicado pelo próprio ocserv. 0 deixa o cliente com os “Dispositivos por conta” da entrada."
     },
     "groups": {
       "name": "Nome",

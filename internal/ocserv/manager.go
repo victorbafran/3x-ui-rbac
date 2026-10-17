@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"maps"
 	"os"
+	"path/filepath"
 	"slices"
 	"sync"
 
@@ -101,6 +102,49 @@ func (m *Manager) sweepOrphansLocked() {
 	}
 }
 
+// writePerUserLimits writes one ocserv config file per client that has a
+// device limit of its own, and removes the files of those that no longer do.
+//
+// Removing matters as much as writing: a file left behind keeps capping a
+// client whose limit the operator has just cleared, and nothing in the panel
+// would show why. ocserv reads these at authentication time, so both the new
+// limit and its removal apply on the next login without a restart.
+func writePerUserLimits(inst Instance) error {
+	dir := perUserDirForID(inst.Id)
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return fmt.Errorf("prepare %s: %w", dir, err)
+	}
+	if err := os.Chmod(dir, 0o755); err != nil {
+		return err
+	}
+
+	wanted := make(map[string]struct{}, len(inst.Users))
+	for _, u := range inst.Users {
+		if u.DeviceLimit <= 0 || ValidLogin(u.Login) != nil {
+			continue
+		}
+		wanted[u.Login] = struct{}{}
+		body := fmt.Sprintf("max-same-clients = %d\n", u.DeviceLimit)
+		if err := writeFile(filepath.Join(dir, u.Login), []byte(body), 0o644); err != nil {
+			return fmt.Errorf("write device limit for %q: %w", u.Name, err)
+		}
+	}
+
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return nil
+	}
+	for _, e := range entries {
+		if e.IsDir() {
+			continue
+		}
+		if _, keep := wanted[e.Name()]; !keep {
+			_ = os.Remove(filepath.Join(dir, e.Name()))
+		}
+	}
+	return nil
+}
+
 // writeUsers renders the password file and disconnects anyone the instance no
 // longer serves. Removing a client from the file only blocks their next login:
 // a session already established keeps running until it is explicitly cut.
@@ -111,6 +155,9 @@ func (m *Manager) writeUsers(inst Instance, ctlSocket string, kick bool) error {
 	}
 	if err := writeFile(passwdPathForID(inst.Id), []byte(content), 0o644); err != nil {
 		return fmt.Errorf("write password file: %w", err)
+	}
+	if err := writePerUserLimits(inst); err != nil {
+		return err
 	}
 	if !kick {
 		return nil
@@ -254,6 +301,7 @@ func (m *Manager) removeLocked(id int) {
 	for _, p := range []string{configPathForID(id), passwdPathForID(id), ctlSocketForID(id)} {
 		_ = os.Remove(p)
 	}
+	_ = os.RemoveAll(perUserDirForID(id))
 	logger.Infof("ocserv: stopped inbound %d", id)
 }
 

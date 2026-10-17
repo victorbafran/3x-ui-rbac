@@ -1047,7 +1047,7 @@
       "renewWeeklyDesc": "Gia hạn theo lịch diễn ra lúc nửa đêm theo múi giờ của bảng điều khiển và cũng đặt lại lưu lượng của khách hàng. Tắt việc đặt lại lưu lượng độc lập trừ khi bạn muốn đặt lại thêm.",
       "owner": "Chủ sở hữu",
       "ownerPanel": "Bảng điều khiển",
-      "limitIpNotForCisco": "Không dùng được với Cisco: giới hạn IP đếm theo thống kê của chính Xray, còn lưu lượng Cisco không đi qua Xray. Hãy dùng “Số thiết bị mỗi tài khoản” ở inbound."
+      "limitIpCisco": "Với Cisco, đây là số thiết bị được dùng tài khoản cùng lúc, do chính ocserv áp dụng. 0 giữ khách ở mức “Số thiết bị mỗi tài khoản” của inbound."
     },
     "groups": {
       "name": "Tên",

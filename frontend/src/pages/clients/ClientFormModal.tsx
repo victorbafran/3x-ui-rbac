@@ -528,10 +528,10 @@ export default function ClientFormModal({
     return ids.length > 0 && ids.every((id) => ciscoIds.has(id));
   }, [inboundIds, ciscoIds]);
 
-  const limitIpDisabled = !fail2ban.usable || ciscoOnly;
-  const limitIpNotice = ciscoOnly
-    ? t('pages.clients.limitIpNotForCisco')
-    : getLimitIpNotice(fail2ban, t);
+  // Cisco enforces this in ocserv itself, per client, so it works there even
+  // when fail2ban is missing — the fail2ban gate only speaks for the xray path.
+  const limitIpDisabled = ciscoOnly ? false : !fail2ban.usable;
+  const limitIpNotice = ciscoOnly ? t('pages.clients.limitIpCisco') : getLimitIpNotice(fail2ban, t);
 
   function regenerateWireguardKeys() {
     const kp = Wireguard.generateKeypair();
@@ -899,7 +899,11 @@ export default function ClientFormModal({
                             tooltip={t('pages.clients.totalGBDesc')}
                             transform={{ output: (v) => Number(v) || 0 }}
                           >
-                            <InputNumber min={can('clients.unlimitedData') ? 0 : 1} step={1} style={{ width: '100%' }} />
+                            <InputNumber
+                              min={can('clients.unlimitedData') ? 0 : 1}
+                              step={1}
+                              style={{ width: '100%' }}
+                            />
                           </FormField>
                         </Col>
                         <Col xs={24} md={12}>
@@ -1087,29 +1091,29 @@ export default function ClientFormModal({
                       )}
 
                       {canPickInbounds && (
-                      <Form.Item label={t('pages.clients.attachedInbounds')} required={!isEdit}>
-                        <SelectAllClearButtons
-                          options={inboundOptions}
-                          value={inboundIds}
-                          onChange={(v) => methods.setValue('inboundIds', v)}
-                        />
-                        <Select
-                          mode="multiple"
-                          value={inboundIds}
-                          onChange={(v) => methods.setValue('inboundIds', v)}
-                          options={inboundOptions}
-                          placeholder={t('pages.clients.selectInbound')}
-                          maxTagCount="responsive"
-                          placement="topLeft"
-                          listHeight={220}
-                          showSearch={{
-                            filterOption: (input, option) =>
-                              ((option?.label as string) || '')
-                                .toLowerCase()
-                                .includes(input.toLowerCase()),
-                          }}
-                        />
-                      </Form.Item>
+                        <Form.Item label={t('pages.clients.attachedInbounds')} required={!isEdit}>
+                          <SelectAllClearButtons
+                            options={inboundOptions}
+                            value={inboundIds}
+                            onChange={(v) => methods.setValue('inboundIds', v)}
+                          />
+                          <Select
+                            mode="multiple"
+                            value={inboundIds}
+                            onChange={(v) => methods.setValue('inboundIds', v)}
+                            options={inboundOptions}
+                            placeholder={t('pages.clients.selectInbound')}
+                            maxTagCount="responsive"
+                            placement="topLeft"
+                            listHeight={220}
+                            showSearch={{
+                              filterOption: (input, option) =>
+                                ((option?.label as string) || '')
+                                  .toLowerCase()
+                                  .includes(input.toLowerCase()),
+                            }}
+                          />
+                        </Form.Item>
                       )}
 
                       <Form.Item>

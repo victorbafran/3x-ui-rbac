@@ -26,6 +26,11 @@ type User struct {
 	Name     string
 	Login    string
 	Password string
+	// DeviceLimit caps how many devices may hold this account at once. Zero
+	// leaves the client on the inbound's own limit. ocserv enforces it through
+	// a per-user config file, the only place the limit can be set per client
+	// rather than per inbound.
+	DeviceLimit int
 }
 
 // LoginFor turns a client email into a name the password file can hold.

@@ -143,7 +143,7 @@ func (inst Instance) structuralFingerprint() string {
 func (inst Instance) usersFingerprint() string {
 	pairs := make([]string, 0, len(inst.Users))
 	for _, u := range inst.Users {
-		pairs = append(pairs, u.Login+"="+u.Password)
+		pairs = append(pairs, fmt.Sprintf("%s=%s;dev=%d", u.Login, u.Password, u.DeviceLimit))
 	}
 	slices.Sort(pairs)
 	return strings.Join(pairs, "|")
@@ -195,6 +195,9 @@ func renderConfig(inst Instance, certFile, keyFile string) string {
 	w("server-key = %s", keyFile)
 	w("max-clients = %d", inst.maxClients())
 	w("max-same-clients = %d", inst.maxSameClients())
+	// Per-client overrides live here, one file per login. A client with no
+	// file of its own falls through to the max-same-clients above.
+	w("config-per-user = %s/", perUserDirForID(inst.Id))
 	w("device = %s", inst.deviceName())
 	w("ipv4-network = %s", inst.network())
 	w("ipv4-netmask = %s", inst.netmask())

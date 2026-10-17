@@ -1047,7 +1047,7 @@
       "renewWeeklyDesc": "Calendar renewal uses midnight in the panel timezone and also resets the client's traffic. Keep independent traffic resets disabled unless an additional reset is intended.",
       "owner": "Owner",
       "ownerPanel": "Panel",
-      "limitIpNotForCisco": "Not available for Cisco: the IP limit counts addresses from Xray's own statistics, and Cisco traffic never passes through Xray. Use “Devices per account” on the inbound instead."
+      "limitIpCisco": "For Cisco this caps how many devices may use the account at the same time, enforced by ocserv itself. 0 leaves the client on the inbound's “Devices per account”."
     },
     "groups": {
       "name": "Name",

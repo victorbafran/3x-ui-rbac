@@ -98,6 +98,14 @@ func ctlSocketForID(id int) string {
 func certPathForID(id int) string { return filepath.Join(runtimeDir(), fmt.Sprintf("cert-%d.pem", id)) }
 func keyPathForID(id int) string  { return filepath.Join(runtimeDir(), fmt.Sprintf("key-%d.pem", id)) }
 
+// perUserDirForID holds one file per client that has its own limits.
+// ocserv reads it at authentication time, so a limit changed here applies
+// to the next login without restarting anything or dropping the clients
+// already connected — measured on ocserv 1.2.4.
+func perUserDirForID(id int) string {
+	return filepath.Join(runtimeDir(), fmt.Sprintf("peruser-%d", id))
+}
+
 // ensureRuntimeDir creates the runtime directory world-traversable. MkdirAll
 // honours the umask, which on many systems strips exactly the bits the
 // unprivileged worker needs, so the mode is set explicitly afterwards.

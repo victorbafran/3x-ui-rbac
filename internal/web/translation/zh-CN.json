@@ -1047,7 +1047,7 @@
       "renewWeeklyDesc": "日历续期按面板时区的午夜执行，并重置客户端流量。若不需要额外重置，请关闭独立的流量重置。",
       "owner": "所有者",
       "ownerPanel": "面板",
-      "limitIpNotForCisco": "Cisco 不支持：IP 限制依据 Xray 自身的统计计数，而 Cisco 流量不经过 Xray。请改用入站中的“每个账号的设备数”。"
+      "limitIpCisco": "对 Cisco，此项限制同一账号可同时使用的设备数，由 ocserv 自身执行。填 0 则沿用入站的“每个账号的设备数”。"
     },
     "groups": {
       "name": "名称",

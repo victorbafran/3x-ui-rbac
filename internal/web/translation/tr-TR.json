@@ -1047,7 +1047,7 @@
       "renewWeeklyDesc": "Takvim yenilemesi panelin saat diliminde gece yarısı gerçekleşir ve istemci trafiğini de sıfırlar. Ek bir sıfırlama istemiyorsanız bağımsız trafik sıfırlamalarını devre dışı bırakın.",
       "owner": "Sahibi",
       "ownerPanel": "Panel",
-      "limitIpNotForCisco": "Cisco için kullanılamaz: IP sınırı Xray'in kendi istatistiklerinden sayılır ve Cisco trafiği Xray'den geçmez. Bunun yerine gelen bağlantıdaki “Hesap başına cihaz” alanını kullanın."
+      "limitIpCisco": "Cisco'da bu, hesabı aynı anda kaç cihazın kullanabileceğini sınırlar ve bunu ocserv'in kendisi uygular. 0, istemciyi gelen bağlantıdaki “Hesap başına cihaz” değerinde bırakır."
     },
     "groups": {
       "name": "İsim",

@@ -1047,7 +1047,7 @@
       "renewWeeklyDesc": "日曆續期按面板時區的午夜執行，並重置客戶端流量。若不需要額外重置，請關閉獨立的流量重置。",
       "owner": "擁有者",
       "ownerPanel": "面板",
-      "limitIpNotForCisco": "Cisco 不支援：IP 限制依據 Xray 自身的統計計數，而 Cisco 流量不經過 Xray。請改用入站中的「每個帳號的裝置數」。"
+      "limitIpCisco": "對 Cisco，此項限制同一帳號可同時使用的裝置數，由 ocserv 自身執行。填 0 則沿用入站的「每個帳號的裝置數」。"
     },
     "groups": {
       "name": "名稱",

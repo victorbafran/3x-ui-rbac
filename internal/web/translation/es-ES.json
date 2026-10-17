@@ -1047,7 +1047,7 @@
       "renewWeeklyDesc": "La renovación por calendario se realiza a medianoche en la zona horaria del panel y también reinicia el tráfico del cliente. Mantén desactivados los reinicios de tráfico independientes salvo que quieras un reinicio adicional.",
       "owner": "Propietario",
       "ownerPanel": "Panel",
-      "limitIpNotForCisco": "No disponible para Cisco: el límite de IP se cuenta con las estadísticas del propio Xray y el tráfico Cisco no pasa por Xray. Usa “Dispositivos por cuenta” en la entrada."
+      "limitIpCisco": "En Cisco limita cuántos dispositivos pueden usar la cuenta a la vez, y lo aplica el propio ocserv. 0 deja al cliente con los “Dispositivos por cuenta” de la entrada."
     },
     "groups": {
       "name": "Nombre",

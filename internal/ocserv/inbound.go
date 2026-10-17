@@ -14,6 +14,11 @@ type ciscoSettings struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`
 		Enable   bool   `json:"enable"`
+		// The panel's per-client "IP limit". For every other protocol it caps
+		// concurrent addresses through xray's statistics; cisco traffic never
+		// reaches xray, so here it caps concurrent sessions in ocserv itself.
+		// Same promise to the operator, enforced where it can be.
+		LimitIP int `json:"limitIp"`
 	} `json:"clients"`
 	Network        string   `json:"network"`
 	Netmask        string   `json:"netmask"`
@@ -58,7 +63,7 @@ func InstanceFromInbound(ib *model.Inbound) (Instance, bool) {
 			continue
 		}
 		taken[login] = name
-		users = append(users, User{Name: name, Login: login, Password: c.Password})
+		users = append(users, User{Name: name, Login: login, Password: c.Password, DeviceLimit: c.LimitIP})
 	}
 	if len(users) == 0 {
 		return Instance{}, false

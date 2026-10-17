@@ -60,8 +60,10 @@ func TestAllInboundLinksCoverOnlyTheCallersClients(t *testing.T) {
 	if err := db.Create(&reseller).Error; err != nil {
 		t.Fatalf("reseller: %v", err)
 	}
-	shared := model.Inbound{UserId: boss.Id, Tag: "shared-link", Remark: "shared-link", Protocol: model.VLESS,
-		Settings: "{}", StreamSettings: "{}", Sniffing: "{}"}
+	shared := model.Inbound{
+		UserId: boss.Id, Tag: "shared-link", Remark: "shared-link", Protocol: model.VLESS,
+		Settings: "{}", StreamSettings: "{}", Sniffing: "{}",
+	}
 	if err := db.Create(&shared).Error; err != nil {
 		t.Fatalf("inbound: %v", err)
 	}

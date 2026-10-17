@@ -41,8 +41,10 @@ func reload(t *testing.T, id int) model.User {
 
 func seedInbound(t *testing.T, ownerId int, tag string) int {
 	t.Helper()
-	ib := model.Inbound{UserId: ownerId, Tag: tag, Remark: tag, Protocol: model.VLESS,
-		Settings: "{}", StreamSettings: "{}", Sniffing: "{}"}
+	ib := model.Inbound{
+		UserId: ownerId, Tag: tag, Remark: tag, Protocol: model.VLESS,
+		Settings: "{}", StreamSettings: "{}", Sniffing: "{}",
+	}
 	if err := database.GetDB().Create(&ib).Error; err != nil {
 		t.Fatalf("create inbound %s: %v", tag, err)
 	}

@@ -69,8 +69,10 @@ func seedUser(t *testing.T, username string, role model.Role) int {
 
 func seedInbound(t *testing.T, ownerId int, tag string) int {
 	t.Helper()
-	ib := model.Inbound{UserId: ownerId, Tag: tag, Protocol: model.VLESS, Remark: tag,
-		Settings: "{}", StreamSettings: "{}", Sniffing: "{}"}
+	ib := model.Inbound{
+		UserId: ownerId, Tag: tag, Protocol: model.VLESS, Remark: tag,
+		Settings: "{}", StreamSettings: "{}", Sniffing: "{}",
+	}
 	if err := database.GetDB().Create(&ib).Error; err != nil {
 		t.Fatalf("create inbound %s: %v", tag, err)
 	}

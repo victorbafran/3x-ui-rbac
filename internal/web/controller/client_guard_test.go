@@ -38,8 +38,10 @@ func seedAdminWithInbound(t *testing.T, username, tag, email string) (adminId, i
 	if err := db.Create(&u).Error; err != nil {
 		t.Fatalf("user: %v", err)
 	}
-	ib := model.Inbound{UserId: u.Id, Tag: tag, Remark: tag, Protocol: model.VLESS, Settings: `{"clients":[]}`,
-		StreamSettings: "{}", Sniffing: "{}"}
+	ib := model.Inbound{
+		UserId: u.Id, Tag: tag, Remark: tag, Protocol: model.VLESS, Settings: `{"clients":[]}`,
+		StreamSettings: "{}", Sniffing: "{}",
+	}
 	if err := db.Create(&ib).Error; err != nil {
 		t.Fatalf("inbound: %v", err)
 	}

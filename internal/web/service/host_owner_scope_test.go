@@ -16,8 +16,10 @@ func seedOwnedHost(t *testing.T, username, tag, remark string) int {
 	if err := db.Create(&u).Error; err != nil {
 		t.Fatalf("create user: %v", err)
 	}
-	ib := model.Inbound{UserId: u.Id, Tag: tag, Remark: tag, Protocol: model.VLESS,
-		Settings: "{}", StreamSettings: "{}", Sniffing: "{}"}
+	ib := model.Inbound{
+		UserId: u.Id, Tag: tag, Remark: tag, Protocol: model.VLESS,
+		Settings: "{}", StreamSettings: "{}", Sniffing: "{}",
+	}
 	if err := db.Create(&ib).Error; err != nil {
 		t.Fatalf("create inbound: %v", err)
 	}

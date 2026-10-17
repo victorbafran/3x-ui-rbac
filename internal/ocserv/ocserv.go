@@ -86,17 +86,22 @@ func runtimeDir() string {
 func configPathForID(id int) string {
 	return filepath.Join(runtimeDir(), fmt.Sprintf("ocserv-%d.conf", id))
 }
+
 func passwdPathForID(id int) string {
 	return filepath.Join(runtimeDir(), fmt.Sprintf("ocpasswd-%d", id))
 }
+
 func ipcSocketForID(id int) string {
 	return filepath.Join(runtimeDir(), fmt.Sprintf("ipc-%d.sock", id))
 }
+
 func ctlSocketForID(id int) string {
 	return filepath.Join(runtimeDir(), fmt.Sprintf("ctl-%d.sock", id))
 }
+
 func certPathForID(id int) string { return filepath.Join(runtimeDir(), fmt.Sprintf("cert-%d.pem", id)) }
-func keyPathForID(id int) string  { return filepath.Join(runtimeDir(), fmt.Sprintf("key-%d.pem", id)) }
+
+func keyPathForID(id int) string { return filepath.Join(runtimeDir(), fmt.Sprintf("key-%d.pem", id)) }
 
 // perUserDirForID holds one file per client that has its own limits.
 // ocserv reads it at authentication time, so a limit changed here applies

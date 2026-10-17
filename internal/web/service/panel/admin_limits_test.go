@@ -10,8 +10,10 @@ import (
 
 func seedInboundWithTraffic(t *testing.T, ownerId int, tag string, up, down int64) int {
 	t.Helper()
-	ib := model.Inbound{UserId: ownerId, Tag: tag, Remark: tag, Protocol: model.VLESS, Enable: true,
-		Up: up, Down: down, Settings: "{}", StreamSettings: "{}", Sniffing: "{}"}
+	ib := model.Inbound{
+		UserId: ownerId, Tag: tag, Remark: tag, Protocol: model.VLESS, Enable: true,
+		Up: up, Down: down, Settings: "{}", StreamSettings: "{}", Sniffing: "{}",
+	}
 	if err := database.GetDB().Create(&ib).Error; err != nil {
 		t.Fatalf("inbound %s: %v", tag, err)
 	}

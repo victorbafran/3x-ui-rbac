@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { act, render, screen } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
 import { ClientInboundChips, ClientRowActions } from '@/pages/clients/RowCells';
+import { renderWithProviders } from './test-utils';
 import type { InboundOption } from '@/hooks/useClients';
 
 const PROTOCOL_COLORS = { vless: 'blue', trojan: 'volcano' };
@@ -96,7 +97,9 @@ describe('clients table row cells', () => {
     const noop = vi.fn();
     let bump: () => void = () => {};
 
-    render(
+    // The row actions are permission-gated, and that reads /admins/me through
+    // react-query, so this one needs the providers a bare render does not give.
+    renderWithProviders(
       <Harness>
         {(doBump) => {
           bump = doBump;
@@ -121,8 +124,12 @@ describe('clients table row cells', () => {
     // Queried by position rather than label: the suite loads the real en-US
     // bundle, so the aria-labels are translated strings, not keys. Order is
     // QR, info, reset traffic, edit, delete.
+    //
+    // Waited for rather than read straight away: the gated actions appear
+    // only once /admins/me has answered, which is a tick after the first
+    // render.
+    await waitFor(() => expect(screen.getAllByRole('button')).toHaveLength(5));
     const buttons = screen.getAllByRole('button');
-    expect(buttons).toHaveLength(5);
     await userEvent.click(buttons[0]);
     await userEvent.click(buttons[3]);
 

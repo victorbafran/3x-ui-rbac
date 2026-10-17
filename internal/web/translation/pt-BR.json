@@ -105,7 +105,15 @@
     "support": "Suporte",
     "qrTitle": "Escaneie. Importe. Conecte.",
     "qrHint": "Escaneie com seu aplicativo cliente. Mantenha este código em sigilo.",
-    "saveQr": "Salvar QR"
+    "saveQr": "Salvar QR",
+    "ciscoTitle": "Cisco AnyConnect",
+    "ciscoHint": "Esta conexão é digitada no app manualmente — o AnyConnect não tem link para importar. Abra o Cisco Secure Client ou o OpenConnect e informe estes dados.",
+    "ciscoServer": "Servidor",
+    "ciscoUsername": "Usuário",
+    "ciscoPassword": "Senha",
+    "ciscoAppAndroid": "App Cisco (Android)",
+    "ciscoAppIos": "App Cisco (iPhone)",
+    "ciscoAppOpenConnect": "OpenConnect (Android)"
   },
   "menu": {
     "theme": "Tema",
@@ -122,6 +130,7 @@
     "donate": "Doar",
     "sponsors": "Patrocinadores",
     "hosts": "Hosts",
+    "admins": "Administradores",
     "docs": "Documentação",
     "openMenu": "Abrir menu",
     "pinSidebar": "Fixar barra lateral",
@@ -291,7 +300,18 @@
       "accessBlocked": "BLOCKED",
       "accessProxy": "PROXY",
       "importKeepHostSettings": "Manter as configurações desta máquina",
-      "importKeepHostSettingsDesc": "Mantém os endereços de escuta, as portas, o caminho base, os certificados e a identidade de nó deste painel em vez de obtê-los do arquivo enviado."
+      "importKeepHostSettingsDesc": "Mantém os endereços de escuta, as portas, o caminho base, os certificados e a identidade de nó deste painel em vez de obtê-los do arquivo enviado.",
+      "myTraffic": {
+        "title": "Seu tráfego",
+        "upload": "Upload",
+        "download": "Download",
+        "used": "Usado",
+        "quota": "Cota",
+        "remaining": "Restante",
+        "unlimited": "Ilimitado",
+        "clients": "Clientes",
+        "expires": "Expira"
+      }
     },
     "inbounds": {
       "totalDownUp": "Total Enviado/Recebido",
@@ -730,7 +750,25 @@
         "autoSystemDnsToGateway": "DNS do sistema para o gateway",
         "autoSystemDnsToGatewayTooltip": "Somente Linux: aponta o systemd-resolved para o gateway do TUN para que as consultas do sistema passem pelo Xray. Precisa de um gateway, e o TUN não inicia se isso falhar.",
         "autoSystemWfpBlockLeak": "Bloquear vazamentos (WFP)",
-        "autoSystemWfpBlockLeakTooltip": "Somente Windows, com Auto system routes: dns mantém o DNS dentro do TUN (precisa de servidores DNS) e misconfigtun bloqueia uma versão de IP que nenhuma rota envia ao TUN."
+        "autoSystemWfpBlockLeakTooltip": "Somente Windows, com Auto system routes: dns mantém o DNS dentro do TUN (precisa de servidores DNS) e misconfigtun bloqueia uma versão de IP que nenhuma rota envia ao TUN.",
+        "ciscoNeedsOcserv": "o ocserv precisa estar instalado neste servidor",
+        "ciscoNeedsOcservHint": "As entradas Cisco são servidas pelo ocserv, que vem da sua distribuição e não do painel. Instale com: apt-get install ocserv (Debian/Ubuntu) ou dnf install ocserv (RHEL/Fedora).",
+        "ciscoRealityWarning": "Já existe uma entrada REALITY neste servidor",
+        "ciscoRealityWarningHint": "O ocserv ocupa a porta inteira em TCP e UDP, e o REALITY ({{remark}}, porta {{port}}) funciona respondendo como um site TLS comum. Use outra porta para esta entrada ou mantenha as duas em servidores separados.",
+        "ciscoPort443": "A porta 443 é a primeira que o cliente AnyConnect tenta",
+        "ciscoPort443Hint": "Redes restritivas costumam liberá-la, por isso funciona onde outras portas não funcionam. O ocserv vai ocupá-la em TCP e UDP.",
+        "ciscoNetwork": "Faixa de endereços",
+        "ciscoNetworkHint": "A rede de onde os clientes conectados recebem endereços. Deixe vazio e o painel escolhe uma que não colida com outra entrada Cisco deste servidor.",
+        "ciscoNetmask": "Máscara de rede",
+        "ciscoDns": "Servidores DNS",
+        "ciscoDnsHint": "Entregues ao cliente e usados em todas as consultas enquanto ele estiver conectado.",
+        "ciscoMaxClients": "Máximo de clientes",
+        "ciscoMaxClientsHint": "Total de conexões simultâneas desta entrada. 0 usa o padrão de 1024.",
+        "ciscoMaxSameClients": "Dispositivos por conta",
+        "ciscoMaxSameClientsHint": "Quantos dispositivos podem usar uma conta ao mesmo tempo. 0 usa o padrão de 2.",
+        "ciscoCertFile": "Arquivo de certificado",
+        "ciscoCertFileHint": "Deixe ambos vazios e o painel gera um certificado RSA autoassinado e o reutiliza. A chave precisa ser RSA: o Cisco Secure Client oficial não conecta a uma ECDSA.",
+        "ciscoKeyFile": "Arquivo de chave privada"
       },
       "info": {
         "mode": "Modo",
@@ -825,7 +863,7 @@
       "limitIpFail2banWindows": "O Fail2ban não está disponível no Windows, portanto o limite de IP não pode ser aplicado.",
       "limitIpDisabled": "O recurso de limite de IP está desativado neste servidor.",
       "password": "Senha",
-      "passwordDesc": "Usada pelos clientes Trojan, Shadowsocks, TUIC e MASQUE; ignorada para VLESS, VMess, Hysteria e WireGuard.",
+      "passwordDesc": "Usado pelos clientes Trojan, Shadowsocks, TUIC, MASQUE e Cisco; ignorado para VLESS, VMess, Hysteria e WireGuard.",
       "subId": "ID da assinatura",
       "subIdDesc": "Também funciona como código de convite deste cliente no bot do Telegram: quem enviá-lo ao bot fica vinculado a este cliente. Mantenha-o longo e aleatório — um ID curto ou fácil de adivinhar pode ser reivindicado por outra pessoa.",
       "online": "Online",
@@ -1006,7 +1044,10 @@
       "renewsUsed": "Renovações usadas",
       "bulkAdTagHint": "Insira uma tag hexadecimal de 32 caracteres para definir ou 'none' para limpar no MTProto.",
       "renewIntervalDesc": "Após a expiração, adiciona o número configurado de dias de 24 horas ao prazo anterior e redefine o tráfego do cliente. Mantenha as redefinições independentes de tráfego desativadas, a menos que queira uma redefinição adicional.",
-      "renewWeeklyDesc": "A renovação por calendário ocorre à meia-noite no fuso horário do painel e também redefine o tráfego do cliente. Mantenha as redefinições independentes de tráfego desativadas, a menos que queira uma redefinição adicional."
+      "renewWeeklyDesc": "A renovação por calendário ocorre à meia-noite no fuso horário do painel e também redefine o tráfego do cliente. Mantenha as redefinições independentes de tráfego desativadas, a menos que queira uma redefinição adicional.",
+      "owner": "Proprietário",
+      "ownerPanel": "Painel",
+      "limitIpNotForCisco": "Indisponível para Cisco: o limite de IP é contado pelas estatísticas do próprio Xray, e o tráfego Cisco não passa por ele. Use “Dispositivos por conta” na entrada."
     },
     "groups": {
       "name": "Nome",
@@ -2416,6 +2457,84 @@
         "delete": "Excluir host",
         "badTag": "Tag inválida",
         "badVlessRoute": "Insira um único número entre 0 e 65535"
+      }
+    },
+    "admins": {
+      "title": "Administradores",
+      "addAdmin": "Adicionar administrador",
+      "editAdmin": "Editar administrador",
+      "resetPassword": "Redefinir senha",
+      "newPassword": "Nova senha",
+      "deleteConfirmTitle": "Excluir este administrador?",
+      "deleteConfirm": "Os inbounds que ele criou são mantidos e podem ser reatribuídos.",
+      "resetToTemplate": "Voltar ao padrão do papel",
+      "assigned": "Inbounds atribuídos",
+      "noInbounds": "Nenhum inbound atribuído",
+      "never": "Nunca",
+      "roles": {
+        "super_admin": "Superadministrador",
+        "manager": "Gerente",
+        "reseller": "Revendedor",
+        "readonly": "Somente leitura"
+      },
+      "groups": {
+        "sections": "Páginas que pode abrir",
+        "clients": "O que pode fazer com clientes",
+        "inbounds": "O que pode fazer com inbounds"
+      },
+      "fields": {
+        "username": "Usuário",
+        "password": "Senha",
+        "role": "Papel",
+        "enabled": "Ativo",
+        "trafficQuota": "Cota de tráfego (GB, 0 = ilimitado)",
+        "usersLimit": "Máx. de clientes (0 = ilimitado)",
+        "expireAt": "Expira em",
+        "permissions": "Permissões",
+        "inbounds": "Inbounds que pode gerenciar",
+        "usage": "Uso",
+        "clients": "Clientes"
+      },
+      "perms": {
+        "sections": {
+          "inbounds": "Inbounds",
+          "clients": "Clientes",
+          "groups": "Grupos",
+          "hosts": "Hosts",
+          "nodes": "Nós",
+          "outbounds": "Outbounds",
+          "routing": "Roteamento",
+          "xray": "Configurações do Xray",
+          "settings": "Configurações do painel",
+          "admins": "Administradores"
+        },
+        "clients": {
+          "create": "Criar clientes",
+          "edit": "Editar clientes",
+          "delete": "Excluir clientes",
+          "resetTraffic": "Zerar tráfego do cliente",
+          "unlimitedData": "Conceder dados ilimitados",
+          "unlimitedExpiry": "Conceder validade ilimitada",
+          "viewLinks": "Ver links de assinatura"
+        },
+        "inbounds": {
+          "create": "Criar inbounds",
+          "edit": "Editar inbounds",
+          "delete": "Excluir inbounds",
+          "resetTraffic": "Zerar tráfego do inbound"
+        }
+      },
+      "toasts": {
+        "saved": "Administrador salvo",
+        "deleted": "Administrador excluído",
+        "passwordReset": "Senha redefinida; as sessões foram encerradas",
+        "shortPassword": "A senha deve ter pelo menos 8 caracteres",
+        "usernameRequired": "O usuário é obrigatório"
+      },
+      "reasons": {
+        "manual": "Desativado pelo administrador",
+        "quota_exceeded": "Cota de tráfego esgotada",
+        "expired": "Expirado"
       }
     },
     "sponsors": {

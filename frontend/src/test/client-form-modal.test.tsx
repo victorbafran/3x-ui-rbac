@@ -52,7 +52,7 @@ describe('ClientFormModal credential tooltips', () => {
 
     await waitFor(() => {
       expect(document.body.textContent).toContain(
-        'Used by Trojan, Shadowsocks, TUIC, and MASQUE clients; ignored for VLESS, VMess, Hysteria, and WireGuard.',
+        'Used by Trojan, Shadowsocks, TUIC, MASQUE, and Cisco clients; ignored for VLESS, VMess, Hysteria, and WireGuard.',
       );
     });
   });

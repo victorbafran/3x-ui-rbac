@@ -3,10 +3,40 @@ export type GeoKind = string;
 export type OnlineAPISupport = number;
 export type ProcessState = string;
 export type Protocol = string;
+export type Role = string;
 export type addrFamily = number;
 export type staticEgressResolver = string;
 export type trafficLocalApplyAction = number;
 export type transportBits = number;
+
+export interface AdminMe {
+  clientCount: number;
+  expireAt: number;
+  id: number;
+  permissions: Record<string, boolean>;
+  role: string;
+  trafficQuota: number;
+  usedDown: number;
+  usedUp: number;
+  username: string;
+  usersLimit: number;
+}
+
+export interface AdminView {
+  clientCount: number;
+  disabledReason: string;
+  enabled: boolean;
+  expireAt: number;
+  id: number;
+  inboundIds: number[];
+  permissions: Record<string, boolean>;
+  role: string;
+  trafficQuota: number;
+  usedDown: number;
+  usedUp: number;
+  username: string;
+  usersLimit: number;
+}
 
 export interface AllSetting {
   datepicker: string;
@@ -456,6 +486,7 @@ export interface ClientPageResponse {
 
 export interface ClientRecord {
   adTag: string;
+  adminId: number;
   allowedIPs: string;
   auth: string;
   comment: string;
@@ -516,6 +547,7 @@ export interface ClientReverse {
 }
 
 export interface ClientSlim {
+  adminId: number;
   comment?: string;
   createdAt: number;
   email: string;
@@ -943,6 +975,11 @@ export interface PeerActivity {
   up: number;
 }
 
+export interface PermissionCatalog {
+  keys: string[];
+  templates: Record<string, Record<string, boolean>>;
+}
+
 export interface ProbeResultUI {
   cpuPct: number;
   error: string;
@@ -1085,8 +1122,15 @@ export interface TuicServerSettings {
 }
 
 export interface User {
+  disabledReason: string;
+  enabled: boolean;
+  expireAt: number;
   id: number;
   password: string;
+  permissions: string;
+  role: Role;
+  trafficQuota: number;
   username: string;
+  usersLimit: number;
 }
 

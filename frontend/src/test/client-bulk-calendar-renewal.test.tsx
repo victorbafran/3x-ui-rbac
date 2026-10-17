@@ -40,7 +40,10 @@ it('keeps bulk renewal disabled by default and requires explicit cutoff selectio
         onOpenChange={() => {}}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Select all' }));
+    // The inbound picker is gated on sections.inbounds, and that permission
+    // arrives with /admins/me a tick after the first render, so the control
+    // does not exist synchronously the way it did before the RBAC layer.
+    fireEvent.click(await screen.findByRole('button', { name: 'Select all' }));
     const mode = screen.getByLabelText('Auto renewal');
     expect(mode.closest('.ant-select')?.textContent).toContain('Disabled');
     expect(post.mock.calls.some(([url]) => url === '/panel/api/clients/renewalPreview')).toBe(

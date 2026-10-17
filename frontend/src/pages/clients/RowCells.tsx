@@ -9,6 +9,7 @@ import {
   RetweetOutlined,
 } from '@ant-design/icons';
 
+import { useMeQuery } from '@/api/queries/useMeQuery';
 import { formatInboundLabel } from '@/lib/inbounds/label';
 import type { InboundOption } from '@/hooks/useClients';
 
@@ -37,6 +38,7 @@ export const ClientRowActions = memo(function ClientRowActions({
   onDelete,
 }: ClientRowActionsProps) {
   const { t } = useTranslation();
+  const { can } = useMeQuery();
   return (
     <Space size={4}>
       <Tooltip title={t('pages.clients.qrCode')}>
@@ -59,37 +61,43 @@ export const ClientRowActions = memo(function ClientRowActions({
           onClick={() => onShowInfo(email)}
         />
       </Tooltip>
-      <Tooltip title={t('pages.inbounds.resetTraffic')}>
-        <Button
-          size="small"
-          type="text"
-          style={ICON_BUTTON_STYLE}
-          icon={<RetweetOutlined />}
-          aria-label={t('pages.inbounds.resetTraffic')}
-          onClick={() => onResetTraffic(email)}
-        />
-      </Tooltip>
-      <Tooltip title={t('edit')}>
-        <Button
-          size="small"
-          type="text"
-          style={ICON_BUTTON_STYLE}
-          icon={<EditOutlined />}
-          aria-label={t('edit')}
-          onClick={() => onEdit(email)}
-        />
-      </Tooltip>
-      <Tooltip title={t('delete')}>
-        <Button
-          size="small"
-          type="text"
-          danger
-          style={ICON_BUTTON_STYLE}
-          icon={<DeleteOutlined />}
-          aria-label={t('delete')}
-          onClick={() => onDelete(email)}
-        />
-      </Tooltip>
+      {can('clients.resetTraffic') && (
+        <Tooltip title={t('pages.inbounds.resetTraffic')}>
+          <Button
+            size="small"
+            type="text"
+            style={ICON_BUTTON_STYLE}
+            icon={<RetweetOutlined />}
+            aria-label={t('pages.inbounds.resetTraffic')}
+            onClick={() => onResetTraffic(email)}
+          />
+        </Tooltip>
+      )}
+      {can('clients.edit') && (
+        <Tooltip title={t('edit')}>
+          <Button
+            size="small"
+            type="text"
+            style={ICON_BUTTON_STYLE}
+            icon={<EditOutlined />}
+            aria-label={t('edit')}
+            onClick={() => onEdit(email)}
+          />
+        </Tooltip>
+      )}
+      {can('clients.delete') && (
+        <Tooltip title={t('delete')}>
+          <Button
+            size="small"
+            type="text"
+            danger
+            style={ICON_BUTTON_STYLE}
+            icon={<DeleteOutlined />}
+            aria-label={t('delete')}
+            onClick={() => onDelete(email)}
+          />
+        </Tooltip>
+      )}
     </Space>
   );
 });

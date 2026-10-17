@@ -12,6 +12,9 @@ export type ProcessState = z.infer<typeof ProcessStateSchema>;
 export const ProtocolSchema = z.string();
 export type Protocol = z.infer<typeof ProtocolSchema>;
 
+export const RoleSchema = z.string();
+export type Role = z.infer<typeof RoleSchema>;
+
 export const addrFamilySchema = z.number().int();
 export type addrFamily = z.infer<typeof addrFamilySchema>;
 
@@ -23,6 +26,37 @@ export type trafficLocalApplyAction = z.infer<typeof trafficLocalApplyActionSche
 
 export const transportBitsSchema = z.number().int();
 export type transportBits = z.infer<typeof transportBitsSchema>;
+
+export const AdminMeSchema = z.object({
+  clientCount: z.number().int(),
+  expireAt: z.number().int(),
+  id: z.number().int(),
+  permissions: z.record(z.string(), z.boolean()),
+  role: z.string(),
+  trafficQuota: z.number().int(),
+  usedDown: z.number().int(),
+  usedUp: z.number().int(),
+  username: z.string(),
+  usersLimit: z.number().int(),
+});
+export type AdminMe = z.infer<typeof AdminMeSchema>;
+
+export const AdminViewSchema = z.object({
+  clientCount: z.number().int(),
+  disabledReason: z.string(),
+  enabled: z.boolean(),
+  expireAt: z.number().int(),
+  id: z.number().int(),
+  inboundIds: z.array(z.number().int()),
+  permissions: z.record(z.string(), z.boolean()),
+  role: z.string(),
+  trafficQuota: z.number().int(),
+  usedDown: z.number().int(),
+  usedUp: z.number().int(),
+  username: z.string(),
+  usersLimit: z.number().int(),
+});
+export type AdminView = z.infer<typeof AdminViewSchema>;
 
 export const AllSettingSchema = z.object({
   datepicker: z.string(),
@@ -480,6 +514,7 @@ export type ClientPageResponse = z.infer<typeof ClientPageResponseSchema>;
 
 export const ClientRecordSchema = z.object({
   adTag: z.string(),
+  adminId: z.number().int(),
   allowedIPs: z.string(),
   auth: z.string(),
   comment: z.string(),
@@ -544,6 +579,7 @@ export const ClientReverseSchema = z.object({
 export type ClientReverse = z.infer<typeof ClientReverseSchema>;
 
 export const ClientSlimSchema = z.object({
+  adminId: z.number().int(),
   comment: z.string().optional(),
   createdAt: z.number().int(),
   email: z.string(),
@@ -757,7 +793,7 @@ export const InboundSchema = z.object({
   nodeId: z.number().int().nullable().optional(),
   originNodeGuid: z.string().optional(),
   port: z.number().int().min(0).max(65535),
-  protocol: z.enum(['vmess', 'vless', 'trojan', 'shadowsocks', 'wireguard', 'hysteria', 'http', 'mixed', 'tunnel', 'tun', 'mtproto', 'amneziawg', 'tuic', 'masque']),
+  protocol: z.enum(['vmess', 'vless', 'trojan', 'shadowsocks', 'wireguard', 'hysteria', 'http', 'mixed', 'tunnel', 'tun', 'mtproto', 'amneziawg', 'tuic', 'masque', 'cisco']),
   remark: z.string(),
   settings: z.unknown(),
   shareAddr: z.string(),
@@ -1002,6 +1038,12 @@ export const PeerActivitySchema = z.object({
 });
 export type PeerActivity = z.infer<typeof PeerActivitySchema>;
 
+export const PermissionCatalogSchema = z.object({
+  keys: z.array(z.string()),
+  templates: z.record(z.string(), z.record(z.string(), z.boolean())),
+});
+export type PermissionCatalog = z.infer<typeof PermissionCatalogSchema>;
+
 export const ProbeResultUISchema = z.object({
   cpuPct: z.number(),
   error: z.string(),
@@ -1154,9 +1196,16 @@ export const TuicServerSettingsSchema = z.object({
 export type TuicServerSettings = z.infer<typeof TuicServerSettingsSchema>;
 
 export const UserSchema = z.object({
+  disabledReason: z.string(),
+  enabled: z.boolean(),
+  expireAt: z.number().int(),
   id: z.number().int(),
   password: z.string(),
+  permissions: z.string(),
+  role: z.lazy(() => RoleSchema),
+  trafficQuota: z.number().int(),
   username: z.string(),
+  usersLimit: z.number().int(),
 });
 export type User = z.infer<typeof UserSchema>;
 

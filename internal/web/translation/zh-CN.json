@@ -105,7 +105,15 @@
     "support": "支持",
     "qrTitle": "扫码。导入。连接。",
     "qrHint": "使用客户端应用扫描。请勿泄露此二维码。",
-    "saveQr": "保存二维码"
+    "saveQr": "保存二维码",
+    "ciscoTitle": "Cisco AnyConnect",
+    "ciscoHint": "此连接需在应用中手动填写——AnyConnect 没有可导入的链接。打开 Cisco Secure Client 或 OpenConnect，填入下列信息。",
+    "ciscoServer": "服务器",
+    "ciscoUsername": "用户名",
+    "ciscoPassword": "密码",
+    "ciscoAppAndroid": "Cisco 客户端（安卓）",
+    "ciscoAppIos": "Cisco 客户端（iPhone）",
+    "ciscoAppOpenConnect": "OpenConnect（安卓）"
   },
   "menu": {
     "theme": "主题",
@@ -122,6 +130,7 @@
     "donate": "捐赠",
     "sponsors": "赞助商",
     "hosts": "主机",
+    "admins": "管理员",
     "docs": "文档",
     "openMenu": "打开菜单",
     "pinSidebar": "固定侧边栏",
@@ -291,7 +300,18 @@
       "accessBlocked": "BLOCKED",
       "accessProxy": "PROXY",
       "importKeepHostSettings": "保留本机设置",
-      "importKeepHostSettingsDesc": "保留本面板的监听地址、端口、基础路径、证书和节点身份，而不是使用上传文件中的值。"
+      "importKeepHostSettingsDesc": "保留本面板的监听地址、端口、基础路径、证书和节点身份，而不是使用上传文件中的值。",
+      "myTraffic": {
+        "title": "您的流量",
+        "upload": "上传",
+        "download": "下载",
+        "used": "已用",
+        "quota": "配额",
+        "remaining": "剩余",
+        "unlimited": "无限",
+        "clients": "客户端",
+        "expires": "到期"
+      }
     },
     "inbounds": {
       "totalDownUp": "总上传 / 下载",
@@ -730,7 +750,25 @@
         "autoSystemDnsToGateway": "系统 DNS 指向网关",
         "autoSystemDnsToGatewayTooltip": "仅限 Linux：将 systemd-resolved 指向 TUN 网关，使系统解析经过 Xray。需要设置网关，失败时 TUN 不会启动。",
         "autoSystemWfpBlockLeak": "阻止泄漏 (WFP)",
-        "autoSystemWfpBlockLeakTooltip": "仅限 Windows，需配合自动系统路由：dns 让 DNS 只走 TUN（需设置 DNS 服务器），misconfigtun 阻止没有任何路由指向 TUN 的 IP 版本。"
+        "autoSystemWfpBlockLeakTooltip": "仅限 Windows，需配合自动系统路由：dns 让 DNS 只走 TUN（需设置 DNS 服务器），misconfigtun 阻止没有任何路由指向 TUN 的 IP 版本。",
+        "ciscoNeedsOcserv": "此服务器需要安装 ocserv",
+        "ciscoNeedsOcservHint": "Cisco 入站由 ocserv 提供服务，它随系统发行版提供，而非面板自带。请执行：apt-get install ocserv（Debian/Ubuntu）或 dnf install ocserv（RHEL/Fedora）。",
+        "ciscoRealityWarning": "此服务器上已有 REALITY 入站在运行",
+        "ciscoRealityWarningHint": "ocserv 会完全占用其端口的 TCP 和 UDP，而 REALITY（{{remark}}，端口 {{port}}）依赖于像普通 TLS 站点那样应答。请为此入站换一个端口，或把两者分到不同服务器。",
+        "ciscoPort443": "443 是 AnyConnect 客户端最先尝试的端口",
+        "ciscoPort443Hint": "受限网络通常放行该端口，所以在其他端口不通时它仍可用。ocserv 会同时占用其 TCP 与 UDP。",
+        "ciscoNetwork": "地址池",
+        "ciscoNetworkHint": "为已连接客户端分配地址的网段。留空则由面板选择一个不会与本服务器其他 Cisco 入站冲突的网段。",
+        "ciscoNetmask": "子网掩码",
+        "ciscoDns": "DNS 服务器",
+        "ciscoDnsHint": "下发给客户端，连接期间其所有解析都经由这些服务器。",
+        "ciscoMaxClients": "最大客户端数",
+        "ciscoMaxClientsHint": "此入站的并发连接总数。填 0 使用默认值 1024。",
+        "ciscoMaxSameClients": "每个账号的设备数",
+        "ciscoMaxSameClientsHint": "同一账号可同时使用的设备数量。填 0 使用默认值 2。",
+        "ciscoCertFile": "证书文件",
+        "ciscoCertFileHint": "两项都留空时，面板会生成一份自签名 RSA 证书并重复使用。密钥必须是 RSA：官方 Cisco Secure Client 无法连接 ECDSA 密钥。",
+        "ciscoKeyFile": "私钥文件"
       },
       "info": {
         "mode": "模式",
@@ -825,7 +863,7 @@
       "limitIpFail2banWindows": "Windows 上不支持 Fail2ban，无法实施 IP 限制。",
       "limitIpDisabled": "此服务器已禁用 IP 限制功能。",
       "password": "密码",
-      "passwordDesc": "用于 Trojan、Shadowsocks、TUIC 和 MASQUE 客户端；对 VLESS、VMess、Hysteria 和 WireGuard 忽略。",
+      "passwordDesc": "用于 Trojan、Shadowsocks、TUIC、MASQUE 和 Cisco 客户端；对 VLESS、VMess、Hysteria 和 WireGuard 忽略。",
       "subId": "订阅 ID",
       "subIdDesc": "同时用作该客户端的 Telegram 机器人邀请码：任何人将其发送给机器人即会绑定到此客户端。请保持足够长且随机——过短或易猜的 ID 可能被他人抢先绑定。",
       "online": "在线",
@@ -1006,7 +1044,10 @@
       "renewsUsed": "已用续期次数",
       "bulkAdTagHint": "输入 32 位十六进制标签以设置，或输入 'none' 清除 MTProto 赞助频道。",
       "renewIntervalDesc": "到期后从上次截止时间增加指定天数（每天 24 小时），并重置客户端流量。若不需要额外重置，请关闭独立的流量重置。",
-      "renewWeeklyDesc": "日历续期按面板时区的午夜执行，并重置客户端流量。若不需要额外重置，请关闭独立的流量重置。"
+      "renewWeeklyDesc": "日历续期按面板时区的午夜执行，并重置客户端流量。若不需要额外重置，请关闭独立的流量重置。",
+      "owner": "所有者",
+      "ownerPanel": "面板",
+      "limitIpNotForCisco": "Cisco 不支持：IP 限制依据 Xray 自身的统计计数，而 Cisco 流量不经过 Xray。请改用入站中的“每个账号的设备数”。"
     },
     "groups": {
       "name": "名称",
@@ -2416,6 +2457,84 @@
         "delete": "删除主机",
         "badTag": "无效的标签",
         "badVlessRoute": "请输入 0 到 65535 之间的单个数字"
+      }
+    },
+    "admins": {
+      "title": "管理员",
+      "addAdmin": "添加管理员",
+      "editAdmin": "编辑管理员",
+      "resetPassword": "重置密码",
+      "newPassword": "新密码",
+      "deleteConfirmTitle": "删除此管理员？",
+      "deleteConfirm": "其创建的入站将被保留，可重新分配。",
+      "resetToTemplate": "恢复角色默认值",
+      "assigned": "已分配的入站",
+      "noInbounds": "未分配入站",
+      "never": "永不",
+      "roles": {
+        "super_admin": "超级管理员",
+        "manager": "经理",
+        "reseller": "代理商",
+        "readonly": "只读"
+      },
+      "groups": {
+        "sections": "可打开的页面",
+        "clients": "对客户端的操作",
+        "inbounds": "对入站的操作"
+      },
+      "fields": {
+        "username": "用户名",
+        "password": "密码",
+        "role": "角色",
+        "enabled": "启用",
+        "trafficQuota": "流量配额 (GB，0 = 无限)",
+        "usersLimit": "最大客户端数 (0 = 无限)",
+        "expireAt": "到期时间",
+        "permissions": "权限",
+        "inbounds": "可管理的入站",
+        "usage": "用量",
+        "clients": "客户端"
+      },
+      "perms": {
+        "sections": {
+          "inbounds": "入站",
+          "clients": "客户端",
+          "groups": "分组",
+          "hosts": "主机",
+          "nodes": "节点",
+          "outbounds": "出站",
+          "routing": "路由",
+          "xray": "Xray 配置",
+          "settings": "面板设置",
+          "admins": "管理员"
+        },
+        "clients": {
+          "create": "创建客户端",
+          "edit": "编辑客户端",
+          "delete": "删除客户端",
+          "resetTraffic": "重置客户端流量",
+          "unlimitedData": "授予无限流量",
+          "unlimitedExpiry": "授予无限期限",
+          "viewLinks": "查看订阅链接"
+        },
+        "inbounds": {
+          "create": "创建入站",
+          "edit": "编辑入站",
+          "delete": "删除入站",
+          "resetTraffic": "重置入站流量"
+        }
+      },
+      "toasts": {
+        "saved": "管理员已保存",
+        "deleted": "管理员已删除",
+        "passwordReset": "密码已重置，其会话已结束",
+        "shortPassword": "密码至少 8 个字符",
+        "usernameRequired": "用户名为必填"
+      },
+      "reasons": {
+        "manual": "已被管理员禁用",
+        "quota_exceeded": "流量配额已用完",
+        "expired": "已过期"
       }
     },
     "sponsors": {

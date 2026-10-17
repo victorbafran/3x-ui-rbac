@@ -14,6 +14,8 @@ import {
   UsergroupDeleteOutlined,
 } from '@ant-design/icons';
 
+import { useMeQuery } from '@/api/queries/useMeQuery';
+import { filterMenuByPermission } from '@/lib/permissions';
 import { isInboundMultiUser } from './helpers';
 import type { DBInboundRecord, RowAction } from './types';
 
@@ -106,22 +108,37 @@ export function buildRowActionsMenu({
   return items;
 }
 
+export const ROW_ACTION_PERMISSION: Record<string, string> = {
+  resetTraffic: 'inbounds.resetTraffic',
+  delete: 'inbounds.delete',
+  delAllClients: 'clients.delete',
+  clone: 'inbounds.create',
+  attachExisting: 'clients.edit',
+};
+
 export function RowActionsCell({ record, subEnable, hasClients, onClick }: RowActionsMenuProps) {
   const { t } = useTranslation();
+  const { can } = useMeQuery();
   return (
     <div className="action-buttons">
-      <Button
-        type="text"
-        size="small"
-        style={{ fontSize: 16 }}
-        icon={<EditOutlined />}
-        aria-label={t('edit')}
-        onClick={() => onClick('edit')}
-      />
+      {can('inbounds.edit') && (
+        <Button
+          type="text"
+          size="small"
+          style={{ fontSize: 16 }}
+          icon={<EditOutlined />}
+          aria-label={t('edit')}
+          onClick={() => onClick('edit')}
+        />
+      )}
       <Dropdown
         trigger={['click']}
         menu={{
-          items: buildRowActionsMenu({ record, subEnable, t, hasClients }),
+          items: filterMenuByPermission(
+            buildRowActionsMenu({ record, subEnable, t, hasClients }) ?? [],
+            can,
+            ROW_ACTION_PERMISSION,
+          ),
           onClick: ({ key }) => onClick(key as RowAction),
         }}
       >

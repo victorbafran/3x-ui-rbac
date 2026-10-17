@@ -22,6 +22,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
+	"github.com/mhsanaei/3x-ui/v3/internal/ocserv"
 	"github.com/mhsanaei/3x-ui/v3/internal/tuic"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/maskcompat"
@@ -44,6 +45,10 @@ type SubService struct {
 	// other context — the sub info page, the panel's link/QR displays — renders
 	// the name-only template, like Remnawave.
 	subscriptionBody bool
+	// ciscoLogins collects what each cisco client types into their AnyConnect
+	// client during one getSubs call. Per-request state like address, so it
+	// lives on the ForRequest copy and never on the shared base service.
+	ciscoLogins []CiscoLogin
 	// usageShown emits info once per subscription identity, including twins.
 	// PrepareForRequest resets this per-request state.
 	usageShown                 map[string]bool
@@ -465,6 +470,7 @@ func (s *SubService) resolveInfoNodeRemark(subId string, uniqueEmails []string, 
 func (s *SubService) getSubs(subId string) ([]string, []string, int64, xray.ClientTraffic, error) {
 	var result []string
 	var emails []string
+	s.ciscoLogins = nil
 	var traffic xray.ClientTraffic
 	var hasEnabledClient bool
 	inbounds, err := s.getInboundsBySubId(subId)
@@ -500,6 +506,18 @@ func (s *SubService) getSubs(subId string) ([]string, []string, int64, xray.Clie
 			if client.Enable {
 				hasEnabledClient = true
 			}
+			// AnyConnect has no share-link format, so a cisco client would
+			// contribute an empty line here and the importing app would show a
+			// blank entry. Its credentials are carried separately instead, for
+			// the page a person opens rather than the list an app parses.
+			if inbound.Protocol == model.Cisco {
+				if login, ok := s.ciscoLoginFor(inbound, client); ok {
+					s.ciscoLogins = append(s.ciscoLogins, login)
+				}
+				emails = append(emails, client.Email)
+				seenEmails[client.Email] = struct{}{}
+				continue
+			}
 			var link string
 			if len(hostEps) > 0 {
 				link = s.linkFromHosts(inbound, client, hostEps)
@@ -529,6 +547,14 @@ func (s *SubService) getSubs(subId string) ([]string, []string, int64, xray.Clie
 				seenEmails[ext.Email] = struct{}{}
 			}
 		}
+	}
+
+	// A subscription that holds only cisco clients produces no links at all,
+	// and a nil result is what the controller turns into a 404 — the dead link
+	// a customer reports as "it does not open". An empty-but-present list says
+	// "found you, there is simply nothing for an app to import".
+	if result == nil && len(s.ciscoLogins) > 0 {
+		result = []string{}
 	}
 
 	uniqueEmails := make([]string, 0, len(seenEmails))
@@ -686,7 +712,7 @@ func (s *SubService) getInboundsBySubId(subId string) ([]*model.Inbound, error) 
 		JOIN client_inbounds ON client_inbounds.inbound_id = inbounds.id
 		JOIN clients ON clients.id = client_inbounds.client_id
 		WHERE
-			inbounds.protocol in ('vmess','vless','trojan','shadowsocks','hysteria','wireguard','amneziawg','mtproto','tuic','masque')
+			inbounds.protocol in ('vmess','vless','trojan','shadowsocks','hysteria','wireguard','amneziawg','mtproto','tuic','masque','cisco')
 			AND clients.sub_id = ? AND inbounds.enable = ?
 	)`, subId, true).Order("sub_sort_index ASC").Order("id ASC").Find(&inbounds).Error
 	if err != nil {
@@ -3064,6 +3090,34 @@ func searchHost(headers any) string {
 
 // PageData is a view model for subpage.html
 // PageData contains data for rendering the subscription information page.
+// CiscoLogin is what a cisco customer actually types into their AnyConnect
+// client. It is carried beside the links rather than inside them because
+// AnyConnect has no URI format to put it in.
+type CiscoLogin struct {
+	Email    string `json:"email"`
+	Server   string `json:"server"`
+	Port     int    `json:"port"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+// ciscoLoginFor reads one cisco client's credentials. The username is not the
+// email: ocserv's password file is colon-separated, so the colon in a
+// reseller's "a<adminId>:" namespace is substituted on the way in, and showing
+// the email here would hand the customer a login the server refuses.
+func (s *SubService) ciscoLoginFor(inbound *model.Inbound, client model.Client) (CiscoLogin, bool) {
+	if client.Password == "" {
+		return CiscoLogin{}, false
+	}
+	return CiscoLogin{
+		Email:    client.Email,
+		Server:   s.resolveInboundAddress(inbound),
+		Port:     inbound.Port,
+		Username: ocserv.LoginFor(client.Email),
+		Password: client.Password,
+	}, true
+}
+
 type PageData struct {
 	Host          string
 	BasePath      string
@@ -3089,6 +3143,7 @@ type PageData struct {
 	SubAnnounce   string
 	Result        []string
 	Emails        []string
+	CiscoLogins   []CiscoLogin
 }
 
 // ResolveRequest extracts scheme, host, and header information from an HTTP request.
@@ -3224,6 +3279,9 @@ func (s *SubService) BuildPageData(subId string, hostHeader string, traffic xray
 
 	pageLinks := make([]string, 0, len(subs))
 	pageEmails := make([]string, 0, len(subs))
+	// Emails are paired with links, so a cisco client — which has no link —
+	// would leave the page with no name on it at all. Its email is carried
+	// on its credentials instead, and the page reads them from there.
 	for i, sub := range subs {
 		email := ""
 		if i < len(emails) {

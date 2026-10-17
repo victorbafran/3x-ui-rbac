@@ -105,7 +105,15 @@
     "support": "Hỗ trợ",
     "qrTitle": "Quét. Nhập. Kết nối.",
     "qrHint": "Quét bằng ứng dụng khách. Không chia sẻ mã này cho người khác.",
-    "saveQr": "Lưu QR"
+    "saveQr": "Lưu QR",
+    "ciscoTitle": "Cisco AnyConnect",
+    "ciscoHint": "Kết nối này phải nhập tay trong ứng dụng — AnyConnect không có liên kết để nhập. Mở Cisco Secure Client hoặc OpenConnect rồi điền các thông tin sau.",
+    "ciscoServer": "Máy chủ",
+    "ciscoUsername": "Tên đăng nhập",
+    "ciscoPassword": "Mật khẩu",
+    "ciscoAppAndroid": "Ứng dụng Cisco (Android)",
+    "ciscoAppIos": "Ứng dụng Cisco (iPhone)",
+    "ciscoAppOpenConnect": "OpenConnect (Android)"
   },
   "menu": {
     "theme": "Chủ đề",
@@ -122,6 +130,7 @@
     "donate": "Quyên góp",
     "sponsors": "Nhà tài trợ",
     "hosts": "Hosts",
+    "admins": "Quản trị viên",
     "docs": "Tài liệu",
     "openMenu": "Mở menu",
     "pinSidebar": "Ghim thanh bên",
@@ -291,7 +300,18 @@
       "accessBlocked": "BLOCKED",
       "accessProxy": "PROXY",
       "importKeepHostSettings": "Giữ cài đặt của máy này",
-      "importKeepHostSettingsDesc": "Giữ nguyên địa chỉ lắng nghe, cổng, đường dẫn cơ sở, chứng chỉ và danh tính node của bảng điều khiển này thay vì lấy chúng từ tệp đã tải lên."
+      "importKeepHostSettingsDesc": "Giữ nguyên địa chỉ lắng nghe, cổng, đường dẫn cơ sở, chứng chỉ và danh tính node của bảng điều khiển này thay vì lấy chúng từ tệp đã tải lên.",
+      "myTraffic": {
+        "title": "Lưu lượng của bạn",
+        "upload": "Tải lên",
+        "download": "Tải xuống",
+        "used": "Đã dùng",
+        "quota": "Hạn mức",
+        "remaining": "Còn lại",
+        "unlimited": "Không giới hạn",
+        "clients": "Khách hàng",
+        "expires": "Hết hạn"
+      }
     },
     "inbounds": {
       "totalDownUp": "Tổng tải lên/tải xuống",
@@ -730,7 +750,25 @@
         "autoSystemDnsToGateway": "DNS hệ thống tới gateway",
         "autoSystemDnsToGatewayTooltip": "Chỉ Linux: trỏ systemd-resolved tới gateway của TUN để truy vấn của hệ thống đi qua Xray. Cần có gateway, và TUN sẽ không khởi động nếu việc này thất bại.",
         "autoSystemWfpBlockLeak": "Chặn rò rỉ (WFP)",
-        "autoSystemWfpBlockLeakTooltip": "Chỉ Windows, cùng với Auto system routes: dns giữ DNS bên trong TUN (cần máy chủ DNS), misconfigtun chặn phiên bản IP mà không tuyến nào đưa vào TUN."
+        "autoSystemWfpBlockLeakTooltip": "Chỉ Windows, cùng với Auto system routes: dns giữ DNS bên trong TUN (cần máy chủ DNS), misconfigtun chặn phiên bản IP mà không tuyến nào đưa vào TUN.",
+        "ciscoNeedsOcserv": "Máy chủ này cần cài ocserv",
+        "ciscoNeedsOcservHint": "Inbound Cisco do ocserv phục vụ, vốn đi kèm bản phân phối chứ không phải bảng điều khiển. Cài bằng: apt-get install ocserv (Debian/Ubuntu) hoặc dnf install ocserv (RHEL/Fedora).",
+        "ciscoRealityWarning": "Máy chủ này đã có một inbound REALITY",
+        "ciscoRealityWarningHint": "ocserv chiếm trọn cổng của nó trên cả TCP và UDP, còn REALITY ({{remark}}, cổng {{port}}) hoạt động bằng cách trả lời như một trang TLS bình thường. Hãy đặt cổng khác cho inbound này, hoặc tách hai bên sang hai máy chủ.",
+        "ciscoPort443": "Cổng 443 là cổng máy khách AnyConnect thử trước tiên",
+        "ciscoPort443Hint": "Mạng hạn chế thường cho phép cổng này, nên nó chạy được ở nơi các cổng khác bị chặn. ocserv sẽ chiếm cả TCP lẫn UDP trên cổng đó.",
+        "ciscoNetwork": "Dải địa chỉ",
+        "ciscoNetworkHint": "Mạng dùng để cấp địa chỉ cho các máy khách đã kết nối. Để trống thì bảng điều khiển tự chọn một dải không đụng với inbound Cisco khác trên máy chủ này.",
+        "ciscoNetmask": "Mặt nạ mạng",
+        "ciscoDns": "Máy chủ DNS",
+        "ciscoDnsHint": "Được cấp cho máy khách và dùng cho mọi truy vấn trong lúc kết nối.",
+        "ciscoMaxClients": "Số máy khách tối đa",
+        "ciscoMaxClientsHint": "Tổng số kết nối đồng thời của inbound này. 0 dùng giá trị mặc định 1024.",
+        "ciscoMaxSameClients": "Số thiết bị mỗi tài khoản",
+        "ciscoMaxSameClientsHint": "Bao nhiêu thiết bị được dùng chung một tài khoản cùng lúc. 0 dùng giá trị mặc định 2.",
+        "ciscoCertFile": "Tệp chứng chỉ",
+        "ciscoCertFileHint": "Để trống cả hai thì bảng điều khiển tạo một chứng chỉ RSA tự ký và dùng lại. Khóa phải là RSA: Cisco Secure Client chính thức không kết nối được với khóa ECDSA.",
+        "ciscoKeyFile": "Tệp khóa riêng"
       },
       "info": {
         "mode": "Chế độ",
@@ -825,7 +863,7 @@
       "limitIpFail2banWindows": "Fail2ban không khả dụng trên Windows nên không thể áp dụng giới hạn IP.",
       "limitIpDisabled": "Tính năng giới hạn IP đã bị tắt trên máy chủ này.",
       "password": "Mật khẩu",
-      "passwordDesc": "Được dùng bởi các client Trojan, Shadowsocks, TUIC và MASQUE; bị bỏ qua đối với VLESS, VMess, Hysteria và WireGuard.",
+      "passwordDesc": "Được dùng bởi các máy khách Trojan, Shadowsocks, TUIC, MASQUE và Cisco; bỏ qua với VLESS, VMess, Hysteria và WireGuard.",
       "subId": "ID đăng ký",
       "subIdDesc": "Cũng được dùng làm mã mời bot Telegram của client này: ai gửi mã này cho bot sẽ được liên kết với client. Hãy để mã dài và ngẫu nhiên — ID ngắn hoặc dễ đoán có thể bị người khác chiếm.",
       "online": "Trực tuyến",
@@ -1006,7 +1044,10 @@
       "renewsUsed": "Số lần gia hạn đã dùng",
       "bulkAdTagHint": "Nhập thẻ hex 32 ký tự để đặt hoặc 'none' để xóa kênh tài trợ trên MTProto.",
       "renewIntervalDesc": "Sau khi hết hạn, cộng số ngày đã đặt (mỗi ngày 24 giờ) vào thời điểm hết hạn trước đó và đặt lại lưu lượng của khách hàng. Tắt việc đặt lại lưu lượng độc lập trừ khi bạn muốn đặt lại thêm.",
-      "renewWeeklyDesc": "Gia hạn theo lịch diễn ra lúc nửa đêm theo múi giờ của bảng điều khiển và cũng đặt lại lưu lượng của khách hàng. Tắt việc đặt lại lưu lượng độc lập trừ khi bạn muốn đặt lại thêm."
+      "renewWeeklyDesc": "Gia hạn theo lịch diễn ra lúc nửa đêm theo múi giờ của bảng điều khiển và cũng đặt lại lưu lượng của khách hàng. Tắt việc đặt lại lưu lượng độc lập trừ khi bạn muốn đặt lại thêm.",
+      "owner": "Chủ sở hữu",
+      "ownerPanel": "Bảng điều khiển",
+      "limitIpNotForCisco": "Không dùng được với Cisco: giới hạn IP đếm theo thống kê của chính Xray, còn lưu lượng Cisco không đi qua Xray. Hãy dùng “Số thiết bị mỗi tài khoản” ở inbound."
     },
     "groups": {
       "name": "Tên",
@@ -2416,6 +2457,84 @@
         "delete": "Xóa host",
         "badTag": "Tag không hợp lệ",
         "badVlessRoute": "Nhập một số duy nhất từ 0 đến 65535"
+      }
+    },
+    "admins": {
+      "title": "Quản trị viên",
+      "addAdmin": "Thêm quản trị viên",
+      "editAdmin": "Sửa quản trị viên",
+      "resetPassword": "Đặt lại mật khẩu",
+      "newPassword": "Mật khẩu mới",
+      "deleteConfirmTitle": "Xóa quản trị viên này?",
+      "deleteConfirm": "Các inbound họ đã tạo được giữ lại và có thể gán lại.",
+      "resetToTemplate": "Về mặc định của vai trò",
+      "assigned": "Inbound được gán",
+      "noInbounds": "Chưa gán inbound nào",
+      "never": "Không bao giờ",
+      "roles": {
+        "super_admin": "Quản trị tối cao",
+        "manager": "Quản lý",
+        "reseller": "Đại lý",
+        "readonly": "Chỉ đọc"
+      },
+      "groups": {
+        "sections": "Trang có thể mở",
+        "clients": "Có thể làm gì với khách hàng",
+        "inbounds": "Có thể làm gì với inbound"
+      },
+      "fields": {
+        "username": "Tên đăng nhập",
+        "password": "Mật khẩu",
+        "role": "Vai trò",
+        "enabled": "Bật",
+        "trafficQuota": "Hạn mức lưu lượng (GB, 0 = không giới hạn)",
+        "usersLimit": "Số khách tối đa (0 = không giới hạn)",
+        "expireAt": "Hết hạn",
+        "permissions": "Quyền",
+        "inbounds": "Inbound được quản lý",
+        "usage": "Sử dụng",
+        "clients": "Khách hàng"
+      },
+      "perms": {
+        "sections": {
+          "inbounds": "Inbound",
+          "clients": "Khách hàng",
+          "groups": "Nhóm",
+          "hosts": "Host",
+          "nodes": "Node",
+          "outbounds": "Outbound",
+          "routing": "Định tuyến",
+          "xray": "Cấu hình Xray",
+          "settings": "Cài đặt bảng điều khiển",
+          "admins": "Quản trị viên"
+        },
+        "clients": {
+          "create": "Tạo khách hàng",
+          "edit": "Sửa khách hàng",
+          "delete": "Xóa khách hàng",
+          "resetTraffic": "Đặt lại lưu lượng khách",
+          "unlimitedData": "Cấp dữ liệu không giới hạn",
+          "unlimitedExpiry": "Cấp thời hạn không giới hạn",
+          "viewLinks": "Xem liên kết đăng ký"
+        },
+        "inbounds": {
+          "create": "Tạo inbound",
+          "edit": "Sửa inbound",
+          "delete": "Xóa inbound",
+          "resetTraffic": "Đặt lại lưu lượng inbound"
+        }
+      },
+      "toasts": {
+        "saved": "Đã lưu quản trị viên",
+        "deleted": "Đã xóa quản trị viên",
+        "passwordReset": "Đã đặt lại mật khẩu; các phiên đã kết thúc",
+        "shortPassword": "Mật khẩu phải có ít nhất 8 ký tự",
+        "usernameRequired": "Cần có tên đăng nhập"
+      },
+      "reasons": {
+        "manual": "Bị quản trị viên tắt",
+        "quota_exceeded": "Hết hạn mức lưu lượng",
+        "expired": "Đã hết hạn"
       }
     },
     "sponsors": {

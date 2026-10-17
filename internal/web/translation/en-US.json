@@ -105,7 +105,15 @@
     "support": "Support",
     "qrTitle": "Scan. Import. Connect.",
     "qrHint": "Scan with your client app. Keep this code private.",
-    "saveQr": "Save QR"
+    "saveQr": "Save QR",
+    "ciscoTitle": "Cisco AnyConnect",
+    "ciscoHint": "This connection is typed into the app by hand — AnyConnect has no link to import. Open your Cisco Secure Client or OpenConnect and enter these.",
+    "ciscoServer": "Server",
+    "ciscoUsername": "Username",
+    "ciscoPassword": "Password",
+    "ciscoAppAndroid": "Cisco client (Android)",
+    "ciscoAppIos": "Cisco client (iPhone)",
+    "ciscoAppOpenConnect": "OpenConnect (Android)"
   },
   "menu": {
     "theme": "Theme",
@@ -115,6 +123,7 @@
     "groups": "Groups",
     "nodes": "Nodes",
     "hosts": "Hosts",
+    "admins": "Admins",
     "settings": "Panel Settings",
     "xray": "Xray Configs",
     "routing": "Routing",
@@ -291,7 +300,18 @@
       "accessBlocked": "BLOCKED",
       "accessProxy": "PROXY",
       "importKeepHostSettings": "Keep this machine's settings",
-      "importKeepHostSettingsDesc": "Keeps this panel's listen addresses, ports, base path, certificates and node identity instead of taking them from the uploaded file."
+      "importKeepHostSettingsDesc": "Keeps this panel's listen addresses, ports, base path, certificates and node identity instead of taking them from the uploaded file.",
+      "myTraffic": {
+        "title": "Your traffic",
+        "upload": "Upload",
+        "download": "Download",
+        "used": "Used",
+        "quota": "Quota",
+        "remaining": "Remaining",
+        "unlimited": "Unlimited",
+        "clients": "Clients",
+        "expires": "Expires"
+      }
     },
     "inbounds": {
       "totalDownUp": "Total Sent/Received",
@@ -731,7 +751,25 @@
         "autoSystemDnsToGateway": "System DNS to gateway",
         "autoSystemDnsToGatewayTooltip": "Linux only: points systemd-resolved at the TUN gateway so system lookups go through Xray. Needs a gateway, and the TUN does not start if this fails.",
         "autoSystemWfpBlockLeak": "Block leaks (WFP)",
-        "autoSystemWfpBlockLeakTooltip": "Windows only, with Auto system routes: dns keeps DNS inside the TUN (needs DNS servers), misconfigtun blocks an IP version that no route sends into the TUN."
+        "autoSystemWfpBlockLeakTooltip": "Windows only, with Auto system routes: dns keeps DNS inside the TUN (needs DNS servers), misconfigtun blocks an IP version that no route sends into the TUN.",
+        "ciscoNeedsOcserv": "ocserv must be installed on this server",
+        "ciscoNeedsOcservHint": "Cisco inbounds are served by ocserv, which comes from your distribution rather than the panel. Install it with: apt-get install ocserv (Debian/Ubuntu) or dnf install ocserv (RHEL/Fedora).",
+        "ciscoRealityWarning": "A REALITY inbound is already running on this server",
+        "ciscoRealityWarningHint": "ocserv holds TCP and UDP on its port exclusively, and REALITY ({{remark}}, port {{port}}) works by answering like an ordinary TLS site. Give this inbound a different port, or keep the two on separate servers.",
+        "ciscoPort443": "Port 443 is the one AnyConnect clients reach first",
+        "ciscoPort443Hint": "Restrictive networks usually allow it, which is why it works where other ports do not. ocserv will hold both TCP and UDP on it.",
+        "ciscoNetwork": "Address pool",
+        "ciscoNetworkHint": "The network connected clients are given addresses from. Leave it empty and the panel picks one that cannot collide with another Cisco inbound on this server.",
+        "ciscoNetmask": "Netmask",
+        "ciscoDns": "DNS servers",
+        "ciscoDnsHint": "Handed to clients and used for all their lookups while they are connected.",
+        "ciscoMaxClients": "Maximum clients",
+        "ciscoMaxClientsHint": "Total simultaneous connections for this inbound. 0 uses the default of 1024.",
+        "ciscoMaxSameClients": "Devices per account",
+        "ciscoMaxSameClientsHint": "How many devices may use one account at the same time. 0 uses the default of 2.",
+        "ciscoCertFile": "Certificate file",
+        "ciscoCertFileHint": "Leave both empty and the panel generates a self-signed RSA certificate and reuses it. The key must be RSA: the official Cisco Secure Client cannot connect to an ECDSA one.",
+        "ciscoKeyFile": "Private key file"
       },
       "info": {
         "mode": "Mode",
@@ -825,7 +863,7 @@
       "limitIpFail2banWindows": "Fail2ban is not available on Windows, so the IP limit cannot be enforced.",
       "limitIpDisabled": "The IP limit feature is disabled on this server.",
       "password": "Password",
-      "passwordDesc": "Used by Trojan, Shadowsocks, TUIC, and MASQUE clients; ignored for VLESS, VMess, Hysteria, and WireGuard.",
+      "passwordDesc": "Used by Trojan, Shadowsocks, TUIC, MASQUE, and Cisco clients; ignored for VLESS, VMess, Hysteria, and WireGuard.",
       "subId": "Subscription ID",
       "subIdDesc": "Also works as this client's Telegram bot invite code: whoever sends it to the bot is linked to this client. Keep it long and random — a short or guessable ID can be claimed by someone else.",
       "online": "Online",
@@ -1006,7 +1044,10 @@
       "renewsUsed": "Renewals used",
       "bulkAdTagHint": "Enter a 32-character hex tag to set, or 'none' to clear sponsor channel on MTProto inbounds.",
       "renewIntervalDesc": "Adds the configured number of 24-hour days to the previous cutoff after expiry and resets the client's traffic. Keep independent traffic resets disabled unless an additional reset is intended.",
-      "renewWeeklyDesc": "Calendar renewal uses midnight in the panel timezone and also resets the client's traffic. Keep independent traffic resets disabled unless an additional reset is intended."
+      "renewWeeklyDesc": "Calendar renewal uses midnight in the panel timezone and also resets the client's traffic. Keep independent traffic resets disabled unless an additional reset is intended.",
+      "owner": "Owner",
+      "ownerPanel": "Panel",
+      "limitIpNotForCisco": "Not available for Cisco: the IP limit counts addresses from Xray's own statistics, and Cisco traffic never passes through Xray. Use “Devices per account” on the inbound instead."
     },
     "groups": {
       "name": "Name",
@@ -1165,6 +1206,84 @@
         "delete": "Host deleted successfully",
         "badTag": "Invalid tag",
         "badVlessRoute": "Enter a single number between 0 and 65535"
+      }
+    },
+    "admins": {
+      "title": "Admins",
+      "addAdmin": "Add admin",
+      "editAdmin": "Edit admin",
+      "resetPassword": "Reset password",
+      "newPassword": "New password",
+      "deleteConfirmTitle": "Delete this admin?",
+      "deleteConfirm": "The inbounds they created are kept and can be reassigned.",
+      "resetToTemplate": "Reset to role defaults",
+      "assigned": "Assigned inbounds",
+      "noInbounds": "No inbounds assigned",
+      "never": "Never",
+      "roles": {
+        "super_admin": "Super admin",
+        "manager": "Manager",
+        "reseller": "Reseller",
+        "readonly": "Read-only"
+      },
+      "groups": {
+        "sections": "Pages they can open",
+        "clients": "What they can do with clients",
+        "inbounds": "What they can do with inbounds"
+      },
+      "fields": {
+        "username": "Username",
+        "password": "Password",
+        "role": "Role",
+        "enabled": "Enabled",
+        "trafficQuota": "Traffic quota (GB, 0 = unlimited)",
+        "usersLimit": "Max clients (0 = unlimited)",
+        "expireAt": "Expires",
+        "permissions": "Permissions",
+        "inbounds": "Inbounds they may manage",
+        "usage": "Usage",
+        "clients": "Clients"
+      },
+      "perms": {
+        "sections": {
+          "inbounds": "Inbounds",
+          "clients": "Clients",
+          "groups": "Groups",
+          "hosts": "Hosts",
+          "nodes": "Nodes",
+          "outbounds": "Outbounds",
+          "routing": "Routing",
+          "xray": "Xray configs",
+          "settings": "Panel settings",
+          "admins": "Admins"
+        },
+        "clients": {
+          "create": "Create clients",
+          "edit": "Edit clients",
+          "delete": "Delete clients",
+          "resetTraffic": "Reset client traffic",
+          "unlimitedData": "Give unlimited data",
+          "unlimitedExpiry": "Give unlimited expiry",
+          "viewLinks": "View subscription links"
+        },
+        "inbounds": {
+          "create": "Create inbounds",
+          "edit": "Edit inbounds",
+          "delete": "Delete inbounds",
+          "resetTraffic": "Reset inbound traffic"
+        }
+      },
+      "toasts": {
+        "saved": "Admin saved",
+        "deleted": "Admin deleted",
+        "passwordReset": "Password reset; their sessions were ended",
+        "shortPassword": "Password must be at least 8 characters",
+        "usernameRequired": "Username is required"
+      },
+      "reasons": {
+        "manual": "Disabled by admin",
+        "quota_exceeded": "Traffic quota used up",
+        "expired": "Expired"
       }
     },
     "nodes": {

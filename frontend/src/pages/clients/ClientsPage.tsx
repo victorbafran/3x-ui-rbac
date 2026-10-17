@@ -52,6 +52,9 @@ import {
   UsergroupAddOutlined,
   UsergroupDeleteOutlined,
 } from '@ant-design/icons';
+import { useMeQuery } from '@/api/queries/useMeQuery';
+import { useAdminsQuery } from '@/api/queries/useAdminsQuery';
+import { displayEmail } from '@/lib/clientOwner';
 import { activateOnKey } from '@/utils/a11y';
 
 import { useTheme } from '@/hooks/useTheme';
@@ -319,6 +322,15 @@ function sortValueFor(column: string | null, order: 'ascend' | 'descend' | null)
 
 export default function ClientsPage() {
   const { t } = useTranslation();
+  const { can, me } = useMeQuery();
+  const isSuperAdmin = me?.role === 'super_admin';
+  // Only a super_admin may list admins; everyone else sees their own clients only.
+  const { admins } = useAdminsQuery({ enabled: isSuperAdmin });
+  const ownerNames = useMemo(() => {
+    const map: Record<number, string> = {};
+    for (const a of admins) map[a.id] = a.username;
+    return map;
+  }, [admins]);
   const { isDark, isUltra, antdThemeConfig } = useTheme();
   const { datepicker } = useDatepicker();
   const { isMobile } = useMediaQuery();
@@ -1122,7 +1134,7 @@ export default function ClientsPage() {
         width: 220,
         render: (_v, record) => (
           <div className="email-cell">
-            <span className="email">{record.email}</span>
+            <span className="email">{displayEmail(record.email)}</span>
             {record.subId && (
               <span className="sub" title={record.subId}>
                 {record.subId}
@@ -1132,6 +1144,22 @@ export default function ClientsPage() {
           </div>
         ),
       },
+      ...(isSuperAdmin
+        ? ([
+            {
+              title: t('pages.clients.owner'),
+              key: 'owner',
+              width: 120,
+              render: (_v, record) => (
+                <Tag>
+                  {record.adminId && ownerNames[record.adminId]
+                    ? ownerNames[record.adminId]
+                    : t('pages.clients.ownerPanel')}
+                </Tag>
+              ),
+            },
+          ] as ColumnsType<ClientRecord>)
+        : []),
       {
         title: t('pages.clients.group'),
         key: 'group',
@@ -1391,14 +1419,16 @@ export default function ClientsPage() {
                       title={
                         <div className="card-toolbar">
                           {selectedRowKeys.length === 0 ? (
-                            <Button
-                              type="primary"
-                              icon={<PlusOutlined />}
-                              onClick={onAdd}
-                              aria-label={t('pages.clients.addClients')}
-                            >
-                              {!isMobile && t('pages.clients.addClients')}
-                            </Button>
+                            can('clients.create') && (
+                              <Button
+                                type="primary"
+                                icon={<PlusOutlined />}
+                                onClick={onAdd}
+                                aria-label={t('pages.clients.addClients')}
+                              >
+                                {!isMobile && t('pages.clients.addClients')}
+                              </Button>
+                            )
                           ) : (
                             <Tag
                               color="blue"
@@ -1516,7 +1546,7 @@ export default function ClientsPage() {
                               {!isMobile && t('more')}
                             </Button>
                           </Dropdown>
-                          {selectedRowKeys.length > 0 && (
+                          {selectedRowKeys.length > 0 && can('clients.delete') && (
                             <Button
                               danger
                               icon={<DeleteOutlined />}

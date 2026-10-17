@@ -105,7 +105,15 @@
     "support": "الدعم",
     "qrTitle": "امسح. استورد. اتصل.",
     "qrHint": "امسح الرمز بتطبيق العميل. لا تشارك هذا الرمز مع أحد.",
-    "saveQr": "حفظ QR"
+    "saveQr": "حفظ QR",
+    "ciscoTitle": "سيسكو AnyConnect",
+    "ciscoHint": "يُدخل هذا الاتصال في التطبيق يدويًا — لا يوجد رابط يمكن استيراده في AnyConnect. افتح Cisco Secure Client أو OpenConnect وأدخل هذه البيانات.",
+    "ciscoServer": "الخادم",
+    "ciscoUsername": "اسم المستخدم",
+    "ciscoPassword": "كلمة المرور",
+    "ciscoAppAndroid": "تطبيق سيسكو (أندرويد)",
+    "ciscoAppIos": "تطبيق سيسكو (آيفون)",
+    "ciscoAppOpenConnect": "OpenConnect (أندرويد)"
   },
   "menu": {
     "theme": "الثيم",
@@ -122,6 +130,7 @@
     "donate": "تبرع",
     "sponsors": "الرعاة",
     "hosts": "المضيفات",
+    "admins": "المشرفون",
     "docs": "التوثيق",
     "openMenu": "فتح القائمة",
     "pinSidebar": "تثبيت الشريط الجانبي",
@@ -291,7 +300,18 @@
       "accessBlocked": "BLOCKED",
       "accessProxy": "PROXY",
       "importKeepHostSettings": "الاحتفاظ بإعدادات هذا الجهاز",
-      "importKeepHostSettingsDesc": "يحتفظ بعناوين الاستماع والمنافذ والمسار الأساسي والشهادات وهوية العقدة الخاصة بهذه اللوحة بدلًا من أخذها من الملف المرفوع."
+      "importKeepHostSettingsDesc": "يحتفظ بعناوين الاستماع والمنافذ والمسار الأساسي والشهادات وهوية العقدة الخاصة بهذه اللوحة بدلًا من أخذها من الملف المرفوع.",
+      "myTraffic": {
+        "title": "بياناتك",
+        "upload": "رفع",
+        "download": "تنزيل",
+        "used": "المستخدم",
+        "quota": "الحصة",
+        "remaining": "المتبقي",
+        "unlimited": "بلا حد",
+        "clients": "العملاء",
+        "expires": "ينتهي"
+      }
     },
     "inbounds": {
       "totalDownUp": "إجمالي المرسل/المستقبل",
@@ -730,7 +750,25 @@
         "autoSystemDnsToGateway": "DNS النظام إلى البوابة",
         "autoSystemDnsToGatewayTooltip": "على لينكس بس: بيوجّه systemd-resolved لبوابة TUN عشان استعلامات النظام تعدّي من Xray. محتاج بوابة، والـTUN مش هيشتغل لو ده فشل.",
         "autoSystemWfpBlockLeak": "منع التسريب (WFP)",
-        "autoSystemWfpBlockLeakTooltip": "على ويندوز بس، مع Auto system routes: ‏dns بيخلّي DNS جوّه الـTUN (محتاج سيرفرات DNS)، وmisconfigtun بيمنع نسخة IP مفيش مسار بيوديها للـTUN."
+        "autoSystemWfpBlockLeakTooltip": "على ويندوز بس، مع Auto system routes: ‏dns بيخلّي DNS جوّه الـTUN (محتاج سيرفرات DNS)، وmisconfigtun بيمنع نسخة IP مفيش مسار بيوديها للـTUN.",
+        "ciscoNeedsOcserv": "يجب تثبيت ocserv على هذا الخادم",
+        "ciscoNeedsOcservHint": "يعمل مدخل Cisco عبر ocserv الذي يأتي مع نظام التشغيل لا مع اللوحة. ثبّته بالأمر: apt-get install ocserv (ديبيان/أوبونتو) أو dnf install ocserv (ريدهات/فيدورا).",
+        "ciscoRealityWarning": "يوجد مدخل REALITY يعمل على هذا الخادم",
+        "ciscoRealityWarningHint": "يحجز ocserv منفذه على TCP وUDP بالكامل، بينما يعتمد REALITY ({{remark}}، المنفذ {{port}}) على الرد كموقع TLS عادي. اختر منفذًا آخر لهذا المدخل أو افصل الاثنين على خادمين.",
+        "ciscoPort443": "المنفذ 443 هو أول ما يجربه عميل AnyConnect",
+        "ciscoPort443Hint": "الشبكات المقيّدة تسمح به عادة، لذلك ينجح حيث تفشل المنافذ الأخرى. سيحجزه ocserv على TCP وUDP معًا.",
+        "ciscoNetwork": "نطاق العناوين",
+        "ciscoNetworkHint": "الشبكة التي تُمنح منها عناوين للعملاء المتصلين. اتركه فارغًا لتختار اللوحة نطاقًا لا يتعارض مع مدخل Cisco آخر على هذا الخادم.",
+        "ciscoNetmask": "قناع الشبكة",
+        "ciscoDns": "خوادم DNS",
+        "ciscoDnsHint": "تُسلَّم للعميل وتُستخدم لكل استعلاماته أثناء الاتصال.",
+        "ciscoMaxClients": "أقصى عدد عملاء",
+        "ciscoMaxClientsHint": "إجمالي الاتصالات المتزامنة لهذا المدخل. القيمة 0 تعني الافتراضي 1024.",
+        "ciscoMaxSameClients": "عدد الأجهزة لكل حساب",
+        "ciscoMaxSameClientsHint": "كم جهازًا يمكنه استخدام الحساب نفسه في آن واحد. القيمة 0 تعني الافتراضي 2.",
+        "ciscoCertFile": "ملف الشهادة",
+        "ciscoCertFileHint": "اترك الحقلين فارغين لتنشئ اللوحة شهادة RSA موقّعة ذاتيًا وتعيد استخدامها. يجب أن يكون المفتاح RSA: عميل Cisco Secure Client الرسمي لا يتصل بمفتاح ECDSA.",
+        "ciscoKeyFile": "ملف المفتاح الخاص"
       },
       "info": {
         "mode": "الوضع",
@@ -825,7 +863,7 @@
       "limitIpFail2banWindows": "Fail2ban غير متوفّر على نظام Windows، لذا لا يمكن تطبيق حد عناوين IP.",
       "limitIpDisabled": "ميزة حد عناوين IP معطّلة على هذا الخادم.",
       "password": "كلمة المرور",
-      "passwordDesc": "يستخدمها عملاء Trojan و Shadowsocks و TUIC و MASQUE؛ ويتم تجاهلها لـ VLESS و VMess و Hysteria و WireGuard.",
+      "passwordDesc": "يُستخدم مع عملاء Trojan وShadowsocks وTUIC وMASQUE وCisco؛ ويُتجاهل مع VLESS وVMess وHysteria وWireGuard.",
       "subId": "معرّف الاشتراك",
       "subIdDesc": "يُستخدم أيضًا كرمز دعوة لهذا العميل في بوت تيليجرام: من يرسله إلى البوت يُربط بهذا العميل. اجعله طويلًا وعشوائيًا — فالمعرّف القصير أو السهل التخمين قد يستولي عليه شخص آخر.",
       "online": "متصل",
@@ -1006,7 +1044,10 @@
       "renewsUsed": "التجديدات المستخدمة",
       "bulkAdTagHint": "أدخل علامة من 32 حرفًا ست عشريًا للتعيين، أو 'none' للمسح في منافذ MTProto.",
       "renewIntervalDesc": "بعد انتهاء الصلاحية، يُضاف عدد الأيام المحدد (24 ساعة لكل يوم) إلى الموعد النهائي السابق ويُعاد تعيين استهلاك العميل. أبقِ إعادة تعيين الاستهلاك المستقلة معطلة ما لم تكن تريد إعادة تعيين إضافية.",
-      "renewWeeklyDesc": "يتم التجديد التقويمي عند منتصف الليل بتوقيت اللوحة ويُعاد أيضًا تعيين استهلاك العميل. أبقِ إعادة تعيين الاستهلاك المستقلة معطلة ما لم تكن تريد إعادة تعيين إضافية."
+      "renewWeeklyDesc": "يتم التجديد التقويمي عند منتصف الليل بتوقيت اللوحة ويُعاد أيضًا تعيين استهلاك العميل. أبقِ إعادة تعيين الاستهلاك المستقلة معطلة ما لم تكن تريد إعادة تعيين إضافية.",
+      "owner": "المالك",
+      "ownerPanel": "اللوحة",
+      "limitIpNotForCisco": "غير متاح مع سيسكو: حد عناوين IP يُحسب من إحصاءات Xray نفسها، وحركة سيسكو لا تمر عبر Xray. استخدم “عدد الأجهزة لكل حساب” في المدخل بدلاً منه."
     },
     "groups": {
       "name": "الاسم",
@@ -2416,6 +2457,84 @@
         "delete": "حذف المضيف",
         "badTag": "وسم غير صالح",
         "badVlessRoute": "أدخل رقماً واحداً بين 0 و65535"
+      }
+    },
+    "admins": {
+      "title": "المشرفون",
+      "addAdmin": "إضافة مشرف",
+      "editAdmin": "تعديل المشرف",
+      "resetPassword": "إعادة تعيين كلمة المرور",
+      "newPassword": "كلمة مرور جديدة",
+      "deleteConfirmTitle": "حذف هذا المشرف؟",
+      "deleteConfirm": "تبقى المداخل التي أنشأها ويمكن إعادة إسنادها.",
+      "resetToTemplate": "إعادة إلى افتراضيات الدور",
+      "assigned": "المداخل المُسندة",
+      "noInbounds": "لا مداخل مُسندة",
+      "never": "أبدًا",
+      "roles": {
+        "super_admin": "مشرف أعلى",
+        "manager": "مدير",
+        "reseller": "موزّع",
+        "readonly": "قراءة فقط"
+      },
+      "groups": {
+        "sections": "الصفحات التي يمكنه فتحها",
+        "clients": "ما يمكنه فعله بالعملاء",
+        "inbounds": "ما يمكنه فعله بالمداخل"
+      },
+      "fields": {
+        "username": "اسم المستخدم",
+        "password": "كلمة المرور",
+        "role": "الدور",
+        "enabled": "مفعّل",
+        "trafficQuota": "حصة البيانات (GB، 0 = بلا حد)",
+        "usersLimit": "أقصى عدد عملاء (0 = بلا حد)",
+        "expireAt": "تاريخ الانتهاء",
+        "permissions": "الصلاحيات",
+        "inbounds": "المداخل التي يديرها",
+        "usage": "الاستهلاك",
+        "clients": "العملاء"
+      },
+      "perms": {
+        "sections": {
+          "inbounds": "المداخل",
+          "clients": "العملاء",
+          "groups": "المجموعات",
+          "hosts": "المضيفون",
+          "nodes": "العقد",
+          "outbounds": "المخارج",
+          "routing": "التوجيه",
+          "xray": "إعدادات Xray",
+          "settings": "إعدادات اللوحة",
+          "admins": "المشرفون"
+        },
+        "clients": {
+          "create": "إنشاء عملاء",
+          "edit": "تعديل العملاء",
+          "delete": "حذف العملاء",
+          "resetTraffic": "تصفير بيانات العميل",
+          "unlimitedData": "منح بيانات غير محدودة",
+          "unlimitedExpiry": "منح مدة غير محدودة",
+          "viewLinks": "عرض روابط الاشتراك"
+        },
+        "inbounds": {
+          "create": "إنشاء مداخل",
+          "edit": "تعديل المداخل",
+          "delete": "حذف المداخل",
+          "resetTraffic": "تصفير بيانات المدخل"
+        }
+      },
+      "toasts": {
+        "saved": "تم حفظ المشرف",
+        "deleted": "تم حذف المشرف",
+        "passwordReset": "أُعيد تعيين كلمة المرور وأُنهيت جلساته",
+        "shortPassword": "يجب ألا تقل كلمة المرور عن 8 أحرف",
+        "usernameRequired": "اسم المستخدم مطلوب"
+      },
+      "reasons": {
+        "manual": "معطّل بواسطة المشرف",
+        "quota_exceeded": "نفدت حصة البيانات",
+        "expired": "منتهي"
       }
     },
     "sponsors": {

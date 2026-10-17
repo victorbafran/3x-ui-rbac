@@ -74,6 +74,7 @@ import {
   MasqueStreamFields,
   MixedFields,
   MtprotoFields,
+  CiscoFields,
   ShadowsocksFields,
   TuicFields,
   TunFields,
@@ -294,7 +295,9 @@ export default function InboundFormModal({
     protocol !== Protocols.MASQUE &&
     protocol !== Protocols.WIREGUARD &&
     protocol !== Protocols.TUNNEL &&
-    protocol !== Protocols.TUIC;
+    protocol !== Protocols.TUIC &&
+    // A cisco inbound is served by ocserv, which has no xray transport at all.
+    protocol !== Protocols.CISCO;
 
   const wPort = useWatch({ control, name: 'port' });
   const wListen = (useWatch({ control, name: 'listen' }) ?? '') as string;
@@ -843,6 +846,7 @@ export default function InboundFormModal({
       {protocol === Protocols.MIXED && <MixedFields mixedUdpOn={mixedUdpOn} />}
 
       {protocol === Protocols.MTPROTO && <MtprotoFields />}
+      {protocol === Protocols.CISCO && <CiscoFields />}
 
       {protocol === Protocols.SHADOWSOCKS && <ShadowsocksFields isSSWith2022={isSSWith2022} />}
 
@@ -1197,6 +1201,7 @@ export default function InboundFormModal({
                     Protocols.AMNEZIAWG,
                     Protocols.TUIC,
                     Protocols.MASQUE,
+                    Protocols.CISCO,
                   ] as string[]
                 ).includes(protocol) || isFallbackHost
                   ? [

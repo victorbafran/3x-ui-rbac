@@ -104,6 +104,9 @@ func (a *SettingController) getAllSetting(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "pages.settings.toasts.getSettings"), err)
 		return
 	}
+	if ownerScopeOf(c) != 0 {
+		allSetting = allSetting.ForReseller()
+	}
 	jsonObj(c, allSetting, nil)
 }
 

@@ -105,7 +105,15 @@
     "support": "支援",
     "qrTitle": "掃描。匯入。連線。",
     "qrHint": "使用用戶端應用程式掃描。請勿外洩此 QR 碼。",
-    "saveQr": "儲存 QR 碼"
+    "saveQr": "儲存 QR 碼",
+    "ciscoTitle": "Cisco AnyConnect",
+    "ciscoHint": "此連線需在應用程式中手動填寫——AnyConnect 沒有可匯入的連結。開啟 Cisco Secure Client 或 OpenConnect，填入下列資訊。",
+    "ciscoServer": "伺服器",
+    "ciscoUsername": "使用者名稱",
+    "ciscoPassword": "密碼",
+    "ciscoAppAndroid": "Cisco 用戶端（Android）",
+    "ciscoAppIos": "Cisco 用戶端（iPhone）",
+    "ciscoAppOpenConnect": "OpenConnect（Android）"
   },
   "menu": {
     "theme": "主題",
@@ -122,6 +130,7 @@
     "donate": "捐贈",
     "sponsors": "贊助商",
     "hosts": "主機",
+    "admins": "管理員",
     "docs": "文件",
     "openMenu": "開啟選單",
     "pinSidebar": "固定側邊欄",
@@ -291,7 +300,18 @@
       "accessBlocked": "BLOCKED",
       "accessProxy": "PROXY",
       "importKeepHostSettings": "保留本機設定",
-      "importKeepHostSettingsDesc": "保留本面板的監聽位址、連接埠、基礎路徑、憑證與節點身分，而不是使用上傳檔案中的值。"
+      "importKeepHostSettingsDesc": "保留本面板的監聽位址、連接埠、基礎路徑、憑證與節點身分，而不是使用上傳檔案中的值。",
+      "myTraffic": {
+        "title": "您的流量",
+        "upload": "上傳",
+        "download": "下載",
+        "used": "已用",
+        "quota": "配額",
+        "remaining": "剩餘",
+        "unlimited": "無限",
+        "clients": "用戶端",
+        "expires": "到期"
+      }
     },
     "inbounds": {
       "totalDownUp": "總上傳 / 下載",
@@ -730,7 +750,25 @@
         "autoSystemDnsToGateway": "系統 DNS 指向閘道",
         "autoSystemDnsToGatewayTooltip": "僅限 Linux：將 systemd-resolved 指向 TUN 閘道，使系統解析經過 Xray。需要設定閘道，失敗時 TUN 不會啟動。",
         "autoSystemWfpBlockLeak": "阻止洩漏 (WFP)",
-        "autoSystemWfpBlockLeakTooltip": "僅限 Windows，需搭配自動系統路由：dns 讓 DNS 只走 TUN（需設定 DNS 伺服器），misconfigtun 阻止沒有任何路由指向 TUN 的 IP 版本。"
+        "autoSystemWfpBlockLeakTooltip": "僅限 Windows，需搭配自動系統路由：dns 讓 DNS 只走 TUN（需設定 DNS 伺服器），misconfigtun 阻止沒有任何路由指向 TUN 的 IP 版本。",
+        "ciscoNeedsOcserv": "此伺服器需要安裝 ocserv",
+        "ciscoNeedsOcservHint": "Cisco 入站由 ocserv 提供服務，它隨系統發行版提供，而非面板內建。請執行：apt-get install ocserv（Debian/Ubuntu）或 dnf install ocserv（RHEL/Fedora）。",
+        "ciscoRealityWarning": "此伺服器上已有 REALITY 入站在執行",
+        "ciscoRealityWarningHint": "ocserv 會完全佔用其連接埠的 TCP 與 UDP，而 REALITY（{{remark}}，連接埠 {{port}}）靠的是像一般 TLS 網站那樣回應。請為此入站換一個連接埠，或將兩者分到不同伺服器。",
+        "ciscoPort443": "443 是 AnyConnect 用戶端最先嘗試的連接埠",
+        "ciscoPort443Hint": "受限網路通常會放行，所以在其他連接埠不通時它仍可用。ocserv 會同時佔用其 TCP 與 UDP。",
+        "ciscoNetwork": "位址池",
+        "ciscoNetworkHint": "配發位址給已連線用戶端的網段。留空則由面板挑選一個不會與本伺服器其他 Cisco 入站衝突的網段。",
+        "ciscoNetmask": "子網路遮罩",
+        "ciscoDns": "DNS 伺服器",
+        "ciscoDnsHint": "下發給用戶端，連線期間其所有查詢都經由這些伺服器。",
+        "ciscoMaxClients": "最大用戶端數",
+        "ciscoMaxClientsHint": "此入站的同時連線總數。填 0 使用預設值 1024。",
+        "ciscoMaxSameClients": "每個帳號的裝置數",
+        "ciscoMaxSameClientsHint": "同一帳號可同時使用的裝置數量。填 0 使用預設值 2。",
+        "ciscoCertFile": "憑證檔案",
+        "ciscoCertFileHint": "兩項都留空時，面板會產生一份自簽 RSA 憑證並重複使用。金鑰必須是 RSA：官方 Cisco Secure Client 無法連線至 ECDSA 金鑰。",
+        "ciscoKeyFile": "私鑰檔案"
       },
       "info": {
         "mode": "模式",
@@ -825,7 +863,7 @@
       "limitIpFail2banWindows": "Windows 上不支援 Fail2ban，無法實施 IP 限制。",
       "limitIpDisabled": "此伺服器已停用 IP 限制功能。",
       "password": "密碼",
-      "passwordDesc": "用於 Trojan、Shadowsocks、TUIC 與 MASQUE 用戶端；VLESS、VMess、Hysteria 和 WireGuard 會忽略此項。",
+      "passwordDesc": "用於 Trojan、Shadowsocks、TUIC、MASQUE 和 Cisco 用戶端；對 VLESS、VMess、Hysteria 和 WireGuard 忽略。",
       "subId": "訂閱 ID",
       "subIdDesc": "同時作為此用戶端的 Telegram 機器人邀請碼：任何人將其傳送給機器人即會綁定到此用戶端。請保持足夠長且隨機——過短或容易猜到的 ID 可能被他人搶先綁定。",
       "online": "上線",
@@ -1006,7 +1044,10 @@
       "renewsUsed": "已用續期次數",
       "bulkAdTagHint": "輸入 32 位十六進位標籤以設定，或輸入 'none' 清除 MTProto 贊助頻道。",
       "renewIntervalDesc": "到期後從上次截止時間增加指定天數（每天 24 小時），並重置客戶端流量。若不需要額外重置，請關閉獨立的流量重置。",
-      "renewWeeklyDesc": "日曆續期按面板時區的午夜執行，並重置客戶端流量。若不需要額外重置，請關閉獨立的流量重置。"
+      "renewWeeklyDesc": "日曆續期按面板時區的午夜執行，並重置客戶端流量。若不需要額外重置，請關閉獨立的流量重置。",
+      "owner": "擁有者",
+      "ownerPanel": "面板",
+      "limitIpNotForCisco": "Cisco 不支援：IP 限制依據 Xray 自身的統計計數，而 Cisco 流量不經過 Xray。請改用入站中的「每個帳號的裝置數」。"
     },
     "groups": {
       "name": "名稱",
@@ -2416,6 +2457,84 @@
         "delete": "刪除 Host",
         "badTag": "無效的標籤",
         "badVlessRoute": "請輸入 0 到 65535 之間的單一數字"
+      }
+    },
+    "admins": {
+      "title": "管理員",
+      "addAdmin": "新增管理員",
+      "editAdmin": "編輯管理員",
+      "resetPassword": "重設密碼",
+      "newPassword": "新密碼",
+      "deleteConfirmTitle": "刪除此管理員？",
+      "deleteConfirm": "其建立的入站將保留，可重新指派。",
+      "resetToTemplate": "還原角色預設值",
+      "assigned": "已指派的入站",
+      "noInbounds": "未指派入站",
+      "never": "永不",
+      "roles": {
+        "super_admin": "超級管理員",
+        "manager": "經理",
+        "reseller": "經銷商",
+        "readonly": "唯讀"
+      },
+      "groups": {
+        "sections": "可開啟的頁面",
+        "clients": "對用戶端的操作",
+        "inbounds": "對入站的操作"
+      },
+      "fields": {
+        "username": "使用者名稱",
+        "password": "密碼",
+        "role": "角色",
+        "enabled": "啟用",
+        "trafficQuota": "流量配額 (GB，0 = 無限)",
+        "usersLimit": "最大用戶端數 (0 = 無限)",
+        "expireAt": "到期時間",
+        "permissions": "權限",
+        "inbounds": "可管理的入站",
+        "usage": "用量",
+        "clients": "用戶端"
+      },
+      "perms": {
+        "sections": {
+          "inbounds": "入站",
+          "clients": "用戶端",
+          "groups": "群組",
+          "hosts": "主機",
+          "nodes": "節點",
+          "outbounds": "出站",
+          "routing": "路由",
+          "xray": "Xray 設定",
+          "settings": "面板設定",
+          "admins": "管理員"
+        },
+        "clients": {
+          "create": "建立用戶端",
+          "edit": "編輯用戶端",
+          "delete": "刪除用戶端",
+          "resetTraffic": "重設用戶端流量",
+          "unlimitedData": "授予無限流量",
+          "unlimitedExpiry": "授予無限期限",
+          "viewLinks": "檢視訂閱連結"
+        },
+        "inbounds": {
+          "create": "建立入站",
+          "edit": "編輯入站",
+          "delete": "刪除入站",
+          "resetTraffic": "重設入站流量"
+        }
+      },
+      "toasts": {
+        "saved": "管理員已儲存",
+        "deleted": "管理員已刪除",
+        "passwordReset": "密碼已重設，其工作階段已結束",
+        "shortPassword": "密碼至少 8 個字元",
+        "usernameRequired": "使用者名稱為必填"
+      },
+      "reasons": {
+        "manual": "已被管理員停用",
+        "quota_exceeded": "流量配額已用完",
+        "expired": "已過期"
       }
     },
     "sponsors": {

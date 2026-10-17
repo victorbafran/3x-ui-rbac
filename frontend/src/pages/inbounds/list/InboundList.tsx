@@ -27,10 +27,12 @@ import {
   SearchOutlined,
 } from '@ant-design/icons';
 
+import { useMeQuery } from '@/api/queries/useMeQuery';
+import { filterMenuByPermission } from '@/lib/permissions';
 import { HttpUtil } from '@/utils';
 import { activateOnKey } from '@/utils/a11y';
 
-import { buildRowActionsMenu } from './RowActions';
+import { buildRowActionsMenu, ROW_ACTION_PERMISSION } from './RowActions';
 import { useInboundColumns } from './useInboundColumns';
 import { buildHostRemarksByInboundId, formatHostRemarksLabel } from './helpers';
 import InboundStatsModal from './InboundStatsModal';
@@ -66,6 +68,7 @@ export default function InboundList({
   onBulkDelete,
 }: InboundListProps) {
   const { t } = useTranslation();
+  const { can, me } = useMeQuery();
   const [statsRecord, setStatsRecord] = useState<DBInboundRecord | null>(null);
   const [selectedRowKeys, setSelectedRowKeys] = useState<number[]>([]);
   // Node filter (#4997): 'all' shows everything, 0 is the local-panel
@@ -212,20 +215,26 @@ export default function InboundList({
     ],
     onClick: ({ key }) => onGeneralAction(key as GeneralAction),
   };
+  // Importing creates inbounds; resetting every inbound's traffic is panel-wide.
+  generalActionsMenu.items = filterMenuByPermission(generalActionsMenu.items ?? [], can, {
+    import: 'inbounds.create',
+  }).filter((item) => me?.role === 'super_admin' || !item || !('key' in item) || item.key !== 'resetInbounds');
 
   return (
     <Card
       hoverable
       title={
         <Space>
-          <Button
-            type="primary"
-            onClick={onAddInbound}
-            icon={<PlusOutlined />}
-            aria-label={t('pages.inbounds.addInbound')}
-          >
-            {!isMobile && t('pages.inbounds.addInbound')}
-          </Button>
+          {can('inbounds.create') && (
+            <Button
+              type="primary"
+              onClick={onAddInbound}
+              icon={<PlusOutlined />}
+              aria-label={t('pages.inbounds.addInbound')}
+            >
+              {!isMobile && t('pages.inbounds.addInbound')}
+            </Button>
+          )}
           <Dropdown trigger={['click']} menu={generalActionsMenu}>
             <Button
               type="primary"
@@ -329,19 +338,24 @@ export default function InboundList({
                         <Switch
                           checked={record.enable}
                           size="small"
+                          disabled={!can('inbounds.edit')}
                           onChange={(next) => onSwitchEnable(record, next)}
                         />
                         <Dropdown
                           trigger={['click']}
                           placement="bottomRight"
                           menu={{
-                            items: buildRowActionsMenu({
-                              record,
-                              subEnable,
-                              t,
-                              isMobile: true,
-                              hasClients: (clientCount[record.id]?.clients || 0) > 0,
-                            }),
+                            items: filterMenuByPermission(
+                              buildRowActionsMenu({
+                                record,
+                                subEnable,
+                                t,
+                                isMobile: true,
+                                hasClients: (clientCount[record.id]?.clients || 0) > 0,
+                              }) ?? [],
+                              can,
+                              ROW_ACTION_PERMISSION,
+                            ),
                             onClick: ({ key }) =>
                               onRowAction({ key: key as RowAction, dbInbound: record }),
                           }}

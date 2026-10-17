@@ -2,6 +2,7 @@ import { RandomUtil, Wireguard } from '@/utils';
 import { generateAwgObfuscation } from '@/lib/xray/amneziawg-obfuscation';
 
 import type { AmneziawgInboundSettings } from '@/schemas/protocols/inbound/amneziawg';
+import type { CiscoInboundSettings } from '@/schemas/protocols/inbound/cisco';
 import type { HttpInboundSettings } from '@/schemas/protocols/inbound/http';
 import type { HysteriaClient, HysteriaInboundSettings } from '@/schemas/protocols/inbound/hysteria';
 import {
@@ -253,6 +254,23 @@ export function createDefaultMtprotoInboundSettings(): MtprotoInboundSettings {
   };
 }
 
+// createDefaultCiscoInboundSettings leaves the address pool empty on purpose:
+// the panel derives a distinct /24 from the inbound id, so two cisco inbounds
+// on one host never hand out the same addresses. Pinning a constant here
+// would make the second inbound collide with the first.
+export function createDefaultCiscoInboundSettings(): CiscoInboundSettings {
+  return {
+    clients: [],
+    network: '',
+    netmask: '255.255.255.0',
+    dns: ['1.1.1.1', '8.8.8.8'],
+    maxClients: 0,
+    maxSameClients: 2,
+    certFile: '',
+    keyFile: '',
+  };
+}
+
 // createDefaultMtprotoClient seeds a new MTProto client with a fresh FakeTLS
 // secret fronting the given domain. Mirrors the WireGuard client default: the
 // backend re-derives the secret on save, so this is only for immediate display.
@@ -416,6 +434,8 @@ export function createDefaultInboundSettings(protocol: string): AnyInboundSettin
       return createDefaultTuicInboundSettings();
     case 'masque':
       return createDefaultMasqueInboundSettings();
+    case 'cisco':
+      return createDefaultCiscoInboundSettings();
     default:
       return null;
   }

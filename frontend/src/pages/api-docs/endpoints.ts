@@ -1890,6 +1890,82 @@ export const sections: readonly Section[] = [
   },
 
   {
+    id: 'admins',
+    title: 'Admins',
+    description:
+      'Admin accounts, their permission switches and the inbounds assigned to them. /me and /permissions are open to every signed-in admin; everything else is super_admin only.',
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/panel/api/admins/me',
+        summary:
+          "The caller's own role and effective permission switches (role template plus overrides). The UI hides sidebar entries from this.",
+        responseSchema: 'AdminMe',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/admins/permissions',
+        summary: 'The closed set of permission keys and the template each role pre-fills.',
+        responseSchema: 'PermissionCatalog',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/admins/list',
+        summary: 'List every admin without password hashes, with their overrides and assigned inbound ids.',
+        responseSchema: 'AdminView',
+        responseSchemaArray: true,
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/admins/get/:id',
+        summary: 'Fetch one admin.',
+        params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Admin ID.' }],
+        responseSchema: 'AdminView',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/admins/add',
+        summary:
+          'Create an admin. permissions are overrides on the role template; unknown keys are dropped. inboundIds are assigned on creation.',
+        body: '{\n  "username": "agent",\n  "password": "at-least-8-chars",\n  "role": "reseller",\n  "trafficQuota": 0,\n  "usersLimit": 0,\n  "expireAt": 0,\n  "permissions": { "inbounds.create": true },\n  "inboundIds": [1]\n}',
+        responseSchema: 'AdminView',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/admins/update/:id',
+        summary:
+          'Replace role, status, limits, overrides and (when inboundIds is present) assignments. Username and password are not touched; the last enabled super_admin cannot be demoted or disabled.',
+        params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Admin ID.' }],
+        body: '{\n  "role": "reseller",\n  "enabled": true,\n  "trafficQuota": 0,\n  "usersLimit": 10,\n  "expireAt": 0,\n  "permissions": { "clients.delete": true },\n  "inboundIds": [1, 2]\n}',
+        responseSchema: 'AdminView',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/admins/resetPassword/:id',
+        summary: 'Set a new password and end every open session of that admin.',
+        params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Admin ID.' }],
+        body: '{\n  "password": "a-new-password"\n}',
+        response: '{\n  "success": true,\n  "obj": 2\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/admins/del/:id',
+        summary:
+          'Delete an admin and their assignments. Refused for your own account and for the last enabled super_admin; inbounds they created are kept.',
+        params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Admin ID.' }],
+        response: '{\n  "success": true,\n  "obj": 2\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/admins/:id/inbounds',
+        summary: 'Replace the set of inbounds assigned to an admin. Every id must exist.',
+        params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Admin ID.' }],
+        body: '{\n  "inboundIds": [1, 2]\n}',
+        response: '{\n  "success": true,\n  "obj": [1, 2]\n}',
+      },
+    ],
+  },
+  {
     id: 'backup',
     title: 'Backup',
     description: 'Operations that interact with the configured Telegram bot.',

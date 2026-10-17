@@ -192,7 +192,7 @@ func normalizeInboundShareAddressColumns(tx *gorm.DB) error {
 func (s *InboundService) GetInbounds(userId int) ([]*model.Inbound, error) {
 	db := database.GetDB()
 	var inbounds []*model.Inbound
-	err := db.Model(model.Inbound{}).Preload("ClientStats").Where("user_id = ?", userId).Order("id ASC").Find(&inbounds).Error
+	err := db.Model(model.Inbound{}).Preload("ClientStats").Scopes(database.OwnedInbounds(userId)).Order("id ASC").Find(&inbounds).Error
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, err
 	}
@@ -235,7 +235,7 @@ func (s *InboundService) annotateLocalOriginGuid(inbounds []*model.Inbound) {
 func (s *InboundService) GetInboundsSlim(userId int) ([]*model.Inbound, error) {
 	db := database.GetDB()
 	var inbounds []*model.Inbound
-	err := db.Model(model.Inbound{}).Preload("ClientStats").Where("user_id = ?", userId).Order("id ASC").Find(&inbounds).Error
+	err := db.Model(model.Inbound{}).Preload("ClientStats").Scopes(database.OwnedInbounds(userId)).Order("id ASC").Find(&inbounds).Error
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, err
 	}
@@ -385,7 +385,7 @@ func (s *InboundService) GetInboundOptions(userId int) ([]InboundOption, error) 
 	err := db.Table("inbounds").
 		Select("inbounds.id, inbounds.remark, inbounds.tag, inbounds.protocol, inbounds.port, inbounds.enable, inbounds.stream_settings, inbounds.settings, inbounds.listen, inbounds.share_addr, inbounds.share_addr_strategy, inbounds.node_id, COALESCE(nodes.address, '') AS node_address, inbounds.disable_flow").
 		Joins("LEFT JOIN nodes ON nodes.id = inbounds.node_id").
-		Where("inbounds.user_id = ?", userId).
+		Scopes(database.OwnedInbounds(userId)).
 		Order("inbounds.id ASC").
 		Scan(&rows).Error
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -2228,9 +2228,11 @@ func (s *InboundService) UpdateInbound(inbound *model.Inbound) (*model.Inbound, 
 }
 
 // servedOutsideXray: these protocols run under their own manager, whose update
-// reconfigures in place where a Del+Add would drop every live session.
+// reconfigures in place where a Del+Add would drop every live session. The set
+// lives on the model so the xray config builder and the runtime dispatch read
+// one list instead of three hand-written copies; see Protocol.ServedOutsideXray.
 func servedOutsideXray(protocol model.Protocol) bool {
-	return protocol == model.MTProto || protocol == model.TUIC || protocol == model.AmneziaWG
+	return protocol.ServedOutsideXray()
 }
 
 // applyInboundUserOps reports whether per-user core ops moved running to next, so

@@ -105,7 +105,15 @@
     "support": "Destek",
     "qrTitle": "Tara. İçe aktar. Bağlan.",
     "qrHint": "İstemci uygulamanızla tarayın. Bu kodu kimseyle paylaşmayın.",
-    "saveQr": "QR'ı kaydet"
+    "saveQr": "QR'ı kaydet",
+    "ciscoTitle": "Cisco AnyConnect",
+    "ciscoHint": "Bu bağlantı uygulamaya elle girilir — AnyConnect'in içe aktarılacak bir bağlantısı yoktur. Cisco Secure Client veya OpenConnect'i açıp bunları girin.",
+    "ciscoServer": "Sunucu",
+    "ciscoUsername": "Kullanıcı adı",
+    "ciscoPassword": "Parola",
+    "ciscoAppAndroid": "Cisco uygulaması (Android)",
+    "ciscoAppIos": "Cisco uygulaması (iPhone)",
+    "ciscoAppOpenConnect": "OpenConnect (Android)"
   },
   "menu": {
     "theme": "Tema",
@@ -122,6 +130,7 @@
     "donate": "Bağış Yap",
     "sponsors": "Sponsorlar",
     "hosts": "Host'lar",
+    "admins": "Yöneticiler",
     "docs": "Belgeler",
     "openMenu": "Menüyü aç",
     "pinSidebar": "Kenar çubuğunu sabitle",
@@ -291,7 +300,18 @@
       "accessBlocked": "BLOCKED",
       "accessProxy": "PROXY",
       "importKeepHostSettings": "Bu makinenin ayarlarını koru",
-      "importKeepHostSettingsDesc": "Yüklenen dosyadan almak yerine bu panelin dinleme adreslerini, portlarını, temel yolunu, sertifikalarını ve düğüm kimliğini korur."
+      "importKeepHostSettingsDesc": "Yüklenen dosyadan almak yerine bu panelin dinleme adreslerini, portlarını, temel yolunu, sertifikalarını ve düğüm kimliğini korur.",
+      "myTraffic": {
+        "title": "Trafiğiniz",
+        "upload": "Yükleme",
+        "download": "İndirme",
+        "used": "Kullanılan",
+        "quota": "Kota",
+        "remaining": "Kalan",
+        "unlimited": "Sınırsız",
+        "clients": "Müşteriler",
+        "expires": "Bitiş"
+      }
     },
     "inbounds": {
       "totalDownUp": "Toplam Gönderilen/Alınan",
@@ -730,7 +750,25 @@
         "autoSystemDnsToGateway": "Sistem DNS'ini ağ geçidine yönlendir",
         "autoSystemDnsToGatewayTooltip": "Yalnızca Linux: sistem sorguları Xray üzerinden gitsin diye systemd-resolved'ı TUN ağ geçidine yönlendirir. Ağ geçidi gerekir ve bu başarısız olursa TUN başlamaz.",
         "autoSystemWfpBlockLeak": "Sızıntıları engelle (WFP)",
-        "autoSystemWfpBlockLeakTooltip": "Yalnızca Windows, Auto system routes ile: dns, DNS'i TUN içinde tutar (DNS sunucuları gerekir); misconfigtun, hiçbir rotanın TUN'a göndermediği IP sürümünü engeller."
+        "autoSystemWfpBlockLeakTooltip": "Yalnızca Windows, Auto system routes ile: dns, DNS'i TUN içinde tutar (DNS sunucuları gerekir); misconfigtun, hiçbir rotanın TUN'a göndermediği IP sürümünü engeller.",
+        "ciscoNeedsOcserv": "Bu sunucuda ocserv kurulu olmalı",
+        "ciscoNeedsOcservHint": "Cisco gelen bağlantılarını paneli değil, dağıtımınızla gelen ocserv çalıştırır. Şu komutla kurun: apt-get install ocserv (Debian/Ubuntu) veya dnf install ocserv (RHEL/Fedora).",
+        "ciscoRealityWarning": "Bu sunucuda zaten bir REALITY gelen bağlantısı var",
+        "ciscoRealityWarningHint": "ocserv portunu TCP ve UDP üzerinde tümüyle tutar; REALITY ({{remark}}, port {{port}}) ise sıradan bir TLS sitesi gibi yanıt vererek çalışır. Bu bağlantıya başka bir port verin ya da ikisini ayrı sunucularda tutun.",
+        "ciscoPort443": "AnyConnect istemcisinin ilk denediği port 443'tür",
+        "ciscoPort443Hint": "Kısıtlı ağlar genellikle buna izin verir; diğer portların çalışmadığı yerde bu yüzden çalışır. ocserv bu portu TCP ve UDP üzerinde tutacak.",
+        "ciscoNetwork": "Adres havuzu",
+        "ciscoNetworkHint": "Bağlanan istemcilere adres verilen ağ. Boş bırakırsanız panel, bu sunucudaki başka bir Cisco bağlantısıyla çakışmayacak bir ağ seçer.",
+        "ciscoNetmask": "Ağ maskesi",
+        "ciscoDns": "DNS sunucuları",
+        "ciscoDnsHint": "İstemciye verilir ve bağlı olduğu sürece tüm sorgularında kullanılır.",
+        "ciscoMaxClients": "En fazla istemci",
+        "ciscoMaxClientsHint": "Bu gelen bağlantı için toplam eşzamanlı bağlantı sayısı. 0, varsayılan olan 1024'ü kullanır.",
+        "ciscoMaxSameClients": "Hesap başına cihaz",
+        "ciscoMaxSameClientsHint": "Bir hesabı aynı anda kaç cihaz kullanabilir. 0, varsayılan olan 2'yi kullanır.",
+        "ciscoCertFile": "Sertifika dosyası",
+        "ciscoCertFileHint": "İkisini de boş bırakırsanız panel kendinden imzalı bir RSA sertifikası üretir ve onu yeniden kullanır. Anahtar RSA olmalı: resmi Cisco Secure Client bir ECDSA anahtarına bağlanamaz.",
+        "ciscoKeyFile": "Özel anahtar dosyası"
       },
       "info": {
         "mode": "Mod",
@@ -825,7 +863,7 @@
       "limitIpFail2banWindows": "Fail2ban Windows'ta kullanılamadığından IP sınırı uygulanamaz.",
       "limitIpDisabled": "IP sınırı özelliği bu sunucuda devre dışı.",
       "password": "Şifre",
-      "passwordDesc": "Trojan, Shadowsocks, TUIC ve MASQUE istemcileri tarafından kullanılır; VLESS, VMess, Hysteria ve WireGuard için yok sayılır.",
+      "passwordDesc": "Trojan, Shadowsocks, TUIC, MASQUE ve Cisco istemcileri kullanır; VLESS, VMess, Hysteria ve WireGuard için yok sayılır.",
       "subId": "Abonelik ID'si",
       "subIdDesc": "Bu istemcinin Telegram botu davet kodu olarak da kullanılır: bunu bota gönderen kişi bu istemciye bağlanır. Uzun ve rastgele tutun — kısa veya tahmin edilebilir bir kimlik başkası tarafından sahiplenilebilir.",
       "online": "Çevrimiçi",
@@ -1006,7 +1044,10 @@
       "renewsUsed": "Kullanılan yenileme",
       "bulkAdTagHint": "Aramak için 32 karakterlik onaltılık etiket girin veya MTProto üzerinde temizlemek için 'none' yazın.",
       "renewIntervalDesc": "Süre dolduktan sonra önceki bitiş zamanına belirlenen sayıda 24 saatlik gün ekler ve istemci trafiğini sıfırlar. Ek bir sıfırlama istemiyorsanız bağımsız trafik sıfırlamalarını devre dışı bırakın.",
-      "renewWeeklyDesc": "Takvim yenilemesi panelin saat diliminde gece yarısı gerçekleşir ve istemci trafiğini de sıfırlar. Ek bir sıfırlama istemiyorsanız bağımsız trafik sıfırlamalarını devre dışı bırakın."
+      "renewWeeklyDesc": "Takvim yenilemesi panelin saat diliminde gece yarısı gerçekleşir ve istemci trafiğini de sıfırlar. Ek bir sıfırlama istemiyorsanız bağımsız trafik sıfırlamalarını devre dışı bırakın.",
+      "owner": "Sahibi",
+      "ownerPanel": "Panel",
+      "limitIpNotForCisco": "Cisco için kullanılamaz: IP sınırı Xray'in kendi istatistiklerinden sayılır ve Cisco trafiği Xray'den geçmez. Bunun yerine gelen bağlantıdaki “Hesap başına cihaz” alanını kullanın."
     },
     "groups": {
       "name": "İsim",
@@ -2416,6 +2457,84 @@
         "delete": "Host'u sil",
         "badTag": "Geçersiz etiket",
         "badVlessRoute": "0 ile 65535 arasında tek bir sayı girin"
+      }
+    },
+    "admins": {
+      "title": "Yöneticiler",
+      "addAdmin": "Yönetici ekle",
+      "editAdmin": "Yöneticiyi düzenle",
+      "resetPassword": "Parolayı sıfırla",
+      "newPassword": "Yeni parola",
+      "deleteConfirmTitle": "Bu yönetici silinsin mi?",
+      "deleteConfirm": "Oluşturduğu inbound'lar korunur ve yeniden atanabilir.",
+      "resetToTemplate": "Rol varsayılanlarına dön",
+      "assigned": "Atanan inbound'lar",
+      "noInbounds": "Atanmış inbound yok",
+      "never": "Asla",
+      "roles": {
+        "super_admin": "Süper yönetici",
+        "manager": "Müdür",
+        "reseller": "Bayi",
+        "readonly": "Salt okunur"
+      },
+      "groups": {
+        "sections": "Açabileceği sayfalar",
+        "clients": "Müşterilerle yapabilecekleri",
+        "inbounds": "Inbound'larla yapabilecekleri"
+      },
+      "fields": {
+        "username": "Kullanıcı adı",
+        "password": "Parola",
+        "role": "Rol",
+        "enabled": "Etkin",
+        "trafficQuota": "Trafik kotası (GB, 0 = sınırsız)",
+        "usersLimit": "En fazla müşteri (0 = sınırsız)",
+        "expireAt": "Bitiş",
+        "permissions": "İzinler",
+        "inbounds": "Yönetebileceği inbound'lar",
+        "usage": "Kullanım",
+        "clients": "Müşteriler"
+      },
+      "perms": {
+        "sections": {
+          "inbounds": "Inbound'lar",
+          "clients": "Müşteriler",
+          "groups": "Gruplar",
+          "hosts": "Hostlar",
+          "nodes": "Düğümler",
+          "outbounds": "Outbound'lar",
+          "routing": "Yönlendirme",
+          "xray": "Xray ayarları",
+          "settings": "Panel ayarları",
+          "admins": "Yöneticiler"
+        },
+        "clients": {
+          "create": "Müşteri oluştur",
+          "edit": "Müşteri düzenle",
+          "delete": "Müşteri sil",
+          "resetTraffic": "Müşteri trafiğini sıfırla",
+          "unlimitedData": "Sınırsız veri ver",
+          "unlimitedExpiry": "Sınırsız süre ver",
+          "viewLinks": "Abonelik bağlantılarını gör"
+        },
+        "inbounds": {
+          "create": "Inbound oluştur",
+          "edit": "Inbound düzenle",
+          "delete": "Inbound sil",
+          "resetTraffic": "Inbound trafiğini sıfırla"
+        }
+      },
+      "toasts": {
+        "saved": "Yönetici kaydedildi",
+        "deleted": "Yönetici silindi",
+        "passwordReset": "Parola sıfırlandı; oturumları sonlandırıldı",
+        "shortPassword": "Parola en az 8 karakter olmalı",
+        "usernameRequired": "Kullanıcı adı gerekli"
+      },
+      "reasons": {
+        "manual": "Yönetici tarafından devre dışı",
+        "quota_exceeded": "Trafik kotası doldu",
+        "expired": "Süresi doldu"
       }
     },
     "sponsors": {

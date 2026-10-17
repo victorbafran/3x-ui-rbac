@@ -14,6 +14,7 @@ import { ClipboardManager, LanguageManager } from '@/utils';
 import { setMessageInstance } from '@/utils/messageBus';
 import { useTheme } from '@/hooks/useTheme';
 import SubAppsTab from './SubAppsTab';
+import SubCiscoCard, { type CiscoLogin } from './SubCiscoCard';
 import SubConfigsTab from './SubConfigsTab';
 import SubHeader from './SubHeader';
 import SubHero from './SubHero';
@@ -33,12 +34,16 @@ const updateHours = Number(subData.subUpdates || 0);
 const announce = subData.announce || '';
 const links: string[] = Array.isArray(subData.links) ? subData.links : [];
 const linkEmails: string[] = Array.isArray(subData.emails) ? subData.emails : [];
+const ciscoLogins: CiscoLogin[] = Array.isArray(subData.ciscoLogins) ? subData.ciscoLogins : [];
+const ciscoOnlySubscription = ciscoLogins.length > 0 && links.length === 0;
 const totalByte = Number(subData.totalByte || 0);
 const usedByte =
   Number(subData.usedByte || 0) ||
   Number(subData.downloadByte || 0) + Number(subData.uploadByte || 0);
 const expireMs = Number(subData.expire || 0) * 1000;
-const clientEmail = [...new Set(linkEmails.filter(Boolean))].join(', ');
+const clientEmail = [
+  ...new Set([...linkEmails, ...ciscoLogins.map((l) => l.email ?? '')].filter(Boolean)),
+].join(', ');
 const loadedAt = Date.now();
 
 const heroData = {
@@ -89,6 +94,14 @@ export default function SubPage() {
 
   const tabs = useMemo(() => {
     const items: NonNullable<TabsProps['items']> = [];
+    // A subscription holding nothing but cisco clients has no importable
+    // link: the subscription tab would offer a URL that adds nothing, the
+    // QR invites a scan no AnyConnect client can make, and the apps tab
+    // recommends V2Ray-family apps that cannot speak the protocol at all.
+    // The credentials card above is the whole subscription in that case.
+    if (ciscoOnlySubscription) {
+      return items;
+    }
     if (subUrl || subJsonUrl || subClashUrl) {
       items.push({
         key: 'subscription',
@@ -148,10 +161,14 @@ export default function SubPage() {
             />
             {announce && <Alert type="info" showIcon title={announce} className="sub-announce" />}
             <SubHero {...heroData} lang={lang} />
+            <SubCiscoCard logins={ciscoLogins} />
             {tabs.length > 0 && <Tabs className="sub-tabs" tabBarGutter={24} items={tabs} />}
-            {(updateHours > 0 || subSupportUrl) && (
+            {((updateHours > 0 && !ciscoOnlySubscription) || subSupportUrl) && (
               <footer className="sub-footer">
-                {updateHours > 0 && (
+                {/* Nothing re-fetches a cisco subscription: the credentials
+                    are typed in once, so an update interval would promise a
+                    refresh that never has anything to refresh. */}
+                {updateHours > 0 && !ciscoOnlySubscription && (
                   <span>
                     <ClockCircleOutlined />
                     {t('subscription.updateInterval', { hours: updateHours })}

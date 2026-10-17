@@ -105,7 +105,15 @@
     "support": "サポート",
     "qrTitle": "スキャン。インポート。接続。",
     "qrHint": "クライアントアプリでスキャンしてください。このコードは他人に見せないでください。",
-    "saveQr": "QR を保存"
+    "saveQr": "QR を保存",
+    "ciscoTitle": "Cisco AnyConnect",
+    "ciscoHint": "この接続はアプリに手で入力します。AnyConnect には取り込めるリンクがありません。Cisco Secure Client か OpenConnect を開いて以下を入力してください。",
+    "ciscoServer": "サーバー",
+    "ciscoUsername": "ユーザー名",
+    "ciscoPassword": "パスワード",
+    "ciscoAppAndroid": "Cisco アプリ (Android)",
+    "ciscoAppIos": "Cisco アプリ (iPhone)",
+    "ciscoAppOpenConnect": "OpenConnect (Android)"
   },
   "menu": {
     "theme": "テーマ",
@@ -122,6 +130,7 @@
     "donate": "寄付",
     "sponsors": "スポンサー",
     "hosts": "ホスト",
+    "admins": "管理者",
     "docs": "ドキュメント",
     "openMenu": "メニューを開く",
     "pinSidebar": "サイドバーを固定",
@@ -291,7 +300,18 @@
       "accessBlocked": "BLOCKED",
       "accessProxy": "PROXY",
       "importKeepHostSettings": "このマシンの設定を保持する",
-      "importKeepHostSettingsDesc": "アップロードしたファイルの値ではなく、このパネルのリッスンアドレス、ポート、ベースパス、証明書、ノード ID を保持します。"
+      "importKeepHostSettingsDesc": "アップロードしたファイルの値ではなく、このパネルのリッスンアドレス、ポート、ベースパス、証明書、ノード ID を保持します。",
+      "myTraffic": {
+        "title": "あなたの通信量",
+        "upload": "アップロード",
+        "download": "ダウンロード",
+        "used": "使用済み",
+        "quota": "上限",
+        "remaining": "残り",
+        "unlimited": "無制限",
+        "clients": "クライアント",
+        "expires": "有効期限"
+      }
     },
     "inbounds": {
       "totalDownUp": "総アップロード / ダウンロード",
@@ -730,7 +750,25 @@
         "autoSystemDnsToGateway": "システム DNS をゲートウェイへ",
         "autoSystemDnsToGatewayTooltip": "Linux のみ：systemd-resolved を TUN のゲートウェイに向け、システムの名前解決を Xray 経由にします。ゲートウェイが必要で、失敗すると TUN は起動しません。",
         "autoSystemWfpBlockLeak": "リーク遮断 (WFP)",
-        "autoSystemWfpBlockLeakTooltip": "Windows のみ（自動システムルートと併用）：dns は DNS を TUN 内に留め（DNS サーバーが必要）、misconfigtun は TUN へのルートがない IP バージョンを遮断します。"
+        "autoSystemWfpBlockLeakTooltip": "Windows のみ（自動システムルートと併用）：dns は DNS を TUN 内に留め（DNS サーバーが必要）、misconfigtun は TUN へのルートがない IP バージョンを遮断します。",
+        "ciscoNeedsOcserv": "このサーバーに ocserv をインストールする必要があります",
+        "ciscoNeedsOcservHint": "Cisco インバウンドはパネルではなくディストリビューション付属の ocserv が処理します。apt-get install ocserv（Debian/Ubuntu）または dnf install ocserv（RHEL/Fedora）で導入してください。",
+        "ciscoRealityWarning": "このサーバーでは REALITY インバウンドが稼働しています",
+        "ciscoRealityWarningHint": "ocserv はポートを TCP と UDP の両方で占有しますが、REALITY（{{remark}}、ポート {{port}}）は通常の TLS サイトのように応答することで成立します。このインバウンドには別のポートを割り当てるか、二つを別のサーバーに分けてください。",
+        "ciscoPort443": "ポート 443 は AnyConnect クライアントが最初に試すポートです",
+        "ciscoPort443Hint": "制限の厳しいネットワークでも通常は許可されるため、他のポートが塞がれていても通ります。ocserv は TCP と UDP の両方で占有します。",
+        "ciscoNetwork": "アドレスプール",
+        "ciscoNetworkHint": "接続したクライアントに割り当てるアドレスのネットワークです。空にするとパネルが、このサーバーの他の Cisco インバウンドと衝突しない範囲を選びます。",
+        "ciscoNetmask": "ネットマスク",
+        "ciscoDns": "DNS サーバー",
+        "ciscoDnsHint": "クライアントに渡され、接続中のすべての名前解決に使われます。",
+        "ciscoMaxClients": "最大クライアント数",
+        "ciscoMaxClientsHint": "このインバウンドの同時接続数の合計です。0 は既定値 1024 を使います。",
+        "ciscoMaxSameClients": "アカウントあたりの端末数",
+        "ciscoMaxSameClientsHint": "一つのアカウントを同時に使える端末数です。0 は既定値 2 を使います。",
+        "ciscoCertFile": "証明書ファイル",
+        "ciscoCertFileHint": "両方を空にするとパネルが自己署名の RSA 証明書を生成して再利用します。鍵は RSA である必要があります。公式の Cisco Secure Client は ECDSA 鍵では接続できません。",
+        "ciscoKeyFile": "秘密鍵ファイル"
       },
       "info": {
         "mode": "モード",
@@ -825,7 +863,7 @@
       "limitIpFail2banWindows": "Windows では Fail2ban を利用できないため、IP 制限を適用できません。",
       "limitIpDisabled": "このサーバーでは IP 制限機能が無効になっています。",
       "password": "パスワード",
-      "passwordDesc": "Trojan、Shadowsocks、TUIC、MASQUE のクライアントが使用します。VLESS、VMess、Hysteria、WireGuard では無視されます。",
+      "passwordDesc": "Trojan、Shadowsocks、TUIC、MASQUE、Cisco のクライアントで使用されます。VLESS、VMess、Hysteria、WireGuard では無視されます。",
       "subId": "サブスクリプション ID",
       "subIdDesc": "このクライアントの Telegram ボット招待コードとしても使われます。ボットに送信した人がこのクライアントに紐付けられます。長くランダムな値にしてください。短い、または推測しやすい ID は他人に取得されるおそれがあります。",
       "online": "オンライン",
@@ -1006,7 +1044,10 @@
       "renewsUsed": "使用済み更新回数",
       "bulkAdTagHint": "設定するには 32 文字の 16 進数タグを入力し、クリアするには 'none' を入力します (MTProto 用)。",
       "renewIntervalDesc": "期限切れ後、前回の期限に指定日数（1 日 24 時間）を加算し、クライアントの通信量をリセットします。追加のリセットが不要なら、独立した通信量リセットは無効にしてください。",
-      "renewWeeklyDesc": "カレンダー更新はパネルのタイムゾーンの午前 0 時に行われ、クライアントの通信量もリセットします。追加のリセットが不要なら、独立した通信量リセットは無効にしてください。"
+      "renewWeeklyDesc": "カレンダー更新はパネルのタイムゾーンの午前 0 時に行われ、クライアントの通信量もリセットします。追加のリセットが不要なら、独立した通信量リセットは無効にしてください。",
+      "owner": "所有者",
+      "ownerPanel": "パネル",
+      "limitIpNotForCisco": "Cisco では使えません。IP 制限は Xray 自身の統計から数えますが、Cisco の通信は Xray を通りません。インバウンドの「アカウントあたりの端末数」を使ってください。"
     },
     "groups": {
       "name": "名前",
@@ -2416,6 +2457,84 @@
         "delete": "ホストを削除",
         "badTag": "無効なタグ",
         "badVlessRoute": "0〜65535 の単一の数値を入力してください"
+      }
+    },
+    "admins": {
+      "title": "管理者",
+      "addAdmin": "管理者を追加",
+      "editAdmin": "管理者を編集",
+      "resetPassword": "パスワードをリセット",
+      "newPassword": "新しいパスワード",
+      "deleteConfirmTitle": "この管理者を削除しますか？",
+      "deleteConfirm": "作成したインバウンドは残り、再割り当てできます。",
+      "resetToTemplate": "ロールの既定値に戻す",
+      "assigned": "割り当て済みインバウンド",
+      "noInbounds": "割り当てなし",
+      "never": "なし",
+      "roles": {
+        "super_admin": "スーパー管理者",
+        "manager": "マネージャー",
+        "reseller": "リセラー",
+        "readonly": "閲覧のみ"
+      },
+      "groups": {
+        "sections": "開けるページ",
+        "clients": "クライアントに対する操作",
+        "inbounds": "インバウンドに対する操作"
+      },
+      "fields": {
+        "username": "ユーザー名",
+        "password": "パスワード",
+        "role": "ロール",
+        "enabled": "有効",
+        "trafficQuota": "通信量上限 (GB、0 = 無制限)",
+        "usersLimit": "最大クライアント数 (0 = 無制限)",
+        "expireAt": "有効期限",
+        "permissions": "権限",
+        "inbounds": "管理できるインバウンド",
+        "usage": "使用量",
+        "clients": "クライアント"
+      },
+      "perms": {
+        "sections": {
+          "inbounds": "インバウンド",
+          "clients": "クライアント",
+          "groups": "グループ",
+          "hosts": "ホスト",
+          "nodes": "ノード",
+          "outbounds": "アウトバウンド",
+          "routing": "ルーティング",
+          "xray": "Xray 設定",
+          "settings": "パネル設定",
+          "admins": "管理者"
+        },
+        "clients": {
+          "create": "クライアント作成",
+          "edit": "クライアント編集",
+          "delete": "クライアント削除",
+          "resetTraffic": "クライアント通信量リセット",
+          "unlimitedData": "無制限データを付与",
+          "unlimitedExpiry": "無期限を付与",
+          "viewLinks": "購読リンクを表示"
+        },
+        "inbounds": {
+          "create": "インバウンド作成",
+          "edit": "インバウンド編集",
+          "delete": "インバウンド削除",
+          "resetTraffic": "インバウンド通信量リセット"
+        }
+      },
+      "toasts": {
+        "saved": "管理者を保存しました",
+        "deleted": "管理者を削除しました",
+        "passwordReset": "パスワードをリセットし、セッションを終了しました",
+        "shortPassword": "パスワードは8文字以上必要です",
+        "usernameRequired": "ユーザー名は必須です"
+      },
+      "reasons": {
+        "manual": "管理者により無効化",
+        "quota_exceeded": "通信量上限に到達",
+        "expired": "期限切れ"
       }
     },
     "sponsors": {

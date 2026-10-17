@@ -12,6 +12,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/amneziawgnet"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/mtproto"
+	"github.com/mhsanaei/3x-ui/v3/internal/ocserv"
 	"github.com/mhsanaei/3x-ui/v3/internal/tuic"
 	"github.com/mhsanaei/3x-ui/v3/internal/xray"
 )
@@ -96,6 +97,13 @@ func (l *Local) AddInbound(_ context.Context, ib *model.Inbound) error {
 		}
 		return err
 	}
+	if ib.Protocol == model.Cisco {
+		inst, ok := ocserv.InstanceFromInbound(ib)
+		if !ok {
+			return nil
+		}
+		return ocserv.GetManager().Ensure(inst)
+	}
 	body, err := json.MarshalIndent(ib.GenXrayInboundConfig(), "", "  ")
 	if err != nil {
 		return err
@@ -127,6 +135,11 @@ func (l *Local) DelInbound(_ context.Context, ib *model.Inbound) error {
 		}
 		return nil
 	}
+	if ib.Protocol == model.Cisco {
+		// A real delete, so the generated TLS keypair goes too.
+		ocserv.GetManager().Forget(ib.Id)
+		return nil
+	}
 	return l.withAPI(func(api *xray.XrayAPI) error {
 		return api.DelInbound(ib.Tag)
 	})
@@ -141,6 +154,9 @@ func (l *Local) UpdateInbound(ctx context.Context, oldIb, newIb *model.Inbound) 
 	}
 	if oldIb.Protocol == model.TUIC || newIb.Protocol == model.TUIC {
 		return l.updateTuicInbound(ctx, oldIb, newIb)
+	}
+	if oldIb.Protocol == model.Cisco || newIb.Protocol == model.Cisco {
+		return l.updateCiscoInbound(ctx, oldIb, newIb)
 	}
 	_ = l.DelInbound(ctx, oldIb)
 	if !newIb.Enable {
@@ -374,4 +390,35 @@ func (l *Local) ResetAllTraffics(_ context.Context) error {
 
 func (l *Local) ResetInboundTraffic(_ context.Context, _ *model.Inbound) error {
 	return nil
+}
+
+// updateCiscoInbound applies an inbound update without the Del+Add the xray
+// path uses. Remove would discard the manager's fingerprints, and ocserv would
+// then be restarted for a change it did not need — dropping every customer who
+// happens to be connected. Ensure compares the fingerprints itself and rewrites
+// only the password file when nothing structural moved. The sidecar is stopped
+// only when the inbound is disabled, loses its last usable client, or changes
+// protocol.
+func (l *Local) updateCiscoInbound(ctx context.Context, oldIb, newIb *model.Inbound) error {
+	if oldIb.Protocol == model.Cisco && newIb.Protocol != model.Cisco {
+		// It stopped being a cisco inbound, so its keypair has no owner left.
+		ocserv.GetManager().Forget(oldIb.Id)
+		if !newIb.Enable {
+			return nil
+		}
+		return l.AddInbound(ctx, newIb)
+	}
+	if oldIb.Protocol != model.Cisco {
+		_ = l.DelInbound(ctx, oldIb)
+	}
+	if !newIb.Enable {
+		ocserv.GetManager().Remove(newIb.Id)
+		return nil
+	}
+	inst, ok := ocserv.InstanceFromInbound(newIb)
+	if !ok {
+		ocserv.GetManager().Remove(newIb.Id)
+		return nil
+	}
+	return ocserv.GetManager().Ensure(inst)
 }

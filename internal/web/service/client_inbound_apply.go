@@ -11,6 +11,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
+	"github.com/mhsanaei/3x-ui/v3/internal/ocserv"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/random"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/runtime"
@@ -446,6 +447,15 @@ func (s *ClientService) AddInboundClient(inboundSvc *InboundService, data *model
 		case "trojan", "masque":
 			if client.Password == "" {
 				return false, common.NewError("empty client ID")
+			}
+		case "cisco":
+			// A cisco client has no UUID: it logs in to ocserv with a name and
+			// a password, so the password is the whole credential.
+			if client.Password == "" {
+				return false, common.NewError("cisco client requires a password")
+			}
+			if err := ocserv.ValidLogin(ocserv.LoginFor(client.Email)); err != nil {
+				return false, err
 			}
 		case "shadowsocks":
 			if client.Email == "" {

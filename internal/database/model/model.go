@@ -35,14 +35,22 @@ const (
 	AmneziaWG   Protocol = "amneziawg"
 	TUIC        Protocol = "tuic"
 	MASQUE      Protocol = "masque"
+	Cisco       Protocol = "cisco"
 )
 
 // User represents a user account in the 3x-ui panel.
 type User struct {
-	Id         int    `json:"id" gorm:"primaryKey;autoIncrement"`
-	Username   string `json:"username"`
-	Password   string `json:"password"`
-	LoginEpoch int64  `json:"-" gorm:"default:0"`
+	Id             int    `json:"id" gorm:"primaryKey;autoIncrement"`
+	Username       string `json:"username"`
+	Password       string `json:"password"`
+	LoginEpoch     int64  `json:"-" gorm:"default:0"`
+	Role           Role   `json:"role" gorm:"type:varchar(32);not null;default:readonly"`
+	Enabled        bool   `json:"enabled" gorm:"not null;default:true"`
+	TrafficQuota   int64  `json:"trafficQuota" gorm:"not null;default:0"`
+	Permissions    string `json:"permissions" gorm:"type:text;not null;default:''"`
+	UsersLimit     int64  `json:"usersLimit" gorm:"not null;default:0"`
+	ExpireAt       int64  `json:"expireAt" gorm:"not null;default:0"`
+	DisabledReason string `json:"disabledReason" gorm:"type:varchar(32);not null;default:''"`
 }
 
 // Inbound represents an Xray inbound configuration with traffic statistics and settings.
@@ -65,7 +73,7 @@ type Inbound struct {
 	// Xray configuration fields
 	Listen            string   `json:"listen" form:"listen"`
 	Port              int      `json:"port" form:"port" validate:"gte=0,lte=65535" example:"443"`
-	Protocol          Protocol `json:"protocol" form:"protocol" validate:"required,oneof=vmess vless trojan shadowsocks wireguard hysteria http mixed tunnel tun mtproto amneziawg tuic masque" example:"vless"`
+	Protocol          Protocol `json:"protocol" form:"protocol" validate:"required,oneof=vmess vless trojan shadowsocks wireguard hysteria http mixed tunnel tun mtproto amneziawg tuic masque cisco" example:"vless"`
 	Settings          string   `json:"settings" form:"settings"`
 	StreamSettings    string   `json:"streamSettings" form:"streamSettings"`
 	Tag               string   `json:"tag" form:"tag" gorm:"unique" example:"in-443-tcp"`
@@ -963,6 +971,7 @@ type Client struct {
 
 type ClientRecord struct {
 	Id              int    `json:"id" gorm:"primaryKey;autoIncrement"`
+	AdminId         int    `json:"adminId" gorm:"column:admin_id;not null;default:0;index"`
 	Email           string `json:"email" gorm:"uniqueIndex;not null"`
 	SubID           string `json:"subId" gorm:"index;column:sub_id"`
 	UUID            string `json:"uuid" gorm:"column:uuid"`
@@ -1555,4 +1564,22 @@ func MergeClientRecord(existing *ClientRecord, incoming *ClientRecord) []ClientM
 		existing.UpdatedAt = incoming.UpdatedAt
 	}
 	return conflicts
+}
+
+// ServedOutsideXray reports whether a protocol is served by its own sidecar
+// rather than by xray-core.
+//
+// This is the single list every caller must agree on. Handing xray-core an
+// inbound it has no handler for does not degrade that one inbound: the core
+// refuses the whole config file and stops, so every other inbound on the panel
+// goes down with it. That is what happened when a new sidecar protocol was
+// added to the runtime dispatch but missed one of the places this set was
+// spelled out by hand.
+func (p Protocol) ServedOutsideXray() bool {
+	switch p {
+	case MTProto, AmneziaWG, TUIC, Cisco:
+		return true
+	default:
+		return false
+	}
 }

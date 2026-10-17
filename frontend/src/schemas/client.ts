@@ -23,6 +23,7 @@ export const ClientTrafficSchema = z.object({
 
 export const ClientRecordSchema = z
   .object({
+    adminId: z.number().optional(),
     id: z.number().optional(),
     email: z.string(),
     subId: z.string().optional(),
@@ -399,6 +400,12 @@ export const ClientBulkAddFormSchema = z.object({
   trafficReset: z.enum(['never', 'hourly', 'daily', 'weekly', 'monthly']).optional(),
   trafficResetDay: z.number().int().min(1).max(31).optional(),
   inboundIds: z.array(z.number()).min(1, 'pages.clients.selectInbound'),
+});
+
+// An admin without the inbounds page cannot choose one; the server fills in
+// the inbounds assigned to them, so these twins drop the min(1) demand.
+export const ClientBulkAddFormSchemaNoInbounds = ClientBulkAddFormSchema.extend({
+  inboundIds: z.array(z.number()),
 });
 
 export type ClientRecord = z.infer<typeof ClientRecordSchema>;

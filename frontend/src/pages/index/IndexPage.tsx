@@ -19,6 +19,7 @@ import {
 } from '@/models/status';
 import { useTheme } from '@/hooks/useTheme';
 import { useStatusQuery } from '@/api/queries/useStatusQuery';
+import { useMeQuery } from '@/api/queries/useMeQuery';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import AppSidebar from '@/layouts/AppSidebar';
 import { LazyMount } from '@/components/utility';
@@ -27,6 +28,7 @@ import { setMessageInstance } from '@/utils/messageBus';
 import OverviewActionBar from './OverviewActionBar';
 import VitalTile from './VitalTile';
 import ThroughputCard from './ThroughputCard';
+import MyTrafficCard from './MyTrafficCard';
 import ConnectionsCard from './ConnectionsCard';
 import SystemStrip from './SystemStrip';
 import { mean, peak, useOverviewHistory } from './useOverviewHistory';
@@ -46,6 +48,10 @@ export default function IndexPage() {
   const { t } = useTranslation();
   const { isDark, isUltra, antdThemeConfig } = useTheme();
   const { status, fetched, fetchError, refresh } = useStatusQuery();
+  const { me } = useMeQuery();
+  // Host throughput is the whole server's; a non-super admin sees their own usage instead.
+  const showOwnTraffic = me !== undefined && me.role !== 'super_admin';
+  const isSuperAdmin = me?.role === 'super_admin';
   const { isMobile } = useMediaQuery();
   const [messageApi, messageContextHolder] = message.useMessage();
   useEffect(() => {
@@ -194,6 +200,7 @@ export default function IndexPage() {
                 />
               ) : (
                 <div className="ov-page">
+                  {isSuperAdmin && (
                   <OverviewActionBar
                     status={status}
                     isMobile={isMobile}
@@ -213,6 +220,7 @@ export default function IndexPage() {
                     onOpenPanelUpdate={() => setPanelUpdateOpen(true)}
                     onOpenVersionSwitch={() => setVersionOpen(true)}
                   />
+                  )}
 
                   <SponsorSlot slot="dashboard" />
 
@@ -273,13 +281,17 @@ export default function IndexPage() {
                   </div>
 
                   <div className="ov-mid">
-                    <ThroughputCard
-                      status={status}
-                      up={history.series.netUp}
-                      down={history.series.netDown}
-                      labels={history.labels}
-                      isMobile={isMobile}
-                    />
+                    {showOwnTraffic ? (
+                      <MyTrafficCard me={me} isMobile={isMobile} />
+                    ) : (
+                      <ThroughputCard
+                        status={status}
+                        up={history.series.netUp}
+                        down={history.series.netDown}
+                        labels={history.labels}
+                        isMobile={isMobile}
+                      />
+                    )}
                     <ConnectionsCard
                       status={status}
                       tcp={history.series.tcpCount}
@@ -289,11 +301,13 @@ export default function IndexPage() {
                     />
                   </div>
 
-                  <SystemStrip
-                    status={status}
-                    showIp={showIp}
-                    onToggleIp={() => setShowIp((v) => !v)}
-                  />
+                  {isSuperAdmin && (
+                    <SystemStrip
+                      status={status}
+                      showIp={showIp}
+                      onToggleIp={() => setShowIp((v) => !v)}
+                    />
+                  )}
                 </div>
               )}
             </Spin>

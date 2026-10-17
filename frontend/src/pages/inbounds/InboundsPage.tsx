@@ -321,6 +321,7 @@ export default function InboundsPage() {
         case 'trojan':
         case 'shadowsocks':
         case 'masque':
+        case 'cisco':
           return c.password === client.password && c.email === client.email;
         default:
           return c.id === client.id && c.email === client.email;

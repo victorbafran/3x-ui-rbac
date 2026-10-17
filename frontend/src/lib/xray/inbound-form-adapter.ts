@@ -7,6 +7,7 @@ import type {
 import type { InboundSettings } from '@/schemas/protocols/inbound';
 import {
   AmneziawgClientSchema,
+  CiscoClientSchema,
   HysteriaClientSchema,
   MasqueClientSchema,
   MtprotoClientSchema,
@@ -293,6 +294,8 @@ function clientSchemaForProtocol(protocol: string): z.ZodType | null {
       return TuicClientSchema;
     case 'masque':
       return MasqueClientSchema;
+    case 'cisco':
+      return CiscoClientSchema;
     default:
       return null;
   }

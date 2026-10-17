@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { AmneziawgInboundSettingsSchema } from './amneziawg';
+import { CiscoInboundSettingsSchema } from './cisco';
 import { HttpInboundSettingsSchema } from './http';
 import { HysteriaInboundSettingsSchema } from './hysteria';
 import { MasqueInboundSettingsSchema } from './masque';
@@ -16,6 +17,7 @@ import { VmessInboundSettingsSchema } from './vmess';
 import { WireguardInboundSettingsSchema } from './wireguard';
 
 export * from './amneziawg';
+export * from './cisco';
 export * from './http';
 export * from './hysteria';
 export * from './masque';
@@ -50,5 +52,6 @@ export const InboundSettingsSchema = z.discriminatedUnion('protocol', [
   z.object({ protocol: z.literal('amneziawg'), settings: AmneziawgInboundSettingsSchema }),
   z.object({ protocol: z.literal('tuic'), settings: TuicInboundSettingsSchema }),
   z.object({ protocol: z.literal('masque'), settings: MasqueInboundSettingsSchema }),
+  z.object({ protocol: z.literal('cisco'), settings: CiscoInboundSettingsSchema }),
 ]);
 export type InboundSettings = z.infer<typeof InboundSettingsSchema>;

@@ -26,6 +26,154 @@
       }
     },
     "schemas": {
+      "AdminMe": {
+        "description": "AdminMe is what the signed-in admin learns about themselves: enough for the\nsidebar to hide what they may not open, and for the overview to show their\nown usage against their limits. Permissions here are effective.",
+        "properties": {
+          "clientCount": {
+            "example": 0,
+            "format": "int64",
+            "type": "integer"
+          },
+          "expireAt": {
+            "example": 0,
+            "format": "int64",
+            "type": "integer"
+          },
+          "id": {
+            "example": 2,
+            "type": "integer"
+          },
+          "permissions": {
+            "additionalProperties": {
+              "type": "boolean"
+            },
+            "type": "object"
+          },
+          "role": {
+            "example": "reseller",
+            "type": "string"
+          },
+          "trafficQuota": {
+            "example": 0,
+            "format": "int64",
+            "type": "integer"
+          },
+          "usedDown": {
+            "example": 0,
+            "format": "int64",
+            "type": "integer"
+          },
+          "usedUp": {
+            "example": 0,
+            "format": "int64",
+            "type": "integer"
+          },
+          "username": {
+            "example": "agent",
+            "type": "string"
+          },
+          "usersLimit": {
+            "example": 0,
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "clientCount",
+          "expireAt",
+          "id",
+          "permissions",
+          "role",
+          "trafficQuota",
+          "usedDown",
+          "usedUp",
+          "username",
+          "usersLimit"
+        ],
+        "type": "object"
+      },
+      "AdminView": {
+        "description": "AdminView is an admin row without its password hash. Permissions holds only\nthe admin's own overrides; InboundIds only the inbounds handed to them.",
+        "properties": {
+          "clientCount": {
+            "example": 0,
+            "format": "int64",
+            "type": "integer"
+          },
+          "disabledReason": {
+            "type": "string"
+          },
+          "enabled": {
+            "example": true,
+            "type": "boolean"
+          },
+          "expireAt": {
+            "example": 0,
+            "format": "int64",
+            "type": "integer"
+          },
+          "id": {
+            "example": 2,
+            "type": "integer"
+          },
+          "inboundIds": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
+          },
+          "permissions": {
+            "additionalProperties": {
+              "type": "boolean"
+            },
+            "type": "object"
+          },
+          "role": {
+            "example": "reseller",
+            "type": "string"
+          },
+          "trafficQuota": {
+            "example": 0,
+            "format": "int64",
+            "type": "integer"
+          },
+          "usedDown": {
+            "example": 0,
+            "format": "int64",
+            "type": "integer"
+          },
+          "usedUp": {
+            "example": 0,
+            "format": "int64",
+            "type": "integer"
+          },
+          "username": {
+            "example": "agent",
+            "type": "string"
+          },
+          "usersLimit": {
+            "example": 0,
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "clientCount",
+          "disabledReason",
+          "enabled",
+          "expireAt",
+          "id",
+          "inboundIds",
+          "permissions",
+          "role",
+          "trafficQuota",
+          "usedDown",
+          "usedUp",
+          "username",
+          "usersLimit"
+        ],
+        "type": "object"
+      },
       "AllSetting": {
         "properties": {
           "datepicker": {
@@ -1925,6 +2073,9 @@
           "adTag": {
             "type": "string"
           },
+          "adminId": {
+            "type": "integer"
+          },
           "allowedIPs": {
             "type": "string"
           },
@@ -2027,6 +2178,7 @@
         },
         "required": [
           "adTag",
+          "adminId",
           "allowedIPs",
           "auth",
           "comment",
@@ -2167,6 +2319,10 @@
       "ClientSlim": {
         "description": "ClientSlim is the row-shape used by the clients page. It drops fields the\ntable never reads (UUID, password, auth, flow, security, reverse, tgId)\nso the list payload stays compact even when the panel manages thousands\nof clients. Modals that need the full record still call /get/:email.",
         "properties": {
+          "adminId": {
+            "example": 0,
+            "type": "integer"
+          },
           "comment": {
             "example": "Primary device",
             "type": "string"
@@ -2251,6 +2407,7 @@
           }
         },
         "required": [
+          "adminId",
           "createdAt",
           "email",
           "enable",
@@ -4159,6 +4316,31 @@
         ],
         "type": "object"
       },
+      "PermissionCatalog": {
+        "description": "PermissionCatalog lists every switch and each role's template, so the\nadmins page renders from the server's closed set rather than its own copy.",
+        "properties": {
+          "keys": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "templates": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "type": "boolean"
+              },
+              "type": "object"
+            },
+            "type": "object"
+          }
+        },
+        "required": [
+          "keys",
+          "templates"
+        ],
+        "type": "object"
+      },
       "ProbeResultUI": {
         "properties": {
           "cpuPct": {
@@ -4761,20 +4943,51 @@
       "User": {
         "description": "User represents a user account in the 3x-ui panel.",
         "properties": {
+          "disabledReason": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "expireAt": {
+            "format": "int64",
+            "type": "integer"
+          },
           "id": {
             "type": "integer"
           },
           "password": {
             "type": "string"
           },
+          "permissions": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          },
+          "trafficQuota": {
+            "format": "int64",
+            "type": "integer"
+          },
           "username": {
             "type": "string"
+          },
+          "usersLimit": {
+            "format": "int64",
+            "type": "integer"
           }
         },
         "required": [
+          "disabledReason",
+          "enabled",
+          "expireAt",
           "id",
           "password",
-          "username"
+          "permissions",
+          "role",
+          "trafficQuota",
+          "username",
+          "usersLimit"
         ],
         "type": "object"
       },
@@ -4844,6 +5057,10 @@
     {
       "name": "Hosts",
       "description": "Per-inbound override endpoints. Each enabled host renders one extra subscription link/proxy with its own address/port/TLS, superseding the legacy externalProxy array. All endpoints under /panel/api/hosts."
+    },
+    {
+      "name": "Admins",
+      "description": "Admin accounts, their permission switches and the inbounds assigned to them. /me and /permissions are open to every signed-in admin; everything else is super_admin only."
     },
     {
       "name": "Backup",
@@ -8391,6 +8608,7 @@
                     ],
                     "items": [
                       {
+                        "adminId": 0,
                         "comment": "Primary device",
                         "createdAt": 1735000000000,
                         "email": "alice@example.com",
@@ -12732,6 +12950,544 @@
                     },
                     "obj": {}
                   }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/admins/me": {
+      "get": {
+        "tags": [
+          "Admins"
+        ],
+        "summary": "The caller's own role and effective permission switches (role template plus overrides). The UI hides sidebar entries from this.",
+        "operationId": "get_panel_api_admins_me",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/AdminMe"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "clientCount": 0,
+                    "expireAt": 0,
+                    "id": 2,
+                    "permissions": {},
+                    "role": "reseller",
+                    "trafficQuota": 0,
+                    "usedDown": 0,
+                    "usedUp": 0,
+                    "username": "agent",
+                    "usersLimit": 0
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/admins/permissions": {
+      "get": {
+        "tags": [
+          "Admins"
+        ],
+        "summary": "The closed set of permission keys and the template each role pre-fills.",
+        "operationId": "get_panel_api_admins_permissions",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/PermissionCatalog"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "keys": [
+                      ""
+                    ],
+                    "templates": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/admins/list": {
+      "get": {
+        "tags": [
+          "Admins"
+        ],
+        "summary": "List every admin without password hashes, with their overrides and assigned inbound ids.",
+        "operationId": "get_panel_api_admins_list",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AdminView"
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": [
+                    {
+                      "clientCount": 0,
+                      "disabledReason": "",
+                      "enabled": true,
+                      "expireAt": 0,
+                      "id": 2,
+                      "inboundIds": [
+                        0
+                      ],
+                      "permissions": {},
+                      "role": "reseller",
+                      "trafficQuota": 0,
+                      "usedDown": 0,
+                      "usedUp": 0,
+                      "username": "agent",
+                      "usersLimit": 0
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/admins/get/{id}": {
+      "get": {
+        "tags": [
+          "Admins"
+        ],
+        "summary": "Fetch one admin.",
+        "operationId": "get_panel_api_admins_get_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Admin ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/AdminView"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "clientCount": 0,
+                    "disabledReason": "",
+                    "enabled": true,
+                    "expireAt": 0,
+                    "id": 2,
+                    "inboundIds": [
+                      0
+                    ],
+                    "permissions": {},
+                    "role": "reseller",
+                    "trafficQuota": 0,
+                    "usedDown": 0,
+                    "usedUp": 0,
+                    "username": "agent",
+                    "usersLimit": 0
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/admins/add": {
+      "post": {
+        "tags": [
+          "Admins"
+        ],
+        "summary": "Create an admin. permissions are overrides on the role template; unknown keys are dropped. inboundIds are assigned on creation.",
+        "operationId": "post_panel_api_admins_add",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "username": "agent",
+                "password": "at-least-8-chars",
+                "role": "reseller",
+                "trafficQuota": 0,
+                "usersLimit": 0,
+                "expireAt": 0,
+                "permissions": {
+                  "inbounds.create": true
+                },
+                "inboundIds": [
+                  1
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/AdminView"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "clientCount": 0,
+                    "disabledReason": "",
+                    "enabled": true,
+                    "expireAt": 0,
+                    "id": 2,
+                    "inboundIds": [
+                      0
+                    ],
+                    "permissions": {},
+                    "role": "reseller",
+                    "trafficQuota": 0,
+                    "usedDown": 0,
+                    "usedUp": 0,
+                    "username": "agent",
+                    "usersLimit": 0
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/admins/update/{id}": {
+      "post": {
+        "tags": [
+          "Admins"
+        ],
+        "summary": "Replace role, status, limits, overrides and (when inboundIds is present) assignments. Username and password are not touched; the last enabled super_admin cannot be demoted or disabled.",
+        "operationId": "post_panel_api_admins_update_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Admin ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "role": "reseller",
+                "enabled": true,
+                "trafficQuota": 0,
+                "usersLimit": 10,
+                "expireAt": 0,
+                "permissions": {
+                  "clients.delete": true
+                },
+                "inboundIds": [
+                  1,
+                  2
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/AdminView"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "clientCount": 0,
+                    "disabledReason": "",
+                    "enabled": true,
+                    "expireAt": 0,
+                    "id": 2,
+                    "inboundIds": [
+                      0
+                    ],
+                    "permissions": {},
+                    "role": "reseller",
+                    "trafficQuota": 0,
+                    "usedDown": 0,
+                    "usedUp": 0,
+                    "username": "agent",
+                    "usersLimit": 0
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/admins/resetPassword/{id}": {
+      "post": {
+        "tags": [
+          "Admins"
+        ],
+        "summary": "Set a new password and end every open session of that admin.",
+        "operationId": "post_panel_api_admins_resetPassword_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Admin ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "password": "a-new-password"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": 2
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/admins/del/{id}": {
+      "post": {
+        "tags": [
+          "Admins"
+        ],
+        "summary": "Delete an admin and their assignments. Refused for your own account and for the last enabled super_admin; inbounds they created are kept.",
+        "operationId": "post_panel_api_admins_del_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Admin ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": 2
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/admins/{id}/inbounds": {
+      "post": {
+        "tags": [
+          "Admins"
+        ],
+        "summary": "Replace the set of inbounds assigned to an admin. Every id must exist.",
+        "operationId": "post_panel_api_admins_id_inbounds",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Admin ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "inboundIds": [
+                  1,
+                  2
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": [
+                    1,
+                    2
+                  ]
                 }
               }
             }

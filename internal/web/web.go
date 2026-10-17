@@ -22,6 +22,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/eventbus"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 	"github.com/mhsanaei/3x-ui/v3/internal/mtproto"
+	"github.com/mhsanaei/3x-ui/v3/internal/ocserv"
 	"github.com/mhsanaei/3x-ui/v3/internal/tuic"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/cronspec"
@@ -301,6 +302,7 @@ const (
 	cadenceMtproto       = "@every 10s"
 	cadenceAmneziaWG     = "@every 10s"
 	cadenceTuic          = "@every 10s"
+	cadenceCisco         = "@every 10s"
 	cadenceClientIPScan  = "@every 10s"
 	cadenceNodeHeartbeat = "@every 5s"
 	cadenceNodeTraffic   = "@every 5s"
@@ -347,6 +349,11 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 	awgJob := job.NewAmneziaWGJob()
 	_, _ = s.cron.AddJob(cadenceAmneziaWG, awgJob)
 	go awgJob.Run()
+
+	// Reconcile ocserv (cisco) sidecars and scrape their traffic through occtl
+	ciscoJob := job.NewCiscoJob()
+	_, _ = s.cron.AddJob(cadenceCisco, ciscoJob)
+	go ciscoJob.Run()
 
 	tuicJob := job.NewTuicJob()
 	_, _ = s.cron.AddJob(cadenceTuic, tuicJob)
@@ -785,6 +792,7 @@ func (s *Server) stop(stopXray bool, stopTgBot bool) error {
 			err2 = err
 		}
 		mtproto.GetManager().StopAll()
+		ocserv.GetManager().StopAll()
 		amneziawgnet.GetManager().StopAll()
 		amneziawgnet.GetOutboundManager().StopAll()
 	}

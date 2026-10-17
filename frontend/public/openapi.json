@@ -3273,7 +3273,8 @@
               "mtproto",
               "amneziawg",
               "tuic",
-              "masque"
+              "masque",
+              "cisco"
             ],
             "example": "vless",
             "type": "string"

@@ -99,8 +99,51 @@ afterEach(async () => {
 
 import { HttpUtil, Msg } from '@/utils';
 
+// Every permission key the panel knows, mirroring authz.AllPermissions. A
+// component test renders as a super admin unless it says otherwise, because
+// the alternative is worse: an empty /admins/me fails its schema, every
+// can() reads false, and a test asserting on a permission-gated control
+// fails with "unable to find button" — which names the wrong cause.
+const ALL_PERMISSIONS = [
+  'sections.inbounds',
+  'sections.clients',
+  'sections.groups',
+  'sections.hosts',
+  'sections.nodes',
+  'sections.outbounds',
+  'sections.routing',
+  'sections.xray',
+  'sections.settings',
+  'sections.admins',
+  'clients.create',
+  'clients.edit',
+  'clients.delete',
+  'clients.resetTraffic',
+  'clients.unlimitedData',
+  'clients.unlimitedExpiry',
+  'clients.viewLinks',
+  'inbounds.create',
+  'inbounds.edit',
+  'inbounds.delete',
+  'inbounds.resetTraffic',
+];
+
+const TEST_ADMIN_ME = {
+  id: 1,
+  username: 'test-admin',
+  role: 'super_admin',
+  permissions: Object.fromEntries(ALL_PERMISSIONS.map((key) => [key, true])),
+  clientCount: 0,
+  expireAt: 0,
+  trafficQuota: 0,
+  usedUp: 0,
+  usedDown: 0,
+  usersLimit: 0,
+};
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 vi.spyOn(HttpUtil, 'post').mockResolvedValue({ success: true, obj: {} } as any);
-vi.spyOn(HttpUtil, 'get').mockImplementation(
-  async (url: string) => new Msg(true, '', url.includes('/panel/api/inbounds/options') ? [] : {}),
-);
+vi.spyOn(HttpUtil, 'get').mockImplementation(async (url: string) => {
+  if (url.includes('/panel/api/admins/me')) return new Msg(true, '', TEST_ADMIN_ME);
+  return new Msg(true, '', url.includes('/panel/api/inbounds/options') ? [] : {});
+});

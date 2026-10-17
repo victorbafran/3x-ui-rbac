@@ -107,6 +107,21 @@ export default function ClientInfoModal({
 }: ClientInfoModalProps) {
   const { datepicker } = useDatepicker();
   const { t } = useTranslation();
+  // A cisco client logs into ocserv with a name, not a UUID, and that name is
+  // not always the email: ocserv's password file is colon-separated, so the
+  // colon in a reseller's "a<adminId>:" namespace is substituted on the way
+  // in. Showing the email here would hand the customer a login that is
+  // refused, so the derived name is shown whenever it differs.
+  const ciscoLogin = useMemo(() => {
+    if (!client) return '';
+    const onCisco = (client.inboundIds || []).some(
+      (id) => inboundsById[id]?.protocol === 'cisco',
+    );
+    if (!onCisco) return '';
+    const login = (client.email || '').replace(/:/g, '_');
+    return login === client.email ? '' : login;
+  }, [client, inboundsById]);
+
   const expiryLabel = (ts?: number) => {
     if (!ts) return '∞';
     if (ts < 0) {
@@ -383,6 +398,21 @@ export default function ClientInfoModal({
                         icon={<CopyOutlined />}
                         aria-label={t('copy')}
                         onClick={() => copyValue(client.password!)}
+                      />
+                    </td>
+                  </tr>
+                )}
+                {ciscoLogin && (
+                  <tr>
+                    <td>{t('username')}</td>
+                    <td>
+                      <Tag className="info-large-tag">{ciscoLogin}</Tag>
+                      <Button
+                        size="small"
+                        type="text"
+                        icon={<CopyOutlined />}
+                        aria-label={t('copy')}
+                        onClick={() => copyValue(ciscoLogin)}
                       />
                     </td>
                   </tr>

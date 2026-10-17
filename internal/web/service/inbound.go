@@ -2228,9 +2228,11 @@ func (s *InboundService) UpdateInbound(inbound *model.Inbound) (*model.Inbound, 
 }
 
 // servedOutsideXray: these protocols run under their own manager, whose update
-// reconfigures in place where a Del+Add would drop every live session.
+// reconfigures in place where a Del+Add would drop every live session. The set
+// lives on the model so the xray config builder and the runtime dispatch read
+// one list instead of three hand-written copies; see Protocol.ServedOutsideXray.
 func servedOutsideXray(protocol model.Protocol) bool {
-	return protocol == model.MTProto || protocol == model.TUIC || protocol == model.AmneziaWG
+	return protocol.ServedOutsideXray()
 }
 
 // applyInboundUserOps reports whether per-user core ops moved running to next, so

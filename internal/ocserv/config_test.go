@@ -1,0 +1,140 @@
+package ocserv
+
+import (
+	"strings"
+	"testing"
+)
+
+func configFor(t *testing.T, inst Instance) string {
+	t.Helper()
+	runtimeDirOverride = t.TempDir()
+	t.Cleanup(func() { runtimeDirOverride = "" })
+	return renderConfig(inst, "/tmp/cert.pem", "/tmp/key.pem")
+}
+
+// The directives below are not decoration: each one was needed to get a real
+// AnyConnect client through a handshake on ocserv 1.2.4.
+func TestRenderConfigCarriesWhatTheClientNeeds(t *testing.T) {
+	cfg := configFor(t, Instance{Id: 3, Tag: "cisco-1", Port: 443})
+
+	for _, want := range []string{
+		"tcp-port = 443",
+		"udp-port = 443",
+		"cisco-client-compat = true",
+		"use-occtl = true",
+		"server-cert = /tmp/cert.pem",
+		"server-key = /tmp/key.pem",
+		"tunnel-all-dns = true",
+	} {
+		if !strings.Contains(cfg, want) {
+			t.Fatalf("config is missing %q:\n%s", want, cfg)
+		}
+	}
+}
+
+// The occtl socket is a separate directive from the worker IPC socket. Setting
+// only socket-file leaves occtl unable to reach the server at all, which takes
+// out both traffic accounting and the ability to disconnect a client.
+func TestRenderConfigSetsBothSocketsSeparately(t *testing.T) {
+	cfg := configFor(t, Instance{Id: 3, Port: 443})
+	if !strings.Contains(cfg, "occtl-socket-file = ") {
+		t.Fatalf("occtl-socket-file is absent; occtl would not reach the server:\n%s", cfg)
+	}
+	ipc := lineValue(cfg, "socket-file = ")
+	ctl := lineValue(cfg, "occtl-socket-file = ")
+	if ipc == "" || ctl == "" || ipc == ctl {
+		t.Fatalf("the two sockets are not distinct: ipc=%q ctl=%q", ipc, ctl)
+	}
+}
+
+func lineValue(cfg, prefix string) string {
+	for _, line := range strings.Split(cfg, "\n") {
+		if strings.HasPrefix(line, prefix) {
+			return strings.TrimPrefix(line, prefix)
+		}
+	}
+	return ""
+}
+
+// Two cisco inbounds on one host must not hand out the same addresses, or each
+// would route the other's clients.
+func TestDefaultPoolDiffersPerInbound(t *testing.T) {
+	seen := map[string]int{}
+	for id := 1; id <= 300; id++ {
+		pool := DefaultPool(id)
+		if other, clash := seen[pool]; clash {
+			t.Fatalf("inbounds %d and %d share the pool %s", other, id, pool)
+		}
+		seen[pool] = id
+	}
+}
+
+func TestCIDRRendersThePoolAsAPrefix(t *testing.T) {
+	cases := []struct {
+		network, netmask, want string
+	}{
+		{"10.8.0.0", "255.255.255.0", "10.8.0.0/24"},
+		{"10.8.0.0", "255.255.0.0", "10.8.0.0/16"},
+		{"10.8.0.0", "", "10.8.0.0/24"},
+	}
+	for _, tc := range cases {
+		inst := Instance{Id: 1, Network: tc.network, Netmask: tc.netmask}
+		if got := inst.CIDR(); got != tc.want {
+			t.Fatalf("CIDR(%s/%s) = %s, want %s", tc.network, tc.netmask, got, tc.want)
+		}
+	}
+}
+
+// A restart drops every live session, so the structural fingerprint must move
+// only for things ocserv reads once at startup.
+func TestStructuralFingerprintIgnoresClientEdits(t *testing.T) {
+	base := Instance{Id: 1, Port: 443, Users: []User{{Name: "ann", Login: "ann", Password: "a"}}}
+	withMore := base
+	withMore.Users = append(append([]User{}, base.Users...), User{Name: "bob", Login: "bob", Password: "b"})
+
+	if base.structuralFingerprint() != withMore.structuralFingerprint() {
+		t.Fatal("adding a client moved the structural fingerprint, which would restart ocserv and drop everyone online")
+	}
+	if base.usersFingerprint() == withMore.usersFingerprint() {
+		t.Fatal("adding a client left the user fingerprint unchanged, so the password file would never be rewritten")
+	}
+}
+
+func TestStructuralFingerprintMovesWithThePort(t *testing.T) {
+	a := Instance{Id: 1, Port: 443}
+	b := Instance{Id: 1, Port: 8443}
+	if a.structuralFingerprint() == b.structuralFingerprint() {
+		t.Fatal("a port change did not move the structural fingerprint, so ocserv would keep the old port")
+	}
+}
+
+// A reordered clients array in the stored settings is not a change.
+func TestUsersFingerprintIgnoresOrder(t *testing.T) {
+	ann := User{Name: "ann", Login: "ann", Password: "a"}
+	bob := User{Name: "bob", Login: "bob", Password: "b"}
+	one := Instance{Id: 1, Users: []User{ann, bob}}
+	two := Instance{Id: 1, Users: []User{bob, ann}}
+	if one.usersFingerprint() != two.usersFingerprint() {
+		t.Fatal("reordering the clients read as a change; the password file would be rewritten on every reconcile")
+	}
+}
+
+// A password change has to reach the file, or the customer keeps logging in
+// with the old one.
+func TestUsersFingerprintMovesWithAPassword(t *testing.T) {
+	a := Instance{Id: 1, Users: []User{{Name: "ann", Login: "ann", Password: "old"}}}
+	b := Instance{Id: 1, Users: []User{{Name: "ann", Login: "ann", Password: "new"}}}
+	if a.usersFingerprint() == b.usersFingerprint() {
+		t.Fatal("a password change did not move the user fingerprint")
+	}
+}
+
+func TestLoginToEmailMapsBackToTheBillingIdentity(t *testing.T) {
+	inst := Instance{Id: 1, Users: []User{
+		{Name: "a9:customer@example.com", Login: "a9_customer@example.com", Password: "p"},
+	}}
+	m := inst.LoginToEmail()
+	if got := m["a9_customer@example.com"]; got != "a9:customer@example.com" {
+		t.Fatalf("login mapped back to %q, want the namespaced email", got)
+	}
+}

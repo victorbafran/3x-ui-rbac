@@ -122,7 +122,7 @@ func (a *InboundController) getInboundsSlim(c *gin.Context) {
 // remark template (name-only display part) is applied consistently.
 func (a *InboundController) getAllInboundLinks(c *gin.Context) {
 	user := session.GetLoginUser(c)
-	links, err := a.inboundService.GetAllInboundLinks(resolveHost(c), scopeFor(user))
+	links, err := a.inboundService.GetAllInboundLinksForOwner(resolveHost(c), scopeFor(user))
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.obtain"), err)
 		return

@@ -307,8 +307,6 @@ export default function ClientFormModal({
   const hwidDateLabel = (ts: number) =>
     !ts || ts <= 0 ? '-' : IntlUtil.formatDate(ts, datepicker);
   const fail2ban = useFail2banStatusQuery();
-  const limitIpDisabled = !fail2ban.usable;
-  const limitIpNotice = getLimitIpNotice(fail2ban, t);
 
   // Declared ahead of the seeding effect below (which needs them to resolve
   // which specific wg/awg inbound this client is attached to, for seeding
@@ -449,6 +447,14 @@ export default function ClientFormModal({
     return ids;
   }, [inbounds]);
 
+  const ciscoIds = useMemo(() => {
+    const ids = new Set<number>();
+    for (const row of inbounds || []) {
+      if (row && row.protocol === 'cisco') ids.add(row.id);
+    }
+    return ids;
+  }, [inbounds]);
+
   const mtprotoIds = useMemo(() => {
     const ids = new Set<number>();
     for (const row of inbounds || []) {
@@ -512,6 +518,20 @@ export default function ClientFormModal({
     () => (inboundIds || []).some((id) => mtprotoIds.has(id)),
     [inboundIds, mtprotoIds],
   );
+
+  // The IP limit counts addresses out of xray's own online-stats, and a cisco
+  // client's traffic never passes through xray — the field would accept a
+  // number and then do nothing at all. Measured rather than assumed: the job
+  // reads GetOnlineUsers and has no other source.
+  const ciscoOnly = useMemo(() => {
+    const ids = inboundIds || [];
+    return ids.length > 0 && ids.every((id) => ciscoIds.has(id));
+  }, [inboundIds, ciscoIds]);
+
+  const limitIpDisabled = !fail2ban.usable || ciscoOnly;
+  const limitIpNotice = ciscoOnly
+    ? t('pages.clients.limitIpNotForCisco')
+    : getLimitIpNotice(fail2ban, t);
 
   function regenerateWireguardKeys() {
     const kp = Wireguard.generateKeypair();

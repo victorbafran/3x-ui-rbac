@@ -105,7 +105,15 @@
     "support": "支持",
     "qrTitle": "扫码。导入。连接。",
     "qrHint": "使用客户端应用扫描。请勿泄露此二维码。",
-    "saveQr": "保存二维码"
+    "saveQr": "保存二维码",
+    "ciscoTitle": "Cisco AnyConnect",
+    "ciscoHint": "此连接需在应用中手动填写——AnyConnect 没有可导入的链接。打开 Cisco Secure Client 或 OpenConnect，填入下列信息。",
+    "ciscoServer": "服务器",
+    "ciscoUsername": "用户名",
+    "ciscoPassword": "密码",
+    "ciscoAppAndroid": "Cisco 客户端（安卓）",
+    "ciscoAppIos": "Cisco 客户端（iPhone）",
+    "ciscoAppOpenConnect": "OpenConnect（安卓）"
   },
   "menu": {
     "theme": "主题",
@@ -1038,7 +1046,8 @@
       "renewIntervalDesc": "到期后从上次截止时间增加指定天数（每天 24 小时），并重置客户端流量。若不需要额外重置，请关闭独立的流量重置。",
       "renewWeeklyDesc": "日历续期按面板时区的午夜执行，并重置客户端流量。若不需要额外重置，请关闭独立的流量重置。",
       "owner": "所有者",
-      "ownerPanel": "面板"
+      "ownerPanel": "面板",
+      "limitIpNotForCisco": "Cisco 不支持：IP 限制依据 Xray 自身的统计计数，而 Cisco 流量不经过 Xray。请改用入站中的“每个账号的设备数”。"
     },
     "groups": {
       "name": "名称",

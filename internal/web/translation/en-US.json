@@ -105,7 +105,15 @@
     "support": "Support",
     "qrTitle": "Scan. Import. Connect.",
     "qrHint": "Scan with your client app. Keep this code private.",
-    "saveQr": "Save QR"
+    "saveQr": "Save QR",
+    "ciscoTitle": "Cisco AnyConnect",
+    "ciscoHint": "This connection is typed into the app by hand — AnyConnect has no link to import. Open your Cisco Secure Client or OpenConnect and enter these.",
+    "ciscoServer": "Server",
+    "ciscoUsername": "Username",
+    "ciscoPassword": "Password",
+    "ciscoAppAndroid": "Cisco client (Android)",
+    "ciscoAppIos": "Cisco client (iPhone)",
+    "ciscoAppOpenConnect": "OpenConnect (Android)"
   },
   "menu": {
     "theme": "Theme",
@@ -1038,7 +1046,8 @@
       "renewIntervalDesc": "Adds the configured number of 24-hour days to the previous cutoff after expiry and resets the client's traffic. Keep independent traffic resets disabled unless an additional reset is intended.",
       "renewWeeklyDesc": "Calendar renewal uses midnight in the panel timezone and also resets the client's traffic. Keep independent traffic resets disabled unless an additional reset is intended.",
       "owner": "Owner",
-      "ownerPanel": "Panel"
+      "ownerPanel": "Panel",
+      "limitIpNotForCisco": "Not available for Cisco: the IP limit counts addresses from Xray's own statistics, and Cisco traffic never passes through Xray. Use “Devices per account” on the inbound instead."
     },
     "groups": {
       "name": "Name",

@@ -105,7 +105,15 @@
     "support": "Soporte",
     "qrTitle": "Escanea. Importa. Conéctate.",
     "qrHint": "Escanéalo con tu aplicación cliente. Mantén este código en privado.",
-    "saveQr": "Guardar QR"
+    "saveQr": "Guardar QR",
+    "ciscoTitle": "Cisco AnyConnect",
+    "ciscoHint": "Esta conexión se escribe a mano en la app: AnyConnect no tiene un enlace que importar. Abre Cisco Secure Client u OpenConnect e introduce estos datos.",
+    "ciscoServer": "Servidor",
+    "ciscoUsername": "Usuario",
+    "ciscoPassword": "Contraseña",
+    "ciscoAppAndroid": "App Cisco (Android)",
+    "ciscoAppIos": "App Cisco (iPhone)",
+    "ciscoAppOpenConnect": "OpenConnect (Android)"
   },
   "menu": {
     "theme": "Tema",
@@ -1038,7 +1046,8 @@
       "renewIntervalDesc": "Tras expirar, añade el número configurado de días de 24 horas al vencimiento anterior y reinicia el tráfico del cliente. Mantén desactivados los reinicios de tráfico independientes salvo que quieras un reinicio adicional.",
       "renewWeeklyDesc": "La renovación por calendario se realiza a medianoche en la zona horaria del panel y también reinicia el tráfico del cliente. Mantén desactivados los reinicios de tráfico independientes salvo que quieras un reinicio adicional.",
       "owner": "Propietario",
-      "ownerPanel": "Panel"
+      "ownerPanel": "Panel",
+      "limitIpNotForCisco": "No disponible para Cisco: el límite de IP se cuenta con las estadísticas del propio Xray y el tráfico Cisco no pasa por Xray. Usa “Dispositivos por cuenta” en la entrada."
     },
     "groups": {
       "name": "Nombre",

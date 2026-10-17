@@ -105,7 +105,15 @@
     "support": "Hỗ trợ",
     "qrTitle": "Quét. Nhập. Kết nối.",
     "qrHint": "Quét bằng ứng dụng khách. Không chia sẻ mã này cho người khác.",
-    "saveQr": "Lưu QR"
+    "saveQr": "Lưu QR",
+    "ciscoTitle": "Cisco AnyConnect",
+    "ciscoHint": "Kết nối này phải nhập tay trong ứng dụng — AnyConnect không có liên kết để nhập. Mở Cisco Secure Client hoặc OpenConnect rồi điền các thông tin sau.",
+    "ciscoServer": "Máy chủ",
+    "ciscoUsername": "Tên đăng nhập",
+    "ciscoPassword": "Mật khẩu",
+    "ciscoAppAndroid": "Ứng dụng Cisco (Android)",
+    "ciscoAppIos": "Ứng dụng Cisco (iPhone)",
+    "ciscoAppOpenConnect": "OpenConnect (Android)"
   },
   "menu": {
     "theme": "Chủ đề",
@@ -1038,7 +1046,8 @@
       "renewIntervalDesc": "Sau khi hết hạn, cộng số ngày đã đặt (mỗi ngày 24 giờ) vào thời điểm hết hạn trước đó và đặt lại lưu lượng của khách hàng. Tắt việc đặt lại lưu lượng độc lập trừ khi bạn muốn đặt lại thêm.",
       "renewWeeklyDesc": "Gia hạn theo lịch diễn ra lúc nửa đêm theo múi giờ của bảng điều khiển và cũng đặt lại lưu lượng của khách hàng. Tắt việc đặt lại lưu lượng độc lập trừ khi bạn muốn đặt lại thêm.",
       "owner": "Chủ sở hữu",
-      "ownerPanel": "Bảng điều khiển"
+      "ownerPanel": "Bảng điều khiển",
+      "limitIpNotForCisco": "Không dùng được với Cisco: giới hạn IP đếm theo thống kê của chính Xray, còn lưu lượng Cisco không đi qua Xray. Hãy dùng “Số thiết bị mỗi tài khoản” ở inbound."
     },
     "groups": {
       "name": "Tên",

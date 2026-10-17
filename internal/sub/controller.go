@@ -441,6 +441,7 @@ func (a *SUBController) buildSubPageData(c *gin.Context) (PageData, bool) {
 	metadata := a.metadataForSubRequest(func() *SubService { return subReq }, subId, "")
 	page := subReq.BuildPageData(subId, hostHeader, traffic, lastOnline, subs, emails, subURL, subJsonURL, subClashURL, basePathStr, metadata.Title, metadata.SupportURL)
 	page.SubAnnounce = metadata.Announce
+	page.CiscoLogins = subReq.ciscoLogins
 	return page, true
 }
 
@@ -697,6 +698,7 @@ func (a *SUBController) subPageContext(page PageData) map[string]any {
 		"subUpdates":    updateHours,
 		"links":         page.Result,
 		"emails":        page.Emails,
+		"ciscoLogins":   page.CiscoLogins,
 		"datepicker":    datepicker,
 		"announce":      page.SubAnnounce,
 	}

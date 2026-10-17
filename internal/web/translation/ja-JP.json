@@ -105,7 +105,15 @@
     "support": "サポート",
     "qrTitle": "スキャン。インポート。接続。",
     "qrHint": "クライアントアプリでスキャンしてください。このコードは他人に見せないでください。",
-    "saveQr": "QR を保存"
+    "saveQr": "QR を保存",
+    "ciscoTitle": "Cisco AnyConnect",
+    "ciscoHint": "この接続はアプリに手で入力します。AnyConnect には取り込めるリンクがありません。Cisco Secure Client か OpenConnect を開いて以下を入力してください。",
+    "ciscoServer": "サーバー",
+    "ciscoUsername": "ユーザー名",
+    "ciscoPassword": "パスワード",
+    "ciscoAppAndroid": "Cisco アプリ (Android)",
+    "ciscoAppIos": "Cisco アプリ (iPhone)",
+    "ciscoAppOpenConnect": "OpenConnect (Android)"
   },
   "menu": {
     "theme": "テーマ",
@@ -1038,7 +1046,8 @@
       "renewIntervalDesc": "期限切れ後、前回の期限に指定日数（1 日 24 時間）を加算し、クライアントの通信量をリセットします。追加のリセットが不要なら、独立した通信量リセットは無効にしてください。",
       "renewWeeklyDesc": "カレンダー更新はパネルのタイムゾーンの午前 0 時に行われ、クライアントの通信量もリセットします。追加のリセットが不要なら、独立した通信量リセットは無効にしてください。",
       "owner": "所有者",
-      "ownerPanel": "パネル"
+      "ownerPanel": "パネル",
+      "limitIpNotForCisco": "Cisco では使えません。IP 制限は Xray 自身の統計から数えますが、Cisco の通信は Xray を通りません。インバウンドの「アカウントあたりの端末数」を使ってください。"
     },
     "groups": {
       "name": "名前",

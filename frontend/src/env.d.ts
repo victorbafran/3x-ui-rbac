@@ -19,6 +19,13 @@ interface SubPageData {
   subUpdates?: number;
   links?: string[];
   emails?: string[];
+  ciscoLogins?: {
+    email?: string;
+    server?: string;
+    port?: number;
+    username?: string;
+    password?: string;
+  }[];
   datepicker?: 'gregorian' | 'jalalian';
   announce?: string;
   downloadByte?: string | number;

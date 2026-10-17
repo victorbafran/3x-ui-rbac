@@ -105,7 +105,15 @@
     "support": "Destek",
     "qrTitle": "Tara. İçe aktar. Bağlan.",
     "qrHint": "İstemci uygulamanızla tarayın. Bu kodu kimseyle paylaşmayın.",
-    "saveQr": "QR'ı kaydet"
+    "saveQr": "QR'ı kaydet",
+    "ciscoTitle": "Cisco AnyConnect",
+    "ciscoHint": "Bu bağlantı uygulamaya elle girilir — AnyConnect'in içe aktarılacak bir bağlantısı yoktur. Cisco Secure Client veya OpenConnect'i açıp bunları girin.",
+    "ciscoServer": "Sunucu",
+    "ciscoUsername": "Kullanıcı adı",
+    "ciscoPassword": "Parola",
+    "ciscoAppAndroid": "Cisco uygulaması (Android)",
+    "ciscoAppIos": "Cisco uygulaması (iPhone)",
+    "ciscoAppOpenConnect": "OpenConnect (Android)"
   },
   "menu": {
     "theme": "Tema",
@@ -1038,7 +1046,8 @@
       "renewIntervalDesc": "Süre dolduktan sonra önceki bitiş zamanına belirlenen sayıda 24 saatlik gün ekler ve istemci trafiğini sıfırlar. Ek bir sıfırlama istemiyorsanız bağımsız trafik sıfırlamalarını devre dışı bırakın.",
       "renewWeeklyDesc": "Takvim yenilemesi panelin saat diliminde gece yarısı gerçekleşir ve istemci trafiğini de sıfırlar. Ek bir sıfırlama istemiyorsanız bağımsız trafik sıfırlamalarını devre dışı bırakın.",
       "owner": "Sahibi",
-      "ownerPanel": "Panel"
+      "ownerPanel": "Panel",
+      "limitIpNotForCisco": "Cisco için kullanılamaz: IP sınırı Xray'in kendi istatistiklerinden sayılır ve Cisco trafiği Xray'den geçmez. Bunun yerine gelen bağlantıdaki “Hesap başına cihaz” alanını kullanın."
     },
     "groups": {
       "name": "İsim",

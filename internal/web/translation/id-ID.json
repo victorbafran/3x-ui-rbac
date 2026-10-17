@@ -105,7 +105,15 @@
     "support": "Dukungan",
     "qrTitle": "Pindai. Impor. Terhubung.",
     "qrHint": "Pindai dengan aplikasi klien Anda. Jaga kerahasiaan kode ini.",
-    "saveQr": "Simpan QR"
+    "saveQr": "Simpan QR",
+    "ciscoTitle": "Cisco AnyConnect",
+    "ciscoHint": "Koneksi ini diketik manual di aplikasi — AnyConnect tidak punya tautan untuk diimpor. Buka Cisco Secure Client atau OpenConnect lalu masukkan data ini.",
+    "ciscoServer": "Server",
+    "ciscoUsername": "Nama pengguna",
+    "ciscoPassword": "Kata sandi",
+    "ciscoAppAndroid": "Aplikasi Cisco (Android)",
+    "ciscoAppIos": "Aplikasi Cisco (iPhone)",
+    "ciscoAppOpenConnect": "OpenConnect (Android)"
   },
   "menu": {
     "theme": "Tema",
@@ -1038,7 +1046,8 @@
       "renewIntervalDesc": "Setelah kedaluwarsa, menambahkan jumlah hari yang ditentukan (24 jam per hari) ke batas waktu sebelumnya dan mereset trafik klien. Nonaktifkan reset trafik terpisah kecuali Anda menginginkan reset tambahan.",
       "renewWeeklyDesc": "Perpanjangan kalender dilakukan pada tengah malam menurut zona waktu panel dan juga mereset trafik klien. Nonaktifkan reset trafik terpisah kecuali Anda menginginkan reset tambahan.",
       "owner": "Pemilik",
-      "ownerPanel": "Panel"
+      "ownerPanel": "Panel",
+      "limitIpNotForCisco": "Tidak tersedia untuk Cisco: batas IP dihitung dari statistik Xray sendiri, dan lalu lintas Cisco tidak melewati Xray. Gunakan “Perangkat per akun” pada inbound."
     },
     "groups": {
       "name": "Nama",

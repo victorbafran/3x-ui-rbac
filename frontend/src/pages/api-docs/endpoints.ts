@@ -1911,7 +1911,8 @@ export const sections: readonly Section[] = [
       {
         method: 'GET',
         path: '/panel/api/admins/list',
-        summary: 'List every admin without password hashes, with their overrides and assigned inbound ids.',
+        summary:
+          'List every admin without password hashes, with their overrides and assigned inbound ids.',
         responseSchema: 'AdminView',
         responseSchemaArray: true,
       },

@@ -24,6 +24,9 @@ export function useMeQuery() {
     refetchOnWindowFocus: false,
   });
   const permissions = query.data?.permissions;
-  const can = useCallback((permission: string) => Boolean(permissions?.[permission]), [permissions]);
+  const can = useCallback(
+    (permission: string) => Boolean(permissions?.[permission]),
+    [permissions],
+  );
   return { me: query.data, loading: query.isLoading, can };
 }

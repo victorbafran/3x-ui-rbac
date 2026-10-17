@@ -114,9 +114,7 @@ export default function ClientInfoModal({
   // refused, so the derived name is shown whenever it differs.
   const ciscoLogin = useMemo(() => {
     if (!client) return '';
-    const onCisco = (client.inboundIds || []).some(
-      (id) => inboundsById[id]?.protocol === 'cisco',
-    );
+    const onCisco = (client.inboundIds || []).some((id) => inboundsById[id]?.protocol === 'cisco');
     if (!onCisco) return '';
     const login = (client.email || '').replace(/:/g, '_');
     return login === client.email ? '' : login;

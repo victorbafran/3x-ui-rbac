@@ -76,7 +76,8 @@ export default function AdminsPage() {
 
   const onSave = useCallback(
     async (payload: AdminPayload) => {
-      const msg = formMode === 'edit' && formAdmin ? await update(formAdmin.id, payload) : await add(payload);
+      const msg =
+        formMode === 'edit' && formAdmin ? await update(formAdmin.id, payload) : await add(payload);
       if (msg?.success) messageApi.success(t('pages.admins.toasts.saved'));
       return msg;
     },
@@ -205,7 +206,9 @@ export default function AdminsPage() {
     return admins.filter(
       (a) =>
         a.username.toLowerCase().includes(q) ||
-        String(t('pages.admins.roles.' + a.role)).toLowerCase().includes(q),
+        String(t('pages.admins.roles.' + a.role))
+          .toLowerCase()
+          .includes(q),
     );
   }, [admins, query, t]);
 

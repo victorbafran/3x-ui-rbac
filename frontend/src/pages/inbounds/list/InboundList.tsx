@@ -218,7 +218,10 @@ export default function InboundList({
   // Importing creates inbounds; resetting every inbound's traffic is panel-wide.
   generalActionsMenu.items = filterMenuByPermission(generalActionsMenu.items ?? [], can, {
     import: 'inbounds.create',
-  }).filter((item) => me?.role === 'super_admin' || !item || !('key' in item) || item.key !== 'resetInbounds');
+  }).filter(
+    (item) =>
+      me?.role === 'super_admin' || !item || !('key' in item) || item.key !== 'resetInbounds',
+  );
 
   return (
     <Card

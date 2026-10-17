@@ -263,24 +263,24 @@ export default function ClientBulkAddModal({
         <FormProvider {...methods}>
           <Form colon={false} labelCol={{ sm: { span: 8 } }} wrapperCol={{ sm: { span: 14 } }}>
             {canPickInbounds && (
-            <Form.Item label={t('pages.clients.attachedInbounds')} required>
-              <SelectAllClearButtons
-                options={inboundOptions}
-                value={inboundIds}
-                onChange={(v) => methods.setValue('inboundIds', v)}
-              />
-              <Select
-                mode="multiple"
-                value={inboundIds}
-                onChange={(v) => methods.setValue('inboundIds', v)}
-                options={inboundOptions}
-                placeholder={t('pages.clients.selectInbound')}
-                showSearch={{
-                  filterOption: (input, option) =>
-                    ((option?.label as string) || '').toLowerCase().includes(input.toLowerCase()),
-                }}
-              />
-            </Form.Item>
+              <Form.Item label={t('pages.clients.attachedInbounds')} required>
+                <SelectAllClearButtons
+                  options={inboundOptions}
+                  value={inboundIds}
+                  onChange={(v) => methods.setValue('inboundIds', v)}
+                />
+                <Select
+                  mode="multiple"
+                  value={inboundIds}
+                  onChange={(v) => methods.setValue('inboundIds', v)}
+                  options={inboundOptions}
+                  placeholder={t('pages.clients.selectInbound')}
+                  showSearch={{
+                    filterOption: (input, option) =>
+                      ((option?.label as string) || '').toLowerCase().includes(input.toLowerCase()),
+                  }}
+                />
+              </Form.Item>
             )}
 
             <FormField name="emailMethod" label={t('pages.clients.method')}>

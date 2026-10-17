@@ -201,25 +201,25 @@ export default function IndexPage() {
               ) : (
                 <div className="ov-page">
                   {isSuperAdmin && (
-                  <OverviewActionBar
-                    status={status}
-                    isMobile={isMobile}
-                    accessLogEnable={accessLogEnable}
-                    panelVersion={displayVersion}
-                    latestVersion={panelUpdateInfo.latestVersion}
-                    updateAvailable={panelUpdateInfo.updateAvailable}
-                    onStopXray={stopXray}
-                    onRestartXray={restartXray}
-                    onOpenLogs={() => setLogsOpen(true)}
-                    onOpenXrayLogs={() => setXrayLogsOpen(true)}
-                    onOpenAmneziaWGLogs={() => setAmneziawgLogsOpen(true)}
-                    onOpenConfig={openConfig}
-                    onOpenBackup={() => setBackupOpen(true)}
-                    onOpenSystemHistory={() => setSysHistoryOpen(true)}
-                    onOpenXrayMetrics={() => setXrayMetricsOpen(true)}
-                    onOpenPanelUpdate={() => setPanelUpdateOpen(true)}
-                    onOpenVersionSwitch={() => setVersionOpen(true)}
-                  />
+                    <OverviewActionBar
+                      status={status}
+                      isMobile={isMobile}
+                      accessLogEnable={accessLogEnable}
+                      panelVersion={displayVersion}
+                      latestVersion={panelUpdateInfo.latestVersion}
+                      updateAvailable={panelUpdateInfo.updateAvailable}
+                      onStopXray={stopXray}
+                      onRestartXray={restartXray}
+                      onOpenLogs={() => setLogsOpen(true)}
+                      onOpenXrayLogs={() => setXrayLogsOpen(true)}
+                      onOpenAmneziaWGLogs={() => setAmneziawgLogsOpen(true)}
+                      onOpenConfig={openConfig}
+                      onOpenBackup={() => setBackupOpen(true)}
+                      onOpenSystemHistory={() => setSysHistoryOpen(true)}
+                      onOpenXrayMetrics={() => setXrayMetricsOpen(true)}
+                      onOpenPanelUpdate={() => setPanelUpdateOpen(true)}
+                      onOpenVersionSwitch={() => setVersionOpen(true)}
+                    />
                   )}
 
                   <SponsorSlot slot="dashboard" />

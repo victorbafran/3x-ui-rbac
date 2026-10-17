@@ -1,6 +1,17 @@
 import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, DatePicker, Divider, Form, Input, InputNumber, Modal, Select, Switch, Typography } from 'antd';
+import {
+  Button,
+  DatePicker,
+  Divider,
+  Form,
+  Input,
+  InputNumber,
+  Modal,
+  Select,
+  Switch,
+  Typography,
+} from 'antd';
 import dayjs from 'dayjs';
 import { Controller, FormProvider, useWatch } from 'react-hook-form';
 
@@ -30,7 +41,10 @@ interface AdminFormModalProps {
 
 const GROUPS = ['sections', 'clients', 'inbounds'] as const;
 
-function templateFor(catalog: PermissionCatalog | undefined, role: AdminRole): Record<string, boolean> {
+function templateFor(
+  catalog: PermissionCatalog | undefined,
+  role: AdminRole,
+): Record<string, boolean> {
   const template = catalog?.templates?.[role] ?? {};
   const out: Record<string, boolean> = {};
   for (const key of catalog?.keys ?? []) out[key] = Boolean(template[key]);
@@ -41,9 +55,9 @@ function defaultsFor(
   admin: AdminView | null,
   catalog: PermissionCatalog | undefined,
 ): AdminFormValues {
-  const role = (AdminRoleSchema.safeParse(admin?.role).success
-    ? admin?.role
-    : 'reseller') as AdminRole;
+  const role = (
+    AdminRoleSchema.safeParse(admin?.role).success ? admin?.role : 'reseller'
+  ) as AdminRole;
   return {
     username: admin?.username ?? '',
     password: '',
@@ -225,7 +239,11 @@ export default function AdminFormModal({
                       checked={isSuper || Boolean(permissions[key])}
                       disabled={isSuper}
                       onChange={(checked) =>
-                        setValue('permissions', { ...permissions, [key]: checked }, { shouldDirty: true })
+                        setValue(
+                          'permissions',
+                          { ...permissions, [key]: checked },
+                          { shouldDirty: true },
+                        )
                       }
                     />
                     <span>{t('pages.admins.perms.' + key)}</span>

@@ -4,12 +4,34 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"os"
+	"path/filepath"
 	"testing"
 )
 
+// openTempBase returns a temporary directory whose whole path is traversable.
+// t.TempDir() hands back something under a 0700 parent, which the checker
+// under test correctly objects to — the point here is what the code creates,
+// not what the test framework did above it.
+func openTempBase(t *testing.T) string {
+	t.Helper()
+	dir := t.TempDir()
+	for p := dir; p != "/" && p != "."; p = filepath.Dir(p) {
+		st, err := os.Stat(p)
+		if err != nil {
+			break
+		}
+		if st.Mode().Perm()&0o001 == 0 {
+			if err := os.Chmod(p, st.Mode().Perm()|0o011); err != nil {
+				t.Fatalf("chmod %s: %v", p, err)
+			}
+		}
+	}
+	return dir
+}
+
 func withTempRuntime(t *testing.T) {
 	t.Helper()
-	runtimeDirOverride = t.TempDir()
+	runtimeDirOverride = openTempBase(t)
 	t.Cleanup(func() { runtimeDirOverride = "" })
 }
 

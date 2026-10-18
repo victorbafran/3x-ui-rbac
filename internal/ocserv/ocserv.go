@@ -114,13 +114,86 @@ func perUserDirForID(id int) string {
 	return filepath.Join(runtimeDir(), fmt.Sprintf("peruser-%d", id))
 }
 
-// ensureRuntimeDir creates the runtime directory world-traversable. MkdirAll
-// honours the umask, which on many systems strips exactly the bits the
-// unprivileged worker needs, so the mode is set explicitly afterwards.
+// ensureRuntimeDir creates the runtime directory and every parent it has to
+// create along the way, each one traversable by the unprivileged user ocserv
+// drops its workers to.
+//
+// Chmod'ing only the leaf is not enough, and the way it fails is invisible.
+// The panel's systemd unit sets UMask=0077, so MkdirAll creates /var/lib/x-ui
+// as 0700 while the explicit chmod opens only /var/lib/x-ui/ocserv beneath it.
+// The socket inside then has the right owner and mode, and the worker still
+// cannot reach it: a directory it cannot traverse is as good as a wall. What
+// the operator sees is "Permission denied" on a socket whose permissions are
+// plainly correct, and what the customer sees is a failed handshake.
+//
+// Directories that already exist are left exactly as they are — this widens
+// only what it creates itself.
 func ensureRuntimeDir() error {
-	dir := runtimeDir()
-	if err := os.MkdirAll(dir, 0o755); err != nil {
+	if err := mkdirTraversable(runtimeDir()); err != nil {
 		return err
 	}
+	return traversabilityError(runtimeDir())
+}
+
+// mkdirTraversable is MkdirAll with the mode applied to each directory it
+// creates, instead of to none of them (MkdirAll's perm argument is masked by
+// the umask, and it never chmods).
+func mkdirTraversable(dir string) error {
+	var missing []string
+	for p := filepath.Clean(dir); ; {
+		st, err := os.Stat(p)
+		if err == nil {
+			if !st.IsDir() {
+				return fmt.Errorf("%s exists and is not a directory", p)
+			}
+			break
+		}
+		if !os.IsNotExist(err) {
+			return err
+		}
+		missing = append(missing, p)
+		parent := filepath.Dir(p)
+		if parent == p {
+			break
+		}
+		p = parent
+	}
+	for i := len(missing) - 1; i >= 0; i-- {
+		if err := os.Mkdir(missing[i], 0o755); err != nil && !os.IsExist(err) {
+			return err
+		}
+		if err := os.Chmod(missing[i], 0o755); err != nil {
+			return err
+		}
+	}
 	return os.Chmod(dir, 0o755)
+}
+
+// traversabilityError names the first directory on the way to dir that the
+// unprivileged worker cannot enter. Reported rather than silently widened:
+// an operator who pointed XUI_OCSERV_DIR somewhere deliberate should be told
+// which directory is in the way, not have its permissions changed for them.
+func traversabilityError(dir string) error {
+	var parts []string
+	for p := filepath.Clean(dir); ; {
+		parts = append(parts, p)
+		parent := filepath.Dir(p)
+		if parent == p {
+			break
+		}
+		p = parent
+	}
+	for i := len(parts) - 1; i >= 0; i-- {
+		st, err := os.Stat(parts[i])
+		if err != nil {
+			return nil
+		}
+		if st.Mode().Perm()&0o001 == 0 {
+			return fmt.Errorf(
+				"%s is not traversable by other users (mode %04o), so ocserv's unprivileged workers cannot reach their own socket under %s; "+
+					"clients will fail the TLS handshake with nothing in the panel to explain it. Open it with: chmod o+x %s",
+				parts[i], st.Mode().Perm(), dir, parts[i])
+		}
+	}
+	return nil
 }

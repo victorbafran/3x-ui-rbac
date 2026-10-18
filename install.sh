@@ -115,7 +115,11 @@ is_port_in_use() {
 # Without this the panel still works; a cisco inbound just reports which
 # package to install rather than failing silently.
 install_ocserv() {
-    [[ "${XUI_WITH_CISCO}" != "1" && "${XUI_WITH_CISCO}" != "true" && "${XUI_WITH_CISCO}" != "yes" ]] && return 0
+    # Defaulted rather than bare: unset is the normal case, and under `set -u`
+    # a bare expansion would abort the whole install for everyone who did not
+    # ask for cisco.
+    local want="${XUI_WITH_CISCO:-}"
+    [[ "$want" != "1" && "$want" != "true" && "$want" != "yes" ]] && return 0
     echo -e "${yellow}Installing ocserv for Cisco/AnyConnect inbounds...${plain}"
     case "${release}" in
         ubuntu | debian | armbian)

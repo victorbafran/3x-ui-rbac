@@ -18,6 +18,10 @@ xui_service="${XUI_SERVICE:=/etc/systemd/system}"
 # fetched from it, so a fork only has to publish release assets under the same
 # names the workflow already produces.
 xui_repo="${XUI_REPO:=MHSanaei/3x-ui}"
+# Which branch the helper scripts (x-ui.sh, update.sh) are fetched from when
+# they are not taken from a release tag. A fork whose default branch is not
+# "main" sets XUI_BRANCH alongside XUI_REPO.
+xui_branch="${XUI_BRANCH:=main}"
 
 # check root
 [[ $EUID -ne 0 ]] && echo -e "${red}Fatal error: ${plain} Please run this script with root privilege \n " && exit 1
@@ -181,6 +185,31 @@ install_ocserv() {
     rc-service ocserv stop 2> /dev/null
     rc-update del ocserv 2> /dev/null
     echo -e "${green}ocserv installed. Its own service is masked: the panel starts one process per cisco inbound.${plain}"
+}
+
+# _persist_repo_choice records the repository and branch this panel was
+# installed from, in the same env file the systemd unit already reads.
+#
+# Without it the installed x-ui helper and update.sh fall back to their
+# compiled-in default — upstream — so "update" from the terminal menu would
+# quietly replace a fork with the original panel, taking every feature the
+# fork exists for with it. Nothing is written for a plain upstream install.
+_persist_repo_choice() {
+    [[ "${xui_repo}" == "MHSanaei/3x-ui" && "${xui_branch}" == "main" ]] && return 0
+    local env_file
+    case "${release}" in
+        ubuntu | debian | armbian) env_file="/etc/default/x-ui" ;;
+        arch | manjaro | parch | alpine) env_file="/etc/conf.d/x-ui" ;;
+        *) env_file="/etc/sysconfig/x-ui" ;;
+    esac
+    install -d -m 755 "$(dirname "$env_file")" 2> /dev/null
+    touch "$env_file" 2> /dev/null || return 0
+    # Replace any line we wrote before rather than appending a second one.
+    sed -i '/^XUI_REPO=/d;/^XUI_BRANCH=/d' "$env_file" 2> /dev/null
+    printf 'XUI_REPO=%s
+XUI_BRANCH=%s
+' "${xui_repo}" "${xui_branch}" >> "$env_file"
+    echo -e "${green}Recorded ${xui_repo} (${xui_branch}) in ${env_file}, so updates stay on it.${plain}"
 }
 
 install_base() {
@@ -2152,5 +2181,6 @@ install_x-ui() {
 
 echo -e "${green}Running...${plain}"
 install_base
+_persist_repo_choice
 install_ocserv
 install_x-ui $1

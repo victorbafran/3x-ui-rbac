@@ -2,7 +2,19 @@
 
 # One variable for every GitHub reference, so a fork installs and updates
 # itself without a forked copy of this script: XUI_REPO=owner/name.
+# Same env file install.sh writes, so an update stays on the repository the
+# panel was installed from.
+for _xui_env in /etc/default/x-ui /etc/conf.d/x-ui /etc/sysconfig/x-ui; do
+    if [[ -r "$_xui_env" ]]; then
+        set -a
+        # shellcheck disable=SC1090
+        source "$_xui_env"
+        set +a
+        break
+    fi
+done
 xui_repo="${XUI_REPO:=MHSanaei/3x-ui}"
+xui_branch="${XUI_BRANCH:=main}"
 
 red='\033[0;31m'
 green='\033[0;32m'

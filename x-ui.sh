@@ -2,7 +2,21 @@
 
 # One variable for every GitHub reference, so a fork installs and updates
 # itself without a forked copy of this script: XUI_REPO=owner/name.
+# Which repository this panel was installed from, and which branch its
+# helper scripts live on. install.sh records them in the env file below, so
+# "update" from this menu goes back to the same place the panel came from
+# instead of silently replacing a fork with upstream.
+for _xui_env in /etc/default/x-ui /etc/conf.d/x-ui /etc/sysconfig/x-ui; do
+    if [[ -r "$_xui_env" ]]; then
+        set -a
+        # shellcheck disable=SC1090
+        source "$_xui_env"
+        set +a
+        break
+    fi
+done
 xui_repo="${XUI_REPO:=MHSanaei/3x-ui}"
+xui_branch="${XUI_BRANCH:=main}"
 
 red='\033[0;31m'
 green='\033[0;32m'
@@ -133,7 +147,7 @@ before_show_menu() {
 }
 
 install() {
-    bash <(curl -Ls https://raw.githubusercontent.com/${xui_repo}/main/install.sh)
+    bash <(curl -Ls https://raw.githubusercontent.com/${xui_repo}/${xui_branch}/install.sh)
     if [[ $? == 0 ]]; then
         if [[ $# == 0 ]]; then
             start
@@ -152,7 +166,7 @@ update() {
         fi
         return 0
     fi
-    bash <(curl -Ls https://raw.githubusercontent.com/${xui_repo}/main/update.sh)
+    bash <(curl -Ls https://raw.githubusercontent.com/${xui_repo}/${xui_branch}/update.sh)
     if [[ $? == 0 ]]; then
         LOGI "Update is complete, Panel has automatically restarted "
         before_show_menu
@@ -170,7 +184,7 @@ update_dev() {
     fi
     # XUI_UPDATE_TAG tells update.sh to install the dev-latest pre-release
     # instead of the latest stable tag.
-    XUI_UPDATE_TAG="dev-latest" bash <(curl -Ls https://raw.githubusercontent.com/${xui_repo}/main/update.sh)
+    XUI_UPDATE_TAG="dev-latest" bash <(curl -Ls https://raw.githubusercontent.com/${xui_repo}/${xui_branch}/update.sh)
     if [[ $? == 0 ]]; then
         LOGI "Dev update is complete, Panel has automatically restarted "
         before_show_menu
@@ -221,7 +235,7 @@ installed_script_url() {
         echo "https://raw.githubusercontent.com/${xui_repo}/v${ver}/x-ui.sh"
     else
         echo -e "${yellow}No x-ui.sh published for the installed version (${ver:-unknown}), using main${plain}" >&2
-        echo "https://raw.githubusercontent.com/${xui_repo}/main/x-ui.sh"
+        echo "https://raw.githubusercontent.com/${xui_repo}/${xui_branch}/x-ui.sh"
     fi
 }
 

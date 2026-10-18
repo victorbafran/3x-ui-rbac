@@ -114,6 +114,35 @@ is_port_in_use() {
 #
 # Without this the panel still works; a cisco inbound just reports which
 # package to install rather than failing silently.
+# The panel's unit withholds every capability it does not need, and ocserv
+# needs three of them: it forks a worker per session, drops that worker to an
+# unprivileged user (CAP_SETGID, CAP_SETUID) and hands it the sec-mod socket
+# (CAP_CHOWN). Measured on ocserv 1.2.4 under the shipped sandbox: without
+# them the port listens, the client reaches the server, and the worker dies
+# before the TLS handshake — the customer sees "server communication errors"
+# and the panel log is the only place the cause appears.
+#
+# A drop-in rather than an edit to the unit, so only installs that asked for
+# cisco widen the sandbox, and an update that rewrites the unit does not undo
+# it. CapabilityBoundingSet entries from drop-ins are merged with the unit's,
+# so the three are added to whatever the unit already grants.
+_install_cisco_sandbox_dropin() {
+    local dir="${xui_service}/x-ui.service.d"
+    local file="${dir}/20-cisco.conf"
+    mkdir -p "$dir" 2> /dev/null || return 0
+    cat > "$file" <<'DROPIN'
+# Added by install.sh because this panel serves Cisco/AnyConnect inbounds.
+# Remove this file if you stop using them.
+[Service]
+CapabilityBoundingSet=CAP_SETGID CAP_SETUID CAP_CHOWN
+DROPIN
+    chmod 644 "$file" 2> /dev/null
+    if command -v systemctl > /dev/null 2>&1; then
+        systemctl daemon-reload > /dev/null 2>&1 || true
+    fi
+    echo -e "${green}Granted ocserv the capabilities it needs (${file}).${plain}"
+}
+
 install_ocserv() {
     # Defaulted rather than bare: unset is the normal case, and under `set -u`
     # a bare expansion would abort the whole install for everyone who did not
@@ -148,6 +177,7 @@ install_ocserv() {
     systemctl stop ocserv 2> /dev/null
     systemctl disable ocserv 2> /dev/null
     systemctl mask ocserv 2> /dev/null
+    _install_cisco_sandbox_dropin
     rc-service ocserv stop 2> /dev/null
     rc-update del ocserv 2> /dev/null
     echo -e "${green}ocserv installed. Its own service is masked: the panel starts one process per cisco inbound.${plain}"

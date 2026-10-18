@@ -57,7 +57,10 @@ func Available() error {
 	if CtlBinaryPath() == "" {
 		return fmt.Errorf("occtl is not installed on this server; it ships with the ocserv package — reinstall ocserv")
 	}
-	return nil
+	// Checked last: the binaries being absent is the likelier problem and the
+	// simpler message, and there is no point naming capabilities for a server
+	// that has nothing to run.
+	return capabilityError()
 }
 
 // defaultRuntimeDir is deliberately outside the panel's own folder.

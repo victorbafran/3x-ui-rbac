@@ -26,6 +26,18 @@ type Instance struct {
 	MaxClients     int
 	MaxSameClients int
 
+	// OutputBuffer is how many MTU-sized packets ocserv may queue per client;
+	// zero takes the panel's default, which favours throughput over latency.
+	OutputBuffer int
+
+	// MTU is the tunnel MTU handed to clients, used when MTUDiscovery is off.
+	// Zero takes the panel's default.
+	MTU int
+
+	// MTUDiscovery turns path MTU discovery back on for operators whose
+	// networks carry ICMP properly and who want the larger packets.
+	MTUDiscovery bool
+
 	// CertFile/KeyFile point at an operator-supplied TLS keypair. When empty
 	// the manager generates and reuses a self-signed RSA keypair.
 	//
@@ -76,6 +88,23 @@ func (inst Instance) maxSameClients() int {
 		return 2
 	}
 	return inst.MaxSameClients
+}
+
+func (inst Instance) outputBuffer() int {
+	if inst.OutputBuffer <= 0 {
+		return 64
+	}
+	return inst.OutputBuffer
+}
+
+// 1400 leaves room for the DTLS record, the UDP and IP headers and a layer of
+// encapsulation on the way — the common case on paths that are not plain
+// ethernet end to end.
+func (inst Instance) mtu() int {
+	if inst.MTU <= 0 {
+		return 1400
+	}
+	return inst.MTU
 }
 
 // deviceName is the tun interface prefix; ocserv appends a per-session number.
@@ -132,6 +161,9 @@ func (inst Instance) structuralFingerprint() string {
 		strconv.Itoa(inst.maxSameClients()),
 		inst.CertFile,
 		inst.KeyFile,
+		strconv.Itoa(inst.outputBuffer()),
+		strconv.Itoa(inst.mtu()),
+		strconv.FormatBool(inst.MTUDiscovery),
 	}, "|")
 }
 
@@ -208,7 +240,21 @@ func renderConfig(inst Instance, certFile, keyFile string) string {
 	// cisco-client-compat is what makes the real AnyConnect client work; ocserv
 	// notes that it implies dtls-legacy, which is wanted for the same reason.
 	w("cisco-client-compat = true")
-	w("try-mtu-discovery = true")
+	// ocserv's own default output buffer is deliberately small — its manual
+	// says the low default is for latency and that raising it improves
+	// throughput. A VPN selling bandwidth wants the throughput.
+	w("output-buffer = %d", inst.outputBuffer())
+	// Path MTU discovery is off by default in ocserv's shipped config, and
+	// for good reason on the networks this panel serves: it depends on ICMP
+	// getting back, and a path that swallows ICMP leaves the tunnel guessing
+	// high and then stalling on every large packet. A fixed, conservative
+	// MTU is slower in theory and far steadier in practice.
+	if inst.MTUDiscovery {
+		w("try-mtu-discovery = true")
+	} else {
+		w("try-mtu-discovery = false")
+		w("mtu = %d", inst.mtu())
+	}
 	w("keepalive = 32400")
 	w("dpd = 90")
 	w("mobile-dpd = 1800")

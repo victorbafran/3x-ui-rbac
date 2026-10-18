@@ -138,3 +138,60 @@ func TestLoginToEmailMapsBackToTheBillingIdentity(t *testing.T) {
 		t.Fatalf("login mapped back to %q, want the namespaced email", got)
 	}
 }
+
+// ocserv's own manual: the default output buffer is small for latency, and
+// raising it improves throughput. A panel selling bandwidth wants the
+// throughput, so the default here is not ocserv's.
+func TestRenderConfigRaisesTheOutputBuffer(t *testing.T) {
+	cfg := configFor(t, Instance{Id: 1, Port: 443})
+	if !strings.Contains(cfg, "output-buffer = 64") {
+		t.Fatalf("output buffer not raised:\n%s", cfg)
+	}
+	custom := configFor(t, Instance{Id: 1, Port: 443, OutputBuffer: 16})
+	if !strings.Contains(custom, "output-buffer = 16") {
+		t.Fatalf("an operator's own value was ignored:\n%s", custom)
+	}
+}
+
+// Path MTU discovery needs ICMP to come back. On a path that swallows it the
+// tunnel guesses high and then stalls on every large packet, which is worse
+// than a conservative fixed MTU. ocserv's own shipped config has it off.
+func TestMtuDiscoveryIsOffWithAFixedMtuInstead(t *testing.T) {
+	cfg := configFor(t, Instance{Id: 1, Port: 443})
+	if !strings.Contains(cfg, "try-mtu-discovery = false") {
+		t.Fatalf("discovery is on by default:\n%s", cfg)
+	}
+	if !strings.Contains(cfg, "mtu = 1400") {
+		t.Fatalf("no fixed MTU to fall back on:\n%s", cfg)
+	}
+}
+
+// An operator whose network carries ICMP properly can have the larger
+// packets back, and then a fixed MTU must not be written alongside.
+func TestMtuDiscoveryCanBeTurnedBackOn(t *testing.T) {
+	cfg := configFor(t, Instance{Id: 1, Port: 443, MTUDiscovery: true})
+	if !strings.Contains(cfg, "try-mtu-discovery = true") {
+		t.Fatalf("discovery was not honoured:\n%s", cfg)
+	}
+	if strings.Contains(cfg, "\nmtu = ") {
+		t.Fatalf("a fixed MTU was written even though discovery is on:\n%s", cfg)
+	}
+}
+
+// These are read once at startup, so a change has to restart the instance —
+// a rewrite of the password file alone would leave the old values running.
+func TestTuningMovesTheStructuralFingerprint(t *testing.T) {
+	base := Instance{Id: 1, Port: 443}
+	for _, tc := range []struct {
+		name string
+		inst Instance
+	}{
+		{"output buffer", Instance{Id: 1, Port: 443, OutputBuffer: 16}},
+		{"mtu", Instance{Id: 1, Port: 443, MTU: 1300}},
+		{"discovery", Instance{Id: 1, Port: 443, MTUDiscovery: true}},
+	} {
+		if base.structuralFingerprint() == tc.inst.structuralFingerprint() {
+			t.Errorf("%s did not move the structural fingerprint; ocserv would keep the old value", tc.name)
+		}
+	}
+}

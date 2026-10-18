@@ -25,6 +25,9 @@ type ciscoSettings struct {
 	DNS            []string `json:"dns"`
 	MaxClients     int      `json:"maxClients"`
 	MaxSameClients int      `json:"maxSameClients"`
+	OutputBuffer   int      `json:"outputBuffer"`
+	MTU            int      `json:"mtu"`
+	MTUDiscovery   bool     `json:"mtuDiscovery"`
 	CertFile       string   `json:"certFile"`
 	KeyFile        string   `json:"keyFile"`
 }
@@ -86,6 +89,9 @@ func InstanceFromInbound(ib *model.Inbound) (Instance, bool) {
 		DNS:            dns,
 		MaxClients:     parsed.MaxClients,
 		MaxSameClients: parsed.MaxSameClients,
+		OutputBuffer:   parsed.OutputBuffer,
+		MTU:            parsed.MTU,
+		MTUDiscovery:   parsed.MTUDiscovery,
 		CertFile:       strings.TrimSpace(parsed.CertFile),
 		KeyFile:        strings.TrimSpace(parsed.KeyFile),
 	}, true

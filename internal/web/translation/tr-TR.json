@@ -768,7 +768,11 @@
         "ciscoMaxSameClientsHint": "Bir hesabı aynı anda kaç cihaz kullanabilir. 0, varsayılan olan 2'yi kullanır.",
         "ciscoCertFile": "Sertifika dosyası",
         "ciscoCertFileHint": "İkisini de boş bırakırsanız panel kendinden imzalı bir RSA sertifikası üretir ve onu yeniden kullanır. Anahtar RSA olmalı: resmi Cisco Secure Client bir ECDSA anahtarına bağlanamaz.",
-        "ciscoKeyFile": "Özel anahtar dosyası"
+        "ciscoKeyFile": "Özel anahtar dosyası",
+        "ciscoUdpPort": "DTLS portu (UDP)",
+        "ciscoUdpPortHint": "Cisco'nun hızı UDP üzerinden çalışan DTLS'ten gelir. 0 bırakırsanız TCP ile aynı port kullanılır; yalnızca o UDP portu kapalı ve başka biri açıksa değiştirin.",
+        "ciscoDisableUdp": "DTLS'i kapat",
+        "ciscoDisableUdpHint": "Yalnızca UDP kalıcı olarak kapalıysa kullanın. Aksi halde her bağlantı 25 saniye bekleyip TCP'ye düşer; trafiğiniz başka bir TCP bağlantısının içinden gittiği için bu yavaştır."
       },
       "info": {
         "mode": "Mod",

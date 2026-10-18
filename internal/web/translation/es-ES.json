@@ -768,7 +768,11 @@
         "ciscoMaxSameClientsHint": "Cuántos dispositivos pueden usar una cuenta a la vez. 0 usa el valor predeterminado de 2.",
         "ciscoCertFile": "Archivo de certificado",
         "ciscoCertFileHint": "Deja ambos vacíos y el panel generará un certificado RSA autofirmado y lo reutilizará. La clave debe ser RSA: el cliente oficial Cisco Secure Client no conecta con una ECDSA.",
-        "ciscoKeyFile": "Archivo de clave privada"
+        "ciscoKeyFile": "Archivo de clave privada",
+        "ciscoUdpPort": "Puerto DTLS (UDP)",
+        "ciscoUdpPortHint": "La velocidad de Cisco viene de DTLS, que va por UDP. Deja 0 para usar el mismo puerto que TCP; cámbialo solo si ese puerto UDP está bloqueado y otro no.",
+        "ciscoDisableUdp": "Desactivar DTLS",
+        "ciscoDisableUdpHint": "Úsalo solo si UDP está bloqueado de forma permanente. Si no, cada conexión espera 25 segundos antes de caer a TCP, que es lento porque tu tráfico va dentro de otra conexión TCP."
       },
       "info": {
         "mode": "Modo",

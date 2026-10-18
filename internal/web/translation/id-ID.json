@@ -768,7 +768,11 @@
         "ciscoMaxSameClientsHint": "Berapa perangkat boleh memakai satu akun bersamaan. 0 memakai nilai bawaan 2.",
         "ciscoCertFile": "Berkas sertifikat",
         "ciscoCertFileHint": "Kosongkan keduanya dan panel membuat sertifikat RSA bertanda tangan sendiri lalu memakainya kembali. Kuncinya harus RSA: klien resmi Cisco Secure Client tidak bisa terhubung ke ECDSA.",
-        "ciscoKeyFile": "Berkas kunci privat"
+        "ciscoKeyFile": "Berkas kunci privat",
+        "ciscoUdpPort": "Port DTLS (UDP)",
+        "ciscoUdpPortHint": "Kecepatan Cisco berasal dari DTLS yang berjalan di UDP. Biarkan 0 untuk memakai port yang sama dengan TCP; ubah hanya jika port UDP itu diblokir dan yang lain tidak.",
+        "ciscoDisableUdp": "Matikan DTLS",
+        "ciscoDisableUdpHint": "Pakai hanya jika UDP diblokir permanen. Tanpa itu setiap koneksi menunggu 25 detik sebelum jatuh ke TCP, yang lambat karena trafik Anda berjalan di dalam koneksi TCP lain."
       },
       "info": {
         "mode": "Mode",

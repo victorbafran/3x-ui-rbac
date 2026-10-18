@@ -25,6 +25,8 @@ type ciscoSettings struct {
 	DNS            []string `json:"dns"`
 	MaxClients     int      `json:"maxClients"`
 	MaxSameClients int      `json:"maxSameClients"`
+	UDPPort        int      `json:"udpPort"`
+	DisableUDP     bool     `json:"disableUdp"`
 	OutputBuffer   int      `json:"outputBuffer"`
 	MTU            int      `json:"mtu"`
 	MTUDiscovery   bool     `json:"mtuDiscovery"`
@@ -89,6 +91,8 @@ func InstanceFromInbound(ib *model.Inbound) (Instance, bool) {
 		DNS:            dns,
 		MaxClients:     parsed.MaxClients,
 		MaxSameClients: parsed.MaxSameClients,
+		UDPPort:        parsed.UDPPort,
+		DisableUDP:     parsed.DisableUDP,
 		OutputBuffer:   parsed.OutputBuffer,
 		MTU:            parsed.MTU,
 		MTUDiscovery:   parsed.MTUDiscovery,

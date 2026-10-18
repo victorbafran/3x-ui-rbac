@@ -26,6 +26,16 @@ type Instance struct {
 	MaxClients     int
 	MaxSameClients int
 
+	// UDPPort carries DTLS. Zero means the same port as TCP, which is what
+	// an AnyConnect client expects; set it only when that UDP port is
+	// blocked and another is not.
+	UDPPort int
+
+	// DisableUDP turns DTLS off outright. Worth doing when UDP is blocked
+	// for good: without it every session spends switch-to-tcp-timeout
+	// seconds trying DTLS before falling back, on every single connect.
+	DisableUDP bool
+
 	// OutputBuffer is how many MTU-sized packets ocserv may queue per client;
 	// zero takes the panel's default, which favours throughput over latency.
 	OutputBuffer int
@@ -88,6 +98,13 @@ func (inst Instance) maxSameClients() int {
 		return 2
 	}
 	return inst.MaxSameClients
+}
+
+func (inst Instance) udpPort() int {
+	if inst.UDPPort <= 0 {
+		return inst.Port
+	}
+	return inst.UDPPort
 }
 
 func (inst Instance) outputBuffer() int {
@@ -161,6 +178,8 @@ func (inst Instance) structuralFingerprint() string {
 		strconv.Itoa(inst.maxSameClients()),
 		inst.CertFile,
 		inst.KeyFile,
+		strconv.Itoa(inst.udpPort()),
+		strconv.FormatBool(inst.DisableUDP),
 		strconv.Itoa(inst.outputBuffer()),
 		strconv.Itoa(inst.mtu()),
 		strconv.FormatBool(inst.MTUDiscovery),
@@ -217,7 +236,13 @@ func renderConfig(inst Instance, certFile, keyFile string) string {
 	w("auth = \"plain[passwd=%s]\"", passwdPathForID(inst.Id))
 	w("listen-host = %s", inst.listenAddr())
 	w("tcp-port = %d", inst.Port)
-	w("udp-port = %d", inst.Port)
+	// Without a udp-port there is no DTLS at all, and the client stops
+	// waiting for one. With UDP blocked that is the faster answer: DTLS is
+	// what makes this protocol quick, but a DTLS that never forms only
+	// costs every connection the switch-to-tcp timeout.
+	if !inst.DisableUDP {
+		w("udp-port = %d", inst.udpPort())
+	}
 	w("run-as-user = nobody")
 	w("run-as-group = nogroup")
 	w("socket-file = %s", ipcSocketForID(inst.Id))

@@ -264,6 +264,8 @@ export function createDefaultCiscoInboundSettings(): CiscoInboundSettings {
     network: '',
     netmask: '255.255.255.0',
     dns: ['1.1.1.1', '8.8.8.8'],
+    udpPort: 0,
+    disableUdp: false,
     maxClients: 0,
     maxSameClients: 2,
     certFile: '',

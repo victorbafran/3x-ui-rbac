@@ -195,3 +195,46 @@ func TestTuningMovesTheStructuralFingerprint(t *testing.T) {
 		}
 	}
 }
+
+// DTLS is what makes this protocol fast. By default it rides the same port
+// as TCP, which is what an AnyConnect client expects.
+func TestUdpSharesTheTcpPortByDefault(t *testing.T) {
+	cfg := configFor(t, Instance{Id: 1, Port: 443})
+	if !strings.Contains(cfg, "udp-port = 443") {
+		t.Fatalf("no DTLS port alongside TCP:\n%s", cfg)
+	}
+}
+
+// When that UDP port is blocked and another is not, the operator moves it
+// without moving the TCP port the client connects to.
+func TestUdpCanUseItsOwnPort(t *testing.T) {
+	cfg := configFor(t, Instance{Id: 1, Port: 443, UDPPort: 8443})
+	if !strings.Contains(cfg, "udp-port = 8443") || !strings.Contains(cfg, "tcp-port = 443") {
+		t.Fatalf("the two ports did not separate:\n%s", cfg)
+	}
+}
+
+// With UDP blocked for good, offering DTLS costs every connection the
+// switch-to-tcp timeout and then falls back anyway. Omitting udp-port is
+// what stops the client waiting.
+func TestDisablingUdpRemovesThePortEntirely(t *testing.T) {
+	cfg := configFor(t, Instance{Id: 1, Port: 443, DisableUDP: true})
+	if strings.Contains(cfg, "udp-port") {
+		t.Fatalf("udp-port is still offered although UDP is disabled:\n%s", cfg)
+	}
+	if !strings.Contains(cfg, "tcp-port = 443") {
+		t.Fatalf("TCP went away with it:\n%s", cfg)
+	}
+}
+
+func TestUdpChangesMoveTheStructuralFingerprint(t *testing.T) {
+	base := Instance{Id: 1, Port: 443}
+	moved := Instance{Id: 1, Port: 443, UDPPort: 8443}
+	off := Instance{Id: 1, Port: 443, DisableUDP: true}
+	if base.structuralFingerprint() == moved.structuralFingerprint() {
+		t.Error("moving the UDP port did not move the fingerprint")
+	}
+	if base.structuralFingerprint() == off.structuralFingerprint() {
+		t.Error("disabling UDP did not move the fingerprint")
+	}
+}

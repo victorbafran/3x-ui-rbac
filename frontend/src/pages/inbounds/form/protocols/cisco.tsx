@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Input, InputNumber, Select } from 'antd';
+import { Alert, Input, InputNumber, Select, Switch } from 'antd';
 import { useFormContext, useWatch } from 'react-hook-form';
 
 import { FormField } from '@/components/form/rhf';
@@ -71,6 +71,26 @@ export default function CiscoFields() {
         tooltip={t('pages.inbounds.form.ciscoDnsHint')}
       >
         <Select mode="tags" tokenSeparators={[',', ' ']} placeholder="1.1.1.1" />
+      </FormField>
+      <FormField
+        name={['settings', 'udpPort']}
+        label={t('pages.inbounds.form.ciscoUdpPort')}
+        tooltip={t('pages.inbounds.form.ciscoUdpPortHint')}
+      >
+        <InputNumber
+          min={0}
+          max={65535}
+          placeholder={String(port ?? 443)}
+          style={{ width: '100%' }}
+        />
+      </FormField>
+      <FormField
+        name={['settings', 'disableUdp']}
+        label={t('pages.inbounds.form.ciscoDisableUdp')}
+        tooltip={t('pages.inbounds.form.ciscoDisableUdpHint')}
+        valueProp="checked"
+      >
+        <Switch />
       </FormField>
       <FormField
         name={['settings', 'maxClients']}

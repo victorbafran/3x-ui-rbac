@@ -32,6 +32,12 @@ export const CiscoInboundSettingsSchema = z.object({
   network: z.string().default(''),
   netmask: z.string().default('255.255.255.0'),
   dns: z.array(z.string()).default(['1.1.1.1', '8.8.8.8']),
+  // DTLS rides UDP and is what makes this protocol fast. Zero means the same
+  // port as TCP; set it only when that UDP port is blocked and another is not.
+  udpPort: z.number().int().min(0).max(65535).default(0),
+  // With UDP blocked for good, offering DTLS costs every connection the
+  // fallback timeout and then lands on TCP anyway.
+  disableUdp: z.boolean().default(false),
   maxClients: z.number().int().min(0).default(0),
   // How many devices may hold one account at the same time.
   maxSameClients: z.number().int().min(0).default(2),

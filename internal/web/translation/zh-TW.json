@@ -768,7 +768,11 @@
         "ciscoMaxSameClientsHint": "同一帳號可同時使用的裝置數量。填 0 使用預設值 2。",
         "ciscoCertFile": "憑證檔案",
         "ciscoCertFileHint": "兩項都留空時，面板會產生一份自簽 RSA 憑證並重複使用。金鑰必須是 RSA：官方 Cisco Secure Client 無法連線至 ECDSA 金鑰。",
-        "ciscoKeyFile": "私鑰檔案"
+        "ciscoKeyFile": "私鑰檔案",
+        "ciscoUdpPort": "DTLS 連接埠（UDP）",
+        "ciscoUdpPortHint": "Cisco 的速度來自執行在 UDP 上的 DTLS。填 0 表示與 TCP 同一個連接埠；僅當該 UDP 連接埠被封鎖而另一個可用時才更改。",
+        "ciscoDisableUdp": "關閉 DTLS",
+        "ciscoDisableUdpHint": "僅在 UDP 被長期封鎖時使用。否則每次連線都會先等 25 秒再退回 TCP，而那很慢——你的流量會跑在另一條 TCP 連線裡。"
       },
       "info": {
         "mode": "模式",

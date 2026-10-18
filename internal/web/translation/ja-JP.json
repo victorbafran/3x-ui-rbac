@@ -768,7 +768,11 @@
         "ciscoMaxSameClientsHint": "一つのアカウントを同時に使える端末数です。0 は既定値 2 を使います。",
         "ciscoCertFile": "証明書ファイル",
         "ciscoCertFileHint": "両方を空にするとパネルが自己署名の RSA 証明書を生成して再利用します。鍵は RSA である必要があります。公式の Cisco Secure Client は ECDSA 鍵では接続できません。",
-        "ciscoKeyFile": "秘密鍵ファイル"
+        "ciscoKeyFile": "秘密鍵ファイル",
+        "ciscoUdpPort": "DTLS ポート (UDP)",
+        "ciscoUdpPortHint": "Cisco の速さは UDP 上の DTLS によるものです。0 のままなら TCP と同じポートを使います。その UDP ポートが塞がれていて別が通る場合だけ変更してください。",
+        "ciscoDisableUdp": "DTLS を無効にする",
+        "ciscoDisableUdpHint": "UDP が恒久的に塞がれている場合だけ使ってください。そうでないと接続ごとに 25 秒 DTLS を試してから TCP に落ち、通信が別の TCP の中を通るため遅くなります。"
       },
       "info": {
         "mode": "モード",

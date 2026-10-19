@@ -36,10 +36,6 @@ type Instance struct {
 	// seconds trying DTLS before falling back, on every single connect.
 	DisableUDP bool
 
-	// OutputBuffer is how many MTU-sized packets ocserv may queue per client;
-	// zero takes the panel's default, which favours throughput over latency.
-	OutputBuffer int
-
 	// MTU is the tunnel MTU handed to clients, used when MTUDiscovery is off.
 	// Zero takes the panel's default.
 	MTU int
@@ -105,13 +101,6 @@ func (inst Instance) udpPort() int {
 		return inst.Port
 	}
 	return inst.UDPPort
-}
-
-func (inst Instance) outputBuffer() int {
-	if inst.OutputBuffer <= 0 {
-		return 64
-	}
-	return inst.OutputBuffer
 }
 
 // 1400 leaves room for the DTLS record, the UDP and IP headers and a layer of
@@ -180,7 +169,6 @@ func (inst Instance) structuralFingerprint() string {
 		inst.KeyFile,
 		strconv.Itoa(inst.udpPort()),
 		strconv.FormatBool(inst.DisableUDP),
-		strconv.Itoa(inst.outputBuffer()),
 		strconv.Itoa(inst.mtu()),
 		strconv.FormatBool(inst.MTUDiscovery),
 	}, "|")
@@ -265,10 +253,14 @@ func renderConfig(inst Instance, certFile, keyFile string) string {
 	// cisco-client-compat is what makes the real AnyConnect client work; ocserv
 	// notes that it implies dtls-legacy, which is wanted for the same reason.
 	w("cisco-client-compat = true")
-	// ocserv's own default output buffer is deliberately small — its manual
-	// says the low default is for latency and that raising it improves
-	// throughput. A VPN selling bandwidth wants the throughput.
-	w("output-buffer = %d", inst.outputBuffer())
+	// output-buffer is deliberately never written. The manual reads as though
+	// raising it buys throughput, so this panel used to set 64 — and measured
+	// against a stock ocserv on the same server, over the same path, in the same
+	// minute, that one line cost 223 Mbit/s of download and turned a clean
+	// 50 Mbit/s UDP stream into 87% loss. Every value behaved the same: 4, 23
+	// (ocserv's own default), 32, 64 and 1000 all landed within a megabit of
+	// each other around 5 Mbit/s, while omitting the option restored full speed.
+	// The size is not what matters; naming the option at all is.
 	// Path MTU discovery is off by default in ocserv's shipped config, and
 	// for good reason on the networks this panel serves: it depends on ICMP
 	// getting back, and a path that swallows ICMP leaves the tunnel guessing

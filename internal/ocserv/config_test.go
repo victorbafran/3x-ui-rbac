@@ -139,17 +139,15 @@ func TestLoginToEmailMapsBackToTheBillingIdentity(t *testing.T) {
 	}
 }
 
-// ocserv's own manual: the default output buffer is small for latency, and
-// raising it improves throughput. A panel selling bandwidth wants the
-// throughput, so the default here is not ocserv's.
-func TestRenderConfigRaisesTheOutputBuffer(t *testing.T) {
+// Measured against a stock ocserv on the same server, over the same path, in
+// the same minute: writing this option cost 223 Mbit/s of download and turned
+// a clean 50 Mbit/s UDP stream into 87% loss. 4, 23, 32, 64 and 1000 all
+// behaved alike, around 5 Mbit/s, so there is no safe value to offer and the
+// only correct rendering is no line at all.
+func TestRenderConfigNeverWritesAnOutputBuffer(t *testing.T) {
 	cfg := configFor(t, Instance{Id: 1, Port: 443})
-	if !strings.Contains(cfg, "output-buffer = 64") {
-		t.Fatalf("output buffer not raised:\n%s", cfg)
-	}
-	custom := configFor(t, Instance{Id: 1, Port: 443, OutputBuffer: 16})
-	if !strings.Contains(custom, "output-buffer = 16") {
-		t.Fatalf("an operator's own value was ignored:\n%s", custom)
+	if strings.Contains(cfg, "output-buffer") {
+		t.Fatalf("output-buffer was written; it caps the tunnel near 5 Mbit/s:\n%s", cfg)
 	}
 }
 
@@ -186,7 +184,6 @@ func TestTuningMovesTheStructuralFingerprint(t *testing.T) {
 		name string
 		inst Instance
 	}{
-		{"output buffer", Instance{Id: 1, Port: 443, OutputBuffer: 16}},
 		{"mtu", Instance{Id: 1, Port: 443, MTU: 1300}},
 		{"discovery", Instance{Id: 1, Port: 443, MTUDiscovery: true}},
 	} {

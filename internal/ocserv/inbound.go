@@ -27,7 +27,6 @@ type ciscoSettings struct {
 	MaxSameClients int      `json:"maxSameClients"`
 	UDPPort        int      `json:"udpPort"`
 	DisableUDP     bool     `json:"disableUdp"`
-	OutputBuffer   int      `json:"outputBuffer"`
 	MTU            int      `json:"mtu"`
 	MTUDiscovery   bool     `json:"mtuDiscovery"`
 	CertFile       string   `json:"certFile"`
@@ -93,7 +92,6 @@ func InstanceFromInbound(ib *model.Inbound) (Instance, bool) {
 		MaxSameClients: parsed.MaxSameClients,
 		UDPPort:        parsed.UDPPort,
 		DisableUDP:     parsed.DisableUDP,
-		OutputBuffer:   parsed.OutputBuffer,
 		MTU:            parsed.MTU,
 		MTUDiscovery:   parsed.MTUDiscovery,
 		CertFile:       strings.TrimSpace(parsed.CertFile),

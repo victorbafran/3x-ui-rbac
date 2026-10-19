@@ -29,7 +29,13 @@ export const RelaySchema = z.object({
   // Which cisco inbounds already offer this relay as a country. Deleting one
   // that is in use would leave that country in every customer's dropdown with
   // nothing behind it, so the panel says so rather than finding out later.
-  inUseBy: z.array(z.string()).default([]),
+  // nullish, not default: default() only fills an *undefined* value, so a
+  // null — which is what Go sends for an empty slice — went straight through
+  // and the page died reading .length off it.
+  inUseBy: z
+    .array(z.string())
+    .nullish()
+    .transform((v) => v ?? []),
 });
 export type Relay = z.infer<typeof RelaySchema>;
 export const RelayListSchema = z.object({ obj: z.array(RelaySchema).nullable().default([]) });
@@ -54,8 +60,14 @@ export const ReachabilitySchema = z.object({
   Country: z.string().default(''),
   City: z.string().default(''),
   Org: z.string().default(''),
-  Services: z.record(z.string(), z.string()).default({}),
-  Notes: z.array(z.string()).nullable().default([]),
+  Services: z
+    .record(z.string(), z.string())
+    .nullish()
+    .transform((v) => v ?? {}),
+  Notes: z
+    .array(z.string())
+    .nullish()
+    .transform((v) => v ?? []),
 });
 export type Reachability = z.infer<typeof ReachabilitySchema>;
 export const ReachabilityMsgSchema = z.object({ obj: ReachabilitySchema.nullable() });

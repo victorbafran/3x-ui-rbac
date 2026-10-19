@@ -116,3 +116,19 @@ func TestAnInboundIsListedOnceHoweverManyCountriesItOffers(t *testing.T) {
 		t.Fatalf("a second inbound was lost: %v", got)
 	}
 }
+
+// A relay nobody uses yet must come back as an empty list, not as nothing. Go
+// marshals a nil slice to null, the page reads .length off it, and on a real
+// panel that took the whole page down the first time it was opened.
+func TestARelayNobodyUsesStillGetsAList(t *testing.T) {
+	got := inUse(map[string][]string{}, "wgr1")
+	if got == nil {
+		t.Fatal("an unused relay was given a nil list, which reaches the browser as null")
+	}
+	if len(got) != 0 {
+		t.Fatalf("expected an empty list, got %v", got)
+	}
+	if used := inUse(map[string][]string{"wgr1": {"cisco-1"}}, "wgr1"); len(used) != 1 {
+		t.Fatalf("a relay in use lost its inbound: %v", used)
+	}
+}

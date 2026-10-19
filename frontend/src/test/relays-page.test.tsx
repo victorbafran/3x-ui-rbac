@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 
@@ -10,6 +10,8 @@ import { renderWithProviders } from './test-utils';
 vi.mock('@/api/queries/useAllSettings', () => ({
   useAllSettings: () => ({ allSetting: {} }),
 }));
+
+let rows: Relay[] = [];
 
 const relays: Relay[] = [
   {
@@ -62,7 +64,7 @@ const removeMut = { mutateAsync: vi.fn(async () => ({ success: true })), isPendi
 
 vi.mock('@/api/queries/useRelaysQuery', () => ({
   useRelaysQuery: () => ({
-    relays,
+    relays: rows,
     isLoading: false,
     isFetched: true,
     error: null,
@@ -84,6 +86,10 @@ vi.mock('@/api/queries/useRelayMutations', () => ({
 const { default: RelaysPage } = await import('@/pages/relays/RelaysPage');
 
 describe('the exit servers page', () => {
+  beforeEach(() => {
+    rows = relays;
+  });
+
   // The operator has to be able to tell a working country from a broken one at
   // a glance; a page that lists both the same way is a page nobody checks.
   it('shows each server and says which one is in trouble', () => {
@@ -122,6 +128,21 @@ describe('the exit servers page', () => {
       </MemoryRouter>,
     );
     expect(screen.getByText('cisco-1')).toBeTruthy();
+    cleanup();
+  });
+
+  // The first thing this page ever did on a real panel was crash: Go sends a
+  // nil slice as null, zod's default() only fills an undefined, and parseMsg
+  // hands the raw response straight to the component when validation fails.
+  // A row with no inbounds behind it has to render.
+  it('survives a server that no inbound is using yet', () => {
+    rows = [{ ...relays[1], inUseBy: null } as unknown as Relay];
+    renderWithProviders(
+      <MemoryRouter>
+        <RelaysPage />
+      </MemoryRouter>,
+    );
+    expect(screen.getByText('turkey')).toBeTruthy();
     cleanup();
   });
 

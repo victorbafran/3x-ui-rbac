@@ -213,8 +213,11 @@ export default function RelaysPage() {
     {
       title: t('pages.relays.columns.usedBy'),
       key: 'usedBy',
+      // parseMsg hands the page the raw response whenever validation fails,
+      // for any reason, so the component cannot assume the shape it asked
+      // for. This field arriving as null is exactly how the page first died.
       render: (_: unknown, r: Relay) =>
-        r.inUseBy.length ? r.inUseBy.join(', ') : <span style={{ opacity: 0.5 }}>—</span>,
+        r.inUseBy?.length ? r.inUseBy.join(', ') : <span style={{ opacity: 0.5 }}>—</span>,
     },
     {
       title: '',
@@ -415,7 +418,7 @@ export default function RelaysPage() {
               </Descriptions.Item>
             </Descriptions>
             <div style={{ marginTop: 12 }}>
-              {Object.entries(reach.result.Services).map(([name, code]) => (
+              {Object.entries(reach.result.Services ?? {}).map(([name, code]) => (
                 <Tag
                   key={name}
                   color={code === '200' || code === 'ok' ? 'success' : undefined}

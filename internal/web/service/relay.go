@@ -92,7 +92,11 @@ func (s *RelayService) List() ([]RelayView, error) {
 			HandshakeAgo: int64(h.HandshakeAge.Seconds()),
 			Received:     h.Received,
 			Sent:         h.Sent,
-			InUseBy:      usage[relay.InterfaceName(r.Id)],
+			// A miss in the map is a nil slice, and a nil slice marshals to
+			// null rather than []. The page reads .length off this and a null
+			// took the whole page down, so the empty case is made explicit
+			// here rather than left to whoever reads the JSON next.
+			InUseBy: inUse(usage, relay.InterfaceName(r.Id)),
 		})
 	}
 	return out, nil
@@ -125,6 +129,14 @@ func (s *RelayService) usage() map[string][]string {
 		}
 	}
 	return out
+}
+
+// inUse is the list of inbounds offering one relay, never nil.
+func inUse(usage map[string][]string, iface string) []string {
+	if got := usage[iface]; len(got) > 0 {
+		return got
+	}
+	return []string{}
 }
 
 func appendOnce(list []string, v string) []string {

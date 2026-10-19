@@ -778,7 +778,9 @@
         "ciscoLocationsHint": "各国は接続前にクライアントの選択肢として表示されます。このサーバーがある国では出口を空にし、それ以外はその国のトラフィックが出ていくインターフェース名（その国のサーバーへのトンネルなど）を指定します。",
         "ciscoLocationName": "名前（例: netherlands）",
         "ciscoLocationLabel": "表示名（例: Netherlands）",
-        "ciscoLocationExit": "出口（例: wg0）"
+        "ciscoLocationExit": "出口（例: wg0）",
+        "ciscoLocationRename": "名前を変更",
+        "ciscoLocationRenameHint": "この国はパネル自身のサーバーから出ていくので、販売している名前で自由に呼べます。"
       },
       "info": {
         "mode": "モード",

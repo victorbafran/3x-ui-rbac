@@ -17,6 +17,15 @@ vi.mock('@/api/queries/useRelaysQuery', () => ({
   useRelayOptions: () => ({
     options: [
       {
+        interface: '',
+        name: 'local',
+        label: '🇩🇪 Germany',
+        address: '',
+        country: 'Germany',
+        countryCode: 'DE',
+        ready: true,
+      },
+      {
         interface: 'wgr2',
         name: 'ams',
         label: '🇳🇱 Netherlands',
@@ -136,7 +145,9 @@ describe('the countries a cisco inbound offers', () => {
     fireEvent.mouseDown(exitInput as HTMLElement);
     fireEvent.focus(exitInput as HTMLElement);
 
-    const option = Array.from(document.querySelectorAll('.ant-select-item-option')).at(0);
+    const option = Array.from(document.querySelectorAll('.ant-select-item-option')).find((el) =>
+      (el.textContent ?? '').includes('Netherlands'),
+    );
     expect(option, 'the enrolled exits should be offered').toBeTruthy();
     fireEvent.click(option as HTMLElement);
 
@@ -150,20 +161,38 @@ describe('the countries a cisco inbound offers', () => {
     cleanup();
   });
 
-  // A country that leaves through this server has no server to be named
-  // after, so it keeps its boxes and whatever the operator wrote in them.
-  it('keeps the boxes for a country that leaves through this server', () => {
+  // The country this panel carries itself deserves its flag as much as any
+  // other, and it is the one the operator may want to sell under a name of
+  // their own — so it, and only it, keeps a way back to the boxes.
+  it('names the country this server carries, and lets it be renamed', () => {
     renderCisco({
       ...createDefaultCiscoInboundSettings(),
-      locations: [{ name: 'mine', label: 'My own', exit: '', network: '', netmask: '', dns: [] }],
+      locations: [
+        { name: 'germany', label: '🇩🇪 Germany', exit: '', network: '', netmask: '', dns: [] },
+      ],
     });
-    expect(countryNames()).toEqual(['mine']);
-    const labels = Array.from(
-      document.querySelectorAll<HTMLInputElement>(
-        'input[placeholder="shown as, e.g. Netherlands"]',
-      ),
-    ).map((el) => el.value);
-    expect(labels).toEqual(['My own']);
+    expect(countryNames()).toHaveLength(0);
+    const shown = Array.from(document.querySelectorAll<HTMLInputElement>('input[readonly]')).map(
+      (el) => el.value,
+    );
+    expect(shown).toContain('🇩🇪 Germany');
+
+    fireEvent.click(screen.getByText('Rename'));
+    expect(countryNames()).toEqual(['germany']);
+    cleanup();
+  });
+
+  // A country behind an enrolled server is named after that server, and there
+  // is nothing to rename: changing it there would only disagree with the
+  // server it points at.
+  it('offers no rename for a country behind an exit server', () => {
+    renderCisco({
+      ...createDefaultCiscoInboundSettings(),
+      locations: [
+        { name: 'netherlands', label: 'x', exit: 'wgr2', network: '', netmask: '', dns: [] },
+      ],
+    });
+    expect(screen.queryByText('Rename')).toBeNull();
     cleanup();
   });
 
@@ -173,7 +202,16 @@ describe('the countries a cisco inbound offers', () => {
     renderCisco({
       ...createDefaultCiscoInboundSettings(),
       locations: [
-        { name: 'germany', label: 'Germany', exit: '', network: '', netmask: '', dns: [] },
+        {
+          name: 'germany',
+          label: '\u{1F1E9}\u{1F1EA} Germany',
+          exit: '',
+          network: '',
+          netmask: '',
+          dns: [],
+        },
+        // An interface the panel did not put there — an operator's own tunnel.
+        // It has no server to be named after, so it keeps its boxes.
         {
           name: 'netherlands',
           label: 'Netherlands',
@@ -184,7 +222,11 @@ describe('the countries a cisco inbound offers', () => {
         },
       ],
     });
-    expect(countryNames()).toEqual(['germany', 'netherlands']);
+    expect(countryNames()).toEqual(['netherlands']);
+    const shown = Array.from(document.querySelectorAll<HTMLInputElement>('input[readonly]')).map(
+      (el) => el.value,
+    );
+    expect(shown).toContain('\u{1F1E9}\u{1F1EA} Germany');
     cleanup();
   });
 
@@ -194,7 +236,7 @@ describe('the countries a cisco inbound offers', () => {
     renderCisco({
       ...createDefaultCiscoInboundSettings(),
       locations: [
-        { name: 'germany', label: 'Germany', exit: '', network: '', netmask: '', dns: [] },
+        { name: 'germany', label: 'Germany', exit: 'wg0', network: '', netmask: '', dns: [] },
       ],
     });
     expect(countryNames()).toEqual(['germany']);

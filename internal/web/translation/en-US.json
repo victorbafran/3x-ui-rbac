@@ -779,7 +779,9 @@
         "ciscoLocationsHint": "Each country appears in the customer’s client as a choice before they connect. Leave the exit empty for a country this server is already in; otherwise name the interface its traffic leaves through, such as a tunnel to a server in that country.",
         "ciscoLocationName": "name, e.g. netherlands",
         "ciscoLocationLabel": "shown as, e.g. Netherlands",
-        "ciscoLocationExit": "exit, e.g. wg0"
+        "ciscoLocationExit": "exit, e.g. wg0",
+        "ciscoLocationRename": "Rename",
+        "ciscoLocationRenameHint": "This country leaves through the panel’s own server, so you can call it whatever you sell it as."
       },
       "info": {
         "mode": "Mode",

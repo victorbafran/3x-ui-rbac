@@ -778,7 +778,9 @@
         "ciscoLocationsHint": "Mỗi quốc gia hiện ra như một lựa chọn trong ứng dụng của khách trước khi kết nối. Để trống lối ra cho quốc gia mà máy chủ này đã ở đó; nếu không, hãy ghi tên giao diện mà lưu lượng của quốc gia đó đi ra, chẳng hạn một đường hầm tới máy chủ ở đó.",
         "ciscoLocationName": "tên, ví dụ netherlands",
         "ciscoLocationLabel": "hiển thị là, ví dụ Netherlands",
-        "ciscoLocationExit": "lối ra, ví dụ wg0"
+        "ciscoLocationExit": "lối ra, ví dụ wg0",
+        "ciscoLocationRename": "Đổi tên",
+        "ciscoLocationRenameHint": "Quốc gia này đi ra qua chính máy chủ của bảng điều khiển, nên bạn có thể gọi nó theo cách bạn bán."
       },
       "info": {
         "mode": "Chế độ",

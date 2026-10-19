@@ -778,7 +778,9 @@
         "ciscoLocationsHint": "Setiap negara muncul sebagai pilihan di aplikasi pelanggan sebelum terhubung. Kosongkan keluaran untuk negara tempat server ini berada; selain itu sebutkan antarmuka yang dilewati lalu lintas negara tersebut, misalnya terowongan ke server di sana.",
         "ciscoLocationName": "nama, mis. netherlands",
         "ciscoLocationLabel": "ditampilkan sebagai, mis. Netherlands",
-        "ciscoLocationExit": "keluaran, mis. wg0"
+        "ciscoLocationExit": "keluaran, mis. wg0",
+        "ciscoLocationRename": "Ganti nama",
+        "ciscoLocationRenameHint": "Negara ini keluar lewat server panel itu sendiri, jadi Anda bebas menamainya sesuai cara Anda menjualnya."
       },
       "info": {
         "mode": "Mode",

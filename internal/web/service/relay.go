@@ -455,6 +455,25 @@ func (s *RelayService) Options() ([]RelayOption, error) {
 		})
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Name < out[j].Name })
+
+	// This server itself, first, with an empty interface — which is exactly
+	// how a country that leaves through the panel is already stored, so
+	// nothing about the saved shape changes. Offered only when its country is
+	// actually known: a guess would label a country wrongly, which is worse
+	// than letting the operator type it.
+	ctx, cancel := context.WithTimeout(context.Background(), 12*time.Second)
+	defer cancel()
+	if h := relay.WhereAmI(ctx); h.Known() {
+		out = append([]RelayOption{{
+			Interface:   "",
+			Name:        "local",
+			Label:       relay.LabelFor(h.Country, h.CountryCode),
+			Address:     "",
+			Country:     h.Country,
+			CountryCode: h.CountryCode,
+			Ready:       true,
+		}}, out...)
+	}
 	return out, nil
 }
 

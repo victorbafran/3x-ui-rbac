@@ -778,7 +778,9 @@
         "ciscoLocationsHint": "每个国家/地区会在连接前作为选项出现在客户端中。本服务器所在的国家/地区请将出口留空；否则填写该国家/地区流量离开所用的接口，例如通往当地服务器的隧道。",
         "ciscoLocationName": "名称，如 netherlands",
         "ciscoLocationLabel": "显示为，如 Netherlands",
-        "ciscoLocationExit": "出口，如 wg0"
+        "ciscoLocationExit": "出口，如 wg0",
+        "ciscoLocationRename": "重命名",
+        "ciscoLocationRenameHint": "这个国家/地区从面板自己的服务器出去，所以你可以按售卖的名字来叫它。"
       },
       "info": {
         "mode": "模式",

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MinusOutlined, PlusOutlined } from '@ant-design/icons';
 import { Alert, AutoComplete, Button, Form, Input, InputNumber, Select, Space, Switch } from 'antd';
@@ -23,6 +23,10 @@ function LocationList() {
   const rows = useWatch({ control, name: 'settings.locations' }) as
     | { name?: string; label?: string; exit?: string }[]
     | undefined;
+  // Only the country this panel carries itself can be renamed. A country
+  // behind an enrolled exit server is named after that server and stays that
+  // way; this one the operator may want to sell under a name of their own.
+  const [renaming, setRenaming] = useState<Set<number>>(new Set());
   // Relays the panel has already enrolled, offered by the name the operator
   // gave them rather than by an interface nobody would remember. Still an
   // AutoComplete rather than a Select: an operator with a tunnel of their own
@@ -39,13 +43,28 @@ function LocationList() {
   // already asked the server where it was, so asking the operator to type it
   // again is two more things to get wrong. A country with no exit leaves
   // through this server, has nothing to be named after, and keeps its boxes.
+  // An empty interface is this server: that is how a country leaving through
+  // the panel has always been stored, and the option carries the same
+  // emptiness, so nothing about the saved shape changes.
   const relayFor = (iface: unknown) =>
-    typeof iface === 'string' && iface ? relays.find((r) => r.interface === iface) : undefined;
+    typeof iface === 'string' ? relays.find((r) => r.interface === iface) : undefined;
+
+  const isThisServer = (iface: unknown) => iface === '';
 
   const nameFromRelay = (relay: RelayOption) => ({
     name: relay.country.toLowerCase().replace(/[^a-z0-9]/g, '') || relay.name,
     label: [flagOf(relay.countryCode), relay.country].filter(Boolean).join(' ') || relay.label,
   });
+
+  // A row shows its name read-only once it has one and an exit to be named
+  // after. A fresh row has neither, so it keeps the boxes and the operator can
+  // either pick an exit, which names it, or type a name themselves.
+  const named = (index: number) => {
+    const row = rows?.[index];
+    if (renaming.has(index)) return false;
+    if (!row?.name?.trim()) return false;
+    return relayFor(row.exit) !== undefined || isThisServer(row.exit);
+  };
 
   const fillFromRelay = (index: number, iface: string) => {
     const relay = relayFor(iface);
@@ -71,7 +90,7 @@ function LocationList() {
       </Button>
       {fields.map((field, i) => (
         <Space.Compact key={field.id} block className="mt-4">
-          {relayFor(rows?.[i]?.exit) ? (
+          {named(i) ? (
             <Input
               readOnly
               value={rows?.[i]?.label || rows?.[i]?.name || ''}
@@ -102,6 +121,15 @@ function LocationList() {
               }
             />
           </FormField>
+          {named(i) && isThisServer(rows?.[i]?.exit) ? (
+            <Button
+              size="small"
+              onClick={() => setRenaming((was) => new Set(was).add(i))}
+              title={t('pages.inbounds.form.ciscoLocationRenameHint')}
+            >
+              {t('pages.inbounds.form.ciscoLocationRename')}
+            </Button>
+          ) : null}
           <Button aria-label={t('remove')} size="small" onClick={() => remove(i)}>
             <MinusOutlined />
           </Button>

@@ -778,7 +778,9 @@
         "ciscoLocationsHint": "Cada país aparece como uma opção no aplicativo do cliente antes de conectar. Deixe a saída vazia para o país onde este servidor já está; caso contrário, informe a interface por onde o tráfego daquele país sai, como um túnel para um servidor de lá.",
         "ciscoLocationName": "nome, ex. netherlands",
         "ciscoLocationLabel": "exibido como, ex. Netherlands",
-        "ciscoLocationExit": "saída, ex. wg0"
+        "ciscoLocationExit": "saída, ex. wg0",
+        "ciscoLocationRename": "Renomear",
+        "ciscoLocationRenameHint": "Este país sai pelo próprio servidor do painel, então você pode chamá-lo como o vende."
       },
       "info": {
         "mode": "Modo",

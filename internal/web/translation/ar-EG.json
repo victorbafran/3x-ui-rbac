@@ -778,7 +778,9 @@
         "ciscoLocationsHint": "تظهر كل دولة في تطبيق العميل كخيار قبل الاتصال. اترك المخرج فارغًا للدولة التي يوجد بها هذا الخادم، وإلا فاكتب اسم الواجهة التي تخرج منها حركة تلك الدولة، مثل نفق إلى خادم هناك.",
         "ciscoLocationName": "الاسم، مثل netherlands",
         "ciscoLocationLabel": "يظهر باسم، مثل Netherlands",
-        "ciscoLocationExit": "المخرج، مثل wg0"
+        "ciscoLocationExit": "المخرج، مثل wg0",
+        "ciscoLocationRename": "إعادة تسمية",
+        "ciscoLocationRenameHint": "هذه الدولة تخرج من خادم اللوحة نفسه، فيمكنك تسميتها بما تبيعها به."
       },
       "info": {
         "mode": "الوضع",

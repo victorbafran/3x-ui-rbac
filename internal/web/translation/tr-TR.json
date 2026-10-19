@@ -778,7 +778,9 @@
         "ciscoLocationsHint": "Her ülke, bağlanmadan önce istemcide bir seçenek olarak görünür. Bu sunucunun zaten bulunduğu ülke için çıkışı boş bırakın; aksi halde o ülkenin trafiğinin çıktığı arayüzü yazın, örneğin o ülkedeki bir sunucuya giden tünel.",
         "ciscoLocationName": "ad, örn. netherlands",
         "ciscoLocationLabel": "gösterilen ad, örn. Netherlands",
-        "ciscoLocationExit": "çıkış, örn. wg0"
+        "ciscoLocationExit": "çıkış, örn. wg0",
+        "ciscoLocationRename": "Yeniden adlandır",
+        "ciscoLocationRenameHint": "Bu ülke panelin kendi sunucusundan çıkıyor, bu yüzden sattığınız adla çağırabilirsiniz."
       },
       "info": {
         "mode": "Mod",

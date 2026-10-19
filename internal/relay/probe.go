@@ -85,12 +85,26 @@ H=(-H "accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
    -H "accept-language: en-US,en;q=0.9"
    -H "sec-fetch-dest: document" -H "sec-fetch-mode: navigate" -H "sec-fetch-site: none"
    -H "upgrade-insecure-requests: 1")
-command -v curl >/dev/null 2>&1 || { echo "where=unknown"; echo "error=curl is not installed"; exit 0; }
-info=$(curl -s --max-time 15 https://ipinfo.io/json)
-echo "ip=$(echo "$info" | grep -o '"ip"[^,]*' | cut -d'"' -f4)"
-echo "country=$(echo "$info" | grep -o '"country"[^,]*' | cut -d'"' -f4)"
-echo "city=$(echo "$info" | grep -o '"city"[^,]*' | cut -d'"' -f4)"
-echo "org=$(echo "$info" | grep -o '"org"[^,]*' | cut -d'"' -f4)"
+command -v curl >/dev/null 2>&1 || { echo "error=curl is not installed"; exit 0; }
+field() { echo "$1" | tr ',' '
+' | grep -o "\"$2\"[[:space:]]*:[[:space:]]*\"[^\"]*\"" | head -1 | sed 's/.*:[[:space:]]*"//; s/"$//'; }
+country=""; city=""; org=""; addr=""
+for url in "https://ipwho.is/" "https://ipinfo.io/json" "http://ip-api.com/json/"; do
+  info=$(curl -s --max-time 12 "$url" 2>/dev/null)
+  case "$info" in *Forbidden*|"") continue ;; esac
+  c=$(field "$info" country); [ -z "$c" ] && c=$(field "$info" countryCode)
+  [ -z "$c" ] && continue
+  country="$c"
+  city=$(field "$info" city)
+  org=$(field "$info" org); [ -z "$org" ] && org=$(field "$info" isp); [ -z "$org" ] && org=$(field "$info" connection)
+  addr=$(field "$info" ip); [ -z "$addr" ] && addr=$(field "$info" query)
+  break
+done
+[ -n "$addr" ] || addr=$(curl -s --max-time 10 https://api.ipify.org 2>/dev/null)
+echo "ip=$addr"
+echo "country=$country"
+echo "city=$city"
+echo "org=$org"
 for pair in "gemini|https://gemini.google.com/" "chatgpt|https://chatgpt.com/" "claude|https://claude.ai/" "youtube|https://www.youtube.com/" "netflix|https://www.netflix.com/"; do
   name=${pair%%|*}; url=${pair#*|}
   code=$(curl -s -o /dev/null --http2 --max-time 20 -w '%{http_code}' -A "$UA" "${H[@]}" "$url" 2>/dev/null)
@@ -139,6 +153,9 @@ func Reach(ctx context.Context, s Server) (Reachability, error) {
 	// A 403 from Cloudflare's own bot check looks exactly like a blocked
 	// country, so it is reported as unknown rather than as a failure. Only
 	// a plain refusal to serve the country is worth warning about.
+	if r.Country == "" {
+		r.Notes = append(r.Notes, "location-unknown")
+	}
 	if r.Services["google-search"] == "captcha" {
 		r.Notes = append(r.Notes, "google-search-captcha")
 	}

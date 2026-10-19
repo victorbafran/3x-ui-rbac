@@ -296,9 +296,29 @@ func (s *RelayService) enrollAndProvision(id int, password, privateKey string) {
 		logger.Warningf("relay %s: %v", r.Name, err)
 		return
 	}
-	if err := database.GetDB().Model(&model.Relay{Id: id}).Updates(map[string]any{
+	fields := map[string]any{
 		"wg_peer_public": peer, "status": RelayReady, "last_error": "", "last_seen": time.Now().Unix(),
-	}).Error; err != nil {
+	}
+	// Where it actually is, and the label a customer will read. The lookup is
+	// best effort: a relay that works but whose country nobody will say is
+	// still a working relay, and failing the whole enrollment over a missing
+	// flag would be absurd.
+	if country, code, city, lerr := relay.Locate(ctx, relay.Server{
+		Id: r.Id, Name: r.Name, Address: r.Address, Port: r.SSHPort, User: r.SSHUser, KeyPath: r.KeyPath,
+	}); lerr == nil {
+		fields["country"] = country
+		fields["country_code"] = code
+		fields["city"] = city
+		// Only when the operator left it blank: a label they typed is theirs.
+		if strings.TrimSpace(r.Label) == "" {
+			if label := relay.LabelFor(country, code); label != "" {
+				fields["label"] = label
+			}
+		}
+	} else {
+		logger.Warningf("relay %s: could not work out where it is: %v", r.Name, lerr)
+	}
+	if err := database.GetDB().Model(&model.Relay{Id: id}).Updates(fields).Error; err != nil {
 		logger.Warningf("relay %s: could not record the tunnel: %v", r.Name, err)
 	}
 	logger.Infof("relay %s is ready; traffic for that country leaves through %s", r.Name, r.Address)
@@ -408,7 +428,13 @@ type RelayOption struct {
 	Name      string `json:"name"`
 	Label     string `json:"label"`
 	Address   string `json:"address"`
-	Ready     bool   `json:"ready"`
+	// Country and its code travel with the option so the inbound form can
+	// fill in a country name and a flag the moment an exit is picked, which
+	// is the whole point: the customer should read a flag without anybody
+	// typing one.
+	Country     string `json:"country"`
+	CountryCode string `json:"countryCode"`
+	Ready       bool   `json:"ready"`
 }
 
 func (s *RelayService) Options() ([]RelayOption, error) {
@@ -419,11 +445,13 @@ func (s *RelayService) Options() ([]RelayOption, error) {
 	out := make([]RelayOption, 0, len(rows))
 	for _, r := range rows {
 		out = append(out, RelayOption{
-			Interface: relay.InterfaceName(r.Id),
-			Name:      r.Name,
-			Label:     r.Label,
-			Address:   r.Address,
-			Ready:     r.Status == RelayReady,
+			Interface:   relay.InterfaceName(r.Id),
+			Name:        r.Name,
+			Label:       r.Label,
+			Address:     r.Address,
+			Country:     r.Country,
+			CountryCode: r.CountryCode,
+			Ready:       r.Status == RelayReady,
 		})
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Name < out[j].Name })

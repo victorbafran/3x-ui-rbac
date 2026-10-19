@@ -201,3 +201,42 @@ func TestTheDefaultsAreTheOnesAnOperatorExpects(t *testing.T) {
 		t.Errorf("empty port became %q", c.addr())
 	}
 }
+
+// A flag is a country's two letters written as regional indicators, so there
+// is no table to keep up to date and no country that can be missing from one.
+// Measured on ocserv 1.2.4: a group label carrying one reaches an AnyConnect
+// client byte for byte, and the real Cisco client renders it.
+func TestAFlagIsBuiltFromTheCountryCode(t *testing.T) {
+	for code, want := range map[string]string{
+		"NL":   "\U0001F1F3\U0001F1F1",
+		"FR":   "\U0001F1EB\U0001F1F7",
+		"de":   "\U0001F1E9\U0001F1EA",
+		" us ": "\U0001F1FA\U0001F1F8",
+	} {
+		if got := FlagFor(code); got != want {
+			t.Errorf("%q gave %q, wanted %q", code, got, want)
+		}
+	}
+	for _, bad := range []string{"", "N", "NLD", "N1", "??"} {
+		if got := FlagFor(bad); got != "" {
+			t.Errorf("%q should have no flag, got %q", bad, got)
+		}
+	}
+}
+
+// The label is what a customer reads. A lookup that half failed must still
+// leave something readable rather than an empty entry in their dropdown.
+func TestTheLabelSurvivesAHalfFailedLookup(t *testing.T) {
+	if got := LabelFor("Netherlands", "NL"); got != "\U0001F1F3\U0001F1F1 Netherlands" {
+		t.Errorf("full lookup gave %q", got)
+	}
+	if got := LabelFor("Netherlands", ""); got != "Netherlands" {
+		t.Errorf("no code gave %q", got)
+	}
+	if got := LabelFor("", "NL"); got != "\U0001F1F3\U0001F1F1" {
+		t.Errorf("no name gave %q", got)
+	}
+	if got := LabelFor("", ""); got != "" {
+		t.Errorf("nothing at all gave %q", got)
+	}
+}

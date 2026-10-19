@@ -19,6 +19,11 @@ export const RelaySchema = z.object({
   enabled: z.boolean().default(true),
   createdAt: z.number().default(0),
   wgPeerPublic: z.string().default(''),
+  // Asked of the relay itself once it is reachable; the operator knows the
+  // address they bought, not the city it ended up in.
+  country: z.string().default(''),
+  countryCode: z.string().default(''),
+  city: z.string().default(''),
 
   interface: z.string().default(''),
   tunnelUp: z.boolean().default(false),
@@ -45,6 +50,8 @@ export const RelayOptionSchema = z.object({
   name: z.string(),
   label: z.string().default(''),
   address: z.string().default(''),
+  country: z.string().default(''),
+  countryCode: z.string().default(''),
   ready: z.boolean().default(false),
 });
 export type RelayOption = z.infer<typeof RelayOptionSchema>;

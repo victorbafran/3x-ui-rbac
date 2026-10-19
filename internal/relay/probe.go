@@ -75,6 +75,30 @@ type Reachability struct {
 	Notes []string
 }
 
+// locateScript is the location half on its own, for enrollment: the operator
+// is waiting on it, and the half-dozen service requests would double the wait
+// for something nobody reads at that moment.
+const locateScript = `#!/bin/bash
+set -u
+command -v curl >/dev/null 2>&1 || { echo "error=curl is not installed"; exit 0; }
+field() { echo "$1" | tr ',' '
+' | grep -o "\"$2\"[[:space:]]*:[[:space:]]*\"[^\"]*\"" | head -1 | sed 's/.*:[[:space:]]*"//; s/"$//'; }
+for url in "https://ipwho.is/" "https://ipinfo.io/json" "http://ip-api.com/json/"; do
+  info=$(curl -s --max-time 12 "$url" 2>/dev/null)
+  case "$info" in *Forbidden*|"") continue ;; esac
+  code=$(field "$info" country_code); [ -z "$code" ] && code=$(field "$info" countryCode)
+  name=$(field "$info" country)
+  case "$name" in [A-Z][A-Z]) code="$name"; name="" ;; esac
+  [ -z "$code$name" ] && continue
+  echo "countryCode=$code"
+  echo "country=$name"
+  echo "city=$(field "$info" city)"
+  exit 0
+done
+echo "countryCode="
+echo "country="
+`
+
 // reachScript asks from the relay itself, with a browser's headers. Without
 // them Cloudflare answers 403 to everything and every address looks equally
 // bad, which is worse than no information at all.
@@ -163,4 +187,40 @@ func Reach(ctx context.Context, s Server) (Reachability, error) {
 		r.Notes = append(r.Notes, "gemini-unavailable")
 	}
 	return r, nil
+}
+
+// Locate asks a relay which country it is in, which is the one thing an
+// operator should not have to type: they know the address they bought, not
+// the city it ended up in. Measured on the owner's own servers, a relay
+// bought as "Holand" answered from France.
+func Locate(ctx context.Context, s Server) (country, code, city string, err error) {
+	key, err := os.ReadFile(s.KeyPath)
+	if err != nil {
+		return "", "", "", fmt.Errorf("the key for %s is missing: %w", s.Name, err)
+	}
+	client, err := Dial(ctx, Credentials{Address: s.Address, Port: s.Port, User: s.User, PrivateKey: key})
+	if err != nil {
+		return "", "", "", err
+	}
+	defer client.Close()
+
+	out, err := client.RunScript(ctx, "xui-relay-where.sh", locateScript)
+	if err != nil {
+		return "", "", "", err
+	}
+	for _, line := range strings.Split(out, "\\n") {
+		k, v, ok := strings.Cut(strings.TrimSpace(line), "=")
+		if !ok {
+			continue
+		}
+		switch k {
+		case "country":
+			country = v
+		case "countryCode":
+			code = v
+		case "city":
+			city = v
+		}
+	}
+	return country, code, city, nil
 }

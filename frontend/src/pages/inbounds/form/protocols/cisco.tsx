@@ -17,7 +17,7 @@ import { useRelayOptions } from '@/api/queries/useRelaysQuery';
 // that interface, in practice a tunnel to a server standing in that country.
 function LocationList() {
   const { t } = useTranslation();
-  const { control } = useFormContext();
+  const { control, getValues, setValue } = useFormContext();
   const { fields, append, remove } = useFieldArray({ control, name: 'settings.locations' });
   // Relays the panel has already enrolled, offered by the name the operator
   // gave them rather than by an interface nobody would remember. Still an
@@ -29,6 +29,28 @@ function LocationList() {
     value: r.interface,
     label: `${r.label || r.name} — ${r.address}${r.ready ? '' : ' (…)'}`,
   }));
+
+  // Picking an exit fills in the country it is in, flag and all. The panel
+  // already asked the relay where it was, and a customer reading "🇳🇱
+  // Netherlands" in their client should not depend on anybody remembering to
+  // type it. Only empty fields are filled: whatever the operator wrote is
+  // theirs to keep.
+  const fillFromRelay = (index: number, iface: string) => {
+    const relay = relays.find((r) => r.interface === iface);
+    if (!relay) return;
+    const slug = relay.country.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const current = getValues(`settings.locations.${index}`) as
+      | { name?: string; label?: string }
+      | undefined;
+    if (!current?.name?.trim() && slug) {
+      setValue(`settings.locations.${index}.name`, slug, { shouldDirty: true });
+    }
+    if (!current?.label?.trim()) {
+      const flag = flagOf(relay.countryCode);
+      const shown = [flag, relay.country].filter(Boolean).join(' ') || relay.label;
+      if (shown) setValue(`settings.locations.${index}.label`, shown, { shouldDirty: true });
+    }
+  };
   return (
     <Form.Item
       label={t('pages.inbounds.form.ciscoLocations')}
@@ -52,6 +74,7 @@ function LocationList() {
           <FormField name={['settings', 'locations', i, 'exit']} noStyle>
             <AutoComplete
               options={exitOptions}
+              onSelect={(value: string) => fillFromRelay(i, value)}
               placeholder={t('pages.inbounds.form.ciscoLocationExit')}
               filterOption={(input, option) =>
                 String(option?.value ?? '')
@@ -70,6 +93,12 @@ function LocationList() {
       ))}
     </Form.Item>
   );
+}
+
+function flagOf(code: string): string {
+  const up = code.trim().toUpperCase();
+  if (!/^[A-Z]{2}$/.test(up)) return '';
+  return String.fromCodePoint(...[...up].map((c) => 0x1f1e6 + c.charCodeAt(0) - 65));
 }
 
 export default function CiscoFields() {

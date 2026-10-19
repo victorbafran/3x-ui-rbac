@@ -48,6 +48,13 @@ type Relay struct {
 	// key to encrypt it with, the same as a node's API token.
 	WgPrivate    string `json:"-" gorm:"column:wg_private"`
 	WgPeerPublic string `json:"wgPeerPublic" gorm:"column:wg_peer_public"`
+
+	// Where the relay turned out to be, asked of the relay itself once it is
+	// reachable. The operator knows the address they bought, not the city it
+	// ended up in: one bought as "Holand" answered from France.
+	Country     string `json:"country"`
+	CountryCode string `json:"countryCode" gorm:"column:country_code"`
+	City        string `json:"city"`
 }
 
 // AdminInbound hands an inbound to an admin who did not create it. Ownership

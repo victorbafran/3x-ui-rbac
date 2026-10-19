@@ -1,10 +1,54 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Input, InputNumber, Select, Switch } from 'antd';
-import { useFormContext, useWatch } from 'react-hook-form';
+import { MinusOutlined, PlusOutlined } from '@ant-design/icons';
+import { Alert, Button, Form, Input, InputNumber, Select, Space, Switch } from 'antd';
+import { useFieldArray, useFormContext, useWatch } from 'react-hook-form';
 
 import { FormField } from '@/components/form/rhf';
 import { useInboundOptions } from '@/api/queries/useInboundOptions';
+
+// The countries this inbound offers. ocserv advertises them before it asks for
+// a password, so the customer's own client shows a Group dropdown and picks
+// where to come out — one address and one account, several exits.
+//
+// With no exit a country leaves through this server, which is free and right
+// for the country the server is already in. With an exit it leaves through
+// that interface, in practice a tunnel to a server standing in that country.
+function LocationList() {
+  const { t } = useTranslation();
+  const { control } = useFormContext();
+  const { fields, append, remove } = useFieldArray({ control, name: 'settings.locations' });
+  return (
+    <Form.Item
+      label={t('pages.inbounds.form.ciscoLocations')}
+      tooltip={t('pages.inbounds.form.ciscoLocationsHint')}
+    >
+      <Button
+        aria-label={t('add')}
+        size="small"
+        onClick={() => append({ name: '', label: '', exit: '' })}
+      >
+        <PlusOutlined />
+      </Button>
+      {fields.map((field, i) => (
+        <Space.Compact key={field.id} block className="mt-4">
+          <FormField name={['settings', 'locations', i, 'name']} noStyle>
+            <Input placeholder={t('pages.inbounds.form.ciscoLocationName')} />
+          </FormField>
+          <FormField name={['settings', 'locations', i, 'label']} noStyle>
+            <Input placeholder={t('pages.inbounds.form.ciscoLocationLabel')} />
+          </FormField>
+          <FormField name={['settings', 'locations', i, 'exit']} noStyle>
+            <Input placeholder={t('pages.inbounds.form.ciscoLocationExit')} />
+          </FormField>
+          <Button aria-label={t('remove')} size="small" onClick={() => remove(i)}>
+            <MinusOutlined />
+          </Button>
+        </Space.Compact>
+      ))}
+    </Form.Item>
+  );
+}
 
 export default function CiscoFields() {
   const { t } = useTranslation();
@@ -116,6 +160,7 @@ export default function CiscoFields() {
       <FormField name={['settings', 'keyFile']} label={t('pages.inbounds.form.ciscoKeyFile')}>
         <Input placeholder="/etc/ssl/private/vpn.key" />
       </FormField>
+      <LocationList />
     </>
   );
 }

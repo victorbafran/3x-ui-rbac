@@ -772,7 +772,12 @@
         "ciscoUdpPort": "Port DTLS (UDP)",
         "ciscoUdpPortHint": "Kecepatan Cisco berasal dari DTLS yang berjalan di UDP. Biarkan 0 untuk memakai port yang sama dengan TCP; ubah hanya jika port UDP itu diblokir dan yang lain tidak.",
         "ciscoDisableUdp": "Matikan DTLS",
-        "ciscoDisableUdpHint": "Pakai hanya jika UDP diblokir permanen. Tanpa itu setiap koneksi menunggu 25 detik sebelum jatuh ke TCP, yang lambat karena trafik Anda berjalan di dalam koneksi TCP lain."
+        "ciscoDisableUdpHint": "Pakai hanya jika UDP diblokir permanen. Tanpa itu setiap koneksi menunggu 25 detik sebelum jatuh ke TCP, yang lambat karena trafik Anda berjalan di dalam koneksi TCP lain.",
+        "ciscoLocations": "Negara yang ditawarkan",
+        "ciscoLocationsHint": "Setiap negara muncul sebagai pilihan di aplikasi pelanggan sebelum terhubung. Kosongkan keluaran untuk negara tempat server ini berada; selain itu sebutkan antarmuka yang dilewati lalu lintas negara tersebut, misalnya terowongan ke server di sana.",
+        "ciscoLocationName": "nama, mis. netherlands",
+        "ciscoLocationLabel": "ditampilkan sebagai, mis. Netherlands",
+        "ciscoLocationExit": "keluaran, mis. wg0"
       },
       "info": {
         "mode": "Mode",

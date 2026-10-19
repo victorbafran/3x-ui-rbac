@@ -772,7 +772,12 @@
         "ciscoUdpPort": "Cổng DTLS (UDP)",
         "ciscoUdpPortHint": "Tốc độ của Cisco đến từ DTLS chạy trên UDP. Để 0 để dùng chung cổng với TCP; chỉ đổi khi cổng UDP đó bị chặn còn cổng khác thì không.",
         "ciscoDisableUdp": "Tắt DTLS",
-        "ciscoDisableUdpHint": "Chỉ dùng khi UDP bị chặn hẳn. Nếu không, mỗi kết nối chờ 25 giây rồi mới chuyển sang TCP, vốn chậm vì lưu lượng của bạn chạy bên trong một kết nối TCP khác."
+        "ciscoDisableUdpHint": "Chỉ dùng khi UDP bị chặn hẳn. Nếu không, mỗi kết nối chờ 25 giây rồi mới chuyển sang TCP, vốn chậm vì lưu lượng của bạn chạy bên trong một kết nối TCP khác.",
+        "ciscoLocations": "Các quốc gia được cung cấp",
+        "ciscoLocationsHint": "Mỗi quốc gia hiện ra như một lựa chọn trong ứng dụng của khách trước khi kết nối. Để trống lối ra cho quốc gia mà máy chủ này đã ở đó; nếu không, hãy ghi tên giao diện mà lưu lượng của quốc gia đó đi ra, chẳng hạn một đường hầm tới máy chủ ở đó.",
+        "ciscoLocationName": "tên, ví dụ netherlands",
+        "ciscoLocationLabel": "hiển thị là, ví dụ Netherlands",
+        "ciscoLocationExit": "lối ra, ví dụ wg0"
       },
       "info": {
         "mode": "Chế độ",

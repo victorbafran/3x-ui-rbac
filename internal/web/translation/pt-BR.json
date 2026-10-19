@@ -772,7 +772,12 @@
         "ciscoUdpPort": "Porta DTLS (UDP)",
         "ciscoUdpPortHint": "A velocidade do Cisco vem do DTLS, que roda em UDP. Deixe 0 para usar a mesma porta do TCP; mude só se essa porta UDP estiver bloqueada e outra não.",
         "ciscoDisableUdp": "Desativar DTLS",
-        "ciscoDisableUdpHint": "Use apenas se o UDP estiver bloqueado de vez. Sem isso cada conexão espera 25 segundos antes de cair para TCP, o que é lento porque seu tráfego passa dentro de outra conexão TCP."
+        "ciscoDisableUdpHint": "Use apenas se o UDP estiver bloqueado de vez. Sem isso cada conexão espera 25 segundos antes de cair para TCP, o que é lento porque seu tráfego passa dentro de outra conexão TCP.",
+        "ciscoLocations": "Países oferecidos",
+        "ciscoLocationsHint": "Cada país aparece como uma opção no aplicativo do cliente antes de conectar. Deixe a saída vazia para o país onde este servidor já está; caso contrário, informe a interface por onde o tráfego daquele país sai, como um túnel para um servidor de lá.",
+        "ciscoLocationName": "nome, ex. netherlands",
+        "ciscoLocationLabel": "exibido como, ex. Netherlands",
+        "ciscoLocationExit": "saída, ex. wg0"
       },
       "info": {
         "mode": "Modo",

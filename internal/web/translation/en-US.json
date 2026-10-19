@@ -773,7 +773,12 @@
         "ciscoUdpPort": "DTLS port (UDP)",
         "ciscoUdpPortHint": "DTLS is what makes Cisco fast, and it rides UDP. Leave 0 to use the same port as TCP. Set another only when that UDP port is blocked and another is not.",
         "ciscoDisableUdp": "Turn DTLS off",
-        "ciscoDisableUdpHint": "Use only when UDP is blocked for good. Without it every connection spends 25 seconds trying DTLS before falling back to TCP — which is slow, because your traffic then runs inside another TCP connection."
+        "ciscoDisableUdpHint": "Use only when UDP is blocked for good. Without it every connection spends 25 seconds trying DTLS before falling back to TCP — which is slow, because your traffic then runs inside another TCP connection.",
+        "ciscoLocations": "Countries offered",
+        "ciscoLocationsHint": "Each country appears in the customer’s client as a choice before they connect. Leave the exit empty for a country this server is already in; otherwise name the interface its traffic leaves through, such as a tunnel to a server in that country.",
+        "ciscoLocationName": "name, e.g. netherlands",
+        "ciscoLocationLabel": "shown as, e.g. Netherlands",
+        "ciscoLocationExit": "exit, e.g. wg0"
       },
       "info": {
         "mode": "Mode",

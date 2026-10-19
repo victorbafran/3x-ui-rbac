@@ -772,7 +772,12 @@
         "ciscoUdpPort": "DTLS portu (UDP)",
         "ciscoUdpPortHint": "Cisco'nun hızı UDP üzerinden çalışan DTLS'ten gelir. 0 bırakırsanız TCP ile aynı port kullanılır; yalnızca o UDP portu kapalı ve başka biri açıksa değiştirin.",
         "ciscoDisableUdp": "DTLS'i kapat",
-        "ciscoDisableUdpHint": "Yalnızca UDP kalıcı olarak kapalıysa kullanın. Aksi halde her bağlantı 25 saniye bekleyip TCP'ye düşer; trafiğiniz başka bir TCP bağlantısının içinden gittiği için bu yavaştır."
+        "ciscoDisableUdpHint": "Yalnızca UDP kalıcı olarak kapalıysa kullanın. Aksi halde her bağlantı 25 saniye bekleyip TCP'ye düşer; trafiğiniz başka bir TCP bağlantısının içinden gittiği için bu yavaştır.",
+        "ciscoLocations": "Sunulan ülkeler",
+        "ciscoLocationsHint": "Her ülke, bağlanmadan önce istemcide bir seçenek olarak görünür. Bu sunucunun zaten bulunduğu ülke için çıkışı boş bırakın; aksi halde o ülkenin trafiğinin çıktığı arayüzü yazın, örneğin o ülkedeki bir sunucuya giden tünel.",
+        "ciscoLocationName": "ad, örn. netherlands",
+        "ciscoLocationLabel": "gösterilen ad, örn. Netherlands",
+        "ciscoLocationExit": "çıkış, örn. wg0"
       },
       "info": {
         "mode": "Mod",

@@ -21,8 +21,29 @@ export const CiscoClientSchema = z.object({
   subId: z.string().default(''),
   comment: z.string().default(''),
   reset: z.number().int().min(0).default(0),
+  // Which of the inbound's countries this client may pick. Empty means all of
+  // them: once the inbound offers any country nobody can connect without
+  // naming one, so an empty list must not read as "entitled to none".
+  locations: z.array(z.string()).default([]),
 });
 export type CiscoClient = z.infer<typeof CiscoClientSchema>;
+
+export const CiscoLocationSchema = z.object({
+  // The identifier ocserv matches on. It is also a filename and a field in a
+  // colon-separated file, so it carries no separator and no space.
+  name: z.string().min(1),
+  // What the customer reads in the dropdown. Empty shows the name.
+  label: z.string().default(''),
+  // The interface this country's traffic leaves through — in practice a
+  // tunnel to a server standing in that country. Empty leaves through this
+  // server, which is the right answer for the country it is already in.
+  exit: z.string().default(''),
+  // Left empty the panel derives a pool nothing else uses.
+  network: z.string().default(''),
+  netmask: z.string().default(''),
+  dns: z.array(z.string()).default([]),
+});
+export type CiscoLocation = z.infer<typeof CiscoLocationSchema>;
 
 export const CiscoInboundSettingsSchema = z.object({
   clients: z.array(CiscoClientSchema).default([]),
@@ -46,5 +67,9 @@ export const CiscoInboundSettingsSchema = z.object({
   // Secure Client cannot complete a handshake against an ECDSA server key.
   certFile: z.string().default(''),
   keyFile: z.string().default(''),
+  // The countries this inbound offers. With any present the customer's client
+  // shows a Group dropdown and picks where to come out; each one is handed a
+  // pool of its own so the host can route it to that country's exit.
+  locations: z.array(CiscoLocationSchema).default([]),
 });
 export type CiscoInboundSettings = z.infer<typeof CiscoInboundSettingsSchema>;

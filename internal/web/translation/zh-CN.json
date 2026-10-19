@@ -772,7 +772,12 @@
         "ciscoUdpPort": "DTLS 端口（UDP）",
         "ciscoUdpPortHint": "Cisco 的速度来自运行在 UDP 上的 DTLS。填 0 表示与 TCP 同端口；仅当该 UDP 端口被封而另一个可用时才更改。",
         "ciscoDisableUdp": "关闭 DTLS",
-        "ciscoDisableUdpHint": "仅在 UDP 被长期封锁时使用。否则每次连接都会先等 25 秒再退回 TCP，而那很慢——你的流量会跑在另一条 TCP 连接里。"
+        "ciscoDisableUdpHint": "仅在 UDP 被长期封锁时使用。否则每次连接都会先等 25 秒再退回 TCP，而那很慢——你的流量会跑在另一条 TCP 连接里。",
+        "ciscoLocations": "提供的国家/地区",
+        "ciscoLocationsHint": "每个国家/地区会在连接前作为选项出现在客户端中。本服务器所在的国家/地区请将出口留空；否则填写该国家/地区流量离开所用的接口，例如通往当地服务器的隧道。",
+        "ciscoLocationName": "名称，如 netherlands",
+        "ciscoLocationLabel": "显示为，如 Netherlands",
+        "ciscoLocationExit": "出口，如 wg0"
       },
       "info": {
         "mode": "模式",

@@ -135,7 +135,8 @@
     "openMenu": "Mở menu",
     "pinSidebar": "Ghim thanh bên",
     "unpinSidebar": "Bỏ ghim thanh bên",
-    "subFormats": "Sub Formats"
+    "subFormats": "Sub Formats",
+    "relays": "Máy chủ lối ra"
   },
   "pages": {
     "login": {
@@ -2554,6 +2555,69 @@
       "visit": "Truy cập",
       "yourBrand": "Thương hiệu của bạn ở đây",
       "yourBrandText": "Đưa công ty bạn đến hàng nghìn quản trị viên máy chủ mở 3X-UI mỗi ngày."
+    },
+    "relays": {
+      "title": "Máy chủ lối ra",
+      "add": "Thêm máy chủ",
+      "addTitle": "Thêm máy chủ lối ra",
+      "editTitle": "Sửa máy chủ lối ra",
+      "intro": "Mỗi máy chủ ở đây trở thành một quốc gia khách có thể chọn",
+      "introHint": "Bảng điều khiển vào máy chủ một lần qua SSH, cài WireGuard và một quy tắc chuyển tiếp duy nhất, không gì khác: không bảng điều khiển, không tài khoản. Sau đó một inbound cisco có thể cung cấp quốc gia đó trong chính danh sách khách đã thấy.",
+      "empty": "Chưa có máy chủ lối ra",
+      "probeHint": "Hỏi xem internet cho máy chủ này những gì",
+      "confirmDelete": "Gỡ {name}?",
+      "confirmDeleteHint": "Bảng điều khiển gỡ đường hầm và quy tắc chuyển tiếp khỏi máy chủ, để bạn trả lại nó sạch sẽ.",
+      "credentialsOnce": "Mật khẩu chỉ dùng một lần",
+      "credentialsOnceHint": "Nó dùng để cài khóa riêng của bảng điều khiển, chứng minh khóa hoạt động, rồi mật khẩu bị bỏ đi. Không bao giờ được lưu. Nếu máy chủ tạo bằng khóa SSH và không có mật khẩu, hãy dán khóa đó thay thế.",
+      "reachTitle": "{name} vào được những đâu",
+      "saved": "Đã lưu. Chuẩn bị máy chủ mất vài phút.",
+      "summary": {
+        "total": "Máy chủ",
+        "ready": "Đang chạy",
+        "trouble": "Cần xem lại"
+      },
+      "columns": {
+        "country": "Quốc gia",
+        "server": "Máy chủ",
+        "status": "Trạng thái",
+        "traffic": "Qua đường hầm",
+        "usedBy": "Được dùng bởi"
+      },
+      "status": {
+        "ready": "Đang chạy",
+        "silent": "Không phản hồi",
+        "working": "Đang chuẩn bị",
+        "error": "Thất bại",
+        "disabled": "Tắt"
+      },
+      "fields": {
+        "name": "Tên",
+        "nameHint": "Định danh mà máy chủ VPN đối chiếu. Không dấu cách, không dấu câu; chữ thường là dễ nhất.",
+        "label": "Hiển thị cho khách",
+        "labelHint": "Chữ xuất hiện trong danh sách của họ. Để trống thì hiện tên.",
+        "address": "Địa chỉ",
+        "sshPort": "Cổng SSH",
+        "sshUser": "Người dùng SSH",
+        "password": "Mật khẩu",
+        "passwordHint": "Dùng một lần để cài khóa rồi bỏ đi. Để trống nếu bạn dán khóa.",
+        "privateKey": "Hoặc một khóa riêng",
+        "privateKeyHint": "Dành cho máy chủ tạo bằng khóa SSH, nơi đăng nhập bằng mật khẩu thường đã tắt."
+      },
+      "reach": {
+        "address": "Địa chỉ",
+        "where": "Ở đâu",
+        "org": "Chủ sở hữu",
+        "reading": "Đọc thế nào",
+        "readingHint": "200 nghĩa là dịch vụ đó đã trả lời địa chỉ này. 403 thường đến từ kiểm tra bot chứ không phải chặn theo quốc gia, nên hãy so với một máy chủ khác của bạn trước khi kết luận."
+      },
+      "toasts": {
+        "list": "Máy chủ lối ra",
+        "add": "Thêm máy chủ lối ra",
+        "update": "Cập nhật máy chủ lối ra",
+        "delete": "Gỡ máy chủ lối ra",
+        "probe": "Kiểm tra máy chủ lối ra",
+        "deleted": "Đã gỡ"
+      }
     }
   },
   "tgbot": {

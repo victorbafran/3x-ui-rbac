@@ -11,6 +11,7 @@ var prefixRules = []prefixRule{
 	{"/panel/api/server/", Rule{Perm: PermSuperOnly}},
 	{"/panel/api/xray/", Rule{Perm: PermSuperOnly}},
 	{"/panel/api/nodes", Rule{Perm: PermSuperOnly}},
+	{"/panel/api/relays", Rule{Perm: PermSuperOnly}},
 	{"/panel/api/setting/", Rule{Perm: PermSuperOnly}},
 	{"/panel/api/sub-balancers", Rule{Perm: PermSuperOnly}},
 	{"/panel/api/admins", Rule{Perm: PermSuperOnly}},

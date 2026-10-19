@@ -190,6 +190,9 @@ const SECTION_OF: Record<string, string> = {
   '/clients': 'sections.clients',
   '/groups': 'sections.groups',
   '/nodes': 'sections.nodes',
+  // Enrolling a relay hands the panel root on another machine, so the entry
+  // is in no role's defaults and only a super admin ever sees it.
+  '/relays': 'sections.relays',
   '/hosts': 'sections.hosts',
   '/outbound': 'sections.outbounds',
   '/routing': 'sections.routing',
@@ -248,6 +251,7 @@ export default function AppSidebar() {
       { key: '/clients', icon: 'team', title: t('menu.clients') },
       { key: '/groups', icon: 'groups', title: t('menu.groups') },
       { key: '/nodes', icon: 'cluster', title: t('menu.nodes') },
+      { key: '/relays', icon: 'cluster', title: t('menu.relays') },
       { key: '/hosts', icon: 'hosts', title: t('menu.hosts') },
       { key: '/admins', icon: 'admins', title: t('menu.admins') },
       { key: '/outbound', icon: 'outbound', title: t('menu.outbounds') },

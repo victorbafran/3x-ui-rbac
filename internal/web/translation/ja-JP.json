@@ -135,7 +135,8 @@
     "openMenu": "メニューを開く",
     "pinSidebar": "サイドバーを固定",
     "unpinSidebar": "サイドバーの固定を解除",
-    "subFormats": "Sub Formats"
+    "subFormats": "Sub Formats",
+    "relays": "出口サーバー"
   },
   "pages": {
     "login": {
@@ -2554,6 +2555,69 @@
       "visit": "訪問",
       "yourBrand": "ここにあなたのブランドを",
       "yourBrandText": "毎日 3X-UI を開く何千人ものサーバー管理者に御社をアピールできます。"
+    },
+    "relays": {
+      "title": "出口サーバー",
+      "add": "サーバーを追加",
+      "addTitle": "出口サーバーを追加",
+      "editTitle": "出口サーバーを編集",
+      "intro": "ここに追加したサーバーは、お客様が選べる国になります",
+      "introHint": "パネルはSSHで一度だけ接続し、WireGuardと転送ルールを一つ入れるだけです。パネルもアカウントも入れません。その後、ciscoインバウンドがその国をお客様の見る選択肢に出せます。",
+      "empty": "出口サーバーはまだありません",
+      "probeHint": "このサーバーがインターネットから何を得られるか確認します",
+      "confirmDelete": "{name} を削除しますか？",
+      "confirmDeleteHint": "パネルはトンネルと転送ルールをサーバーから取り除くので、きれいな状態で返せます。",
+      "credentialsOnce": "パスワードは一度だけ使われます",
+      "credentialsOnceHint": "パネル専用の鍵を入れ、その鍵が使えることを確かめたうえでパスワードは捨てられます。保存されることはありません。SSH鍵で作成しパスワードがないサーバーなら、代わりにその鍵を貼ってください。",
+      "reachTitle": "{name} から届く先",
+      "saved": "保存しました。サーバーの準備には数分かかります。",
+      "summary": {
+        "total": "サーバー",
+        "ready": "稼働中",
+        "trouble": "要確認"
+      },
+      "columns": {
+        "country": "国",
+        "server": "サーバー",
+        "status": "状態",
+        "traffic": "トンネル経由",
+        "usedBy": "利用元"
+      },
+      "status": {
+        "ready": "稼働中",
+        "silent": "応答なし",
+        "working": "準備中",
+        "error": "失敗",
+        "disabled": "停止"
+      },
+      "fields": {
+        "name": "名前",
+        "nameHint": "VPNサーバーが照合する識別子です。空白と記号は使わず、小文字が簡単です。",
+        "label": "お客様への表示",
+        "labelHint": "選択肢に出る文字です。空なら名前が出ます。",
+        "address": "アドレス",
+        "sshPort": "SSHポート",
+        "sshUser": "SSHユーザー",
+        "password": "パスワード",
+        "passwordHint": "鍵を入れるために一度だけ使い、その後は捨てます。鍵を貼る場合は空のままに。",
+        "privateKey": "または秘密鍵",
+        "privateKeyHint": "SSH鍵で作成したサーバー向けです。通常はパスワード認証が無効になっています。"
+      },
+      "reach": {
+        "address": "アドレス",
+        "where": "場所",
+        "org": "所有者",
+        "reading": "読み方",
+        "readingHint": "200はそのサービスがこのアドレスに応答したという意味です。403は国の遮断ではなくボット判定であることが多いので、別のサーバーと比べてから判断してください。"
+      },
+      "toasts": {
+        "list": "出口サーバー",
+        "add": "出口サーバーの追加",
+        "update": "出口サーバーの更新",
+        "delete": "出口サーバーの削除",
+        "probe": "出口サーバーの確認",
+        "deleted": "削除しました"
+      }
     }
   },
   "tgbot": {

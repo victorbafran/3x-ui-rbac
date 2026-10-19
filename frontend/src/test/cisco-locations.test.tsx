@@ -88,7 +88,10 @@ describe('the countries a cisco inbound offers', () => {
     fireEvent.click(add as HTMLElement);
 
     expect(countryNames()).toHaveLength(1);
-    expect(document.querySelectorAll('input[placeholder="exit, e.g. wg0"]')).toHaveLength(1);
+    // The exit field is an AutoComplete so the panel can suggest the servers
+    // it has already enrolled; antd renders that placeholder as a span rather
+    // than on the input, so the row is checked by what the operator sees.
+    expect(document.body.textContent).toContain('exit, e.g. wg0');
     cleanup();
   });
 

@@ -8,6 +8,11 @@ export const keys = {
     root: () => ['nodes'] as const,
     list: () => ['nodes', 'list'] as const,
   },
+  relays: {
+    root: () => ['relays'] as const,
+    list: () => ['relays', 'list'] as const,
+    options: () => ['relays', 'options'] as const,
+  },
   admins: {
     root: () => ['admins'] as const,
     me: () => ['admins', 'me'] as const,

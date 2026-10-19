@@ -21,6 +21,11 @@ const (
 	SecXray      = "sections.xray"
 	SecSettings  = "sections.settings"
 	SecAdmins    = "sections.admins"
+	// Relays are the servers a country's traffic leaves through. Enrolling
+	// one hands the panel root on another machine, so like sections.admins
+	// this is in no role's defaults: only a super_admin has it, which keeps
+	// the sidebar entry and the super-only routes agreeing with each other.
+	SecRelays = "sections.relays"
 
 	ClientCreate          = "clients.create"
 	ClientEdit            = "clients.edit"
@@ -39,7 +44,7 @@ const (
 // AllPermissions is the closed set of keys. An override naming anything else
 // is dropped, and Has() on an unknown key is false.
 var AllPermissions = []string{
-	SecInbounds, SecClients, SecGroups, SecHosts, SecNodes, SecOutbounds, SecRouting, SecXray, SecSettings, SecAdmins,
+	SecInbounds, SecClients, SecGroups, SecHosts, SecNodes, SecOutbounds, SecRouting, SecXray, SecSettings, SecAdmins, SecRelays,
 	ClientCreate, ClientEdit, ClientDelete, ClientResetTraffic, ClientUnlimitedData, ClientUnlimitedExpiry, ClientViewLinks,
 	InboundCreate, InboundEdit, InboundDelete, InboundResetTraffic,
 }

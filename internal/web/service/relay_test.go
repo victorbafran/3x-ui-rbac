@@ -1,0 +1,118 @@
+package service
+
+import (
+	"strings"
+	"testing"
+)
+
+// A relay's name becomes a group in a VPN server's config, a filename, and a
+// field in a colon-separated file. Letting a separator through would let one
+// country rewrite another's entry, so it is refused at the form.
+func TestARelayNameIsCheckedTheWayACountryNameIs(t *testing.T) {
+	s := &RelayService{}
+	for _, bad := range []string{"", "de:nl", "de,nl", "../etc", "de nl"} {
+		if _, err := s.rowFrom(RelayRequest{Name: bad, Address: "198.51.100.1"}, nil); err == nil {
+			t.Errorf("%q was accepted as a relay name", bad)
+		}
+	}
+	if _, err := s.rowFrom(RelayRequest{Name: "netherlands", Address: "198.51.100.1"}, nil); err != nil {
+		t.Errorf("an ordinary name was refused: %v", err)
+	}
+}
+
+// A relay with no address is a row that can never be reached, and the failure
+// would only show up minutes later as a connection timeout.
+func TestARelayNeedsAnAddress(t *testing.T) {
+	s := &RelayService{}
+	if _, err := s.rowFrom(RelayRequest{Name: "nl", Address: "   "}, nil); err == nil {
+		t.Fatal("a relay with no address was accepted")
+	}
+}
+
+// The fields an operator leaves alone should mean what they look like they
+// mean: ssh on 22, as root.
+func TestTheBlankFieldsTakeTheUsualDefaults(t *testing.T) {
+	s := &RelayService{}
+	r, err := s.rowFrom(RelayRequest{Name: "nl", Address: "198.51.100.1"}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r.SSHPort != 22 {
+		t.Errorf("blank port became %d", r.SSHPort)
+	}
+	if r.SSHUser != "root" {
+		t.Errorf("blank user became %q", r.SSHUser)
+	}
+	if !r.Enabled {
+		t.Error("a new relay was created switched off")
+	}
+	if r.Tunnel != "wireguard" {
+		t.Errorf("tunnel kind is %q", r.Tunnel)
+	}
+}
+
+// Editing a relay must not silently switch it off, or on: whatever the
+// operator did not touch stays as it was.
+func TestAnEditKeepsWhatTheOperatorDidNotChange(t *testing.T) {
+	s := &RelayService{}
+	base, err := s.rowFrom(RelayRequest{Name: "nl", Address: "198.51.100.1"}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	base.Id = 7
+	base.Enabled = false
+	base.KeyPath = "/etc/x-ui/relay-keys/relay-7"
+
+	edited, err := s.rowFrom(RelayRequest{Name: "nl", Address: "198.51.100.2"}, base)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if edited.Enabled {
+		t.Error("editing the address turned a disabled relay back on")
+	}
+	if edited.KeyPath != base.KeyPath {
+		t.Errorf("the enrolled key was dropped on an edit: %q", edited.KeyPath)
+	}
+	if edited.Id != 7 {
+		t.Errorf("the edit lost the row it was editing: id %d", edited.Id)
+	}
+}
+
+// The stored tunnel key must come back exactly, or the tunnel it belongs to
+// never handshakes again and the country goes quiet with nothing to explain it.
+func TestTheStoredTunnelKeyRoundTrips(t *testing.T) {
+	stored, err := encryptRelaySecret(3, "a-private-key")
+	if err != nil {
+		t.Fatal(err)
+	}
+	back, err := decryptRelaySecret(3, stored)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if back != "a-private-key" {
+		t.Fatalf("the key came back as %q", back)
+	}
+}
+
+// A relay with no key at all has to say so rather than hand an empty string to
+// WireGuard, which would bring up an interface that silently never works.
+func TestAMissingTunnelKeyIsRefused(t *testing.T) {
+	if _, err := decryptRelaySecret(3, ""); err == nil {
+		t.Fatal("an empty tunnel key was accepted")
+	} else if !strings.Contains(err.Error(), "enroll it again") {
+		t.Fatalf("the error does not say what to do: %v", err)
+	}
+}
+
+// The list of inbounds offering a relay is shown to the operator before they
+// delete it, so the same inbound appearing twice would read as two.
+func TestAnInboundIsListedOnceHoweverManyCountriesItOffers(t *testing.T) {
+	got := appendOnce(appendOnce(nil, "cisco-1"), "cisco-1")
+	if len(got) != 1 {
+		t.Fatalf("expected one entry, got %v", got)
+	}
+	got = appendOnce(got, "cisco-2")
+	if strings.Join(got, ",") != "cisco-1,cisco-2" {
+		t.Fatalf("a second inbound was lost: %v", got)
+	}
+}

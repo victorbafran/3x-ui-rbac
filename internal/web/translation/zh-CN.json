@@ -135,7 +135,8 @@
     "openMenu": "打开菜单",
     "pinSidebar": "固定侧边栏",
     "unpinSidebar": "取消固定侧边栏",
-    "subFormats": "Sub Formats"
+    "subFormats": "Sub Formats",
+    "relays": "出口服务器"
   },
   "pages": {
     "login": {
@@ -2554,6 +2555,69 @@
       "visit": "访问",
       "yourBrand": "您的品牌展示位",
       "yourBrandText": "让每天打开 3X-UI 的数千名服务器管理员看到您的公司。"
+    },
+    "relays": {
+      "title": "出口服务器",
+      "add": "添加服务器",
+      "addTitle": "添加出口服务器",
+      "editTitle": "编辑出口服务器",
+      "intro": "这里的每台服务器都会成为客户可以选择的一个国家/地区",
+      "introHint": "面板只通过 SSH 连接一次，装上 WireGuard 和一条转发规则，别的什么都不装：没有面板，也没有账号。之后 cisco 入站就能在客户已经看到的下拉列表中提供这个国家/地区。",
+      "empty": "还没有出口服务器",
+      "probeHint": "看看互联网对这台服务器开放了什么",
+      "confirmDelete": "移除 {name}？",
+      "confirmDeleteHint": "面板会从服务器上撤掉隧道和转发规则，让你干净地交还它。",
+      "credentialsOnce": "密码只用一次",
+      "credentialsOnceHint": "它用来装上面板自己的密钥，验证密钥可用，然后就被丢弃，绝不保存。如果服务器是用 SSH 密钥创建、没有密码，请改为粘贴那把密钥。",
+      "reachTitle": "{name} 能访问什么",
+      "saved": "已保存。准备服务器需要几分钟。",
+      "summary": {
+        "total": "服务器",
+        "ready": "正常",
+        "trouble": "需要关注"
+      },
+      "columns": {
+        "country": "国家/地区",
+        "server": "服务器",
+        "status": "状态",
+        "traffic": "隧道流量",
+        "usedBy": "被谁使用"
+      },
+      "status": {
+        "ready": "正常",
+        "silent": "无握手",
+        "working": "准备中",
+        "error": "失败",
+        "disabled": "已关闭"
+      },
+      "fields": {
+        "name": "名称",
+        "nameHint": "VPN 服务器据此匹配的标识。不要空格和标点，小写最省事。",
+        "label": "显示给客户",
+        "labelHint": "出现在客户下拉列表中的文字。留空则显示名称。",
+        "address": "地址",
+        "sshPort": "SSH 端口",
+        "sshUser": "SSH 用户",
+        "password": "密码",
+        "passwordHint": "只用一次来安装密钥，随后丢弃。粘贴密钥时请留空。",
+        "privateKey": "或一把私钥",
+        "privateKeyHint": "适用于以 SSH 密钥创建的服务器，这类服务器通常已关闭密码登录。"
+      },
+      "reach": {
+        "address": "地址",
+        "where": "位置",
+        "org": "归属",
+        "reading": "怎么看这些结果",
+        "readingHint": "200 表示该服务回应了这个地址。403 往往来自机器人检测而非国家/地区封锁，下结论前请与你的另一台服务器对比。"
+      },
+      "toasts": {
+        "list": "出口服务器",
+        "add": "添加出口服务器",
+        "update": "更新出口服务器",
+        "delete": "移除出口服务器",
+        "probe": "检查出口服务器",
+        "deleted": "已移除"
+      }
     }
   },
   "tgbot": {

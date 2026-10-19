@@ -135,7 +135,8 @@
     "openMenu": "Abrir menú",
     "pinSidebar": "Fijar barra lateral",
     "unpinSidebar": "Desfijar barra lateral",
-    "subFormats": "Sub Formats"
+    "subFormats": "Sub Formats",
+    "relays": "Servidores de salida"
   },
   "pages": {
     "login": {
@@ -2554,6 +2555,69 @@
       "visit": "Visitar",
       "yourBrand": "Tu marca aquí",
       "yourBrandText": "Muestra tu empresa a miles de administradores de servidores que abren 3X-UI cada día."
+    },
+    "relays": {
+      "title": "Servidores de salida",
+      "add": "Añadir un servidor",
+      "addTitle": "Añadir servidor de salida",
+      "editTitle": "Editar servidor de salida",
+      "intro": "Cada servidor aquí se convierte en un país que el cliente puede elegir",
+      "introHint": "El panel entra una vez por SSH, instala WireGuard y una sola regla de reenvío, nada más: ni panel ni cuentas. Después un inbound cisco puede ofrecer ese país en la misma lista que el cliente ya ve.",
+      "empty": "Aún no hay servidores de salida",
+      "probeHint": "Pregunta a este servidor qué le da internet",
+      "confirmDelete": "¿Quitar {name}?",
+      "confirmDeleteHint": "El panel retira del servidor su túnel y su regla de reenvío, para que lo devuelvas limpio.",
+      "credentialsOnce": "La contraseña se usa una sola vez",
+      "credentialsOnceHint": "Instala una clave propia del panel, comprueba que funciona y después la descarta. Nunca se guarda. Si el servidor se creó con una clave SSH y no tiene contraseña, pega esa clave.",
+      "reachTitle": "Qué alcanza {name}",
+      "saved": "Guardado. Preparar el servidor tarda unos minutos.",
+      "summary": {
+        "total": "Servidores",
+        "ready": "Funcionando",
+        "trouble": "Requiere atención"
+      },
+      "columns": {
+        "country": "País",
+        "server": "Servidor",
+        "status": "Estado",
+        "traffic": "Por el túnel",
+        "usedBy": "Lo ofrece"
+      },
+      "status": {
+        "ready": "Funcionando",
+        "silent": "Sin respuesta",
+        "working": "Preparando",
+        "error": "Falló",
+        "disabled": "Apagado"
+      },
+      "fields": {
+        "name": "Nombre",
+        "nameHint": "El identificador que usa el servidor VPN. Sin espacios ni signos; en minúsculas es más fácil.",
+        "label": "Se muestra al cliente",
+        "labelHint": "Lo que aparece en su lista. Vacío muestra el nombre.",
+        "address": "Dirección",
+        "sshPort": "Puerto SSH",
+        "sshUser": "Usuario SSH",
+        "password": "Contraseña",
+        "passwordHint": "Se usa una vez para instalar una clave y luego se descarta. Vacío si pegas una clave.",
+        "privateKey": "O una clave privada",
+        "privateKeyHint": "Para un servidor creado con clave SSH, donde el acceso por contraseña suele estar desactivado."
+      },
+      "reach": {
+        "address": "Dirección",
+        "where": "Dónde",
+        "org": "Propietario",
+        "reading": "Cómo leer esto",
+        "readingHint": "Un 200 significa que el servicio respondió a esta dirección. Un 403 suele venir de un control antibots y no de un bloqueo por país, así que compáralo con otro de tus servidores antes de juzgar."
+      },
+      "toasts": {
+        "list": "Servidores de salida",
+        "add": "Añadir servidor de salida",
+        "update": "Actualizar servidor de salida",
+        "delete": "Quitar servidor de salida",
+        "probe": "Comprobar el servidor de salida",
+        "deleted": "Eliminado"
+      }
     }
   },
   "tgbot": {

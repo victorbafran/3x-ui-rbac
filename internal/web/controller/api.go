@@ -20,6 +20,7 @@ type APIController struct {
 	inboundController     *InboundController
 	serverController      *ServerController
 	nodeController        *NodeController
+	relayController       *RelayController
 	hostController        *HostController
 	settingController     *SettingController
 	xraySettingController *XraySettingController
@@ -201,6 +202,12 @@ func (a *APIController) initRouter(g *gin.RouterGroup) {
 	// Nodes API — multi-panel management
 	nodes := api.Group("/nodes")
 	a.nodeController = NewNodeController(nodes)
+
+	// Relays API — the servers a cisco country's traffic leaves through.
+	// Unlike a node these run nothing of this panel: the panel reaches them
+	// over SSH and puts a tunnel on them.
+	relays := api.Group("/relays")
+	a.relayController = NewRelayController(relays)
 
 	// Hosts API — per-inbound override endpoints for subscription links
 	hosts := api.Group("/hosts")

@@ -296,13 +296,16 @@ func (s *Server) initRouter() (*gin.Engine, error) {
 // node/xray state is unchanged, and export per-job duration/skipped/error
 // counters.
 const (
-	cadenceXrayRunning   = "@every 1s"
-	cadenceXrayRestart   = "@every 30s"
-	cadenceXrayTraffic   = "@every 5s"
-	cadenceMtproto       = "@every 10s"
-	cadenceAmneziaWG     = "@every 10s"
-	cadenceTuic          = "@every 10s"
-	cadenceCisco         = "@every 10s"
+	cadenceXrayRunning = "@every 1s"
+	cadenceXrayRestart = "@every 30s"
+	cadenceXrayTraffic = "@every 5s"
+	cadenceMtproto     = "@every 10s"
+	cadenceAmneziaWG   = "@every 10s"
+	cadenceTuic        = "@every 10s"
+	cadenceCisco       = "@every 10s"
+	// A tunnel is slow-moving and the check is only a read, but bringing one
+	// back runs wg-quick, so a minute is often enough and never busy.
+	cadenceRelay         = "@every 1m"
 	cadenceClientIPScan  = "@every 10s"
 	cadenceNodeHeartbeat = "@every 5s"
 	cadenceNodeTraffic   = "@every 5s"
@@ -354,6 +357,12 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 	ciscoJob := job.NewCiscoJob()
 	_, _ = s.cron.AddJob(cadenceCisco, ciscoJob)
 	go ciscoJob.Run()
+
+	// Keep the tunnel to each exit country up, so a reboot does not leave a
+	// country in every customer's dropdown with nothing behind it.
+	relayJob := job.NewRelayJob()
+	_, _ = s.cron.AddJob(cadenceRelay, relayJob)
+	go relayJob.Run()
 
 	tuicJob := job.NewTuicJob()
 	_, _ = s.cron.AddJob(cadenceTuic, tuicJob)

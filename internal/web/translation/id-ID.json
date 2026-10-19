@@ -135,7 +135,8 @@
     "openMenu": "Buka menu",
     "pinSidebar": "Sematkan bilah sisi",
     "unpinSidebar": "Lepas sematan bilah sisi",
-    "subFormats": "Sub Formats"
+    "subFormats": "Sub Formats",
+    "relays": "Server keluar"
   },
   "pages": {
     "login": {
@@ -2554,6 +2555,69 @@
       "visit": "Kunjungi",
       "yourBrand": "Merek Anda di sini",
       "yourBrandText": "Tampilkan perusahaan Anda kepada ribuan admin server yang membuka 3X-UI setiap hari."
+    },
+    "relays": {
+      "title": "Server keluar",
+      "add": "Tambah server",
+      "addTitle": "Tambah server keluar",
+      "editTitle": "Ubah server keluar",
+      "intro": "Setiap server di sini menjadi satu negara yang bisa dipilih pelanggan",
+      "introHint": "Panel masuk sekali lewat SSH, memasang WireGuard dan satu aturan penerusan saja — tanpa panel, tanpa akun. Setelah itu inbound cisco bisa menawarkan negara tersebut di daftar yang sudah dilihat pelanggan.",
+      "empty": "Belum ada server keluar",
+      "probeHint": "Tanyakan apa yang internet berikan pada server ini",
+      "confirmDelete": "Hapus {name}?",
+      "confirmDeleteHint": "Panel melepas terowongan dan aturan penerusannya dari server, jadi bisa dikembalikan bersih.",
+      "credentialsOnce": "Kata sandi dipakai sekali saja",
+      "credentialsOnceHint": "Dipakai untuk memasang kunci milik panel, dibuktikan bahwa kuncinya bekerja, lalu dibuang. Tidak pernah disimpan. Jika server dibuat dengan kunci SSH dan tidak punya kata sandi, tempel kuncinya.",
+      "reachTitle": "Apa yang bisa dijangkau {name}",
+      "saved": "Tersimpan. Menyiapkan server butuh beberapa menit.",
+      "summary": {
+        "total": "Server",
+        "ready": "Bekerja",
+        "trouble": "Perlu perhatian"
+      },
+      "columns": {
+        "country": "Negara",
+        "server": "Server",
+        "status": "Status",
+        "traffic": "Lewat terowongan",
+        "usedBy": "Dipakai oleh"
+      },
+      "status": {
+        "ready": "Bekerja",
+        "silent": "Tidak menjawab",
+        "working": "Menyiapkan",
+        "error": "Gagal",
+        "disabled": "Mati"
+      },
+      "fields": {
+        "name": "Nama",
+        "nameHint": "Pengenal yang dicocokkan server VPN. Tanpa spasi dan tanda baca; huruf kecil paling mudah.",
+        "label": "Ditampilkan ke pelanggan",
+        "labelHint": "Yang muncul di daftar mereka. Kosong berarti namanya.",
+        "address": "Alamat",
+        "sshPort": "Porta SSH",
+        "sshUser": "Pengguna SSH",
+        "password": "Kata sandi",
+        "passwordHint": "Dipakai sekali untuk memasang kunci lalu dibuang. Kosongkan jika menempel kunci.",
+        "privateKey": "Atau kunci privat",
+        "privateKeyHint": "Untuk server yang dibuat dengan kunci SSH, yang biasanya login sandinya dimatikan."
+      },
+      "reach": {
+        "address": "Alamat",
+        "where": "Lokasi",
+        "org": "Pemilik",
+        "reading": "Cara membacanya",
+        "readingHint": "200 berarti layanan itu menjawab alamat ini. 403 sering berasal dari pemeriksaan bot, bukan negara yang diblokir, jadi bandingkan dengan server Anda yang lain sebelum menyimpulkan."
+      },
+      "toasts": {
+        "list": "Server keluar",
+        "add": "Tambah server keluar",
+        "update": "Perbarui server keluar",
+        "delete": "Hapus server keluar",
+        "probe": "Periksa server keluar",
+        "deleted": "Dihapus"
+      }
     }
   },
   "tgbot": {

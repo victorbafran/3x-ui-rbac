@@ -135,7 +135,8 @@
     "openMenu": "Abrir menu",
     "pinSidebar": "Fixar barra lateral",
     "unpinSidebar": "Desafixar barra lateral",
-    "subFormats": "Sub Formats"
+    "subFormats": "Sub Formats",
+    "relays": "Servidores de saída"
   },
   "pages": {
     "login": {
@@ -2554,6 +2555,69 @@
       "visit": "Visitar",
       "yourBrand": "Sua marca aqui",
       "yourBrandText": "Coloque sua empresa diante de milhares de administradores de servidores que abrem o 3X-UI todos os dias."
+    },
+    "relays": {
+      "title": "Servidores de saída",
+      "add": "Adicionar servidor",
+      "addTitle": "Adicionar servidor de saída",
+      "editTitle": "Editar servidor de saída",
+      "intro": "Cada servidor aqui vira um país que o cliente pode escolher",
+      "introHint": "O painel entra uma vez por SSH, instala o WireGuard e uma única regra de encaminhamento, e nada mais: sem painel, sem contas. Depois um inbound cisco pode oferecer esse país na mesma lista que o cliente já vê.",
+      "empty": "Ainda não há servidores de saída",
+      "probeHint": "Pergunte a este servidor o que a internet lhe dá",
+      "confirmDelete": "Remover {name}?",
+      "confirmDeleteHint": "O painel retira do servidor o túnel e a regra de encaminhamento, para você devolvê-lo limpo.",
+      "credentialsOnce": "A senha é usada uma única vez",
+      "credentialsOnceHint": "Ela instala uma chave do próprio painel, comprova que a chave funciona e depois é descartada. Nunca é guardada. Se o servidor foi criado com uma chave SSH e não tem senha, cole essa chave.",
+      "reachTitle": "O que {name} alcança",
+      "saved": "Salvo. Preparar o servidor leva alguns minutos.",
+      "summary": {
+        "total": "Servidores",
+        "ready": "Funcionando",
+        "trouble": "Precisa de atenção"
+      },
+      "columns": {
+        "country": "País",
+        "server": "Servidor",
+        "status": "Estado",
+        "traffic": "Pelo túnel",
+        "usedBy": "Oferecido por"
+      },
+      "status": {
+        "ready": "Funcionando",
+        "silent": "Sem resposta",
+        "working": "Preparando",
+        "error": "Falhou",
+        "disabled": "Desligado"
+      },
+      "fields": {
+        "name": "Nome",
+        "nameHint": "O identificador que o servidor VPN usa. Sem espaços nem pontuação; minúsculas é mais simples.",
+        "label": "Mostrado ao cliente",
+        "labelHint": "O que aparece na lista dele. Vazio mostra o nome.",
+        "address": "Endereço",
+        "sshPort": "Porta SSH",
+        "sshUser": "Usuário SSH",
+        "password": "Senha",
+        "passwordHint": "Usada uma vez para instalar uma chave e depois descartada. Deixe vazio ao colar uma chave.",
+        "privateKey": "Ou uma chave privada",
+        "privateKeyHint": "Para um servidor criado com chave SSH, onde o login por senha costuma estar desativado."
+      },
+      "reach": {
+        "address": "Endereço",
+        "where": "Onde",
+        "org": "Dono",
+        "reading": "Como ler isto",
+        "readingHint": "Um 200 quer dizer que o serviço respondeu a este endereço. Um 403 costuma vir de uma verificação antibô e não de bloqueio por país, então compare com outro servidor seu antes de concluir."
+      },
+      "toasts": {
+        "list": "Servidores de saída",
+        "add": "Adicionar servidor de saída",
+        "update": "Atualizar servidor de saída",
+        "delete": "Remover servidor de saída",
+        "probe": "Verificar o servidor de saída",
+        "deleted": "Removido"
+      }
     }
   },
   "tgbot": {

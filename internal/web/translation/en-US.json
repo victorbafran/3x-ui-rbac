@@ -135,7 +135,8 @@
     "openMenu": "Open menu",
     "pinSidebar": "Pin sidebar",
     "unpinSidebar": "Unpin sidebar",
-    "subFormats": "Sub Formats"
+    "subFormats": "Sub Formats",
+    "relays": "Exit servers"
   },
   "pages": {
     "login": {
@@ -2554,6 +2555,69 @@
       "visit": "Visit",
       "yourBrand": "Your brand here",
       "yourBrandText": "Put your company in front of thousands of server admins who open 3X-UI every day."
+    },
+    "relays": {
+      "title": "Exit servers",
+      "add": "Add a server",
+      "addTitle": "Add an exit server",
+      "editTitle": "Edit an exit server",
+      "intro": "Each server here becomes a country your customers can pick",
+      "introHint": "The panel reaches the server once over SSH, installs WireGuard and a single forwarding rule, and nothing else — no panel, no accounts. A cisco inbound can then offer that country in the dropdown the customer already sees.",
+      "empty": "No exit servers yet",
+      "probeHint": "Ask this server what the internet gives it",
+      "confirmDelete": "Remove {name}?",
+      "confirmDeleteHint": "The panel takes its tunnel and forwarding rule off the server, so you can hand it back clean.",
+      "credentialsOnce": "The password is used once",
+      "credentialsOnceHint": "It installs a key of the panel’s own, proves the key works, and is then thrown away. It is never stored. If the server was created with an SSH key and has no password, paste that key instead.",
+      "reachTitle": "What {name} can reach",
+      "saved": "Saved. Setting the server up takes a few minutes.",
+      "summary": {
+        "total": "Servers",
+        "ready": "Working",
+        "trouble": "Needs attention"
+      },
+      "columns": {
+        "country": "Country",
+        "server": "Server",
+        "status": "Status",
+        "traffic": "Through the tunnel",
+        "usedBy": "Offered by"
+      },
+      "status": {
+        "ready": "Working",
+        "silent": "No handshake",
+        "working": "Setting up",
+        "error": "Failed",
+        "disabled": "Off"
+      },
+      "fields": {
+        "name": "Name",
+        "nameHint": "The identifier the VPN server matches on. No spaces and no punctuation; lowercase is easiest.",
+        "label": "Shown to the customer",
+        "labelHint": "What appears in their dropdown. Empty shows the name.",
+        "address": "Address",
+        "sshPort": "SSH port",
+        "sshUser": "SSH user",
+        "password": "Password",
+        "passwordHint": "Used once to install a key, then discarded. Leave empty when pasting a key.",
+        "privateKey": "Or a private key",
+        "privateKeyHint": "For a server created with an SSH key, which usually has password login switched off."
+      },
+      "reach": {
+        "address": "Address",
+        "where": "Where",
+        "org": "Owner",
+        "reading": "How to read this",
+        "readingHint": "A 200 means the service answered this address. A 403 often comes from a bot check rather than the country being blocked, so compare it against another of your servers before judging."
+      },
+      "toasts": {
+        "list": "Exit servers",
+        "add": "Add exit server",
+        "update": "Update exit server",
+        "delete": "Remove exit server",
+        "probe": "Check the exit server",
+        "deleted": "Removed"
+      }
     }
   },
   "tgbot": {

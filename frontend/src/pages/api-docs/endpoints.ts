@@ -1657,6 +1657,57 @@ export const sections: readonly Section[] = [
   },
 
   {
+    id: 'relays',
+    title: 'Exit servers',
+    description:
+      'Plain servers in other countries that a cisco inbound can send one of its countries out through. The panel reaches each one over SSH once, installs WireGuard and a single forwarding rule, and nothing else: no panel and no accounts are installed there. Super admin only. All endpoints under /panel/api/relays.',
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/panel/api/relays/list',
+        summary:
+          'Every exit server with the live state of its tunnel, and which cisco inbounds already offer it as a country.',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/relays/options',
+        summary:
+          'The smaller list a cisco inbound form needs: the interface to store and a name the operator recognises.',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/relays/add',
+        summary:
+          'Enroll a server. The password or key is used once to install a key of the panel\u2019s own, proven to work, and then discarded; it is never stored. Returns at once while the setup runs behind it, so poll the list for the status.',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/relays/update/:id',
+        summary:
+          'Change a server and rebuild its tunnel. New credentials re-enroll it; without them the stored key is kept.',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/relays/del/:id',
+        summary:
+          'Remove a server and take the panel\u2019s footprint off it. Refused while a cisco inbound still offers it as a country.',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/relays/setEnable/:id',
+        summary:
+          'Switch a country off or back on. A disabled server keeps its key, so turning it on again asks for no password.',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/relays/probe/:id',
+        summary:
+          'Ask the server what the internet gives it: where the address is, and which of the services customers ask for will answer it.',
+      },
+    ],
+  },
+
+  {
     id: 'nodes',
     title: 'Nodes',
     description:

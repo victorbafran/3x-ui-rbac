@@ -36,6 +36,18 @@ type Relay struct {
 	LastSeen  int64  `json:"lastSeen" example:"0"`
 	Enabled   bool   `json:"enabled" gorm:"not null;default:true" example:"true"`
 	CreatedAt int64  `json:"createdAt" gorm:"autoCreateTime" example:"1760000000"`
+
+	// Label is what a customer reads when this relay is offered as a country,
+	// where Name is the identifier the VPN server matches on.
+	Label string `json:"label" example:"Netherlands"`
+
+	// WgPrivate is the panel's half of the tunnel key and WgPeerPublic the
+	// relay's. Settled once at enrollment and reused, so bringing the tunnel
+	// back up after a reboot does not rekey it and drop every customer on
+	// that country. WgPrivate is encrypted at rest wherever the panel has a
+	// key to encrypt it with, the same as a node's API token.
+	WgPrivate    string `json:"-" gorm:"column:wg_private"`
+	WgPeerPublic string `json:"wgPeerPublic" gorm:"column:wg_peer_public"`
 }
 
 // AdminInbound hands an inbound to an admin who did not create it. Ownership

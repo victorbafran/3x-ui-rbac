@@ -135,7 +135,8 @@
     "openMenu": "Menüyü aç",
     "pinSidebar": "Kenar çubuğunu sabitle",
     "unpinSidebar": "Kenar çubuğu sabitlemesini kaldır",
-    "subFormats": "Abonelik Formatları"
+    "subFormats": "Abonelik Formatları",
+    "relays": "Çıkış sunucuları"
   },
   "pages": {
     "login": {
@@ -2554,6 +2555,69 @@
       "visit": "Ziyaret et",
       "yourBrand": "Markanız burada",
       "yourBrandText": "Şirketinizi her gün 3X-UI açan binlerce sunucu yöneticisinin önüne çıkarın."
+    },
+    "relays": {
+      "title": "Çıkış sunucuları",
+      "add": "Sunucu ekle",
+      "addTitle": "Çıkış sunucusu ekle",
+      "editTitle": "Çıkış sunucusunu düzenle",
+      "intro": "Buradaki her sunucu, müşterinin seçebileceği bir ülke olur",
+      "introHint": "Panel sunucuya bir kez SSH ile girer, WireGuard ve tek bir yönlendirme kuralı kurar, başka hiçbir şey yapmaz: ne panel ne hesap. Sonrasında bir cisco gelen bağlantısı o ülkeyi müşterinin zaten gördüğü listede sunabilir.",
+      "empty": "Henüz çıkış sunucusu yok",
+      "probeHint": "Bu sunucuya internetin ne verdiğini sor",
+      "confirmDelete": "{name} kaldırılsın mı?",
+      "confirmDeleteHint": "Panel tünelini ve yönlendirme kuralını sunucudan kaldırır, böylece temiz teslim edebilirsiniz.",
+      "credentialsOnce": "Parola yalnızca bir kez kullanılır",
+      "credentialsOnceHint": "Panelin kendi anahtarını kurar, anahtarın çalıştığını kanıtlar ve sonra parolayı atar. Hiçbir zaman saklanmaz. Sunucu bir SSH anahtarıyla oluşturulduysa ve parolası yoksa, onun yerine o anahtarı yapıştırın.",
+      "reachTitle": "{name} neye erişebiliyor",
+      "saved": "Kaydedildi. Sunucunun hazırlanması birkaç dakika sürer.",
+      "summary": {
+        "total": "Sunucular",
+        "ready": "Çalışıyor",
+        "trouble": "İlgi gerekiyor"
+      },
+      "columns": {
+        "country": "Ülke",
+        "server": "Sunucu",
+        "status": "Durum",
+        "traffic": "Tünelden",
+        "usedBy": "Kullanan"
+      },
+      "status": {
+        "ready": "Çalışıyor",
+        "silent": "Yanıt yok",
+        "working": "Hazırlanıyor",
+        "error": "Başarısız",
+        "disabled": "Kapalı"
+      },
+      "fields": {
+        "name": "Ad",
+        "nameHint": "VPN sunucusunun eşleştirdiği tanımlayıcı. Boşluk ve noktalama olmadan; küçük harf en kolayı.",
+        "label": "Müşteriye görünen",
+        "labelHint": "Listede görünen yazı. Boşsa ad görünür.",
+        "address": "Adres",
+        "sshPort": "SSH bağlantı noktası",
+        "sshUser": "SSH kullanıcısı",
+        "password": "Parola",
+        "passwordHint": "Anahtar kurmak için bir kez kullanılır, sonra atılır. Anahtar yapıştıracaksanız boş bırakın.",
+        "privateKey": "Ya da özel anahtar",
+        "privateKeyHint": "SSH anahtarıyla oluşturulmuş, parolayla girişi genelde kapalı bir sunucu için."
+      },
+      "reach": {
+        "address": "Adres",
+        "where": "Konum",
+        "org": "Sahibi",
+        "reading": "Bu nasıl okunur",
+        "readingHint": "200, o hizmetin bu adrese yanıt verdiği anlamına gelir. 403 çoğu zaman ülke engelinden değil bot denetiminden gelir; karar vermeden önce başka bir sunucunuzla karşılaştırın."
+      },
+      "toasts": {
+        "list": "Çıkış sunucuları",
+        "add": "Çıkış sunucusu ekleme",
+        "update": "Çıkış sunucusunu güncelleme",
+        "delete": "Çıkış sunucusunu kaldırma",
+        "probe": "Çıkış sunucusunu denetleme",
+        "deleted": "Kaldırıldı"
+      }
     }
   },
   "tgbot": {

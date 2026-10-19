@@ -1,11 +1,12 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MinusOutlined, PlusOutlined } from '@ant-design/icons';
-import { Alert, Button, Form, Input, InputNumber, Select, Space, Switch } from 'antd';
+import { Alert, AutoComplete, Button, Form, Input, InputNumber, Select, Space, Switch } from 'antd';
 import { useFieldArray, useFormContext, useWatch } from 'react-hook-form';
 
 import { FormField } from '@/components/form/rhf';
 import { useInboundOptions } from '@/api/queries/useInboundOptions';
+import { useRelayOptions } from '@/api/queries/useRelaysQuery';
 
 // The countries this inbound offers. ocserv advertises them before it asks for
 // a password, so the customer's own client shows a Group dropdown and picks
@@ -18,6 +19,16 @@ function LocationList() {
   const { t } = useTranslation();
   const { control } = useFormContext();
   const { fields, append, remove } = useFieldArray({ control, name: 'settings.locations' });
+  // Relays the panel has already enrolled, offered by the name the operator
+  // gave them rather than by an interface nobody would remember. Still an
+  // AutoComplete rather than a Select: an operator with a tunnel of their own
+  // can type its interface, and a reseller who cannot read the relay routes
+  // simply gets no suggestions instead of an empty, broken dropdown.
+  const { options: relays } = useRelayOptions();
+  const exitOptions = relays.map((r) => ({
+    value: r.interface,
+    label: `${r.label || r.name} — ${r.address}${r.ready ? '' : ' (…)'}`,
+  }));
   return (
     <Form.Item
       label={t('pages.inbounds.form.ciscoLocations')}
@@ -39,7 +50,18 @@ function LocationList() {
             <Input placeholder={t('pages.inbounds.form.ciscoLocationLabel')} />
           </FormField>
           <FormField name={['settings', 'locations', i, 'exit']} noStyle>
-            <Input placeholder={t('pages.inbounds.form.ciscoLocationExit')} />
+            <AutoComplete
+              options={exitOptions}
+              placeholder={t('pages.inbounds.form.ciscoLocationExit')}
+              filterOption={(input, option) =>
+                String(option?.value ?? '')
+                  .toLowerCase()
+                  .includes(input.toLowerCase()) ||
+                String(option?.label ?? '')
+                  .toLowerCase()
+                  .includes(input.toLowerCase())
+              }
+            />
           </FormField>
           <Button aria-label={t('remove')} size="small" onClick={() => remove(i)}>
             <MinusOutlined />

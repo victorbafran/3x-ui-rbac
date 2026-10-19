@@ -9,6 +9,7 @@ const InboundsPage = lazy(() => import('@/pages/inbounds/InboundsPage'));
 const ClientsPage = lazy(() => import('@/pages/clients/ClientsPage'));
 const GroupsPage = lazy(() => import('@/pages/groups/GroupsPage'));
 const NodesPage = lazy(() => import('@/pages/nodes/NodesPage'));
+const RelaysPage = lazy(() => import('@/pages/relays/RelaysPage'));
 const HostsPage = lazy(() => import('@/pages/hosts/HostsPage'));
 const AdminsPage = lazy(() => import('@/pages/admins/AdminsPage'));
 const SettingsPage = lazy(() => import('@/pages/settings/SettingsPage'));
@@ -47,6 +48,7 @@ const routes: RouteObject[] = [
       { path: 'clients', element: withSuspense(<ClientsPage />) },
       { path: 'groups', element: withSuspense(<GroupsPage />) },
       { path: 'nodes', element: withSuspense(<NodesPage />) },
+      { path: 'relays', element: withSuspense(<RelaysPage />) },
       { path: 'hosts', element: withSuspense(<HostsPage />) },
       { path: 'admins', element: withSuspense(<AdminsPage />) },
       { path: 'settings', element: withSuspense(<SettingsPage />) },

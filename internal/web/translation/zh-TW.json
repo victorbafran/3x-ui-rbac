@@ -135,7 +135,8 @@
     "openMenu": "開啟選單",
     "pinSidebar": "固定側邊欄",
     "unpinSidebar": "取消固定側邊欄",
-    "subFormats": "Sub Formats"
+    "subFormats": "Sub Formats",
+    "relays": "出口伺服器"
   },
   "pages": {
     "login": {
@@ -2554,6 +2555,69 @@
       "visit": "造訪",
       "yourBrand": "您的品牌展示位",
       "yourBrandText": "讓每天打開 3X-UI 的數千名伺服器管理員看到您的公司。"
+    },
+    "relays": {
+      "title": "出口伺服器",
+      "add": "新增伺服器",
+      "addTitle": "新增出口伺服器",
+      "editTitle": "編輯出口伺服器",
+      "intro": "這裡的每台伺服器都會成為客戶可以選擇的一個國家／地區",
+      "introHint": "面板只透過 SSH 連線一次，裝上 WireGuard 與一條轉送規則，其他什麼都不裝：沒有面板，也沒有帳號。之後 cisco 入站就能在客戶已經看到的下拉清單中提供這個國家／地區。",
+      "empty": "還沒有出口伺服器",
+      "probeHint": "看看網際網路對這台伺服器開放了什麼",
+      "confirmDelete": "移除 {name}？",
+      "confirmDeleteHint": "面板會從伺服器上撤掉通道與轉送規則，讓你乾淨地交還它。",
+      "credentialsOnce": "密碼只用一次",
+      "credentialsOnceHint": "它用來裝上面板自己的金鑰，驗證金鑰可用，然後就被丟棄，絕不儲存。如果伺服器是以 SSH 金鑰建立、沒有密碼，請改為貼上那把金鑰。",
+      "reachTitle": "{name} 能連到什麼",
+      "saved": "已儲存。準備伺服器需要幾分鐘。",
+      "summary": {
+        "total": "伺服器",
+        "ready": "正常",
+        "trouble": "需要注意"
+      },
+      "columns": {
+        "country": "國家／地區",
+        "server": "伺服器",
+        "status": "狀態",
+        "traffic": "通道流量",
+        "usedBy": "被誰使用"
+      },
+      "status": {
+        "ready": "正常",
+        "silent": "無交握",
+        "working": "準備中",
+        "error": "失敗",
+        "disabled": "已關閉"
+      },
+      "fields": {
+        "name": "名稱",
+        "nameHint": "VPN 伺服器據此比對的識別字。不要空白與標點，小寫最省事。",
+        "label": "顯示給客戶",
+        "labelHint": "出現在客戶下拉清單中的文字。留空則顯示名稱。",
+        "address": "位址",
+        "sshPort": "SSH 連接埠",
+        "sshUser": "SSH 使用者",
+        "password": "密碼",
+        "passwordHint": "只用一次來安裝金鑰，隨後丟棄。貼上金鑰時請留空。",
+        "privateKey": "或一把私密金鑰",
+        "privateKeyHint": "適用於以 SSH 金鑰建立的伺服器，這類伺服器通常已關閉密碼登入。"
+      },
+      "reach": {
+        "address": "位址",
+        "where": "位置",
+        "org": "擁有者",
+        "reading": "怎麼看這些結果",
+        "readingHint": "200 表示該服務回應了這個位址。403 往往來自機器人偵測而非國家／地區封鎖，下結論前請與你的另一台伺服器比較。"
+      },
+      "toasts": {
+        "list": "出口伺服器",
+        "add": "新增出口伺服器",
+        "update": "更新出口伺服器",
+        "delete": "移除出口伺服器",
+        "probe": "檢查出口伺服器",
+        "deleted": "已移除"
+      }
     }
   },
   "tgbot": {

@@ -7,6 +7,7 @@ import { useFieldArray, useFormContext, useWatch } from 'react-hook-form';
 import { FormField } from '@/components/form/rhf';
 import { useInboundOptions } from '@/api/queries/useInboundOptions';
 import { useRelayOptions } from '@/api/queries/useRelaysQuery';
+import type { RelayOption } from '@/schemas/relay';
 
 // The countries this inbound offers. ocserv advertises them before it asks for
 // a password, so the customer's own client shows a Group dropdown and picks
@@ -17,8 +18,11 @@ import { useRelayOptions } from '@/api/queries/useRelaysQuery';
 // that interface, in practice a tunnel to a server standing in that country.
 function LocationList() {
   const { t } = useTranslation();
-  const { control, getValues, setValue } = useFormContext();
+  const { control, setValue } = useFormContext();
   const { fields, append, remove } = useFieldArray({ control, name: 'settings.locations' });
+  const rows = useWatch({ control, name: 'settings.locations' }) as
+    | { name?: string; label?: string; exit?: string }[]
+    | undefined;
   // Relays the panel has already enrolled, offered by the name the operator
   // gave them rather than by an interface nobody would remember. Still an
   // AutoComplete rather than a Select: an operator with a tunnel of their own
@@ -30,26 +34,28 @@ function LocationList() {
     label: `${r.label || r.name} — ${r.address}${r.ready ? '' : ' (…)'}`,
   }));
 
-  // Picking an exit fills in the country it is in, flag and all. The panel
-  // already asked the relay where it was, and a customer reading "🇳🇱
-  // Netherlands" in their client should not depend on anybody remembering to
-  // type it. Only empty fields are filled: whatever the operator wrote is
-  // theirs to keep.
+  // A country that leaves through an enrolled exit takes that server's own
+  // country and flag, and the two name boxes are hidden for it: the panel
+  // already asked the server where it was, so asking the operator to type it
+  // again is two more things to get wrong. A country with no exit leaves
+  // through this server, has nothing to be named after, and keeps its boxes.
+  const relayFor = (iface: unknown) =>
+    typeof iface === 'string' && iface ? relays.find((r) => r.interface === iface) : undefined;
+
+  const nameFromRelay = (relay: RelayOption) => ({
+    name: relay.country.toLowerCase().replace(/[^a-z0-9]/g, '') || relay.name,
+    label: [flagOf(relay.countryCode), relay.country].filter(Boolean).join(' ') || relay.label,
+  });
+
   const fillFromRelay = (index: number, iface: string) => {
-    const relay = relays.find((r) => r.interface === iface);
+    const relay = relayFor(iface);
     if (!relay) return;
-    const slug = relay.country.toLowerCase().replace(/[^a-z0-9]/g, '');
-    const current = getValues(`settings.locations.${index}`) as
-      | { name?: string; label?: string }
-      | undefined;
-    if (!current?.name?.trim() && slug) {
-      setValue(`settings.locations.${index}.name`, slug, { shouldDirty: true });
-    }
-    if (!current?.label?.trim()) {
-      const flag = flagOf(relay.countryCode);
-      const shown = [flag, relay.country].filter(Boolean).join(' ') || relay.label;
-      if (shown) setValue(`settings.locations.${index}.label`, shown, { shouldDirty: true });
-    }
+    const { name, label } = nameFromRelay(relay);
+    // Overwritten rather than filled: the boxes are not shown for a country
+    // backed by a server, so there is nothing of the operator's to protect,
+    // and switching to another country has to rename it.
+    if (name) setValue(`settings.locations.${index}.name`, name, { shouldDirty: true });
+    if (label) setValue(`settings.locations.${index}.label`, label, { shouldDirty: true });
   };
   return (
     <Form.Item
@@ -65,12 +71,22 @@ function LocationList() {
       </Button>
       {fields.map((field, i) => (
         <Space.Compact key={field.id} block className="mt-4">
-          <FormField name={['settings', 'locations', i, 'name']} noStyle>
-            <Input placeholder={t('pages.inbounds.form.ciscoLocationName')} />
-          </FormField>
-          <FormField name={['settings', 'locations', i, 'label']} noStyle>
-            <Input placeholder={t('pages.inbounds.form.ciscoLocationLabel')} />
-          </FormField>
+          {relayFor(rows?.[i]?.exit) ? (
+            <Input
+              readOnly
+              value={rows?.[i]?.label || rows?.[i]?.name || ''}
+              style={{ width: '45%' }}
+            />
+          ) : (
+            <>
+              <FormField name={['settings', 'locations', i, 'name']} noStyle>
+                <Input placeholder={t('pages.inbounds.form.ciscoLocationName')} />
+              </FormField>
+              <FormField name={['settings', 'locations', i, 'label']} noStyle>
+                <Input placeholder={t('pages.inbounds.form.ciscoLocationLabel')} />
+              </FormField>
+            </>
+          )}
           <FormField name={['settings', 'locations', i, 'exit']} noStyle>
             <AutoComplete
               options={exitOptions}

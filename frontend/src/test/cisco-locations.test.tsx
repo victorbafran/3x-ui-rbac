@@ -131,39 +131,32 @@ describe('the countries a cisco inbound offers', () => {
 
     const exitInput = Array.from(document.querySelectorAll<HTMLInputElement>('input')).at(-1);
     expect(exitInput).toBeTruthy();
+    // Opening the list is enough; typing would re-render the row under the
+    // dropdown and close it before anything could be clicked.
     fireEvent.mouseDown(exitInput as HTMLElement);
     fireEvent.focus(exitInput as HTMLElement);
-    fireEvent.change(exitInput as HTMLElement, { target: { value: 'wgr2' } });
 
     const option = Array.from(document.querySelectorAll('.ant-select-item-option')).at(0);
     expect(option, 'the enrolled exits should be offered').toBeTruthy();
     fireEvent.click(option as HTMLElement);
 
-    expect(countryNames()).toEqual(['netherlands']);
-    const labels = Array.from(
-      document.querySelectorAll<HTMLInputElement>(
-        'input[placeholder="shown as, e.g. Netherlands"]',
-      ),
-    ).map((el) => el.value);
-    expect(labels).toEqual(['🇳🇱 Netherlands']);
+    // The two name boxes are gone for a country backed by a server: it is
+    // named after the server, and the row shows what the customer reads.
+    expect(countryNames()).toHaveLength(0);
+    const shown = Array.from(document.querySelectorAll<HTMLInputElement>('input[readonly]')).map(
+      (el) => el.value,
+    );
+    expect(shown).toContain('🇳🇱 Netherlands');
     cleanup();
   });
 
-  // Filling a blank is helpful; overwriting what somebody typed is not. An
-  // operator who named the country themselves must keep that name when they
-  // then pick the server it goes out through.
-  it('leaves a name the operator already typed alone', () => {
+  // A country that leaves through this server has no server to be named
+  // after, so it keeps its boxes and whatever the operator wrote in them.
+  it('keeps the boxes for a country that leaves through this server', () => {
     renderCisco({
       ...createDefaultCiscoInboundSettings(),
       locations: [{ name: 'mine', label: 'My own', exit: '', network: '', netmask: '', dns: [] }],
     });
-    const exitInput = Array.from(document.querySelectorAll<HTMLInputElement>('input')).at(-1);
-    fireEvent.mouseDown(exitInput as HTMLElement);
-    fireEvent.focus(exitInput as HTMLElement);
-    fireEvent.change(exitInput as HTMLElement, { target: { value: 'wgr2' } });
-    const option = Array.from(document.querySelectorAll('.ant-select-item-option')).at(0);
-    fireEvent.click(option as HTMLElement);
-
     expect(countryNames()).toEqual(['mine']);
     const labels = Array.from(
       document.querySelectorAll<HTMLInputElement>(

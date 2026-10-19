@@ -208,7 +208,18 @@ func Locate(ctx context.Context, s Server) (country, code, city string, err erro
 	if err != nil {
 		return "", "", "", err
 	}
-	for _, line := range strings.Split(out, "\\n") {
+	country, code, city = parseLocation(out)
+	return country, code, city, nil
+}
+
+// parseLocation reads what the relay printed.
+//
+// It is a function of its own so it can be tested without a server, which it
+// now is: a mistyped separator once left the whole reply in a single field,
+// so the country code came back carrying the country and the city with it,
+// and the only symptom anybody saw was a relay with no flag.
+func parseLocation(out string) (country, code, city string) {
+	for _, line := range strings.Split(out, "\n") {
 		k, v, ok := strings.Cut(strings.TrimSpace(line), "=")
 		if !ok {
 			continue
@@ -222,5 +233,5 @@ func Locate(ctx context.Context, s Server) (country, code, city string, err erro
 			city = v
 		}
 	}
-	return country, code, city, nil
+	return country, code, city
 }

@@ -114,6 +114,14 @@ func perUserDirForID(id int) string {
 	return filepath.Join(runtimeDir(), fmt.Sprintf("peruser-%d", id))
 }
 
+// perGroupDirForID holds one file per country the inbound offers, named after
+// the group. ocserv reads the file when a client picks that group, so the pool
+// and resolvers behind a country can change without restarting the instance —
+// unlike the select-group list itself, which is read once at startup.
+func perGroupDirForID(id int) string {
+	return filepath.Join(runtimeDir(), fmt.Sprintf("pergroup-%d", id))
+}
+
 // ensureRuntimeDir creates the runtime directory and every parent it has to
 // create along the way, each one traversable by the unprivileged user ocserv
 // drops its workers to.

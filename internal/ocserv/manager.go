@@ -26,9 +26,13 @@ type sessionCounters struct {
 }
 
 type managed struct {
-	proc         *Process
-	tag          string
-	cidr         string
+	proc *Process
+	tag  string
+	cidr string
+	// routes is what this instance's countries put on the wire. Kept so a
+	// location that is renamed, renumbered or deleted has its rule and its
+	// table removed, rather than left steering a range nobody serves.
+	routes       []locationRoute
 	structuralFP string
 	usersFP      string
 	ctlSocket    string
@@ -100,6 +104,51 @@ func (m *Manager) sweepOrphansLocked() {
 	if n := killStrayOcservProcesses(runtimeDir()); n > 0 {
 		logger.Warningf("ocserv: terminated %d process(es) left over from a previous run", n)
 	}
+}
+
+// writeGroupConfigs writes one file per country the inbound offers and
+// removes the files of countries it no longer does.
+//
+// Removing matters as much as writing. ocserv reads these when a client picks
+// a group, so a file left behind would keep handing out a pool the panel has
+// stopped routing — the customer connects, picks a country that is no longer
+// offered, and reaches nothing at all.
+func writeGroupConfigs(inst Instance) error {
+	dir := perGroupDirForID(inst.Id)
+	locs, problems := inst.locations()
+	for _, why := range problems {
+		logger.Warningf("ocserv: inbound %d (%s): %s", inst.Id, inst.Tag, why)
+	}
+	if len(locs) == 0 {
+		_ = os.RemoveAll(dir)
+		return nil
+	}
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return fmt.Errorf("prepare %s: %w", dir, err)
+	}
+	if err := os.Chmod(dir, 0o755); err != nil {
+		return err
+	}
+
+	wanted := make(map[string]struct{}, len(locs))
+	for i, l := range locs {
+		wanted[l.Name] = struct{}{}
+		body := renderGroupConfig(inst, l, i)
+		if err := writeFile(filepath.Join(dir, l.Name), []byte(body), 0o644); err != nil {
+			return fmt.Errorf("write location %q: %w", l.Name, err)
+		}
+	}
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return nil
+	}
+	for _, e := range entries {
+		if _, keep := wanted[e.Name()]; keep {
+			continue
+		}
+		_ = os.Remove(filepath.Join(dir, e.Name()))
+	}
+	return nil
 }
 
 // writePerUserLimits writes one ocserv config file per client that has a
@@ -236,7 +285,17 @@ func (m *Manager) ensureLocked(inst Instance) error {
 	// A socket left behind by a killed process blocks the new bind.
 	_ = os.Remove(ctlSocketForID(inst.Id))
 
+	if err := writeGroupConfigs(inst); err != nil {
+		return err
+	}
+
 	ensureNAT(inst.CIDR())
+	var previousRoutes []locationRoute
+	if had && cur != nil {
+		previousRoutes = cur.routes
+	}
+	routes := inst.locationRoutes()
+	syncLocationRoutes(previousRoutes, routes)
 
 	proc := newProcess(configPathForID(inst.Id), inst.Tag)
 	if err := proc.Start(); err != nil {
@@ -246,6 +305,7 @@ func (m *Manager) ensureLocked(inst Instance) error {
 		proc:         proc,
 		tag:          inst.Tag,
 		cidr:         inst.CIDR(),
+		routes:       routes,
 		structuralFP: newStructFP,
 		usersFP:      newUsersFP,
 		ctlSocket:    ctlSocketForID(inst.Id),
@@ -298,10 +358,12 @@ func (m *Manager) removeLocked(id int) {
 	_ = cur.proc.Stop()
 	delete(m.procs, id)
 	removeNAT(cur.cidr)
+	syncLocationRoutes(cur.routes, nil)
 	for _, p := range []string{configPathForID(id), passwdPathForID(id), ctlSocketForID(id)} {
 		_ = os.Remove(p)
 	}
 	_ = os.RemoveAll(perUserDirForID(id))
+	_ = os.RemoveAll(perGroupDirForID(id))
 	logger.Infof("ocserv: stopped inbound %d", id)
 }
 

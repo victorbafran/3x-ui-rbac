@@ -52,6 +52,18 @@ type Instance struct {
 	// looks like a dead server rather than a certificate problem.
 	CertFile string
 	KeyFile  string
+
+	// Locations are the countries this inbound offers. With any present the
+	// client shows a Group dropdown before asking for a password and the
+	// customer picks where to come out; each location hands out a pool of
+	// its own so the host can route it to that country's exit.
+	//
+	// Measured on ocserv 1.2.4: once select-group is configured nobody
+	// connects without choosing one — not even a client whose password-file
+	// group field is "*", which means no group rather than any group. A
+	// client entitled to nothing could therefore not connect at all, which
+	// is why InstanceFromInbound entitles such a client to every location.
+	Locations []Location
 }
 
 func (inst Instance) listenAddr() string {
@@ -171,7 +183,26 @@ func (inst Instance) structuralFingerprint() string {
 		strconv.FormatBool(inst.DisableUDP),
 		strconv.Itoa(inst.mtu()),
 		strconv.FormatBool(inst.MTUDiscovery),
+		inst.locationsFingerprint(),
 	}, "|")
+}
+
+// locationsFingerprint covers the country list in the order it is rendered,
+// because a location's pool is derived from its position: moving two countries
+// past each other swaps their addresses, which ocserv only reads at startup.
+func (inst Instance) locationsFingerprint() string {
+	locs, _ := inst.locations()
+	if len(locs) == 0 {
+		return ""
+	}
+	parts := make([]string, 0, len(locs))
+	for i, l := range locs {
+		parts = append(parts, strings.Join([]string{
+			l.Name, l.labelOrName(), l.CIDR(inst.Id, i),
+			strings.Join(l.DNS, ","), strings.TrimSpace(l.Exit),
+		}, ">"))
+	}
+	return strings.Join(parts, ";")
 }
 
 // usersFingerprint identifies the client set regardless of order, so a
@@ -243,6 +274,17 @@ func renderConfig(inst Instance, certFile, keyFile string) string {
 	// Per-client overrides live here, one file per login. A client with no
 	// file of its own falls through to the max-same-clients above.
 	w("config-per-user = %s/", perUserDirForID(inst.Id))
+	// One file per country, holding that country's pool and resolvers, and
+	// one select-group line per country, which is what puts the names in the
+	// customer's dropdown. Written only when there are locations: a bare
+	// select-group list with nothing behind it would force every client to
+	// choose from an empty menu.
+	if locs, _ := inst.locations(); len(locs) > 0 {
+		w("config-per-group = %s/", perGroupDirForID(inst.Id))
+		for _, l := range locs {
+			w("select-group = %s[%s]", l.Name, l.labelOrName())
+		}
+	}
 	w("device = %s", inst.deviceName())
 	w("ipv4-network = %s", inst.network())
 	w("ipv4-netmask = %s", inst.netmask())

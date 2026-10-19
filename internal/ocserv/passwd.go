@@ -31,6 +31,13 @@ type User struct {
 	// a per-user config file, the only place the limit can be set per client
 	// rather than per inbound.
 	DeviceLimit int
+
+	// Locations are the countries this client may pick from the dropdown.
+	// Empty means the inbound offers none, and the client connects to the
+	// one pool there is. It must not mean "entitled to nothing" on an
+	// inbound that does offer countries: measured on ocserv 1.2.4, such a
+	// client cannot connect at all.
+	Locations []string
 }
 
 // LoginFor turns a client email into a name the password file can hold.
@@ -67,6 +74,28 @@ func HashPassword(password string) (string, error) {
 	return string(h), nil
 }
 
+// groupField renders a client's countries for the password file. ocserv reads
+// the field as a comma-separated list, and "*" when there is nothing to list.
+func groupField(locations []string) string {
+	names := make([]string, 0, len(locations))
+	seen := make(map[string]struct{}, len(locations))
+	for _, name := range locations {
+		name = strings.TrimSpace(name)
+		if ValidLocationName(name) != nil {
+			continue
+		}
+		if _, dup := seen[name]; dup {
+			continue
+		}
+		seen[name] = struct{}{}
+		names = append(names, name)
+	}
+	if len(names) == 0 {
+		return "*"
+	}
+	return strings.Join(names, ",")
+}
+
 // ValidLogin reports whether a login name can be written to the password file.
 // The file is colon-separated and line-based, so a name carrying either would
 // let one client's entry rewrite another's.
@@ -81,9 +110,17 @@ func ValidLogin(login string) error {
 }
 
 // renderPasswd builds the ocpasswd file for an instance: one line per client,
-// as login:group:hash with "*" for "any group". Clients are sorted so the file
-// is stable to read and to diff; a client whose name or password cannot be
-// used is skipped with a reason rather than taking the whole file down.
+// as login:groups:hash. Clients are sorted so the file is stable to read and
+// to diff; a client whose name or password cannot be used is skipped with a
+// reason rather than taking the whole file down.
+//
+// The group field is the comma-separated list of countries that client may
+// pick, or "*" when the inbound offers none. "*" is not "any group": measured
+// on ocserv 1.2.4, a user written with "*" who asks for a named group is
+// refused with "requested group ... but is not a member", and once any
+// select-group exists that same user cannot connect without naming one
+// either. On an inbound with countries, every client therefore carries a real
+// list.
 func renderPasswd(users []User) (string, []string) {
 	sorted := make([]User, len(users))
 	copy(sorted, users)
@@ -101,7 +138,7 @@ func renderPasswd(users []User) (string, []string) {
 			problems = append(problems, fmt.Sprintf("client %q: %v", u.Name, err))
 			continue
 		}
-		fmt.Fprintf(&b, "%s:*:%s\n", u.Login, hash)
+		fmt.Fprintf(&b, "%s:%s:%s\n", u.Login, groupField(u.Locations), hash)
 	}
 	return b.String(), problems
 }

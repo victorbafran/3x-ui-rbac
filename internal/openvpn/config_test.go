@@ -179,16 +179,14 @@ func TestTheHelperAndItsArgumentsAreOneParameter(t *testing.T) {
 	for _, id := range []int{1, 3, 42} {
 		cfg := configFor(t, Instance{Id: id, Port: 1194})
 		var line string
-		for _, l := range strings.Split(cfg, "
-") {
+		for _, l := range strings.Split(cfg, "\n") {
 			if strings.HasPrefix(l, "auth-user-pass-verify") {
 				line = l
 				break
 			}
 		}
 		if line == "" {
-			t.Fatalf("inbound %d: no password check at all; anyone could log in:
-%s", id, cfg)
+			t.Fatalf("inbound %d: no password check at all; anyone could log in:\n%s", id, cfg)
 		}
 		rest := strings.TrimPrefix(line, "auth-user-pass-verify ")
 		if !strings.HasPrefix(rest, `"`) || !strings.HasSuffix(rest, `" via-file`) {

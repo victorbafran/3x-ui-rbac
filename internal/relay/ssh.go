@@ -148,7 +148,7 @@ func (c *Client) Run(ctx context.Context, command string) (string, error) {
 				detail = strings.TrimSpace(out.String())
 			}
 			if detail != "" {
-				return out.String(), fmt.Errorf("%s: %s", err, firstLines(detail, 3))
+				return out.String(), fmt.Errorf("%w: %s", err, firstLines(detail, 3))
 			}
 			return out.String(), err
 		}

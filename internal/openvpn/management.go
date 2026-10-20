@@ -2,6 +2,7 @@ package openvpn
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"net"
 	"os"
@@ -123,7 +124,10 @@ const managementTimeout = 5 * time.Second
 // back. The socket speaks a line protocol with no framing, so the reply is
 // read until it stops rather than parsed for an end marker.
 func command(socket, line string) (string, error) {
-	conn, err := net.DialTimeout("unix", socket, managementTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), managementTimeout)
+	defer cancel()
+	dialer := net.Dialer{Timeout: managementTimeout}
+	conn, err := dialer.DialContext(ctx, "unix", socket)
 	if err != nil {
 		return "", err
 	}

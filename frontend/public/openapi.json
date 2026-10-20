@@ -5052,6 +5052,10 @@
       "description": "Manage clients as first-class entities that can be attached to one or more inbounds. A single client row drives the settings.clients entry in every inbound it belongs to. Endpoints live under /panel/api/clients."
     },
     {
+      "name": "Exit servers",
+      "description": "Plain servers in other countries that a cisco inbound can send one of its countries out through. The panel reaches each one over SSH once, installs WireGuard and a single forwarding rule, and nothing else: no panel and no accounts are installed there. Super admin only. All endpoints under /panel/api/relays."
+    },
+    {
       "name": "Nodes",
       "description": "Manage remote 3x-ui panels acting as nodes for a central panel. All endpoints under /panel/api/nodes."
     },
@@ -11124,6 +11128,260 @@
                   "obj": [
                     "vless://uuid@host:443?...#user1"
                   ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/relays/list": {
+      "get": {
+        "tags": [
+          "Exit servers"
+        ],
+        "summary": "Every exit server with the live state of its tunnel, and which cisco inbounds already offer it as a country.",
+        "operationId": "get_panel_api_relays_list",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/relays/options": {
+      "get": {
+        "tags": [
+          "Exit servers"
+        ],
+        "summary": "The smaller list a cisco inbound form needs: the interface to store and a name the operator recognises.",
+        "operationId": "get_panel_api_relays_options",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/relays/add": {
+      "post": {
+        "tags": [
+          "Exit servers"
+        ],
+        "summary": "Enroll a server. The password or key is used once to install a key of the panel’s own, proven to work, and then discarded; it is never stored. Returns at once while the setup runs behind it, so poll the list for the status.",
+        "operationId": "post_panel_api_relays_add",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/relays/update/{id}": {
+      "post": {
+        "tags": [
+          "Exit servers"
+        ],
+        "summary": "Change a server and rebuild its tunnel. New credentials re-enroll it; without them the stored key is kept.",
+        "operationId": "post_panel_api_relays_update_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/relays/del/{id}": {
+      "post": {
+        "tags": [
+          "Exit servers"
+        ],
+        "summary": "Remove a server and take the panel’s footprint off it. Refused while a cisco inbound still offers it as a country.",
+        "operationId": "post_panel_api_relays_del_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/relays/setEnable/{id}": {
+      "post": {
+        "tags": [
+          "Exit servers"
+        ],
+        "summary": "Switch a country off or back on. A disabled server keeps its key, so turning it on again asks for no password.",
+        "operationId": "post_panel_api_relays_setEnable_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/relays/probe/{id}": {
+      "post": {
+        "tags": [
+          "Exit servers"
+        ],
+        "summary": "Ask the server what the internet gives it: where the address is, and which of the services customers ask for will answer it.",
+        "operationId": "post_panel_api_relays_probe_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
                 }
               }
             }

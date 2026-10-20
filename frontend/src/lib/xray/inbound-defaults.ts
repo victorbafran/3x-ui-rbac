@@ -3,6 +3,7 @@ import { generateAwgObfuscation } from '@/lib/xray/amneziawg-obfuscation';
 
 import type { AmneziawgInboundSettings } from '@/schemas/protocols/inbound/amneziawg';
 import type { CiscoInboundSettings } from '@/schemas/protocols/inbound/cisco';
+import type { OpenVPNInboundSettings } from '@/schemas/protocols/inbound/openvpn';
 import type { HttpInboundSettings } from '@/schemas/protocols/inbound/http';
 import type { HysteriaClient, HysteriaInboundSettings } from '@/schemas/protocols/inbound/hysteria';
 import {
@@ -254,6 +255,26 @@ export function createDefaultMtprotoInboundSettings(): MtprotoInboundSettings {
   };
 }
 
+// createDefaultOpenVPNInboundSettings leaves the address pool empty for the
+// same reason as cisco: the panel derives a distinct /24 from the inbound id,
+// so two inbounds never hand out the same addresses. The exit is empty too,
+// which means this server — a new inbound should serve the country it is
+// already in rather than reach for a tunnel nobody has set up yet.
+export function createDefaultOpenVPNInboundSettings(): OpenVPNInboundSettings {
+  return {
+    clients: [],
+    network: '',
+    netmask: '255.255.255.0',
+    dns: ['1.1.1.1', '8.8.8.8'],
+    maxClients: 0,
+    maxSameClients: 2,
+    useTcp: false,
+    exit: '',
+    certFile: '',
+    keyFile: '',
+  };
+}
+
 // createDefaultCiscoInboundSettings leaves the address pool empty on purpose:
 // the panel derives a distinct /24 from the inbound id, so two cisco inbounds
 // on one host never hand out the same addresses. Pinning a constant here
@@ -442,6 +463,8 @@ export function createDefaultInboundSettings(protocol: string): AnyInboundSettin
       return createDefaultMasqueInboundSettings();
     case 'cisco':
       return createDefaultCiscoInboundSettings();
+    case 'openvpn':
+      return createDefaultOpenVPNInboundSettings();
     default:
       return null;
   }

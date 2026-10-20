@@ -65,13 +65,6 @@ func Available() error {
 	return nil
 }
 
-// resetLookupForTest lets a test pretend the binary is somewhere else.
-func resetLookupForTest() {
-	lookupOnce = sync.Once{}
-	lookupPath = ""
-	lookupErr = nil
-}
-
 // runtimeDirOverride lets tests point the package at a temporary directory.
 var runtimeDirOverride string
 

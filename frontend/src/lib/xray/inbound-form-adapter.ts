@@ -18,6 +18,7 @@ import {
   VmessClientSchema,
   WireguardClientSchema,
 } from '@/schemas/protocols/inbound';
+import { OpenVPNClientSchema } from '@/schemas/protocols/inbound/openvpn';
 import type { StreamSettings } from '@/schemas/api/inbound';
 import type { Sniffing } from '@/schemas/primitives';
 import type { z } from 'zod';
@@ -296,6 +297,8 @@ function clientSchemaForProtocol(protocol: string): z.ZodType | null {
       return MasqueClientSchema;
     case 'cisco':
       return CiscoClientSchema;
+    case 'openvpn':
+      return OpenVPNClientSchema;
     default:
       return null;
   }

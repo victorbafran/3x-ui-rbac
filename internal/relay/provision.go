@@ -233,7 +233,7 @@ func bringUpLocal(s Server) error {
 	// an endpoint or key that has just changed has to replace the old one.
 	_ = runLocal("wg-quick", "down", path)
 	if out, err := runLocalOut("wg-quick", "up", path); err != nil {
-		return fmt.Errorf("could not bring up %s here: %v: %s", InterfaceName(s.Id), err, firstLines(out, 2))
+		return fmt.Errorf("could not bring up %s here: %w: %s", InterfaceName(s.Id), err, firstLines(out, 2))
 	}
 	return nil
 }

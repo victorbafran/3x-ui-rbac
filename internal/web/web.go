@@ -303,6 +303,10 @@ const (
 	cadenceAmneziaWG   = "@every 10s"
 	cadenceTuic        = "@every 10s"
 	cadenceCisco       = "@every 10s"
+	// The same cadence as cisco: both read a file the server rewrites on a
+	// timer, and a slower loop would let a depleted customer keep moving
+	// traffic for longer than the operator asked for.
+	cadenceOpenVPN = "@every 10s"
 	// A tunnel is slow-moving and the check is only a read, but bringing one
 	// back runs wg-quick, so a minute is often enough and never busy.
 	cadenceRelay         = "@every 1m"
@@ -360,6 +364,12 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 
 	// Keep the tunnel to each exit country up, so a reboot does not leave a
 	// country in every customer's dropdown with nothing behind it.
+	// Reconcile the openvpn sidecars and scrape their traffic, the same way
+	// the cisco ones are handled.
+	openvpnJob := job.NewOpenVPNJob()
+	_, _ = s.cron.AddJob(cadenceOpenVPN, openvpnJob)
+	go openvpnJob.Run()
+
 	relayJob := job.NewRelayJob()
 	_, _ = s.cron.AddJob(cadenceRelay, relayJob)
 	go relayJob.Run()

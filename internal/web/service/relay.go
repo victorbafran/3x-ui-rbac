@@ -108,7 +108,9 @@ func (s *RelayService) List() ([]RelayView, error) {
 func (s *RelayService) usage() map[string][]string {
 	out := map[string][]string{}
 	var inbounds []*model.Inbound
-	if err := database.GetDB().Where("protocol = ?", model.Cisco).Find(&inbounds).Error; err != nil {
+	// Both protocols can point a country at a relay, and deleting one that is
+	// still in use has to be refused whichever protocol is using it.
+	if err := database.GetDB().Where("protocol IN ?", []model.Protocol{model.Cisco, model.OpenVPN}).Find(&inbounds).Error; err != nil {
 		return out
 	}
 	for _, ib := range inbounds {

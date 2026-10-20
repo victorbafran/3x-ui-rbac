@@ -57,9 +57,15 @@ func seedProtocolSub(t *testing.T, email, subID, password string, inbounds ...op
 		if err := db.Create(&model.ClientInbound{InboundId: in.id, ClientId: 1}).Error; err != nil {
 			t.Fatalf("attach %d: %v", in.id, err)
 		}
-		if err := db.Create(&xray.ClientTraffic{InboundId: in.id, Email: email, Enable: true}).Error; err != nil {
-			t.Fatalf("traffic %d: %v", in.id, err)
-		}
+	}
+
+	// One traffic row, not one per inbound. The email is unique on that table
+	// because usage is counted per customer and summed across whatever they
+	// are attached to, so a row per inbound is not merely rejected by the
+	// schema — it is the wrong shape.
+	traffic := &xray.ClientTraffic{InboundId: inbounds[0].id, Email: email, Enable: true}
+	if err := db.Create(traffic).Error; err != nil {
+		t.Fatalf("traffic: %v", err)
 	}
 }
 

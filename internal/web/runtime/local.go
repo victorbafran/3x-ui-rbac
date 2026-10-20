@@ -13,6 +13,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/mtproto"
 	"github.com/mhsanaei/3x-ui/v3/internal/ocserv"
+	"github.com/mhsanaei/3x-ui/v3/internal/openvpn"
 	"github.com/mhsanaei/3x-ui/v3/internal/tuic"
 	"github.com/mhsanaei/3x-ui/v3/internal/xray"
 )
@@ -104,6 +105,13 @@ func (l *Local) AddInbound(_ context.Context, ib *model.Inbound) error {
 		}
 		return ocserv.GetManager().Ensure(inst)
 	}
+	if ib.Protocol == model.OpenVPN {
+		inst, ok := openvpn.InstanceFromInbound(ib)
+		if !ok {
+			return nil
+		}
+		return openvpn.GetManager().Ensure(inst)
+	}
 	body, err := json.MarshalIndent(ib.GenXrayInboundConfig(), "", "  ")
 	if err != nil {
 		return err
@@ -140,6 +148,12 @@ func (l *Local) DelInbound(_ context.Context, ib *model.Inbound) error {
 		ocserv.GetManager().Forget(ib.Id)
 		return nil
 	}
+	if ib.Protocol == model.OpenVPN {
+		// Likewise: the certificate authority this inbound issued for itself
+		// has no owner once the inbound is gone.
+		openvpn.GetManager().Forget(ib.Id)
+		return nil
+	}
 	return l.withAPI(func(api *xray.XrayAPI) error {
 		return api.DelInbound(ib.Tag)
 	})
@@ -157,6 +171,9 @@ func (l *Local) UpdateInbound(ctx context.Context, oldIb, newIb *model.Inbound) 
 	}
 	if oldIb.Protocol == model.Cisco || newIb.Protocol == model.Cisco {
 		return l.updateCiscoInbound(ctx, oldIb, newIb)
+	}
+	if oldIb.Protocol == model.OpenVPN || newIb.Protocol == model.OpenVPN {
+		return l.updateOpenVPNInbound(ctx, oldIb, newIb)
 	}
 	_ = l.DelInbound(ctx, oldIb)
 	if !newIb.Enable {
@@ -421,4 +438,35 @@ func (l *Local) updateCiscoInbound(ctx context.Context, oldIb, newIb *model.Inbo
 		return nil
 	}
 	return ocserv.GetManager().Ensure(inst)
+}
+
+// updateOpenVPNInbound moves a running sidecar rather than restarting it when
+// only the client list changed, so editing one customer does not drop every
+// other customer who happens to be connected. Ensure compares the
+// fingerprints itself and rewrites only the credentials file when nothing
+// structural moved. The sidecar is stopped only when the inbound is disabled,
+// loses its last usable client, or changes protocol.
+func (l *Local) updateOpenVPNInbound(ctx context.Context, oldIb, newIb *model.Inbound) error {
+	if oldIb.Protocol == model.OpenVPN && newIb.Protocol != model.OpenVPN {
+		// It stopped being an OpenVPN inbound, so its certificate has no
+		// owner left.
+		openvpn.GetManager().Forget(oldIb.Id)
+		if !newIb.Enable {
+			return nil
+		}
+		return l.AddInbound(ctx, newIb)
+	}
+	if oldIb.Protocol != model.OpenVPN {
+		_ = l.DelInbound(ctx, oldIb)
+	}
+	if !newIb.Enable {
+		openvpn.GetManager().Remove(newIb.Id)
+		return nil
+	}
+	inst, ok := openvpn.InstanceFromInbound(newIb)
+	if !ok {
+		openvpn.GetManager().Remove(newIb.Id)
+		return nil
+	}
+	return openvpn.GetManager().Ensure(inst)
 }

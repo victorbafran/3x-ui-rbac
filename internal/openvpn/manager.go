@@ -300,8 +300,11 @@ func (m *Manager) Result(id int) string {
 }
 
 // Traffic is one client's movement since the last time it was collected.
+// Tag names the inbound it moved through, so the panel can total an inbound
+// as well as a customer.
 type Traffic struct {
 	Email string
+	Tag   string
 	Up    int64
 	Down  int64
 }
@@ -312,11 +315,15 @@ type Traffic struct {
 // Deltas are keyed by the process's own client id. A reconnect gets a new id
 // and starts at zero, so keying by customer would read that as traffic going
 // backwards and quietly lose everything they had used.
-func (m *Manager) CollectTraffic() []Traffic {
+// It also reports who is connected, which is what the panel's online list is
+// built from: a customer with no traffic in the last few seconds is still
+// online, and leaving them out would make the list flicker.
+func (m *Manager) CollectTraffic() ([]Traffic, []string) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	byEmail := map[string]*Traffic{}
+	byKey := map[string]*Traffic{}
+	online := map[string]struct{}{}
 	for id, cur := range m.procs {
 		sessions := Sessions(id)
 		seen := make(map[string]struct{}, len(sessions))
@@ -326,6 +333,7 @@ func (m *Manager) CollectTraffic() []Traffic {
 			if email == "" {
 				email = s.Login
 			}
+			online[email] = struct{}{}
 			was := cur.last[s.ClientID]
 			up := s.BytesReceived - was.received
 			down := s.BytesSent - was.sent
@@ -339,10 +347,11 @@ func (m *Manager) CollectTraffic() []Traffic {
 			if up == 0 && down == 0 {
 				continue
 			}
-			t, ok := byEmail[email]
+			key := cur.tag + "\x00" + email
+			t, ok := byKey[key]
 			if !ok {
-				t = &Traffic{Email: email}
-				byEmail[email] = t
+				t = &Traffic{Email: email, Tag: cur.tag}
+				byKey[key] = t
 			}
 			t.Up += up
 			t.Down += down
@@ -364,9 +373,26 @@ func (m *Manager) CollectTraffic() []Traffic {
 		}
 	}
 
-	out := make([]Traffic, 0, len(byEmail))
-	for _, t := range byEmail {
+	out := make([]Traffic, 0, len(byKey))
+	for _, t := range byKey {
 		out = append(out, *t)
+	}
+	emails := make([]string, 0, len(online))
+	for email := range online {
+		emails = append(emails, email)
+	}
+	return out, emails
+}
+
+// ActiveTags names the inbounds this manager is serving, which the panel
+// needs so it can tell "nobody is online here" from "this inbound is not
+// running at all".
+func (m *Manager) ActiveTags() []string {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	out := make([]string, 0, len(m.procs))
+	for _, cur := range m.procs {
+		out = append(out, cur.tag)
 	}
 	return out
 }

@@ -12,7 +12,19 @@ func configFor(t *testing.T, inst Instance) string {
 	// The same string the manager builds. Passing a simpler one here is how
 	// the unquoted helper line reached a customer's server: the test proved
 	// something true of a value production never produces.
-	return renderConfig(inst, HelperCommand("/usr/local/x-ui/x-ui", inst.Id))
+	return renderConfig(inst, HelperCommand("/usr/local/x-ui/x-ui", inst.Id), testDrop)
+}
+
+// The account the tests assume openvpn drops to. A fixed one, so a test
+// says the same thing on a machine that has no nobody account as on one
+// that does.
+var testDrop = &DropAccount{User: "nobody", Group: "nogroup", GID: 65534}
+
+func configWithoutDrop(t *testing.T, inst Instance) string {
+	t.Helper()
+	runtimeDirOverride = t.TempDir()
+	t.Cleanup(func() { runtimeDirOverride = "" })
+	return renderConfig(inst, HelperCommand("/usr/local/x-ui/x-ui", inst.Id), nil)
 }
 
 // The cisco side lost 223 Mbit/s of download to one line that the manual said

@@ -112,7 +112,7 @@ func (m *Manager) ensureLocked(inst Instance) error {
 	case actionNone:
 		return nil
 	case actionUsers:
-		if err := writeUsers(inst); err != nil {
+		if err := writeUsers(inst, ResolveDropAccount()); err != nil {
 			return err
 		}
 		cur.usersFP = newUsersFP
@@ -137,7 +137,8 @@ func (m *Manager) ensureLocked(inst Instance) error {
 	_ = certFile
 	_ = keyFile
 
-	if err := writeUsers(inst); err != nil {
+	drop := ResolveDropAccount()
+	if err := writeUsers(inst, drop); err != nil {
 		return err
 	}
 
@@ -145,7 +146,7 @@ func (m *Manager) ensureLocked(inst Instance) error {
 	if err != nil {
 		return fmt.Errorf("find the panel's own binary, which checks the passwords: %w", err)
 	}
-	cfg := renderConfig(inst, HelperCommand(helper, inst.Id))
+	cfg := renderConfig(inst, HelperCommand(helper, inst.Id), drop)
 	if err := writeFile(configPathForID(inst.Id), []byte(cfg), 0o644); err != nil {
 		return fmt.Errorf("write the config: %w", err)
 	}
@@ -189,22 +190,40 @@ func fpOf(cur *managed, had, structural bool) string {
 	return cur.usersFP
 }
 
-func writeUsers(inst Instance) error {
+func writeUsers(inst Instance, drop *DropAccount) error {
 	body, problems := renderPasswd(inst.Users)
 	for _, why := range problems {
 		logger.Warningf("openvpn: inbound %d (%s): %s", inst.Id, inst.Tag, why)
 	}
 	// 0640 rather than 0644: the hashes are bcrypt and not worth much to a
 	// reader, but there is no reason for every account on the host to have
-	// them. The helper that reads this runs as the panel, not as the
-	// unprivileged user openvpn drops to.
-	return writeFile(passwdPathForID(inst.Id), []byte(body), 0o640)
+	// them.
+	//
+	// The group is the one openvpn drops to, because the helper that reads
+	// this file is spawned by openvpn after that drop and reads it as that
+	// user. Root-only here means every customer is rejected on a correct
+	// password, which is how this was found.
+	gid := -1
+	if drop != nil {
+		gid = drop.GID
+	}
+	return writeFileOwnedBy(passwdPathForID(inst.Id), []byte(body), 0o640, gid)
 }
 
 // writeFile writes through a temporary file in the same directory, so a
 // reader never sees half a file and a crash mid-write cannot leave the
 // credentials truncated — which would lock every customer out at once.
 func writeFile(path string, body []byte, mode os.FileMode) error {
+	return writeFileOwnedBy(path, body, mode, -1)
+}
+
+// writeFileOwnedBy is writeFile with a group. A gid below zero leaves the
+// ownership alone, which is what every caller but the credentials file wants.
+//
+// The chown happens before the rename, so the file is never visible at its
+// real path with the wrong group: a reader either sees the previous file or
+// the finished one.
+func writeFileOwnedBy(path string, body []byte, mode os.FileMode, gid int) error {
 	tmp := path + ".tmp"
 	if err := os.WriteFile(tmp, body, mode); err != nil {
 		return err
@@ -212,6 +231,14 @@ func writeFile(path string, body []byte, mode os.FileMode) error {
 	if err := os.Chmod(tmp, mode); err != nil {
 		_ = os.Remove(tmp)
 		return err
+	}
+	if gid >= 0 {
+		if err := os.Chown(tmp, -1, gid); err != nil {
+			// Not fatal on its own, but it is the failure that locks every
+			// customer out of this inbound, so it is said plainly rather
+			// than left for someone to infer from "wrong password".
+			logger.Warningf("openvpn: could not give %s to group %d; the password helper runs as that group and will reject every login: %v", path, gid, err)
+		}
 	}
 	if err := os.Rename(tmp, path); err != nil {
 		_ = os.Remove(tmp)

@@ -194,7 +194,7 @@ func HelperCommand(binary string, inboundID int) string {
 	return fmt.Sprintf("%s openvpn-verify %d", binary, inboundID)
 }
 
-func renderConfig(inst Instance, helperPath string) string {
+func renderConfig(inst Instance, helperPath string, drop *DropAccount) string {
 	var b strings.Builder
 	w := func(format string, args ...any) {
 		fmt.Fprintf(&b, format+"\n", args...)
@@ -249,8 +249,13 @@ func renderConfig(inst Instance, helperPath string) string {
 	w("keepalive 10 60")
 	w("persist-key")
 	w("persist-tun")
-	w("user nobody")
-	w("group nogroup")
+	// Only when there is an account to drop to AND that account can read
+	// the credentials file. ResolveDropAccount decides both at once; see
+	// drop.go for why they must not be decided separately.
+	if drop != nil {
+		w("user %s", drop.User)
+		w("group %s", drop.Group)
+	}
 	w("max-clients %d", inst.maxClients())
 	// Several devices on one account are the normal case, and the per-client
 	// limit is enforced through the management interface rather than here:

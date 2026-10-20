@@ -62,9 +62,15 @@ func Render(inst Instance, p Profile) (string, error) {
 	// has no idea it should ask for them and fails with a handshake error
 	// that says nothing about credentials.
 	w("auth-user-pass")
-	// There is no client certificate to present, and a client that expects to
-	// present one refuses to start.
-	w("verify-x509-name")
+	// There is no client certificate in this profile, and a client that is not
+	// told so stops to ask the customer to pick one out of their phone's
+	// keychain — a question they have no way to answer. This is the line the
+	// OpenVPN clients read to mean "username and password only".
+	w("setenv CLIENT_CERT 0")
+	// The server's certificate must carry the server extended-key-usage, so a
+	// certificate issued for something else cannot stand in for it. This is
+	// the whole of what the client checks: there is deliberately no
+	// verify-x509-name, which pins a subject name this panel never fixes.
 	w("remote-cert-tls server")
 
 	w("data-ciphers AES-256-GCM:AES-128-GCM")

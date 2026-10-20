@@ -36,6 +36,7 @@ const (
 	TUIC        Protocol = "tuic"
 	MASQUE      Protocol = "masque"
 	Cisco       Protocol = "cisco"
+	OpenVPN     Protocol = "openvpn"
 )
 
 // User represents a user account in the 3x-ui panel.
@@ -1577,7 +1578,7 @@ func MergeClientRecord(existing *ClientRecord, incoming *ClientRecord) []ClientM
 // spelled out by hand.
 func (p Protocol) ServedOutsideXray() bool {
 	switch p {
-	case MTProto, AmneziaWG, TUIC, Cisco:
+	case MTProto, AmneziaWG, TUIC, Cisco, OpenVPN:
 		return true
 	default:
 		return false

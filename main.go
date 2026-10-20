@@ -11,6 +11,7 @@ import (
 	_ "net/http/pprof"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 	_ "unsafe"
@@ -19,6 +20,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/crypto/nodetoken"
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
+	"github.com/mhsanaei/3x-ui/v3/internal/openvpn"
 	"github.com/mhsanaei/3x-ui/v3/internal/sub"
 	"github.com/mhsanaei/3x-ui/v3/internal/tunnelmonitor"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/crypto"
@@ -549,6 +551,36 @@ func GetApiToken(getApiToken bool, tokenName, tokenScope string) {
 }
 
 // migrateDb performs database migration operations for the 3x-ui panel.
+// openvpnVerify answers the one question an OpenVPN sidecar asks before it
+// lets a customer in: is this name and password one of ours?
+//
+// OpenVPN runs this with the inbound's id and the path to a file holding the
+// username on the first line and the password on the second, and reads the
+// exit status: zero lets them in, anything else does not. It prints nothing
+// either way — the credentials are on the command line's doorstep and the
+// output goes to a log.
+//
+// It lives in the panel's own binary so the check uses the same bcrypt file
+// the cisco side uses. That is what makes one customer have one password
+// across both protocols rather than two that drift apart.
+func openvpnVerify(args []string) {
+	if len(args) < 2 {
+		os.Exit(1)
+	}
+	id, err := strconv.Atoi(args[0])
+	if err != nil {
+		os.Exit(1)
+	}
+	login, password, err := openvpn.ReadCredentialFile(args[1])
+	if err != nil {
+		os.Exit(1)
+	}
+	if !openvpn.VerifyFile(id, login, password) {
+		os.Exit(1)
+	}
+	os.Exit(0)
+}
+
 func migrateDb() {
 	inboundService := service.InboundService{}
 
@@ -665,6 +697,8 @@ func main() {
 			return
 		}
 		runWebServer()
+	case "openvpn-verify":
+		openvpnVerify(os.Args[2:])
 	case "migrate":
 		migrateDb()
 	case "encrypt-tokens":

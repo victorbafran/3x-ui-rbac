@@ -96,6 +96,23 @@ func groupField(locations []string) string {
 	return strings.Join(names, ",")
 }
 
+// PasswordMatches checks a password against a stored hash.
+//
+// ocserv never needs this — it verifies through the system's own crypt(3) —
+// but OpenVPN hands the credentials to a helper and believes its answer, and
+// that helper must check against the same file in the same way. Keeping the
+// one implementation here is what makes a customer's single password work
+// for both protocols rather than two that drift apart.
+//
+// bcrypt's comparison is constant time for a given cost, so a wrong password
+// takes as long as a right one and tells a caller nothing by how long it took.
+func PasswordMatches(hash, password string) bool {
+	if hash == "" || password == "" || len(password) > maxPasswordLen {
+		return false
+	}
+	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)) == nil
+}
+
 // ValidLogin reports whether a login name can be written to the password file.
 // The file is colon-separated and line-based, so a name carrying either would
 // let one client's entry rewrite another's.

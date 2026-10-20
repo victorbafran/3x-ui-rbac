@@ -145,7 +145,7 @@ func (m *Manager) ensureLocked(inst Instance) error {
 	if err != nil {
 		return fmt.Errorf("find the panel's own binary, which checks the passwords: %w", err)
 	}
-	cfg := renderConfig(inst, helper+" openvpn-verify "+fmt.Sprint(inst.Id))
+	cfg := renderConfig(inst, HelperCommand(helper, inst.Id))
 	if err := writeFile(configPathForID(inst.Id), []byte(cfg), 0o644); err != nil {
 		return fmt.Errorf("write the config: %w", err)
 	}

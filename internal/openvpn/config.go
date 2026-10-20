@@ -182,6 +182,18 @@ func (inst Instance) structuralFingerprint() string {
 //
 // Nothing here is tuned on faith. The MTU is left at OpenVPN's own default
 // until a measurement says otherwise, for the same reason.
+// HelperCommand is what openvpn is told to run to check a password: the
+// panel's own binary, the subcommand, and which inbound is asking.
+//
+// It is a function rather than a string built at the call site because the
+// test used to build its own — a bare path, no arguments — and so never saw
+// that the real one is three words long and has to be quoted. The config that
+// shipped was rejected by openvpn at startup, and no test could have caught
+// it while the test fed the renderer a value the caller never produces.
+func HelperCommand(binary string, inboundID int) string {
+	return fmt.Sprintf("%s openvpn-verify %d", binary, inboundID)
+}
+
 func renderConfig(inst Instance, helperPath string) string {
 	var b strings.Builder
 	w := func(format string, args ...any) {
@@ -220,7 +232,12 @@ func renderConfig(inst Instance, helperPath string) string {
 	w("verify-client-cert none")
 	w("username-as-common-name")
 	w("script-security 2")
-	w("auth-user-pass-verify %s via-file", helperPath)
+	// The command and its arguments are ONE parameter, so they are quoted.
+	// openvpn counts words: unquoted, "<binary> openvpn-verify 3 via-file" is
+	// four parameters where at most two are allowed, and the server exits at
+	// startup with an options error. The inbound is then simply absent, which
+	// is the hardest kind of failure for an operator to read.
+	w("auth-user-pass-verify %q via-file", helperPath)
 	// Without this the helper is asked again on every renegotiation, which
 	// means a customer whose password changed is thrown off mid-session.
 	w("reneg-sec 0")

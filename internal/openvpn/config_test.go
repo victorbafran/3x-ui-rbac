@@ -9,7 +9,10 @@ func configFor(t *testing.T, inst Instance) string {
 	t.Helper()
 	runtimeDirOverride = t.TempDir()
 	t.Cleanup(func() { runtimeDirOverride = "" })
-	return renderConfig(inst, "/usr/local/x-ui/x-ui")
+	// The same string the manager builds. Passing a simpler one here is how
+	// the unquoted helper line reached a customer's server: the test proved
+	// something true of a value production never produces.
+	return renderConfig(inst, HelperCommand("/usr/local/x-ui/x-ui", inst.Id))
 }
 
 // The cisco side lost 223 Mbit/s of download to one line that the manual said
@@ -72,7 +75,7 @@ func TestTheCustomerCanLogInWithAPassword(t *testing.T) {
 		"verify-client-cert none",
 		"username-as-common-name",
 		"script-security 2",
-		"auth-user-pass-verify /usr/local/x-ui/x-ui via-file",
+		`auth-user-pass-verify "/usr/local/x-ui/x-ui openvpn-verify 1" via-file`,
 	} {
 		if !strings.Contains(cfg, want) {
 			t.Errorf("%q is missing:\n%s", want, cfg)
@@ -163,5 +166,33 @@ func TestOnlyAStartupChangeRestartsTheProcess(t *testing.T) {
 	withUsers.Users = []User{{Name: "a@b", Login: "a@b", Password: "x"}}
 	if base.structuralFingerprint() != withUsers.structuralFingerprint() {
 		t.Error("adding a client moved the structural fingerprint, which would drop every live session to let one customer in")
+	}
+}
+
+// openvpn allows auth-user-pass-verify at most two parameters, and counts
+// them by whitespace. The helper is a binary plus a subcommand plus an
+// inbound id — four words before the method — so without quotes the server
+// refuses to start and the inbound never appears. This is that rule, spelled
+// out, rather than a comparison against one expected line: the binary's path
+// and the id both vary, and the quoting is the part that must not.
+func TestTheHelperAndItsArgumentsAreOneParameter(t *testing.T) {
+	for _, id := range []int{1, 3, 42} {
+		cfg := configFor(t, Instance{Id: id, Port: 1194})
+		var line string
+		for _, l := range strings.Split(cfg, "
+") {
+			if strings.HasPrefix(l, "auth-user-pass-verify") {
+				line = l
+				break
+			}
+		}
+		if line == "" {
+			t.Fatalf("inbound %d: no password check at all; anyone could log in:
+%s", id, cfg)
+		}
+		rest := strings.TrimPrefix(line, "auth-user-pass-verify ")
+		if !strings.HasPrefix(rest, `"`) || !strings.HasSuffix(rest, `" via-file`) {
+			t.Errorf("inbound %d: openvpn would read this as more than two parameters and exit at startup: %s", id, line)
+		}
 	}
 }

@@ -113,7 +113,17 @@
     "ciscoPassword": "密码",
     "ciscoAppAndroid": "Cisco 客户端（安卓）",
     "ciscoAppIos": "Cisco 客户端（iPhone）",
-    "ciscoAppOpenConnect": "OpenConnect（安卓）"
+    "ciscoAppOpenConnect": "OpenConnect（安卓）",
+    "openvpnTitle": "OpenVPN",
+    "openvpnHint": "下载文件，用 OpenVPN 应用打开，然后使用下面的用户名和密码登录。",
+    "openvpnProfile": "配置文件",
+    "openvpnDownload": "下载",
+    "openvpnUsername": "用户名",
+    "openvpnPassword": "密码",
+    "openvpnNotReady": "该配置文件尚未就绪——服务器还没有启动这个连接。请一分钟后再试。",
+    "openvpnAppAndroid": "OpenVPN Connect（安卓）",
+    "openvpnAppIos": "OpenVPN Connect（iPhone）",
+    "openvpnAppDesktop": "OpenVPN Connect（电脑）"
   },
   "menu": {
     "theme": "主题",
@@ -780,7 +790,30 @@
         "ciscoLocationLabel": "显示为，如 Netherlands",
         "ciscoLocationExit": "出口，如 wg0",
         "ciscoLocationRename": "重命名",
-        "ciscoLocationRenameHint": "这个国家/地区从面板自己的服务器出去，所以你可以按售卖的名字来叫它。"
+        "ciscoLocationRenameHint": "这个国家/地区从面板自己的服务器出去，所以你可以按售卖的名字来叫它。",
+        "openvpnNeedsBinary": "这需要服务器上装有 OpenVPN",
+        "openvpnNeedsBinaryHint": "用包管理器安装（apt install openvpn），入站就会自己启动。别的都不需要：配置由面板写，证书由面板签发，密码也由面板校验。",
+        "openvpnOneCountry": "一个入站就是一个国家/地区",
+        "openvpnOneCountryHint": "OpenVPN 没法像 Cisco 客户端那样在连接前让人选国家/地区。需要多个的客户会拿到多个配置文件，在应用里切换，所以请一个国家/地区建一个入站。",
+        "openvpnExit": "流量从哪里出去",
+        "openvpnExitHint": "你的某台出口服务器，或留空表示本机。客户看到的始终是本机地址，变的只是出口位置。",
+        "openvpnExitThisServer": "本服务器",
+        "openvpnUseTcp": "用 TCP 而不是 UDP",
+        "openvpnUseTcpHint": "只适用于完全封锁 UDP 的网络。UDP 更快。",
+        "openvpnTcpWarning": "TCP 会牺牲速度",
+        "openvpnTcpWarningHint": "在 TCP 里再套一层 TCP，丢包会被重传两次，两层同时降速。只在 UDP 完全不通时使用。",
+        "openvpnNetwork": "地址段",
+        "openvpnNetworkHint": "留空时面板会挑一个不会与其他入站或出口服务器隧道冲突的网段。",
+        "openvpnNetmask": "子网掩码",
+        "openvpnDns": "DNS 服务器",
+        "openvpnDnsHint": "下发给客户并在隧道内使用，这样他们查询的域名不会落到自己的运营商手里。",
+        "openvpnMaxClients": "最大连接数",
+        "openvpnMaxClientsHint": "针对整个入站。0 表示默认的 1024。",
+        "openvpnMaxSameClients": "每个账号的设备数",
+        "openvpnMaxSameClientsHint": "一个账号可同时使用的设备数。0 表示默认的 2。客户自己的限制优先。",
+        "openvpnCertFile": "证书文件",
+        "openvpnCertFileHint": "你自己的证书，如果有的话。留空则由面板签发并一直沿用——重新签发会让每个客户端都以为换了服务器。",
+        "openvpnKeyFile": "私钥文件"
       },
       "info": {
         "mode": "模式",
@@ -1059,7 +1092,8 @@
       "renewWeeklyDesc": "日历续期按面板时区的午夜执行，并重置客户端流量。若不需要额外重置，请关闭独立的流量重置。",
       "owner": "所有者",
       "ownerPanel": "面板",
-      "limitIpCisco": "对 Cisco，此项限制同一账号可同时使用的设备数，由 ocserv 自身执行。填 0 则沿用入站的“每个账号的设备数”。"
+      "limitIpCisco": "对 Cisco，此项限制同一账号可同时使用的设备数，由 ocserv 自身执行。填 0 则沿用入站的“每个账号的设备数”。",
+      "limitIpDeviceCap": "对 Cisco 和 OpenVPN 来说，这限制同时使用该账号的设备数，由服务器自己执行。0 表示沿用入站的“每个账号设备数”。"
     },
     "groups": {
       "name": "名称",

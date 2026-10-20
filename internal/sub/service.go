@@ -23,6 +23,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 	"github.com/mhsanaei/3x-ui/v3/internal/ocserv"
+	"github.com/mhsanaei/3x-ui/v3/internal/openvpn"
 	"github.com/mhsanaei/3x-ui/v3/internal/tuic"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/maskcompat"
@@ -49,6 +50,10 @@ type SubService struct {
 	// client during one getSubs call. Per-request state like address, so it
 	// lives on the ForRequest copy and never on the shared base service.
 	ciscoLogins []CiscoLogin
+	// openvpnProfiles collects the .ovpn files this subscription can download.
+	// Same reason and same lifetime as ciscoLogins: OpenVPN has no share-link
+	// format either, so it is carried beside the links rather than inside them.
+	openvpnProfiles []OpenVPNProfile
 	// usageShown emits info once per subscription identity, including twins.
 	// PrepareForRequest resets this per-request state.
 	usageShown                 map[string]bool
@@ -471,6 +476,7 @@ func (s *SubService) getSubs(subId string) ([]string, []string, int64, xray.Clie
 	var result []string
 	var emails []string
 	s.ciscoLogins = nil
+	s.openvpnProfiles = nil
 	var traffic xray.ClientTraffic
 	var hasEnabledClient bool
 	inbounds, err := s.getInboundsBySubId(subId)
@@ -518,6 +524,16 @@ func (s *SubService) getSubs(subId string) ([]string, []string, int64, xray.Clie
 				seenEmails[client.Email] = struct{}{}
 				continue
 			}
+			// OpenVPN has no share link either. The customer gets a file and
+			// a password, which the page offers and the list cannot hold.
+			if inbound.Protocol == model.OpenVPN {
+				if profile, ok := s.openvpnProfileFor(inbound, client); ok {
+					s.openvpnProfiles = append(s.openvpnProfiles, profile)
+				}
+				emails = append(emails, client.Email)
+				seenEmails[client.Email] = struct{}{}
+				continue
+			}
 			var link string
 			if len(hostEps) > 0 {
 				link = s.linkFromHosts(inbound, client, hostEps)
@@ -549,11 +565,12 @@ func (s *SubService) getSubs(subId string) ([]string, []string, int64, xray.Clie
 		}
 	}
 
-	// A subscription that holds only cisco clients produces no links at all,
-	// and a nil result is what the controller turns into a 404 — the dead link
-	// a customer reports as "it does not open". An empty-but-present list says
-	// "found you, there is simply nothing for an app to import".
-	if result == nil && len(s.ciscoLogins) > 0 {
+	// A subscription that holds only cisco or OpenVPN clients produces no
+	// links at all, and a nil result is what the controller turns into a 404 —
+	// the dead link a customer reports as "it does not open". An
+	// empty-but-present list says "found you, there is simply nothing for an
+	// app to import".
+	if result == nil && (len(s.ciscoLogins) > 0 || len(s.openvpnProfiles) > 0) {
 		result = []string{}
 	}
 
@@ -712,7 +729,7 @@ func (s *SubService) getInboundsBySubId(subId string) ([]*model.Inbound, error) 
 		JOIN client_inbounds ON client_inbounds.inbound_id = inbounds.id
 		JOIN clients ON clients.id = client_inbounds.client_id
 		WHERE
-			inbounds.protocol in ('vmess','vless','trojan','shadowsocks','hysteria','wireguard','amneziawg','mtproto','tuic','masque','cisco')
+			inbounds.protocol in ('vmess','vless','trojan','shadowsocks','hysteria','wireguard','amneziawg','mtproto','tuic','masque','cisco','openvpn')
 			AND clients.sub_id = ? AND inbounds.enable = ?
 	)`, subId, true).Order("sub_sort_index ASC").Order("id ASC").Find(&inbounds).Error
 	if err != nil {
@@ -3118,6 +3135,78 @@ func (s *SubService) ciscoLoginFor(inbound *model.Inbound, client model.Client) 
 	}, true
 }
 
+// OpenVPNProfile is one .ovpn file a customer can download, with the name and
+// password that go beside it in their client.
+//
+// The file itself is not carried here. It embeds a certificate authority and
+// a shared key — several kilobytes of secret — and putting that inside the
+// page would leave it in the browser cache and the history of a page most
+// customers only open to read their remaining traffic. The page carries a
+// link; the file is built when they click it.
+type OpenVPNProfile struct {
+	Email    string `json:"email"`
+	Label    string `json:"label"`
+	FileName string `json:"fileName"`
+	URL      string `json:"url"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+
+	// What rendering the file needs, which the page never sees.
+	InboundId int    `json:"-"`
+	Address   string `json:"-"`
+	Port      int    `json:"-"`
+	UseTCP    bool   `json:"-"`
+}
+
+// openvpnProfileFor describes one client's file on one inbound.
+//
+// The username is not the email, for the same reason as cisco: the shared
+// password file is colon-separated, so a reseller's "a<adminId>:" namespace is
+// substituted on the way in, and showing the email would hand the customer a
+// login the server refuses.
+func (s *SubService) openvpnProfileFor(inbound *model.Inbound, client model.Client) (OpenVPNProfile, bool) {
+	if client.Password == "" {
+		return OpenVPNProfile{}, false
+	}
+	label := strings.TrimSpace(inbound.Remark)
+	if label == "" {
+		label = "OpenVPN"
+	}
+	return OpenVPNProfile{
+		Email:     client.Email,
+		Label:     label,
+		FileName:  s.openvpnFileName(label, inbound.Id),
+		Username:  ocserv.LoginFor(client.Email),
+		Password:  client.Password,
+		InboundId: inbound.Id,
+		Address:   s.resolveInboundAddress(inbound),
+		Port:      inbound.Port,
+		UseTCP:    openvpn.UsesTCP(inbound),
+	}, true
+}
+
+// openvpnFileName keeps two files from arriving under one name.
+//
+// openvpn.FileName drops everything that is not a plain letter or digit, so an
+// operator who names their inbounds in Persian or Chinese gets "vpn.ovpn"
+// every time, and a customer with three countries ends up with three files
+// they cannot tell apart. The first keeps the clean name; any later one that
+// collides carries its inbound id.
+func (s *SubService) openvpnFileName(label string, inboundId int) string {
+	name := openvpn.FileName(label)
+	taken := false
+	for _, p := range s.openvpnProfiles {
+		if p.FileName == name {
+			taken = true
+			break
+		}
+	}
+	if !taken {
+		return name
+	}
+	return strings.TrimSuffix(name, ".ovpn") + "-" + strconv.Itoa(inboundId) + ".ovpn"
+}
+
 type PageData struct {
 	Host          string
 	BasePath      string
@@ -3144,6 +3233,8 @@ type PageData struct {
 	Result        []string
 	Emails        []string
 	CiscoLogins   []CiscoLogin
+
+	OpenVPNProfiles []OpenVPNProfile
 }
 
 // ResolveRequest extracts scheme, host, and header information from an HTTP request.

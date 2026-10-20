@@ -19,6 +19,7 @@ import SubConfigsTab from './SubConfigsTab';
 import SubHeader from './SubHeader';
 import SubHero from './SubHero';
 import SubLinksTab from './SubLinksTab';
+import SubOpenVPNCard, { type OpenVPNProfile } from './SubOpenVPNCard';
 import { buildSubApps, daysUntil, detectPlatform, resolveSubStatus } from './subPageModel';
 import './SubPage.css';
 
@@ -35,14 +36,26 @@ const announce = subData.announce || '';
 const links: string[] = Array.isArray(subData.links) ? subData.links : [];
 const linkEmails: string[] = Array.isArray(subData.emails) ? subData.emails : [];
 const ciscoLogins: CiscoLogin[] = Array.isArray(subData.ciscoLogins) ? subData.ciscoLogins : [];
-const ciscoOnlySubscription = ciscoLogins.length > 0 && links.length === 0;
+const openvpnProfiles: OpenVPNProfile[] = Array.isArray(subData.openvpnProfiles)
+  ? subData.openvpnProfiles
+  : [];
+// Neither cisco nor OpenVPN produces a link an app can import, so a customer
+// who has only those two has a subscription made entirely of the cards above.
+const nothingToImport =
+  links.length === 0 && (ciscoLogins.length > 0 || openvpnProfiles.length > 0);
 const totalByte = Number(subData.totalByte || 0);
 const usedByte =
   Number(subData.usedByte || 0) ||
   Number(subData.downloadByte || 0) + Number(subData.uploadByte || 0);
 const expireMs = Number(subData.expire || 0) * 1000;
 const clientEmail = [
-  ...new Set([...linkEmails, ...ciscoLogins.map((l) => l.email ?? '')].filter(Boolean)),
+  ...new Set(
+    [
+      ...linkEmails,
+      ...ciscoLogins.map((l) => l.email ?? ''),
+      ...openvpnProfiles.map((p) => p.email ?? ''),
+    ].filter(Boolean),
+  ),
 ].join(', ');
 const loadedAt = Date.now();
 
@@ -94,12 +107,12 @@ export default function SubPage() {
 
   const tabs = useMemo(() => {
     const items: NonNullable<TabsProps['items']> = [];
-    // A subscription holding nothing but cisco clients has no importable
-    // link: the subscription tab would offer a URL that adds nothing, the
-    // QR invites a scan no AnyConnect client can make, and the apps tab
-    // recommends V2Ray-family apps that cannot speak the protocol at all.
-    // The credentials card above is the whole subscription in that case.
-    if (ciscoOnlySubscription) {
+    // A subscription holding nothing but cisco and OpenVPN clients has no
+    // importable link: the subscription tab would offer a URL that adds
+    // nothing, the QR invites a scan no such client can make, and the apps
+    // tab recommends V2Ray-family apps that cannot speak either protocol.
+    // The cards above are the whole subscription in that case.
+    if (nothingToImport) {
       return items;
     }
     if (subUrl || subJsonUrl || subClashUrl) {
@@ -162,13 +175,15 @@ export default function SubPage() {
             {announce && <Alert type="info" showIcon title={announce} className="sub-announce" />}
             <SubHero {...heroData} lang={lang} />
             <SubCiscoCard logins={ciscoLogins} />
+            <SubOpenVPNCard profiles={openvpnProfiles} />
             {tabs.length > 0 && <Tabs className="sub-tabs" tabBarGutter={24} items={tabs} />}
-            {((updateHours > 0 && !ciscoOnlySubscription) || subSupportUrl) && (
+            {((updateHours > 0 && !nothingToImport) || subSupportUrl) && (
               <footer className="sub-footer">
-                {/* Nothing re-fetches a cisco subscription: the credentials
-                    are typed in once, so an update interval would promise a
-                    refresh that never has anything to refresh. */}
-                {updateHours > 0 && !ciscoOnlySubscription && (
+                {/* Nothing re-fetches a cisco or OpenVPN subscription: the
+                    credentials are typed in once and the file is imported
+                    once, so an update interval would promise a refresh that
+                    never has anything to refresh. */}
+                {updateHours > 0 && !nothingToImport && (
                   <span>
                     <ClockCircleOutlined />
                     {t('subscription.updateInterval', { hours: updateHours })}

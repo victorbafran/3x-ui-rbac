@@ -26,6 +26,14 @@ interface SubPageData {
     username?: string;
     password?: string;
   }[];
+  openvpnProfiles?: {
+    email?: string;
+    label?: string;
+    fileName?: string;
+    url?: string;
+    username?: string;
+    password?: string;
+  }[];
   datepicker?: 'gregorian' | 'jalalian';
   announce?: string;
   downloadByte?: string | number;

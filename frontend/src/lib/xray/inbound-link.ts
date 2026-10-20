@@ -1422,6 +1422,7 @@ export function getInboundClients(inbound: Inbound): ClientShape[] | null {
     case 'shadowsocks':
       return (inbound.settings.clients ?? []) as ClientShape[];
     case 'cisco':
+    case 'openvpn':
       return (inbound.settings.clients ?? []) as ClientShape[];
     default:
       return null;

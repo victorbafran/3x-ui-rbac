@@ -75,6 +75,7 @@ import {
   MixedFields,
   MtprotoFields,
   CiscoFields,
+  OpenVPNFields,
   ShadowsocksFields,
   TuicFields,
   TunFields,
@@ -847,6 +848,7 @@ export default function InboundFormModal({
 
       {protocol === Protocols.MTPROTO && <MtprotoFields />}
       {protocol === Protocols.CISCO && <CiscoFields />}
+      {protocol === Protocols.OPENVPN && <OpenVPNFields />}
 
       {protocol === Protocols.SHADOWSOCKS && <ShadowsocksFields isSSWith2022={isSSWith2022} />}
 

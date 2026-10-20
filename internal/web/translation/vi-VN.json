@@ -113,7 +113,17 @@
     "ciscoPassword": "Mật khẩu",
     "ciscoAppAndroid": "Ứng dụng Cisco (Android)",
     "ciscoAppIos": "Ứng dụng Cisco (iPhone)",
-    "ciscoAppOpenConnect": "OpenConnect (Android)"
+    "ciscoAppOpenConnect": "OpenConnect (Android)",
+    "openvpnTitle": "OpenVPN",
+    "openvpnHint": "Tải tệp về, mở bằng ứng dụng OpenVPN, rồi đăng nhập bằng tên người dùng và mật khẩu bên dưới.",
+    "openvpnProfile": "Hồ sơ",
+    "openvpnDownload": "Tải về",
+    "openvpnUsername": "Tên người dùng",
+    "openvpnPassword": "Mật khẩu",
+    "openvpnNotReady": "Hồ sơ này chưa sẵn sàng — máy chủ chưa khởi động kết nối này. Hãy thử lại sau một phút.",
+    "openvpnAppAndroid": "OpenVPN Connect (Android)",
+    "openvpnAppIos": "OpenVPN Connect (iPhone)",
+    "openvpnAppDesktop": "OpenVPN Connect (máy tính)"
   },
   "menu": {
     "theme": "Chủ đề",
@@ -780,7 +790,30 @@
         "ciscoLocationLabel": "hiển thị là, ví dụ Netherlands",
         "ciscoLocationExit": "lối ra, ví dụ wg0",
         "ciscoLocationRename": "Đổi tên",
-        "ciscoLocationRenameHint": "Quốc gia này đi ra qua chính máy chủ của bảng điều khiển, nên bạn có thể gọi nó theo cách bạn bán."
+        "ciscoLocationRenameHint": "Quốc gia này đi ra qua chính máy chủ của bảng điều khiển, nên bạn có thể gọi nó theo cách bạn bán.",
+        "openvpnNeedsBinary": "Việc này cần OpenVPN trên máy chủ",
+        "openvpnNeedsBinaryHint": "Hãy cài bằng trình quản lý gói (apt install openvpn) và inbound sẽ tự chạy. Không cần gì thêm: bảng điều khiển tự viết cấu hình, tự cấp chứng chỉ và tự kiểm tra mật khẩu.",
+        "openvpnOneCountry": "Một inbound là một quốc gia",
+        "openvpnOneCountryHint": "OpenVPN không có cách nào đưa ra danh sách quốc gia trước khi kết nối như ứng dụng Cisco. Khách có nhiều quốc gia sẽ giữ nhiều tệp cấu hình và chọn một trong ứng dụng, nên hãy tạo mỗi quốc gia một inbound.",
+        "openvpnExit": "Lưu lượng đi ra qua",
+        "openvpnExitHint": "Một trong các máy chủ lối ra của bạn, hoặc để trống cho chính máy chủ này. Dù thế nào khách vẫn thấy địa chỉ của máy chủ này; chỉ nơi đi ra là thay đổi.",
+        "openvpnExitThisServer": "máy chủ này",
+        "openvpnUseTcp": "Dùng TCP thay vì UDP",
+        "openvpnUseTcpHint": "Chỉ dành cho mạng chặn hẳn UDP. UDP nhanh hơn.",
+        "openvpnTcpWarning": "TCP đánh đổi tốc độ",
+        "openvpnTcpWarningHint": "Đường hầm mang TCP bên trong TCP sẽ bù mất gói hai lần, và cả hai lớp cùng chậm lại. Chỉ dùng ở nơi UDP hoàn toàn không qua được.",
+        "openvpnNetwork": "Dải địa chỉ",
+        "openvpnNetworkHint": "Để trống thì bảng điều khiển chọn một dải không thể trùng với inbound khác hay với đường hầm của máy chủ lối ra.",
+        "openvpnNetmask": "Mặt nạ mạng",
+        "openvpnDns": "Máy chủ DNS",
+        "openvpnDnsHint": "Được gửi cho khách và dùng bên trong đường hầm, để những tên họ tra cứu không đến tay nhà mạng của họ.",
+        "openvpnMaxClients": "Số kết nối tối đa",
+        "openvpnMaxClientsHint": "Cho cả inbound. 0 nghĩa là mặc định 1024.",
+        "openvpnMaxSameClients": "Số thiết bị mỗi tài khoản",
+        "openvpnMaxSameClientsHint": "Bao nhiêu thiết bị dùng chung một tài khoản cùng lúc. 0 nghĩa là mặc định 2. Giới hạn riêng của khách được ưu tiên.",
+        "openvpnCertFile": "Tệp chứng chỉ",
+        "openvpnCertFileHint": "Chứng chỉ của riêng bạn, nếu có. Để trống thì bảng điều khiển tự cấp và dùng lại — cấp lại sẽ khiến mọi ứng dụng tưởng là một máy chủ khác.",
+        "openvpnKeyFile": "Tệp khóa riêng"
       },
       "info": {
         "mode": "Chế độ",
@@ -1059,7 +1092,8 @@
       "renewWeeklyDesc": "Gia hạn theo lịch diễn ra lúc nửa đêm theo múi giờ của bảng điều khiển và cũng đặt lại lưu lượng của khách hàng. Tắt việc đặt lại lưu lượng độc lập trừ khi bạn muốn đặt lại thêm.",
       "owner": "Chủ sở hữu",
       "ownerPanel": "Bảng điều khiển",
-      "limitIpCisco": "Với Cisco, đây là số thiết bị được dùng tài khoản cùng lúc, do chính ocserv áp dụng. 0 giữ khách ở mức “Số thiết bị mỗi tài khoản” của inbound."
+      "limitIpCisco": "Với Cisco, đây là số thiết bị được dùng tài khoản cùng lúc, do chính ocserv áp dụng. 0 giữ khách ở mức “Số thiết bị mỗi tài khoản” của inbound.",
+      "limitIpDeviceCap": "Với Cisco và OpenVPN, đây là giới hạn số thiết bị dùng tài khoản cùng lúc, do chính máy chủ áp dụng. 0 giữ khách hàng theo “Thiết bị mỗi tài khoản” của inbound."
     },
     "groups": {
       "name": "Tên",

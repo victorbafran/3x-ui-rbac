@@ -43,6 +43,23 @@ type openvpnSettings struct {
 	KeyFile  string `json:"keyFile"`
 }
 
+// UsesTCP says whether this inbound is served over TCP rather than UDP.
+//
+// The customer's own file has to name the same transport the server listens
+// on. A profile that says udp against a server listening on tcp does not fail
+// with a wrong-protocol error; it sits there until it times out, which reads
+// to the customer as a dead server.
+func UsesTCP(ib *model.Inbound) bool {
+	if ib == nil || ib.Protocol != model.OpenVPN {
+		return false
+	}
+	var parsed openvpnSettings
+	if err := json.Unmarshal([]byte(ib.Settings), &parsed); err != nil {
+		return false
+	}
+	return parsed.UseTCP
+}
+
 // InstanceFromInbound derives the sidecar config for an OpenVPN inbound,
 // serving one account per enabled client. Returns false when the inbound is
 // not a usable OpenVPN inbound or has no client to serve: a server nobody can

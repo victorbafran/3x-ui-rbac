@@ -22,6 +22,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
+	"github.com/mhsanaei/3x-ui/v3/internal/openvpn"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 )
 
@@ -335,6 +336,10 @@ func (a *SUBController) initRouter(g *gin.RouterGroup) {
 	gLink.HEAD(":subid", a.subs)
 	gLink.GET(":subid/hwid-status", a.hwidStatus)
 	gLink.HEAD(":subid/hwid-status", a.hwidStatus)
+	// OpenVPN's profile is a file, not a link, so it gets a URL of its own
+	// under the subscription the customer already has.
+	gLink.GET(":subid/openvpn/:file", a.subOpenVPN)
+	gLink.HEAD(":subid/openvpn/:file", a.subOpenVPN)
 	if a.jsonEnabled {
 		gJson := g.Group(a.subJsonPath)
 		gJson.GET(":subid", a.subJsons)
@@ -442,6 +447,7 @@ func (a *SUBController) buildSubPageData(c *gin.Context) (PageData, bool) {
 	page := subReq.BuildPageData(subId, hostHeader, traffic, lastOnline, subs, emails, subURL, subJsonURL, subClashURL, basePathStr, metadata.Title, metadata.SupportURL)
 	page.SubAnnounce = metadata.Announce
 	page.CiscoLogins = subReq.ciscoLogins
+	page.OpenVPNProfiles = withProfileURLs(subReq.openvpnProfiles, subURL)
 	return page, true
 }
 
@@ -459,6 +465,73 @@ func dedupeEmails(emails []string) []string {
 		out = append(out, email)
 	}
 	return out
+}
+
+// withProfileURLs hangs each .ovpn off the subscription URL the customer
+// already has, so the file follows whatever host and scheme the operator
+// configured rather than whatever this one request arrived on.
+//
+// The id, not the file name, is what the URL carries. Two inbounds an
+// operator named the same would otherwise answer to one address, and the
+// customer would get one country twice.
+func withProfileURLs(profiles []OpenVPNProfile, subURL string) []OpenVPNProfile {
+	if len(profiles) == 0 || subURL == "" {
+		return profiles
+	}
+	base := strings.TrimRight(subURL, "/")
+	out := make([]OpenVPNProfile, len(profiles))
+	for i, p := range profiles {
+		p.URL = fmt.Sprintf("%s/openvpn/%d.ovpn", base, p.InboundId)
+		out[i] = p
+	}
+	return out
+}
+
+// subOpenVPN serves one customer's .ovpn file.
+//
+// The subscription is rebuilt rather than trusted from the URL, because that
+// is what answers the only question worth asking here: whether this subId
+// really holds a client on that inbound. The file embeds the inbound's shared
+// key, so without the check the link would hand it to anyone who can count.
+func (a *SUBController) subOpenVPN(c *gin.Context) {
+	subId := c.Param("subid")
+	wanted, err := strconv.Atoi(strings.TrimSuffix(c.Param("file"), ".ovpn"))
+	if err != nil {
+		c.Status(http.StatusNotFound)
+		return
+	}
+	_, host, _, _ := a.subService.ResolveRequest(c)
+	subReq := a.subService.ForRequest(host)
+	subReq.subscriptionBody = false
+	if _, _, _, _, err := subReq.getSubs(subId); err != nil {
+		writeSubError(c, err)
+		return
+	}
+	for _, p := range subReq.openvpnProfiles {
+		if p.InboundId != wanted {
+			continue
+		}
+		body, err := openvpn.Render(
+			openvpn.Instance{Id: p.InboundId, Port: p.Port, UseTCP: p.UseTCP},
+			openvpn.Profile{Address: p.Address, Label: p.Label},
+		)
+		if err != nil {
+			// The inbound has not started yet, so its authority does not
+			// exist on disk. 503 rather than 404: the link is right and the
+			// server is not ready, and a customer who tries again later gets
+			// their file instead of concluding the link is dead.
+			logger.Warningf("sub: the openvpn profile for inbound %d is not ready: %v", wanted, err)
+			c.Status(http.StatusServiceUnavailable)
+			return
+		}
+		setNoCacheHeaders(c)
+		// openvpn.FileName leaves only letters, digits, dashes and
+		// underscores, so there is nothing in here that can end the header.
+		c.Header("Content-Disposition", `attachment; filename="`+p.FileName+`"`)
+		c.Data(http.StatusOK, "application/x-openvpn-profile", []byte(body))
+		return
+	}
+	c.Status(http.StatusNotFound)
 }
 
 // subs handles HTTP requests for subscription links, returning either HTML page or base64-encoded subscription data.
@@ -677,30 +750,31 @@ func (a *SUBController) subPageContext(page PageData) map[string]any {
 	updateHours, _ := strconv.Atoi(subUpdates)
 
 	return map[string]any{
-		"sId":           page.SId,
-		"enabled":       page.Enabled,
-		"isOnline":      page.IsOnline,
-		"download":      page.Download,
-		"upload":        page.Upload,
-		"total":         page.Total,
-		"used":          page.Used,
-		"remained":      page.Remained,
-		"expire":        page.Expire,
-		"lastOnline":    page.LastOnline,
-		"downloadByte":  page.DownloadByte,
-		"uploadByte":    page.UploadByte,
-		"totalByte":     page.TotalByte,
-		"subUrl":        page.SubUrl,
-		"subJsonUrl":    page.SubJsonUrl,
-		"subClashUrl":   page.SubClashUrl,
-		"subTitle":      page.SubTitle,
-		"subSupportUrl": page.SubSupportUrl,
-		"subUpdates":    updateHours,
-		"links":         page.Result,
-		"emails":        page.Emails,
-		"ciscoLogins":   page.CiscoLogins,
-		"datepicker":    datepicker,
-		"announce":      page.SubAnnounce,
+		"sId":             page.SId,
+		"enabled":         page.Enabled,
+		"isOnline":        page.IsOnline,
+		"download":        page.Download,
+		"upload":          page.Upload,
+		"total":           page.Total,
+		"used":            page.Used,
+		"remained":        page.Remained,
+		"expire":          page.Expire,
+		"lastOnline":      page.LastOnline,
+		"downloadByte":    page.DownloadByte,
+		"uploadByte":      page.UploadByte,
+		"totalByte":       page.TotalByte,
+		"subUrl":          page.SubUrl,
+		"subJsonUrl":      page.SubJsonUrl,
+		"subClashUrl":     page.SubClashUrl,
+		"subTitle":        page.SubTitle,
+		"subSupportUrl":   page.SubSupportUrl,
+		"subUpdates":      updateHours,
+		"links":           page.Result,
+		"emails":          page.Emails,
+		"ciscoLogins":     page.CiscoLogins,
+		"openvpnProfiles": page.OpenVPNProfiles,
+		"datepicker":      datepicker,
+		"announce":        page.SubAnnounce,
 	}
 }
 

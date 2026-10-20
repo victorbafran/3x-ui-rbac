@@ -76,10 +76,11 @@ func TestARowWithNoHeaderIsSkipped(t *testing.T) {
 	}
 }
 
-// The device limit drops the newest connection, not the oldest. Dropping the
-// oldest would let an account be handed around with each new person kicking
-// the last one off, which is the thing a limit exists to prevent.
-func TestTheDeviceLimitDropsTheNewestConnection(t *testing.T) {
+// The device limit keeps the newest connections and drops the oldest.
+//
+// This was the other way round until a phone proved it could not work. See
+// the comment on OverLimit, and the reconnect test below.
+func TestTheDeviceLimitKeepsTheNewestConnection(t *testing.T) {
 	sessions := parseStatus(sampleStatus)
 	over := OverLimit(sessions, func(login string) int {
 		if login == "ali" {
@@ -90,8 +91,68 @@ func TestTheDeviceLimitDropsTheNewestConnection(t *testing.T) {
 	if len(over) != 1 {
 		t.Fatalf("expected one device over the limit, got %d", len(over))
 	}
-	if over[0].ClientID != "7" {
-		t.Fatalf("dropped client %s; the newest is 7", over[0].ClientID)
+	if over[0].ClientID != "3" {
+		t.Fatalf("dropped client %s; the oldest is 3 and the one still in use is 7", over[0].ClientID)
+	}
+}
+
+// The bug a customer actually hit, on an account with one device.
+//
+// A phone reconnects whenever its network changes. The server holds the
+// previous connection until its ping timer reaps it, up to a minute later,
+// so for that minute the account has one live session and one or two dead
+// ones — and the dead ones are the older. Dropping the newest killed the
+// live one every time: the client reconnected, became the newest again, and
+// was killed again, ten seconds apart, forever.
+//
+// Nothing about one device in isolation is wrong here. The limit is 2 and
+// there is one phone. It is the corpses that make it three.
+func TestAPhoneReconnectingIsNotKilledByItsOwnDeadSessions(t *testing.T) {
+	base := time.Unix(1792470000, 0)
+	sessions := []Session{
+		// Two instances the server has not reaped yet, from earlier attempts.
+		{Login: "ghosty", ClientID: "ghost-a", ConnectedSince: base},
+		{Login: "ghosty", ClientID: "ghost-b", ConnectedSince: base.Add(20 * time.Second)},
+		// The connection the customer is looking at right now.
+		{Login: "ghosty", ClientID: "live", ConnectedSince: base.Add(40 * time.Second)},
+	}
+
+	over := OverLimit(sessions, func(string) int { return 2 })
+
+	for _, s := range over {
+		if s.ClientID == "live" {
+			t.Fatalf("the connection in use was dropped; the customer sees the VPN reconnect in a loop and the account only has one device")
+		}
+	}
+	if len(over) != 1 {
+		t.Fatalf("dropped %d sessions, want 1: three sessions against a limit of two", len(over))
+	}
+	if over[0].ClientID != "ghost-a" {
+		t.Fatalf("dropped %q, want the oldest dead session", over[0].ClientID)
+	}
+}
+
+// Dropping the oldest must still cap how many run at once, or it is not a
+// limit at all — that is the property the old policy was protecting.
+func TestTheLimitStillCapsConcurrentDevices(t *testing.T) {
+	base := time.Unix(1792470000, 0)
+	var sessions []Session
+	for i := 0; i < 5; i++ {
+		sessions = append(sessions, Session{
+			Login:          "shared",
+			ClientID:       string(rune('a' + i)),
+			ConnectedSince: base.Add(time.Duration(i) * time.Minute),
+		})
+	}
+	over := OverLimit(sessions, func(string) int { return 2 })
+	if len(over) != 3 {
+		t.Fatalf("dropped %d of 5 against a limit of 2; 3 must go", len(over))
+	}
+	kept := map[string]bool{"d": true, "e": true}
+	for _, s := range over {
+		if kept[s.ClientID] {
+			t.Errorf("dropped %q, which is one of the two newest", s.ClientID)
+		}
 	}
 }
 

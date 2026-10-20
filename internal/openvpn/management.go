@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -179,12 +180,28 @@ func firstLine(s string) string {
 	return strings.TrimSpace(s)
 }
 
-// OverLimit reports which devices are past what their account allows, oldest
-// kept and newest dropped.
+// OverLimit reports which devices are past what their account allows. The
+// newest connections are kept and the oldest are dropped.
 //
-// Newest dropped is the choice that makes a device limit feel like a limit:
-// dropping the oldest would let a customer hand the account around and have
-// each new person kick the last one off, which is the thing being prevented.
+// It was written the other way round, and the reasoning was wrong. Dropping
+// the newest looks like the stricter choice — a customer handing the account
+// around cannot have each new person kick the last one off — but it never
+// settles, even for one honest customer with one phone.
+//
+// A phone reconnects constantly: it changes network, it sleeps, it wakes.
+// Each time, the server keeps the previous connection for up to a minute
+// before its ping timer reaps it, so the account briefly holds a live
+// session and one or more dead ones. The dead ones are older. Dropping the
+// newest therefore kills the connection the customer is actually using and
+// leaves the corpses holding the slots; the client reconnects, is the newest
+// again, and is killed again. Measured on a real phone on 2026-10-21: two
+// kills ten seconds apart, on an account with one device.
+//
+// Dropping the oldest converges instead. The dead sessions go first, the
+// live one survives, and the cap on how many connections run at once is
+// exactly the same number it always was — which is the part that makes it a
+// limit. An account genuinely shared between two people still thrashes, and
+// that is the behaviour being asked for.
 func OverLimit(sessions []Session, limitFor func(login string) int) []Session {
 	byLogin := map[string][]Session{}
 	for _, s := range sessions {
@@ -196,15 +213,11 @@ func OverLimit(sessions []Session, limitFor func(login string) int) []Session {
 		if limit <= 0 || len(list) <= limit {
 			continue
 		}
-		// Oldest first, so everything past the limit is the newest.
-		for i := 0; i < len(list); i++ {
-			for j := i + 1; j < len(list); j++ {
-				if list[j].ConnectedSince.Before(list[i].ConnectedSince) {
-					list[i], list[j] = list[j], list[i]
-				}
-			}
-		}
-		over = append(over, list[limit:]...)
+		sort.SliceStable(list, func(i, j int) bool {
+			return list[i].ConnectedSince.Before(list[j].ConnectedSince)
+		})
+		// Oldest first, so everything before the last `limit` is dropped.
+		over = append(over, list[:len(list)-limit]...)
 	}
 	return over
 }

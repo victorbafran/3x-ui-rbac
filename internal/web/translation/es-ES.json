@@ -113,7 +113,17 @@
     "ciscoPassword": "Contraseña",
     "ciscoAppAndroid": "App Cisco (Android)",
     "ciscoAppIos": "App Cisco (iPhone)",
-    "ciscoAppOpenConnect": "OpenConnect (Android)"
+    "ciscoAppOpenConnect": "OpenConnect (Android)",
+    "openvpnTitle": "OpenVPN",
+    "openvpnHint": "Descarga el archivo, ábrelo con la aplicación OpenVPN e inicia sesión con el usuario y la contraseña de abajo.",
+    "openvpnProfile": "Perfil",
+    "openvpnDownload": "Descargar",
+    "openvpnUsername": "Usuario",
+    "openvpnPassword": "Contraseña",
+    "openvpnNotReady": "Este perfil aún no está listo: el servidor no ha iniciado esta conexión. Inténtalo de nuevo en un minuto.",
+    "openvpnAppAndroid": "OpenVPN Connect (Android)",
+    "openvpnAppIos": "OpenVPN Connect (iPhone)",
+    "openvpnAppDesktop": "OpenVPN Connect (escritorio)"
   },
   "menu": {
     "theme": "Tema",
@@ -780,7 +790,30 @@
         "ciscoLocationLabel": "se muestra como, p. ej. Netherlands",
         "ciscoLocationExit": "salida, p. ej. wg0",
         "ciscoLocationRename": "Renombrar",
-        "ciscoLocationRenameHint": "Este país sale por el propio servidor del panel, así que puedes llamarlo como lo vendas."
+        "ciscoLocationRenameHint": "Este país sale por el propio servidor del panel, así que puedes llamarlo como lo vendas.",
+        "openvpnNeedsBinary": "Esto necesita OpenVPN en el servidor",
+        "openvpnNeedsBinaryHint": "Instálalo con el gestor de paquetes (apt install openvpn) y el inbound arrancará solo. No hace falta nada más: el panel escribe la configuración, emite el certificado y comprueba las contraseñas.",
+        "openvpnOneCountry": "Un inbound es un país",
+        "openvpnOneCountryHint": "OpenVPN no puede ofrecer una lista de países antes de conectar, como sí hace el cliente de Cisco. Un cliente con varios países tiene varios perfiles y elige uno en su aplicación, así que crea un inbound por país.",
+        "openvpnExit": "El tráfico sale por",
+        "openvpnExitHint": "Uno de tus servidores de salida, o vacío para este servidor. El cliente ve la dirección de este servidor en ambos casos; solo cambia por dónde sale.",
+        "openvpnExitThisServer": "este servidor",
+        "openvpnUseTcp": "Usar TCP en vez de UDP",
+        "openvpnUseTcpHint": "Solo para una red que bloquea UDP por completo. UDP es más rápido.",
+        "openvpnTcpWarning": "TCP cuesta velocidad",
+        "openvpnTcpWarningHint": "Un túnel que lleva TCP dentro de TCP recupera las pérdidas dos veces y ambas capas se frenan a la vez. Úsalo solo donde UDP no pase en absoluto.",
+        "openvpnNetwork": "Rango de direcciones",
+        "openvpnNetworkHint": "Vacío, el panel elige un rango que no puede chocar con otro inbound ni con el túnel de un servidor de salida.",
+        "openvpnNetmask": "Máscara de red",
+        "openvpnDns": "Servidores DNS",
+        "openvpnDnsHint": "Se envían al cliente y se usan dentro del túnel, para que los nombres que consulta no lleguen a su proveedor.",
+        "openvpnMaxClients": "Conexiones máximas",
+        "openvpnMaxClientsHint": "En todo el inbound. 0 usa el valor por defecto de 1024.",
+        "openvpnMaxSameClients": "Dispositivos por cuenta",
+        "openvpnMaxSameClientsHint": "Cuántos dispositivos pueden usar una cuenta a la vez. 0 usa el valor por defecto de 2. El límite propio de un cliente tiene prioridad.",
+        "openvpnCertFile": "Archivo de certificado",
+        "openvpnCertFileHint": "Tu propio certificado, si lo tienes. Vacío, el panel emite el suyo y lo reutiliza: reemitirlo parecería a cada cliente un servidor distinto.",
+        "openvpnKeyFile": "Archivo de clave privada"
       },
       "info": {
         "mode": "Modo",
@@ -1059,7 +1092,8 @@
       "renewWeeklyDesc": "La renovación por calendario se realiza a medianoche en la zona horaria del panel y también reinicia el tráfico del cliente. Mantén desactivados los reinicios de tráfico independientes salvo que quieras un reinicio adicional.",
       "owner": "Propietario",
       "ownerPanel": "Panel",
-      "limitIpCisco": "En Cisco limita cuántos dispositivos pueden usar la cuenta a la vez, y lo aplica el propio ocserv. 0 deja al cliente con los “Dispositivos por cuenta” de la entrada."
+      "limitIpCisco": "En Cisco limita cuántos dispositivos pueden usar la cuenta a la vez, y lo aplica el propio ocserv. 0 deja al cliente con los “Dispositivos por cuenta” de la entrada.",
+      "limitIpDeviceCap": "En Cisco y OpenVPN esto limita cuántos dispositivos pueden usar la cuenta a la vez, y lo aplica el propio servidor. 0 deja al cliente con los «Dispositivos por cuenta» del inbound."
     },
     "groups": {
       "name": "Nombre",

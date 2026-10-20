@@ -94,6 +94,7 @@ export function isInboundMultiUser(record: { protocol: string }): boolean {
     case 'tuic':
     case 'masque':
     case 'cisco':
+    case 'openvpn':
       return true;
     default:
       return false;

@@ -113,7 +113,17 @@
     "ciscoPassword": "Parola",
     "ciscoAppAndroid": "Cisco uygulaması (Android)",
     "ciscoAppIos": "Cisco uygulaması (iPhone)",
-    "ciscoAppOpenConnect": "OpenConnect (Android)"
+    "ciscoAppOpenConnect": "OpenConnect (Android)",
+    "openvpnTitle": "OpenVPN",
+    "openvpnHint": "Dosyayı indirin, OpenVPN uygulamasıyla açın ve aşağıdaki kullanıcı adı ile parolayla giriş yapın.",
+    "openvpnProfile": "Profil",
+    "openvpnDownload": "İndir",
+    "openvpnUsername": "Kullanıcı adı",
+    "openvpnPassword": "Parola",
+    "openvpnNotReady": "Bu profil henüz hazır değil — sunucu bu bağlantıyı başlatmadı. Bir dakika sonra tekrar deneyin.",
+    "openvpnAppAndroid": "OpenVPN Connect (Android)",
+    "openvpnAppIos": "OpenVPN Connect (iPhone)",
+    "openvpnAppDesktop": "OpenVPN Connect (masaüstü)"
   },
   "menu": {
     "theme": "Tema",
@@ -780,7 +790,30 @@
         "ciscoLocationLabel": "gösterilen ad, örn. Netherlands",
         "ciscoLocationExit": "çıkış, örn. wg0",
         "ciscoLocationRename": "Yeniden adlandır",
-        "ciscoLocationRenameHint": "Bu ülke panelin kendi sunucusundan çıkıyor, bu yüzden sattığınız adla çağırabilirsiniz."
+        "ciscoLocationRenameHint": "Bu ülke panelin kendi sunucusundan çıkıyor, bu yüzden sattığınız adla çağırabilirsiniz.",
+        "openvpnNeedsBinary": "Bunun için sunucuda OpenVPN gerekir",
+        "openvpnNeedsBinaryHint": "Paket yöneticisiyle kurun (apt install openvpn), gelen bağlantı kendiliğinden başlar. Başka bir şey gerekmez: yapılandırmayı panel yazar, sertifikayı panel verir, parolaları panel denetler.",
+        "openvpnOneCountry": "Bir gelen bağlantı bir ülkedir",
+        "openvpnOneCountryHint": "OpenVPN, Cisco istemcisinin yaptığı gibi bağlanmadan önce ülke listesi sunamaz. Birkaç ülkesi olan müşteri birkaç profil taşır ve uygulamasında birini seçer; bu yüzden her ülke için bir gelen bağlantı oluşturun.",
+        "openvpnExit": "Trafik şuradan çıkar",
+        "openvpnExitHint": "Çıkış sunucularınızdan biri ya da boş bırakırsanız bu sunucu. Müşteri her hâlükârda bu sunucunun adresini görür; değişen yalnızca çıktığı yerdir.",
+        "openvpnExitThisServer": "bu sunucu",
+        "openvpnUseTcp": "UDP yerine TCP kullan",
+        "openvpnUseTcpHint": "Yalnızca UDP’yi tümden kapatan ağlar için. UDP daha hızlıdır.",
+        "openvpnTcpWarning": "TCP hızdan götürür",
+        "openvpnTcpWarningHint": "TCP içinde TCP taşıyan bir tünel kaybı iki kez telafi eder ve iki katman birden yavaşlar. Yalnızca UDP’nin hiç geçmediği yerde kullanın.",
+        "openvpnNetwork": "Adres aralığı",
+        "openvpnNetworkHint": "Boş bırakılırsa panel, başka bir gelen bağlantıyla ya da bir çıkış sunucusunun tüneliyle çakışamayacak bir aralık seçer.",
+        "openvpnNetmask": "Ağ maskesi",
+        "openvpnDns": "DNS sunucuları",
+        "openvpnDnsHint": "Müşteriye gönderilir ve tünelin içinde kullanılır, böylece aradığı adlar kendi operatörüne ulaşmaz.",
+        "openvpnMaxClients": "En fazla bağlantı",
+        "openvpnMaxClientsHint": "Gelen bağlantının tamamı için. 0, varsayılan 1024 demektir.",
+        "openvpnMaxSameClients": "Hesap başına cihaz",
+        "openvpnMaxSameClientsHint": "Bir hesabı aynı anda kaç cihaz kullanabilir. 0, varsayılan 2 demektir. Müşterinin kendi sınırı önceliklidir.",
+        "openvpnCertFile": "Sertifika dosyası",
+        "openvpnCertFileHint": "Kendi sertifikanız varsa. Boş bırakılırsa panel kendi sertifikasını verir ve onu kullanmayı sürdürür — yeniden vermek her istemciye başka bir sunucu gibi görünür.",
+        "openvpnKeyFile": "Özel anahtar dosyası"
       },
       "info": {
         "mode": "Mod",
@@ -1059,7 +1092,8 @@
       "renewWeeklyDesc": "Takvim yenilemesi panelin saat diliminde gece yarısı gerçekleşir ve istemci trafiğini de sıfırlar. Ek bir sıfırlama istemiyorsanız bağımsız trafik sıfırlamalarını devre dışı bırakın.",
       "owner": "Sahibi",
       "ownerPanel": "Panel",
-      "limitIpCisco": "Cisco'da bu, hesabı aynı anda kaç cihazın kullanabileceğini sınırlar ve bunu ocserv'in kendisi uygular. 0, istemciyi gelen bağlantıdaki “Hesap başına cihaz” değerinde bırakır."
+      "limitIpCisco": "Cisco'da bu, hesabı aynı anda kaç cihazın kullanabileceğini sınırlar ve bunu ocserv'in kendisi uygular. 0, istemciyi gelen bağlantıdaki “Hesap başına cihaz” değerinde bırakır.",
+      "limitIpDeviceCap": "Cisco ve OpenVPN için bu, hesabı aynı anda kaç cihazın kullanabileceğini sınırlar ve sunucunun kendisi uygular. 0, istemciyi gelen bağlantının “Hesap başına cihaz” değerinde bırakır."
     },
     "groups": {
       "name": "İsim",

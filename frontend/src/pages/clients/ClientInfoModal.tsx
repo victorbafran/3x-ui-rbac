@@ -107,15 +107,18 @@ export default function ClientInfoModal({
 }: ClientInfoModalProps) {
   const { datepicker } = useDatepicker();
   const { t } = useTranslation();
-  // A cisco client logs into ocserv with a name, not a UUID, and that name is
-  // not always the email: ocserv's password file is colon-separated, so the
-  // colon in a reseller's "a<adminId>:" namespace is substituted on the way
-  // in. Showing the email here would hand the customer a login that is
+  // A cisco or OpenVPN client logs in with a name, not a UUID, and that name
+  // is not always the email: the shared password file is colon-separated, so
+  // the colon in a reseller's "a<adminId>:" namespace is substituted on the
+  // way in. Showing the email here would hand the customer a login that is
   // refused, so the derived name is shown whenever it differs.
   const ciscoLogin = useMemo(() => {
     if (!client) return '';
-    const onCisco = (client.inboundIds || []).some((id) => inboundsById[id]?.protocol === 'cisco');
-    if (!onCisco) return '';
+    const onPasswordProtocol = (client.inboundIds || []).some((id) => {
+      const protocol = inboundsById[id]?.protocol;
+      return protocol === 'cisco' || protocol === 'openvpn';
+    });
+    if (!onPasswordProtocol) return '';
     const login = (client.email || '').replace(/:/g, '_');
     return login === client.email ? '' : login;
   }, [client, inboundsById]);

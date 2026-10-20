@@ -113,7 +113,17 @@
     "ciscoPassword": "كلمة المرور",
     "ciscoAppAndroid": "تطبيق سيسكو (أندرويد)",
     "ciscoAppIos": "تطبيق سيسكو (آيفون)",
-    "ciscoAppOpenConnect": "OpenConnect (أندرويد)"
+    "ciscoAppOpenConnect": "OpenConnect (أندرويد)",
+    "openvpnTitle": "OpenVPN",
+    "openvpnHint": "نزّل الملف، وافتحه بتطبيق OpenVPN، ثم سجّل الدخول باسم المستخدم وكلمة المرور أدناه.",
+    "openvpnProfile": "الملف الشخصي",
+    "openvpnDownload": "تنزيل",
+    "openvpnUsername": "اسم المستخدم",
+    "openvpnPassword": "كلمة المرور",
+    "openvpnNotReady": "هذا الملف غير جاهز بعد — لم يبدأ الخادم هذا الاتصال. حاول مرة أخرى بعد دقيقة.",
+    "openvpnAppAndroid": "OpenVPN Connect (أندرويد)",
+    "openvpnAppIos": "OpenVPN Connect (آيفون)",
+    "openvpnAppDesktop": "OpenVPN Connect (الكمبيوتر)"
   },
   "menu": {
     "theme": "الثيم",
@@ -780,7 +790,30 @@
         "ciscoLocationLabel": "يظهر باسم، مثل Netherlands",
         "ciscoLocationExit": "المخرج، مثل wg0",
         "ciscoLocationRename": "إعادة تسمية",
-        "ciscoLocationRenameHint": "هذه الدولة تخرج من خادم اللوحة نفسه، فيمكنك تسميتها بما تبيعها به."
+        "ciscoLocationRenameHint": "هذه الدولة تخرج من خادم اللوحة نفسه، فيمكنك تسميتها بما تبيعها به.",
+        "openvpnNeedsBinary": "يحتاج هذا إلى OpenVPN على الخادم",
+        "openvpnNeedsBinaryHint": "ثبّته بمدير الحزم (apt install openvpn) وسيبدأ المدخل من تلقاء نفسه. لا شيء آخر مطلوب: اللوحة تكتب الإعدادات وتصدر الشهادة وتتحقق من كلمات المرور بنفسها.",
+        "openvpnOneCountry": "كل مدخل دولة واحدة",
+        "openvpnOneCountryHint": "لا يملك OpenVPN طريقة لعرض قائمة دول قبل الاتصال كما يفعل عميل Cisco. العميل الذي يحتاج عدة دول يحتفظ بعدة ملفات ويختار واحدًا في تطبيقه، فأنشئ مدخلًا لكل دولة.",
+        "openvpnExit": "تخرج الحركة عبر",
+        "openvpnExitHint": "أحد خوادم الخروج لديك، أو اتركه فارغًا لهذا الخادم. يرى العميل عنوان هذا الخادم في الحالتين؛ ما يتغير هو مكان خروجه فقط.",
+        "openvpnExitThisServer": "هذا الخادم",
+        "openvpnUseTcp": "استخدم TCP بدل UDP",
+        "openvpnUseTcpHint": "فقط لشبكة تحجب UDP تمامًا. UDP أسرع.",
+        "openvpnTcpWarning": "TCP يكلّف سرعة",
+        "openvpnTcpWarningHint": "نفق يحمل TCP داخل TCP يعوّض الفقد مرتين، وتتباطأ الطبقتان معًا. استخدمه فقط حيث لا يمر UDP إطلاقًا.",
+        "openvpnNetwork": "نطاق العناوين",
+        "openvpnNetworkHint": "اتركه فارغًا لتختار اللوحة نطاقًا لا يتعارض مع مدخل آخر ولا مع نفق خادم خروج.",
+        "openvpnNetmask": "قناع الشبكة",
+        "openvpnDns": "خوادم DNS",
+        "openvpnDnsHint": "تُرسل إلى العميل وتُستخدم داخل النفق، حتى لا تصل الأسماء التي يبحث عنها إلى مزوّده.",
+        "openvpnMaxClients": "أقصى عدد اتصالات",
+        "openvpnMaxClientsHint": "على مستوى المدخل كله. الصفر يعني 1024.",
+        "openvpnMaxSameClients": "عدد الأجهزة لكل حساب",
+        "openvpnMaxSameClientsHint": "كم جهازًا يستخدم الحساب في وقت واحد. الصفر يعني 2. حد العميل الخاص يتقدم على هذا.",
+        "openvpnCertFile": "ملف الشهادة",
+        "openvpnCertFileHint": "شهادتك الخاصة إن وُجدت. اتركه فارغًا لتصدر اللوحة شهادتها وتعيد استخدامها — إعادة الإصدار تبدو لكل عميل كأنه خادم مختلف.",
+        "openvpnKeyFile": "ملف المفتاح الخاص"
       },
       "info": {
         "mode": "الوضع",
@@ -1059,7 +1092,8 @@
       "renewWeeklyDesc": "يتم التجديد التقويمي عند منتصف الليل بتوقيت اللوحة ويُعاد أيضًا تعيين استهلاك العميل. أبقِ إعادة تعيين الاستهلاك المستقلة معطلة ما لم تكن تريد إعادة تعيين إضافية.",
       "owner": "المالك",
       "ownerPanel": "اللوحة",
-      "limitIpCisco": "مع سيسكو يحدّد هذا عدد الأجهزة التي يمكنها استخدام الحساب في آن واحد، وينفّذه ocserv نفسه. القيمة 0 تترك العميل على “عدد الأجهزة لكل حساب” في المدخل."
+      "limitIpCisco": "مع سيسكو يحدّد هذا عدد الأجهزة التي يمكنها استخدام الحساب في آن واحد، وينفّذه ocserv نفسه. القيمة 0 تترك العميل على “عدد الأجهزة لكل حساب” في المدخل.",
+      "limitIpDeviceCap": "في Cisco وOpenVPN يحدّد هذا عدد الأجهزة التي يمكنها استخدام الحساب في الوقت نفسه، والخادم نفسه هو من يطبّقه. الصفر يترك العميل على «الأجهزة لكل حساب» المحددة في الاتصال الوارد."
     },
     "groups": {
       "name": "الاسم",

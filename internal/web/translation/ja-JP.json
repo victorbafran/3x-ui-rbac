@@ -113,7 +113,17 @@
     "ciscoPassword": "パスワード",
     "ciscoAppAndroid": "Cisco アプリ (Android)",
     "ciscoAppIos": "Cisco アプリ (iPhone)",
-    "ciscoAppOpenConnect": "OpenConnect (Android)"
+    "ciscoAppOpenConnect": "OpenConnect (Android)",
+    "openvpnTitle": "OpenVPN",
+    "openvpnHint": "ファイルをダウンロードし、OpenVPN アプリで開いて、下のユーザー名とパスワードでログインしてください。",
+    "openvpnProfile": "プロファイル",
+    "openvpnDownload": "ダウンロード",
+    "openvpnUsername": "ユーザー名",
+    "openvpnPassword": "パスワード",
+    "openvpnNotReady": "このプロファイルはまだ準備できていません。サーバーがこの接続を開始していません。少し待ってからもう一度お試しください。",
+    "openvpnAppAndroid": "OpenVPN Connect (Android)",
+    "openvpnAppIos": "OpenVPN Connect (iPhone)",
+    "openvpnAppDesktop": "OpenVPN Connect (デスクトップ)"
   },
   "menu": {
     "theme": "テーマ",
@@ -780,7 +790,30 @@
         "ciscoLocationLabel": "表示名（例: Netherlands）",
         "ciscoLocationExit": "出口（例: wg0）",
         "ciscoLocationRename": "名前を変更",
-        "ciscoLocationRenameHint": "この国はパネル自身のサーバーから出ていくので、販売している名前で自由に呼べます。"
+        "ciscoLocationRenameHint": "この国はパネル自身のサーバーから出ていくので、販売している名前で自由に呼べます。",
+        "openvpnNeedsBinary": "サーバーに OpenVPN が必要です",
+        "openvpnNeedsBinaryHint": "パッケージマネージャーで入れてください（apt install openvpn）。あとはインバウンドが自分で起動します。ほかに必要なものはありません。設定の作成も証明書の発行もパスワードの確認もパネルが行います。",
+        "openvpnOneCountry": "1つのインバウンドが1つの国です",
+        "openvpnOneCountryHint": "OpenVPN には、Cisco のクライアントのように接続前に国を選ばせる仕組みがありません。複数の国を使うお客様は複数のプロファイルを持ち、アプリで選びます。国ごとにインバウンドを作ってください。",
+        "openvpnExit": "通信の出口",
+        "openvpnExitHint": "出口サーバーのいずれか、または空欄でこのサーバー。お客様が見るアドレスはどちらでもこのサーバーで、変わるのは出る場所だけです。",
+        "openvpnExitThisServer": "このサーバー",
+        "openvpnUseTcp": "UDP ではなく TCP を使う",
+        "openvpnUseTcpHint": "UDP が完全に塞がれている回線だけ。UDP のほうが速いです。",
+        "openvpnTcpWarning": "TCP は速度を落とします",
+        "openvpnTcpWarningHint": "TCP の中に TCP を通すと、パケットの取りこぼしを二重に取り戻そうとして両方が同時に遅くなります。UDP がまったく通らない場合だけにしてください。",
+        "openvpnNetwork": "アドレス範囲",
+        "openvpnNetworkHint": "空欄にすると、ほかのインバウンドや出口サーバーのトンネルと重ならない範囲をパネルが選びます。",
+        "openvpnNetmask": "ネットマスク",
+        "openvpnDns": "DNS サーバー",
+        "openvpnDnsHint": "お客様に渡され、トンネルの中で使われます。調べた名前がお客様自身の回線業者に届かなくなります。",
+        "openvpnMaxClients": "最大接続数",
+        "openvpnMaxClientsHint": "インバウンド全体で。0 は既定の 1024 です。",
+        "openvpnMaxSameClients": "1アカウントあたりの台数",
+        "openvpnMaxSameClientsHint": "同時に何台まで使えるか。0 は既定の 2 です。お客様ごとの設定があればそちらが優先されます。",
+        "openvpnCertFile": "証明書ファイル",
+        "openvpnCertFileHint": "お持ちの証明書があれば。空欄ならパネルが発行して使い続けます。発行し直すと、どのクライアントにも別のサーバーに見えてしまいます。",
+        "openvpnKeyFile": "秘密鍵ファイル"
       },
       "info": {
         "mode": "モード",
@@ -1059,7 +1092,8 @@
       "renewWeeklyDesc": "カレンダー更新はパネルのタイムゾーンの午前 0 時に行われ、クライアントの通信量もリセットします。追加のリセットが不要なら、独立した通信量リセットは無効にしてください。",
       "owner": "所有者",
       "ownerPanel": "パネル",
-      "limitIpCisco": "Cisco では、このアカウントを同時に使える端末数を制限します。適用するのは ocserv 自身です。0 はインバウンドの「アカウントあたりの端末数」に従います。"
+      "limitIpCisco": "Cisco では、このアカウントを同時に使える端末数を制限します。適用するのは ocserv 自身です。0 はインバウンドの「アカウントあたりの端末数」に従います。",
+      "limitIpDeviceCap": "Cisco と OpenVPN では、同時にこのアカウントを使える端末数の上限になり、サーバー自身が適用します。0 はインバウンドの「アカウントごとの端末数」に従います。"
     },
     "groups": {
       "name": "名前",

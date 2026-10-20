@@ -11,3 +11,4 @@ export { default as AmneziawgFields } from './amneziawg';
 export { default as TuicFields } from './tuic';
 export { default as MasqueStreamFields, MasqueSettingsFields } from './masque';
 export { default as CiscoFields } from './cisco';
+export { default as OpenVPNFields } from './openvpn';

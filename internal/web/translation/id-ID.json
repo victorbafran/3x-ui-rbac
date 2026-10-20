@@ -113,7 +113,17 @@
     "ciscoPassword": "Kata sandi",
     "ciscoAppAndroid": "Aplikasi Cisco (Android)",
     "ciscoAppIos": "Aplikasi Cisco (iPhone)",
-    "ciscoAppOpenConnect": "OpenConnect (Android)"
+    "ciscoAppOpenConnect": "OpenConnect (Android)",
+    "openvpnTitle": "OpenVPN",
+    "openvpnHint": "Unduh berkasnya, buka dengan aplikasi OpenVPN, lalu masuk dengan nama pengguna dan kata sandi di bawah.",
+    "openvpnProfile": "Profil",
+    "openvpnDownload": "Unduh",
+    "openvpnUsername": "Nama pengguna",
+    "openvpnPassword": "Kata sandi",
+    "openvpnNotReady": "Profil ini belum siap — server belum menjalankan koneksi ini. Coba lagi sebentar.",
+    "openvpnAppAndroid": "OpenVPN Connect (Android)",
+    "openvpnAppIos": "OpenVPN Connect (iPhone)",
+    "openvpnAppDesktop": "OpenVPN Connect (desktop)"
   },
   "menu": {
     "theme": "Tema",
@@ -780,7 +790,30 @@
         "ciscoLocationLabel": "ditampilkan sebagai, mis. Netherlands",
         "ciscoLocationExit": "keluaran, mis. wg0",
         "ciscoLocationRename": "Ganti nama",
-        "ciscoLocationRenameHint": "Negara ini keluar lewat server panel itu sendiri, jadi Anda bebas menamainya sesuai cara Anda menjualnya."
+        "ciscoLocationRenameHint": "Negara ini keluar lewat server panel itu sendiri, jadi Anda bebas menamainya sesuai cara Anda menjualnya.",
+        "openvpnNeedsBinary": "Ini membutuhkan OpenVPN di server",
+        "openvpnNeedsBinaryHint": "Pasang dengan manajer paket (apt install openvpn) dan inbound akan hidup sendiri. Tidak ada lagi yang perlu: panel menulis konfigurasinya, menerbitkan sertifikat, dan memeriksa kata sandinya sendiri.",
+        "openvpnOneCountry": "Satu inbound satu negara",
+        "openvpnOneCountryHint": "OpenVPN tidak bisa menawarkan pilihan negara sebelum terhubung seperti klien Cisco. Pelanggan dengan beberapa negara memegang beberapa profil dan memilih satu di aplikasinya, jadi buat satu inbound per negara.",
+        "openvpnExit": "Lalu lintas keluar lewat",
+        "openvpnExitHint": "Salah satu server keluar Anda, atau kosong untuk server ini. Pelanggan tetap melihat alamat server ini; yang berubah hanya tempat keluarnya.",
+        "openvpnExitThisServer": "server ini",
+        "openvpnUseTcp": "Gunakan TCP, bukan UDP",
+        "openvpnUseTcpHint": "Hanya untuk jaringan yang memblokir UDP sepenuhnya. UDP lebih cepat.",
+        "openvpnTcpWarning": "TCP mengorbankan kecepatan",
+        "openvpnTcpWarningHint": "Terowongan yang membawa TCP di dalam TCP memulihkan kehilangan dua kali, dan kedua lapisan melambat bersamaan. Pakai hanya jika UDP sama sekali tidak lewat.",
+        "openvpnNetwork": "Rentang alamat",
+        "openvpnNetworkHint": "Jika dikosongkan, panel memilih rentang yang tidak mungkin bentrok dengan inbound lain atau dengan terowongan server keluar.",
+        "openvpnNetmask": "Netmask",
+        "openvpnDns": "Server DNS",
+        "openvpnDnsHint": "Dikirim ke pelanggan dan dipakai di dalam terowongan, sehingga nama yang mereka cari tidak sampai ke penyedia mereka.",
+        "openvpnMaxClients": "Koneksi maksimum",
+        "openvpnMaxClientsHint": "Untuk seluruh inbound. 0 berarti 1024.",
+        "openvpnMaxSameClients": "Perangkat per akun",
+        "openvpnMaxSameClientsHint": "Berapa perangkat memakai satu akun bersamaan. 0 berarti 2. Batas milik pelanggan sendiri lebih diutamakan.",
+        "openvpnCertFile": "Berkas sertifikat",
+        "openvpnCertFileHint": "Sertifikat Anda sendiri, bila ada. Jika kosong panel menerbitkan miliknya dan memakainya terus — menerbitkan ulang akan tampak seperti server lain bagi setiap klien.",
+        "openvpnKeyFile": "Berkas kunci privat"
       },
       "info": {
         "mode": "Mode",
@@ -1059,7 +1092,8 @@
       "renewWeeklyDesc": "Perpanjangan kalender dilakukan pada tengah malam menurut zona waktu panel dan juga mereset trafik klien. Nonaktifkan reset trafik terpisah kecuali Anda menginginkan reset tambahan.",
       "owner": "Pemilik",
       "ownerPanel": "Panel",
-      "limitIpCisco": "Untuk Cisco ini membatasi berapa perangkat boleh memakai akun bersamaan, dan ocserv sendiri yang menerapkannya. 0 membiarkan klien memakai “Perangkat per akun” pada inbound."
+      "limitIpCisco": "Untuk Cisco ini membatasi berapa perangkat boleh memakai akun bersamaan, dan ocserv sendiri yang menerapkannya. 0 membiarkan klien memakai “Perangkat per akun” pada inbound.",
+      "limitIpDeviceCap": "Untuk Cisco dan OpenVPN ini membatasi berapa perangkat yang boleh memakai akun secara bersamaan, dan server sendiri yang menerapkannya. 0 membiarkan klien memakai “Perangkat per akun” milik inbound."
     },
     "groups": {
       "name": "Nama",

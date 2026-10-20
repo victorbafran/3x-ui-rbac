@@ -2872,6 +2872,60 @@ export const sections: readonly Section[] = [
       },
       {
         method: 'GET',
+        path: '/{subPath}:subid/openvpn/:file',
+        summary:
+          'Download one OpenVPN inbound\u2019s .ovpn profile for this subscription. The file name is the inbound id plus .ovpn; the name the browser saves it under comes from Content-Disposition and is the inbound\u2019s remark. The path prefix is configured by subPath.',
+        description:
+          'Returns the profile as <code>application/x-openvpn-profile</code>, not the <code>{success,msg,obj}</code> panel envelope, like the other subscription-server routes. The subscription is resolved first, so an id this subscription holds no client on is a 404 \u2014 the file embeds the inbound\u2019s shared key. A 503 means the inbound has not started yet and has no certificate to put in the file; the same link works once it has.',
+        params: [
+          { name: 'subid', in: 'path', type: 'string', desc: 'Client subscription ID.' },
+          {
+            name: 'file',
+            in: 'path',
+            type: 'string',
+            desc: 'The inbound id with a .ovpn suffix, e.g. 7.ovpn.',
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'The .ovpn profile.',
+            content: { 'application/x-openvpn-profile': { schema: { type: 'string' } } },
+          },
+          '404': {
+            description: 'No such subscription, or it holds no client on that inbound.',
+          },
+          '503': {
+            description:
+              'The inbound has not started yet, so there is no certificate to build the file from.',
+          },
+        },
+      },
+      {
+        method: 'HEAD',
+        path: '/{subPath}:subid/openvpn/:file',
+        summary: 'Return the profile status code and headers as GET without a response body.',
+        params: [
+          { name: 'subid', in: 'path', type: 'string', desc: 'Client subscription ID.' },
+          {
+            name: 'file',
+            in: 'path',
+            type: 'string',
+            desc: 'The inbound id with a .ovpn suffix, e.g. 7.ovpn.',
+          },
+        ],
+        responses: {
+          '200': { description: 'Headers match GET; no response body.' },
+          '404': {
+            description: 'No such subscription, or it holds no client on that inbound.',
+          },
+          '503': {
+            description:
+              'The inbound has not started yet, so there is no certificate to build the file from.',
+          },
+        },
+      },
+      {
+        method: 'GET',
         path: '/{jsonPath}:subid',
         summary:
           'Return subscription as a JSON array of proxy configs (one per enabled client). Only when JSON subscription is enabled in settings. The path prefix is configured by subJsonPath.',

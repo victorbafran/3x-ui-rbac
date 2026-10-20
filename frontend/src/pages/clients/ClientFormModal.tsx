@@ -68,6 +68,7 @@ const MULTI_CLIENT_PROTOCOLS = new Set([
   'tuic',
   'masque',
   'cisco',
+  'openvpn',
 ]);
 
 const CLIENT_FORM_MODAL_Z_INDEX = 1000;
@@ -455,6 +456,14 @@ export default function ClientFormModal({
     return ids;
   }, [inbounds]);
 
+  const openvpnIds = useMemo(() => {
+    const ids = new Set<number>();
+    for (const row of inbounds || []) {
+      if (row && row.protocol === 'openvpn') ids.add(row.id);
+    }
+    return ids;
+  }, [inbounds]);
+
   const mtprotoIds = useMemo(() => {
     const ids = new Set<number>();
     for (const row of inbounds || []) {
@@ -519,19 +528,30 @@ export default function ClientFormModal({
     [inboundIds, mtprotoIds],
   );
 
-  // The IP limit counts addresses out of xray's own online-stats, and a cisco
-  // client's traffic never passes through xray — the field would accept a
-  // number and then do nothing at all. Measured rather than assumed: the job
-  // reads GetOnlineUsers and has no other source.
+  // The IP limit counts addresses out of xray's own online-stats, and neither
+  // a cisco nor an OpenVPN client's traffic passes through xray — the field
+  // would accept a number and then do nothing at all. Measured rather than
+  // assumed: the job reads GetOnlineUsers and has no other source.
+  //
+  // Both protocols cap devices in their own server instead, per client, so the
+  // field means something there even when fail2ban is missing: the fail2ban
+  // gate only speaks for the xray path.
   const ciscoOnly = useMemo(() => {
     const ids = inboundIds || [];
     return ids.length > 0 && ids.every((id) => ciscoIds.has(id));
   }, [inboundIds, ciscoIds]);
 
-  // Cisco enforces this in ocserv itself, per client, so it works there even
-  // when fail2ban is missing — the fail2ban gate only speaks for the xray path.
-  const limitIpDisabled = ciscoOnly ? false : !fail2ban.usable;
-  const limitIpNotice = ciscoOnly ? t('pages.clients.limitIpCisco') : getLimitIpNotice(fail2ban, t);
+  const ownDeviceCapOnly = useMemo(() => {
+    const ids = inboundIds || [];
+    return ids.length > 0 && ids.every((id) => ciscoIds.has(id) || openvpnIds.has(id));
+  }, [inboundIds, ciscoIds, openvpnIds]);
+
+  const limitIpDisabled = ownDeviceCapOnly ? false : !fail2ban.usable;
+  const limitIpNotice = ciscoOnly
+    ? t('pages.clients.limitIpCisco')
+    : ownDeviceCapOnly
+      ? t('pages.clients.limitIpDeviceCap')
+      : getLimitIpNotice(fail2ban, t);
 
   function regenerateWireguardKeys() {
     const kp = Wireguard.generateKeypair();

@@ -44,6 +44,9 @@ func seedProtocolSub(t *testing.T, email, subID, password string, inbounds ...op
 		)
 		ib := &model.Inbound{
 			Id: in.id, UserId: 1, Remark: in.remark, Enable: true, Port: in.port,
+			// The tag is unique in the schema, so two seeded inbounds that
+			// both leave it empty collide on the second insert.
+			Tag:            fmt.Sprintf("inbound-%d", in.id),
 			Protocol:       in.protocol,
 			Settings:       settings,
 			StreamSettings: "{}", Sniffing: "{}",

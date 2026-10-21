@@ -45,31 +45,51 @@ export const CiscoLocationSchema = z.object({
 });
 export type CiscoLocation = z.infer<typeof CiscoLocationSchema>;
 
-export const CiscoInboundSettingsSchema = z.object({
-  clients: z.array(CiscoClientSchema).default([]),
-  // Left empty, the panel derives a /24 from the inbound id. Two cisco
-  // inbounds on one host must not hand out the same addresses or each would
-  // route the other's clients.
-  network: z.string().default(''),
-  netmask: z.string().default('255.255.255.0'),
-  dns: z.array(z.string()).default(['1.1.1.1', '8.8.8.8']),
-  // DTLS rides UDP and is what makes this protocol fast. Zero means the same
-  // port as TCP; set it only when that UDP port is blocked and another is not.
-  udpPort: z.number().int().min(0).max(65535).default(0),
-  // With UDP blocked for good, offering DTLS costs every connection the
-  // fallback timeout and then lands on TCP anyway.
-  disableUdp: z.boolean().default(false),
-  maxClients: z.number().int().min(0).default(0),
-  // How many devices may hold one account at the same time.
-  maxSameClients: z.number().int().min(0).default(2),
-  // An operator-supplied keypair. Left empty the panel generates a
-  // self-signed RSA pair and reuses it. The key must be RSA: Cisco's own
-  // Secure Client cannot complete a handshake against an ECDSA server key.
-  certFile: z.string().default(''),
-  keyFile: z.string().default(''),
-  // The countries this inbound offers. With any present the customer's client
-  // shows a Group dropdown and picks where to come out; each one is handed a
-  // pool of its own so the host can route it to that country's exit.
-  locations: z.array(CiscoLocationSchema).default([]),
-});
+export const CiscoInboundSettingsSchema = z
+  .object({
+    clients: z.array(CiscoClientSchema).default([]),
+    // Left empty, the panel derives a /24 from the inbound id. Two cisco
+    // inbounds on one host must not hand out the same addresses or each would
+    // route the other's clients.
+    network: z.string().default(''),
+    netmask: z.string().default('255.255.255.0'),
+    dns: z.array(z.string()).default(['1.1.1.1', '8.8.8.8']),
+    // DTLS rides UDP and is what makes this protocol fast. Zero means the same
+    // port as TCP; set it only when that UDP port is blocked and another is not.
+    udpPort: z.number().int().min(0).max(65535).default(0),
+    // With UDP blocked for good, offering DTLS costs every connection the
+    // fallback timeout and then lands on TCP anyway.
+    disableUdp: z.boolean().default(false),
+    maxClients: z.number().int().min(0).default(0),
+    // How many devices may hold one account at the same time.
+    maxSameClients: z.number().int().min(0).default(2),
+    // The tunnel MTU handed to clients. Zero is the server's default, 1400.
+    // Behind an entry server the tunnel's own encapsulation pushes 1400 past
+    // the wire limit: small packets pass and large ones vanish, so pages start
+    // to load and never finish. 1300 was measured to fix it.
+    mtu: z.number().int().min(0).max(1500).default(0),
+    // Path MTU discovery needs ICMP to come back; on a path that swallows it a
+    // fixed MTU is slower in theory and far steadier in practice.
+    mtuDiscovery: z.boolean().default(false),
+    // How long, in seconds, the server keeps a phone's session after it stops
+    // hearing from it. Zero is 1800. Behind an entry server every phone shares
+    // one address, so a phone that changed network cannot be told apart from a
+    // second device and each switch leaves a ghost holding a device slot for
+    // this long; 90 was measured to clear them.
+    mobileDpd: z.number().int().min(0).max(86400).default(0),
+    // An operator-supplied keypair. Left empty the panel generates a
+    // self-signed RSA pair and reuses it. Use RSA: some versions of Cisco's own
+    // Secure Client offer no ECDSA cipher and give up before the certificate is
+    // sent, while one measured on 2026-10-21 held an ECDSA session fine.
+    certFile: z.string().default(''),
+    keyFile: z.string().default(''),
+    // The countries this inbound offers. With any present the customer's client
+    // shows a Group dropdown and picks where to come out; each one is handed a
+    // pool of its own so the host can route it to that country's exit.
+    locations: z.array(CiscoLocationSchema).default([]),
+  })
+  // Loose, not strict: the panel reads settings the form may not show yet,
+  // and a strict schema drops them on every save through the form. That is
+  // exactly how a measured MTU of 1300 went back to 1400.
+  .loose();
 export type CiscoInboundSettings = z.infer<typeof CiscoInboundSettingsSchema>;

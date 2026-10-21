@@ -44,6 +44,15 @@ type Instance struct {
 	// networks carry ICMP properly and who want the larger packets.
 	MTUDiscovery bool
 
+	// MobileDPD is how long ocserv keeps a mobile session it has stopped
+	// hearing from before it reaps it, in seconds. Zero takes the default of
+	// 1800 — thirty minutes, which is right on a public address where ocserv
+	// recognises a returning phone by its IP. Behind a front every client
+	// arrives as 127.0.0.1, so a dead session cannot be told from the phone
+	// coming back, and thirty minutes of stale sessions pile up and fill the
+	// account. A front sets this low.
+	MobileDPD int
+
 	// CertFile/KeyFile point at an operator-supplied TLS keypair. When empty
 	// the manager generates and reuses a self-signed RSA keypair.
 	//
@@ -125,6 +134,13 @@ func (inst Instance) mtu() int {
 	return inst.MTU
 }
 
+func (inst Instance) mobileDPD() int {
+	if inst.MobileDPD <= 0 {
+		return 1800
+	}
+	return inst.MobileDPD
+}
+
 // deviceName is the tun interface prefix; ocserv appends a per-session number.
 func (inst Instance) deviceName() string { return fmt.Sprintf("vpns%d", inst.Id) }
 
@@ -183,6 +199,7 @@ func (inst Instance) structuralFingerprint() string {
 		strconv.FormatBool(inst.DisableUDP),
 		strconv.Itoa(inst.mtu()),
 		strconv.FormatBool(inst.MTUDiscovery),
+		strconv.Itoa(inst.mobileDPD()),
 		inst.locationsFingerprint(),
 	}, "|")
 }
@@ -316,7 +333,7 @@ func renderConfig(inst Instance, certFile, keyFile string) string {
 	}
 	w("keepalive = 32400")
 	w("dpd = 90")
-	w("mobile-dpd = 1800")
+	w("mobile-dpd = %d", inst.mobileDPD())
 	w("switch-to-tcp-timeout = 25")
 	w("auth-timeout = 240")
 	w("idle-timeout = 1200")

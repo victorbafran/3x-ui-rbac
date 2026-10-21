@@ -35,6 +35,7 @@ type ciscoSettings struct {
 	DisableUDP     bool     `json:"disableUdp"`
 	MTU            int      `json:"mtu"`
 	MTUDiscovery   bool     `json:"mtuDiscovery"`
+	MobileDPD      int      `json:"mobileDpd"`
 	CertFile       string   `json:"certFile"`
 	KeyFile        string   `json:"keyFile"`
 	// Locations are the countries this inbound offers in the client's Group
@@ -141,6 +142,7 @@ func InstanceFromInbound(ib *model.Inbound) (Instance, bool) {
 		DisableUDP:     parsed.DisableUDP,
 		MTU:            parsed.MTU,
 		MTUDiscovery:   parsed.MTUDiscovery,
+		MobileDPD:      parsed.MobileDPD,
 		Locations:      locations,
 		CertFile:       strings.TrimSpace(parsed.CertFile),
 		KeyFile:        strings.TrimSpace(parsed.KeyFile),

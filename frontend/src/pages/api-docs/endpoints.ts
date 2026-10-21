@@ -1658,15 +1658,15 @@ export const sections: readonly Section[] = [
 
   {
     id: 'relays',
-    title: 'Exit servers',
+    title: 'Exit and entry servers',
     description:
-      'Plain servers in other countries that a cisco inbound can send one of its countries out through. The panel reaches each one over SSH once, installs WireGuard and a single forwarding rule, and nothing else: no panel and no accounts are installed there. Super admin only. All endpoints under /panel/api/relays.',
+      'Plain servers the panel reaches over SSH once. An exit (role "exit", the default) sits in another country: WireGuard and a single forwarding rule go on it, and a cisco inbound can send one of its countries out through it. An entry server (role "front") works the other way round: customers connect to its address, and the panel\u2019s own inbounds reach it through a Backhaul tunnel that the panel dials. Nothing else is installed on either: no panel and no accounts. Super admin only. All endpoints under /panel/api/relays.',
     endpoints: [
       {
         method: 'GET',
         path: '/panel/api/relays/list',
         summary:
-          'Every exit server with the live state of its tunnel, and which cisco inbounds already offer it as a country.',
+          'Every server with the live state of its tunnel. An exit carries which cisco inbounds already offer it as a country; an entry server carries the customer ports it forwards and, when the panel is not dialling it, what its client last said.',
       },
       {
         method: 'GET',
@@ -1678,7 +1678,8 @@ export const sections: readonly Section[] = [
         method: 'POST',
         path: '/panel/api/relays/add',
         summary:
-          'Enroll a server. The password or key is used once to install a key of the panel\u2019s own, proven to work, and then discarded; it is never stored. Returns at once while the setup runs behind it, so poll the list for the status.',
+          'Enroll a server. The password or key is used once to install a key of the panel\u2019s own, proven to work, and then discarded; it is never stored. Returns at once while the setup runs behind it, so poll the list for the status. An entry server takes role "front", a tunnelPort (3080 when omitted) and a transport (tcp when omitted); the role cannot be changed afterwards.',
+        body: '{\n  "name": "iran-front",\n  "label": "Iran",\n  "address": "203.0.113.9",\n  "sshPort": 22,\n  "sshUser": "root",\n  "password": "...",\n  "role": "front",\n  "tunnelPort": 3080,\n  "transport": "tcp"\n}',
       },
       {
         method: 'POST',

@@ -2593,24 +2593,35 @@
       "yourBrandText": "Put your company in front of thousands of server admins who open 3X-UI every day."
     },
     "relays": {
-      "title": "Exit servers",
+      "title": "Exit and entry servers",
       "add": "Add a server",
       "addTitle": "Add an exit server",
       "editTitle": "Edit an exit server",
+      "addFrontTitle": "Add an entry server",
+      "editFrontTitle": "Edit an entry server",
       "intro": "Each server here becomes a country your customers can pick",
       "introHint": "The panel reaches the server once over SSH, installs WireGuard and a single forwarding rule, and nothing else — no panel, no accounts. A cisco inbound can then offer that country in the dropdown the customer already sees.",
+      "frontsHint": "An entry server works the other way round: customers connect to its address, and the panel’s own inbounds reach it through a tunnel.",
       "empty": "No exit servers yet",
       "probeHint": "Ask this server what the internet gives it",
       "confirmDelete": "Remove {name}?",
       "confirmDeleteHint": "The panel takes its tunnel and forwarding rule off the server, so you can hand it back clean.",
       "credentialsOnce": "The password is used once",
       "credentialsOnceHint": "It installs a key of the panel’s own, proves the key works, and is then thrown away. It is never stored. If the server was created with an SSH key and has no password, paste that key instead.",
+      "frontIntro": "Customers connect to this server’s address",
+      "frontIntroHint": "The panel installs a tunnel here and carries its own inbounds through it. Every enabled inbound’s port is forwarded on its own, including inbounds added later.",
       "reachTitle": "What {name} can reach",
       "saved": "Saved. Setting the server up takes a few minutes.",
+      "forwards": "Forwards {ports}",
+      "noPorts": "No ports to forward yet",
       "summary": {
         "total": "Servers",
         "ready": "Working",
         "trouble": "Needs attention"
+      },
+      "roles": {
+        "exit": "Exit",
+        "front": "Entry"
       },
       "columns": {
         "country": "Country",
@@ -2624,7 +2635,8 @@
         "silent": "No handshake",
         "working": "Setting up",
         "error": "Failed",
-        "disabled": "Off"
+        "disabled": "Off",
+        "notConnected": "Not connected"
       },
       "fields": {
         "name": "Name",
@@ -2637,7 +2649,15 @@
         "password": "Password",
         "passwordHint": "Used once to install a key, then discarded. Leave empty when pasting a key.",
         "privateKey": "Or a private key",
-        "privateKeyHint": "For a server created with an SSH key, which usually has password login switched off."
+        "privateKeyHint": "For a server created with an SSH key, which usually has password login switched off.",
+        "role": "What this server does",
+        "roleHint": "Fixed once the server is added: an exit and an entry are installed differently.",
+        "roleExit": "Exit to its country",
+        "roleFront": "Entry for customers",
+        "tunnelPort": "Tunnel port",
+        "tunnelPortHint": "Where this server waits for the panel to dial in. Not a customer port; any free port on that server works.",
+        "transport": "Tunnel transport",
+        "transportHint": "TCP suits almost every network. Try another only when a network refuses this one."
       },
       "reach": {
         "address": "Address",

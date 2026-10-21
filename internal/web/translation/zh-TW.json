@@ -2593,24 +2593,35 @@
       "yourBrandText": "讓每天打開 3X-UI 的數千名伺服器管理員看到您的公司。"
     },
     "relays": {
-      "title": "出口伺服器",
+      "title": "出口與入口伺服器",
       "add": "新增伺服器",
       "addTitle": "新增出口伺服器",
       "editTitle": "編輯出口伺服器",
+      "addFrontTitle": "新增入口伺服器",
+      "editFrontTitle": "編輯入口伺服器",
       "intro": "這裡的每台伺服器都會成為客戶可以選擇的一個國家／地區",
       "introHint": "面板只透過 SSH 連線一次，裝上 WireGuard 與一條轉送規則，其他什麼都不裝：沒有面板，也沒有帳號。之後 cisco 入站就能在客戶已經看到的下拉清單中提供這個國家／地區。",
+      "frontsHint": "入口伺服器的方向相反：客戶連線到它的位址，面板自己的入站透過通道抵達那裡。",
       "empty": "還沒有出口伺服器",
       "probeHint": "看看網際網路對這台伺服器開放了什麼",
       "confirmDelete": "移除 {name}？",
       "confirmDeleteHint": "面板會從伺服器上撤掉通道與轉送規則，讓你乾淨地交還它。",
       "credentialsOnce": "密碼只用一次",
       "credentialsOnceHint": "它用來裝上面板自己的金鑰，驗證金鑰可用，然後就被丟棄，絕不儲存。如果伺服器是以 SSH 金鑰建立、沒有密碼，請改為貼上那把金鑰。",
+      "frontIntro": "客戶連線到這台伺服器的位址",
+      "frontIntroHint": "面板在這裡裝上一條通道，並讓自己的入站從中通過。每個已啟用入站的連接埠都會自動轉送，之後新增的入站也一樣。",
       "reachTitle": "{name} 能連到什麼",
       "saved": "已儲存。準備伺服器需要幾分鐘。",
+      "forwards": "轉送 {ports}",
+      "noPorts": "目前沒有要轉送的連接埠",
       "summary": {
         "total": "伺服器",
         "ready": "正常",
         "trouble": "需要注意"
+      },
+      "roles": {
+        "exit": "出口",
+        "front": "入口"
       },
       "columns": {
         "country": "國家／地區",
@@ -2624,7 +2635,8 @@
         "silent": "無交握",
         "working": "準備中",
         "error": "失敗",
-        "disabled": "已關閉"
+        "disabled": "已關閉",
+        "notConnected": "未連線"
       },
       "fields": {
         "name": "名稱",
@@ -2637,7 +2649,15 @@
         "password": "密碼",
         "passwordHint": "只用一次來安裝金鑰，隨後丟棄。貼上金鑰時請留空。",
         "privateKey": "或一把私密金鑰",
-        "privateKeyHint": "適用於以 SSH 金鑰建立的伺服器，這類伺服器通常已關閉密碼登入。"
+        "privateKeyHint": "適用於以 SSH 金鑰建立的伺服器，這類伺服器通常已關閉密碼登入。",
+        "role": "這台伺服器的作用",
+        "roleHint": "新增後不能變更：出口與入口伺服器的安裝方式不同。",
+        "roleExit": "通往其所在國家的出口",
+        "roleFront": "客戶的入口",
+        "tunnelPort": "通道連接埠",
+        "tunnelPortHint": "這台伺服器等待面板連入的地方。不是客戶連接埠，那台伺服器上任何空閒連接埠都可以。",
+        "transport": "通道傳輸方式",
+        "transportHint": "TCP 幾乎適合所有網路。只有某個網路拒絕它時，才嘗試其他方式。"
       },
       "reach": {
         "address": "位址",

@@ -2593,24 +2593,35 @@
       "yourBrandText": "Tampilkan perusahaan Anda kepada ribuan admin server yang membuka 3X-UI setiap hari."
     },
     "relays": {
-      "title": "Server keluar",
+      "title": "Server keluar dan masuk",
       "add": "Tambah server",
       "addTitle": "Tambah server keluar",
       "editTitle": "Ubah server keluar",
+      "addFrontTitle": "Tambah server masuk",
+      "editFrontTitle": "Ubah server masuk",
       "intro": "Setiap server di sini menjadi satu negara yang bisa dipilih pelanggan",
       "introHint": "Panel masuk sekali lewat SSH, memasang WireGuard dan satu aturan penerusan saja — tanpa panel, tanpa akun. Setelah itu inbound cisco bisa menawarkan negara tersebut di daftar yang sudah dilihat pelanggan.",
+      "frontsHint": "Server masuk bekerja sebaliknya: pelanggan terhubung ke alamatnya, dan inbound milik panel sampai ke sana lewat terowongan.",
       "empty": "Belum ada server keluar",
       "probeHint": "Tanyakan apa yang internet berikan pada server ini",
       "confirmDelete": "Hapus {name}?",
       "confirmDeleteHint": "Panel melepas terowongan dan aturan penerusannya dari server, jadi bisa dikembalikan bersih.",
       "credentialsOnce": "Kata sandi dipakai sekali saja",
       "credentialsOnceHint": "Dipakai untuk memasang kunci milik panel, dibuktikan bahwa kuncinya bekerja, lalu dibuang. Tidak pernah disimpan. Jika server dibuat dengan kunci SSH dan tidak punya kata sandi, tempel kuncinya.",
+      "frontIntro": "Pelanggan terhubung ke alamat server ini",
+      "frontIntroHint": "Panel memasang terowongan di sini dan meneruskan inbound miliknya lewat terowongan itu. Port setiap inbound yang aktif diteruskan sendiri, termasuk inbound yang ditambahkan nanti.",
       "reachTitle": "Apa yang bisa dijangkau {name}",
       "saved": "Tersimpan. Menyiapkan server butuh beberapa menit.",
+      "forwards": "Meneruskan {ports}",
+      "noPorts": "Belum ada port untuk diteruskan",
       "summary": {
         "total": "Server",
         "ready": "Bekerja",
         "trouble": "Perlu perhatian"
+      },
+      "roles": {
+        "exit": "Keluar",
+        "front": "Masuk"
       },
       "columns": {
         "country": "Negara",
@@ -2624,7 +2635,8 @@
         "silent": "Tidak menjawab",
         "working": "Menyiapkan",
         "error": "Gagal",
-        "disabled": "Mati"
+        "disabled": "Mati",
+        "notConnected": "Tidak terhubung"
       },
       "fields": {
         "name": "Nama",
@@ -2637,7 +2649,15 @@
         "password": "Kata sandi",
         "passwordHint": "Dipakai sekali untuk memasang kunci lalu dibuang. Kosongkan jika menempel kunci.",
         "privateKey": "Atau kunci privat",
-        "privateKeyHint": "Untuk server yang dibuat dengan kunci SSH, yang biasanya login sandinya dimatikan."
+        "privateKeyHint": "Untuk server yang dibuat dengan kunci SSH, yang biasanya login sandinya dimatikan.",
+        "role": "Fungsi server ini",
+        "roleHint": "Tidak bisa diubah setelah ditambahkan: server keluar dan server masuk dipasang dengan cara berbeda.",
+        "roleExit": "Keluar ke negaranya",
+        "roleFront": "Masuk untuk pelanggan",
+        "tunnelPort": "Port terowongan",
+        "tunnelPortHint": "Tempat server ini menunggu panel terhubung. Bukan port pelanggan; port bebas apa pun di server itu bisa dipakai.",
+        "transport": "Transport terowongan",
+        "transportHint": "TCP cocok untuk hampir semua jaringan. Coba yang lain hanya bila sebuah jaringan menolaknya."
       },
       "reach": {
         "address": "Alamat",

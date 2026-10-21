@@ -2593,24 +2593,35 @@
       "yourBrandText": "Muestra tu empresa a miles de administradores de servidores que abren 3X-UI cada día."
     },
     "relays": {
-      "title": "Servidores de salida",
+      "title": "Servidores de salida y de entrada",
       "add": "Añadir un servidor",
       "addTitle": "Añadir servidor de salida",
       "editTitle": "Editar servidor de salida",
+      "addFrontTitle": "Añadir servidor de entrada",
+      "editFrontTitle": "Editar servidor de entrada",
       "intro": "Cada servidor aquí se convierte en un país que el cliente puede elegir",
       "introHint": "El panel entra una vez por SSH, instala WireGuard y una sola regla de reenvío, nada más: ni panel ni cuentas. Después un inbound cisco puede ofrecer ese país en la misma lista que el cliente ya ve.",
+      "frontsHint": "Un servidor de entrada funciona al revés: los clientes se conectan a su dirección y los inbounds del propio panel le llegan por un túnel.",
       "empty": "Aún no hay servidores de salida",
       "probeHint": "Pregunta a este servidor qué le da internet",
       "confirmDelete": "¿Quitar {name}?",
       "confirmDeleteHint": "El panel retira del servidor su túnel y su regla de reenvío, para que lo devuelvas limpio.",
       "credentialsOnce": "La contraseña se usa una sola vez",
       "credentialsOnceHint": "Instala una clave propia del panel, comprueba que funciona y después la descarta. Nunca se guarda. Si el servidor se creó con una clave SSH y no tiene contraseña, pega esa clave.",
+      "frontIntro": "Los clientes se conectan a la dirección de este servidor",
+      "frontIntroHint": "El panel instala aquí un túnel y lleva por él sus propios inbounds. El puerto de cada inbound activo se reenvía solo, también el de los inbounds que se añadan después.",
       "reachTitle": "Qué alcanza {name}",
       "saved": "Guardado. Preparar el servidor tarda unos minutos.",
+      "forwards": "Reenvía {ports}",
+      "noPorts": "Aún no hay puertos que reenviar",
       "summary": {
         "total": "Servidores",
         "ready": "Funcionando",
         "trouble": "Requiere atención"
+      },
+      "roles": {
+        "exit": "Salida",
+        "front": "Entrada"
       },
       "columns": {
         "country": "País",
@@ -2624,7 +2635,8 @@
         "silent": "Sin respuesta",
         "working": "Preparando",
         "error": "Falló",
-        "disabled": "Apagado"
+        "disabled": "Apagado",
+        "notConnected": "Sin conexión"
       },
       "fields": {
         "name": "Nombre",
@@ -2637,7 +2649,15 @@
         "password": "Contraseña",
         "passwordHint": "Se usa una vez para instalar una clave y luego se descarta. Vacío si pegas una clave.",
         "privateKey": "O una clave privada",
-        "privateKeyHint": "Para un servidor creado con clave SSH, donde el acceso por contraseña suele estar desactivado."
+        "privateKeyHint": "Para un servidor creado con clave SSH, donde el acceso por contraseña suele estar desactivado.",
+        "role": "Qué hace este servidor",
+        "roleHint": "No se cambia después de añadirlo: un servidor de salida y uno de entrada se instalan de forma distinta.",
+        "roleExit": "Salida a su país",
+        "roleFront": "Entrada para los clientes",
+        "tunnelPort": "Puerto del túnel",
+        "tunnelPortHint": "Donde este servidor espera a que el panel se conecte. No es un puerto de clientes; sirve cualquier puerto libre de ese servidor.",
+        "transport": "Transporte del túnel",
+        "transportHint": "TCP funciona en casi cualquier red. Prueba otro solo cuando una red rechace este."
       },
       "reach": {
         "address": "Dirección",

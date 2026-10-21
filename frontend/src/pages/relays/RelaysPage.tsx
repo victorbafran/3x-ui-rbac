@@ -12,8 +12,10 @@ import {
   InputNumber,
   Layout,
   Modal,
+  Radio,
   Result,
   Row,
+  Select,
   Space,
   Spin,
   Statistic,
@@ -38,19 +40,25 @@ import AppSidebar from '@/layouts/AppSidebar';
 import { setMessageInstance } from '@/utils/messageBus';
 import { useRelaysQuery } from '@/api/queries/useRelaysQuery';
 import { useRelayMutations } from '@/api/queries/useRelayMutations';
+import { DEFAULT_TUNNEL_PORT, TUNNEL_TRANSPORTS } from '@/schemas/relay';
 import type { Reachability, Relay, RelayFormValues } from '@/schemas/relay';
 
-// A relay is a plain server in another country. The panel reaches it over SSH
-// once, installs WireGuard and one forwarding rule, and from then on a cisco
-// inbound can offer that country in the dropdown its customers already see.
-// Nothing of this panel is installed there.
+// A relay is a plain server the panel reaches over SSH once. An exit sits in
+// another country: WireGuard and one forwarding rule go on it, and a cisco
+// inbound can then offer that country in the dropdown its customers already
+// see. A front works the other way round: customers connect to its address,
+// and the panel's own inbounds reach it through a tunnel. Nothing of this
+// panel is installed on either.
 
 function statusTag(r: Relay, t: (k: string) => string) {
   if (!r.enabled) return <Tag>{t('pages.relays.status.disabled')}</Tag>;
   switch (r.status) {
     case 'ready':
-      return r.healthy ? (
-        <Tag color="success">{t('pages.relays.status.ready')}</Tag>
+      if (r.healthy) return <Tag color="success">{t('pages.relays.status.ready')}</Tag>;
+      // A front has no WireGuard handshake to be missing; what it can lack is
+      // the panel's connection to it.
+      return r.role === 'front' ? (
+        <Tag color="warning">{t('pages.relays.status.notConnected')}</Tag>
       ) : (
         <Tag color="warning">{t('pages.relays.status.silent')}</Tag>
       );
@@ -93,6 +101,8 @@ export default function RelaysPage() {
   const [editing, setEditing] = useState<Relay | null>(null);
   const [reach, setReach] = useState<{ relay: Relay; result: Reachability } | null>(null);
   const [form] = Form.useForm<RelayFormValues>();
+  const role = Form.useWatch('role', form);
+  const isFront = editing ? editing.role === 'front' : role === 'front';
 
   const summary = useMemo(
     () => ({
@@ -106,7 +116,13 @@ export default function RelaysPage() {
   const onAdd = useCallback(() => {
     setEditing(null);
     form.resetFields();
-    form.setFieldsValue({ sshPort: 22, sshUser: 'root' } as RelayFormValues);
+    form.setFieldsValue({
+      sshPort: 22,
+      sshUser: 'root',
+      role: 'exit',
+      tunnelPort: DEFAULT_TUNNEL_PORT,
+      transport: 'tcp',
+    } as RelayFormValues);
     setFormOpen(true);
   }, [form]);
 
@@ -120,6 +136,9 @@ export default function RelaysPage() {
         address: r.address,
         sshPort: r.sshPort,
         sshUser: r.sshUser,
+        role: r.role,
+        tunnelPort: r.tunnelPort || DEFAULT_TUNNEL_PORT,
+        transport: r.transport || 'tcp',
       } as RelayFormValues);
       setFormOpen(true);
     },
@@ -172,6 +191,9 @@ export default function RelaysPage() {
         <Space orientation="vertical" size={0}>
           <strong>{r.label || r.name}</strong>
           {r.label ? <span style={{ opacity: 0.6, fontSize: 12 }}>{r.name}</span> : null}
+          <Tag color={r.role === 'front' ? 'blue' : undefined} style={{ marginTop: 2 }}>
+            {r.role === 'front' ? t('pages.relays.roles.front') : t('pages.relays.roles.exit')}
+          </Tag>
         </Space>
       ),
     },
@@ -182,7 +204,8 @@ export default function RelaysPage() {
         <Space orientation="vertical" size={0}>
           <span>{r.address}</span>
           <span style={{ opacity: 0.6, fontSize: 12 }}>
-            {r.sshUser}@{r.sshPort} · {r.interface}
+            {r.sshUser}@{r.sshPort} ·{' '}
+            {r.role === 'front' ? `${r.transport}:${r.tunnelPort}` : r.interface}
           </span>
         </Space>
       ),
@@ -201,14 +224,33 @@ export default function RelaysPage() {
               </span>
             </Tooltip>
           ) : null}
+          {r.role === 'front' && r.status === 'ready' && !r.tunnelUp && r.tunnelDetail ? (
+            <Tooltip title={r.tunnelDetail}>
+              <span style={{ fontSize: 12, opacity: 0.7, cursor: 'help' }}>
+                {r.tunnelDetail.slice(0, 48)}
+                {r.tunnelDetail.length > 48 ? '…' : ''}
+              </span>
+            </Tooltip>
+          ) : null}
         </Space>
       ),
     },
     {
       title: t('pages.relays.columns.traffic'),
       key: 'traffic',
-      render: (_: unknown, r: Relay) =>
-        r.tunnelUp ? `↓ ${bytes(r.received)} · ↑ ${bytes(r.sent)}` : '—',
+      render: (_: unknown, r: Relay) => {
+        // A front has no counters of its own to show. What the operator needs
+        // is which customer ports it opens, because a port missing here is a
+        // customer who cannot connect through it.
+        if (r.role === 'front') {
+          return r.forwardedPorts.length ? (
+            t('pages.relays.forwards', { ports: r.forwardedPorts.join(', ') })
+          ) : (
+            <span style={{ opacity: 0.5 }}>{t('pages.relays.noPorts')}</span>
+          );
+        }
+        return r.tunnelUp ? `↓ ${bytes(r.received)} · ↑ ${bytes(r.sent)}` : '—';
+      },
     },
     {
       title: t('pages.relays.columns.usedBy'),
@@ -217,7 +259,11 @@ export default function RelaysPage() {
       // for any reason, so the component cannot assume the shape it asked
       // for. This field arriving as null is exactly how the page first died.
       render: (_: unknown, r: Relay) =>
-        r.inUseBy?.length ? r.inUseBy.join(', ') : <span style={{ opacity: 0.5 }}>—</span>,
+        r.role !== 'front' && r.inUseBy?.length ? (
+          r.inUseBy.join(', ')
+        ) : (
+          <span style={{ opacity: 0.5 }}>—</span>
+        ),
     },
     {
       title: '',
@@ -310,7 +356,11 @@ export default function RelaysPage() {
                         showIcon
                         style={{ marginBottom: 12 }}
                         title={t('pages.relays.intro')}
-                        description={t('pages.relays.introHint')}
+                        description={
+                          <>
+                            {t('pages.relays.introHint')} {t('pages.relays.frontsHint')}
+                          </>
+                        }
                       />
                       <Table
                         rowKey="id"
@@ -331,7 +381,15 @@ export default function RelaysPage() {
 
       <Modal
         open={formOpen}
-        title={editing ? t('pages.relays.editTitle') : t('pages.relays.addTitle')}
+        title={
+          isFront
+            ? editing
+              ? t('pages.relays.editFrontTitle')
+              : t('pages.relays.addFrontTitle')
+            : editing
+              ? t('pages.relays.editTitle')
+              : t('pages.relays.addTitle')
+        }
         onCancel={() => setFormOpen(false)}
         onOk={onSubmit}
         confirmLoading={createMut.isPending || updateMut.isPending}
@@ -345,6 +403,28 @@ export default function RelaysPage() {
           description={t('pages.relays.credentialsOnceHint')}
         />
         <Form form={form} layout="vertical">
+          <Form.Item
+            name="role"
+            label={t('pages.relays.fields.role')}
+            tooltip={t('pages.relays.fields.roleHint')}
+          >
+            {/* The backend refuses to turn one into the other, because each is
+                installed differently, so an edit shows the role but cannot
+                change it. */}
+            <Radio.Group disabled={editing !== null}>
+              <Radio.Button value="exit">{t('pages.relays.fields.roleExit')}</Radio.Button>
+              <Radio.Button value="front">{t('pages.relays.fields.roleFront')}</Radio.Button>
+            </Radio.Group>
+          </Form.Item>
+          {isFront ? (
+            <Alert
+              type="info"
+              showIcon
+              style={{ marginBottom: 12 }}
+              title={t('pages.relays.frontIntro')}
+              description={t('pages.relays.frontIntroHint')}
+            />
+          ) : null}
           <Form.Item
             name="name"
             label={t('pages.relays.fields.name')}
@@ -379,6 +459,33 @@ export default function RelaysPage() {
               </Form.Item>
             </Col>
           </Row>
+          {isFront ? (
+            <Row gutter={12}>
+              <Col span={12}>
+                <Form.Item
+                  name="tunnelPort"
+                  label={t('pages.relays.fields.tunnelPort')}
+                  tooltip={t('pages.relays.fields.tunnelPortHint')}
+                >
+                  <InputNumber
+                    min={1}
+                    max={65535}
+                    style={{ width: '100%' }}
+                    placeholder={String(DEFAULT_TUNNEL_PORT)}
+                  />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  name="transport"
+                  label={t('pages.relays.fields.transport')}
+                  tooltip={t('pages.relays.fields.transportHint')}
+                >
+                  <Select options={TUNNEL_TRANSPORTS.map((v) => ({ value: v, label: v }))} />
+                </Form.Item>
+              </Col>
+            </Row>
+          ) : null}
           <Form.Item
             name="password"
             label={t('pages.relays.fields.password')}

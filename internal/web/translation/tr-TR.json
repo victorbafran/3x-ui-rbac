@@ -2593,24 +2593,35 @@
       "yourBrandText": "Şirketinizi her gün 3X-UI açan binlerce sunucu yöneticisinin önüne çıkarın."
     },
     "relays": {
-      "title": "Çıkış sunucuları",
+      "title": "Çıkış ve giriş sunucuları",
       "add": "Sunucu ekle",
       "addTitle": "Çıkış sunucusu ekle",
       "editTitle": "Çıkış sunucusunu düzenle",
+      "addFrontTitle": "Giriş sunucusu ekle",
+      "editFrontTitle": "Giriş sunucusunu düzenle",
       "intro": "Buradaki her sunucu, müşterinin seçebileceği bir ülke olur",
       "introHint": "Panel sunucuya bir kez SSH ile girer, WireGuard ve tek bir yönlendirme kuralı kurar, başka hiçbir şey yapmaz: ne panel ne hesap. Sonrasında bir cisco gelen bağlantısı o ülkeyi müşterinin zaten gördüğü listede sunabilir.",
+      "frontsHint": "Giriş sunucusu tersine çalışır: müşteriler onun adresine bağlanır, panelin kendi gelen bağlantıları ona bir tünelle ulaşır.",
       "empty": "Henüz çıkış sunucusu yok",
       "probeHint": "Bu sunucuya internetin ne verdiğini sor",
       "confirmDelete": "{name} kaldırılsın mı?",
       "confirmDeleteHint": "Panel tünelini ve yönlendirme kuralını sunucudan kaldırır, böylece temiz teslim edebilirsiniz.",
       "credentialsOnce": "Parola yalnızca bir kez kullanılır",
       "credentialsOnceHint": "Panelin kendi anahtarını kurar, anahtarın çalıştığını kanıtlar ve sonra parolayı atar. Hiçbir zaman saklanmaz. Sunucu bir SSH anahtarıyla oluşturulduysa ve parolası yoksa, onun yerine o anahtarı yapıştırın.",
+      "frontIntro": "Müşteriler bu sunucunun adresine bağlanır",
+      "frontIntroHint": "Panel buraya bir tünel kurar ve kendi gelen bağlantılarını onun içinden geçirir. Etkin her gelen bağlantının portu kendiliğinden yönlendirilir, sonradan eklenenler de dahil.",
       "reachTitle": "{name} neye erişebiliyor",
       "saved": "Kaydedildi. Sunucunun hazırlanması birkaç dakika sürer.",
+      "forwards": "Yönlendirilen: {ports}",
+      "noPorts": "Henüz yönlendirilecek port yok",
       "summary": {
         "total": "Sunucular",
         "ready": "Çalışıyor",
         "trouble": "İlgi gerekiyor"
+      },
+      "roles": {
+        "exit": "Çıkış",
+        "front": "Giriş"
       },
       "columns": {
         "country": "Ülke",
@@ -2624,7 +2635,8 @@
         "silent": "Yanıt yok",
         "working": "Hazırlanıyor",
         "error": "Başarısız",
-        "disabled": "Kapalı"
+        "disabled": "Kapalı",
+        "notConnected": "Bağlı değil"
       },
       "fields": {
         "name": "Ad",
@@ -2637,7 +2649,15 @@
         "password": "Parola",
         "passwordHint": "Anahtar kurmak için bir kez kullanılır, sonra atılır. Anahtar yapıştıracaksanız boş bırakın.",
         "privateKey": "Ya da özel anahtar",
-        "privateKeyHint": "SSH anahtarıyla oluşturulmuş, parolayla girişi genelde kapalı bir sunucu için."
+        "privateKeyHint": "SSH anahtarıyla oluşturulmuş, parolayla girişi genelde kapalı bir sunucu için.",
+        "role": "Bu sunucunun görevi",
+        "roleHint": "Eklendikten sonra değişmez: çıkış ve giriş sunucuları farklı kurulur.",
+        "roleExit": "Kendi ülkesine çıkış",
+        "roleFront": "Müşteriler için giriş",
+        "tunnelPort": "Tünel portu",
+        "tunnelPortHint": "Bu sunucunun panelin bağlanmasını beklediği yer. Müşteri portu değildir; o sunucudaki herhangi bir boş port olur.",
+        "transport": "Tünel taşıması",
+        "transportHint": "TCP neredeyse her ağda çalışır. Başkasını yalnızca bir ağ bunu reddettiğinde deneyin."
       },
       "reach": {
         "address": "Adres",

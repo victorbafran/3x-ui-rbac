@@ -2593,24 +2593,35 @@
       "yourBrandText": "Đưa công ty bạn đến hàng nghìn quản trị viên máy chủ mở 3X-UI mỗi ngày."
     },
     "relays": {
-      "title": "Máy chủ lối ra",
+      "title": "Máy chủ lối ra và lối vào",
       "add": "Thêm máy chủ",
       "addTitle": "Thêm máy chủ lối ra",
       "editTitle": "Sửa máy chủ lối ra",
+      "addFrontTitle": "Thêm máy chủ lối vào",
+      "editFrontTitle": "Sửa máy chủ lối vào",
       "intro": "Mỗi máy chủ ở đây trở thành một quốc gia khách có thể chọn",
       "introHint": "Bảng điều khiển vào máy chủ một lần qua SSH, cài WireGuard và một quy tắc chuyển tiếp duy nhất, không gì khác: không bảng điều khiển, không tài khoản. Sau đó một inbound cisco có thể cung cấp quốc gia đó trong chính danh sách khách đã thấy.",
+      "frontsHint": "Máy chủ lối vào hoạt động ngược lại: khách kết nối tới địa chỉ của nó, còn các inbound của chính bảng điều khiển đi tới đó qua một đường hầm.",
       "empty": "Chưa có máy chủ lối ra",
       "probeHint": "Hỏi xem internet cho máy chủ này những gì",
       "confirmDelete": "Gỡ {name}?",
       "confirmDeleteHint": "Bảng điều khiển gỡ đường hầm và quy tắc chuyển tiếp khỏi máy chủ, để bạn trả lại nó sạch sẽ.",
       "credentialsOnce": "Mật khẩu chỉ dùng một lần",
       "credentialsOnceHint": "Nó dùng để cài khóa riêng của bảng điều khiển, chứng minh khóa hoạt động, rồi mật khẩu bị bỏ đi. Không bao giờ được lưu. Nếu máy chủ tạo bằng khóa SSH và không có mật khẩu, hãy dán khóa đó thay thế.",
+      "frontIntro": "Khách kết nối tới địa chỉ của máy chủ này",
+      "frontIntroHint": "Bảng điều khiển cài một đường hầm ở đây và đưa các inbound của mình đi qua đó. Cổng của mỗi inbound đang bật được chuyển tiếp tự động, kể cả các inbound thêm sau.",
       "reachTitle": "{name} vào được những đâu",
       "saved": "Đã lưu. Chuẩn bị máy chủ mất vài phút.",
+      "forwards": "Chuyển tiếp {ports}",
+      "noPorts": "Chưa có cổng nào để chuyển tiếp",
       "summary": {
         "total": "Máy chủ",
         "ready": "Đang chạy",
         "trouble": "Cần xem lại"
+      },
+      "roles": {
+        "exit": "Lối ra",
+        "front": "Lối vào"
       },
       "columns": {
         "country": "Quốc gia",
@@ -2624,7 +2635,8 @@
         "silent": "Không phản hồi",
         "working": "Đang chuẩn bị",
         "error": "Thất bại",
-        "disabled": "Tắt"
+        "disabled": "Tắt",
+        "notConnected": "Chưa kết nối"
       },
       "fields": {
         "name": "Tên",
@@ -2637,7 +2649,15 @@
         "password": "Mật khẩu",
         "passwordHint": "Dùng một lần để cài khóa rồi bỏ đi. Để trống nếu bạn dán khóa.",
         "privateKey": "Hoặc một khóa riêng",
-        "privateKeyHint": "Dành cho máy chủ tạo bằng khóa SSH, nơi đăng nhập bằng mật khẩu thường đã tắt."
+        "privateKeyHint": "Dành cho máy chủ tạo bằng khóa SSH, nơi đăng nhập bằng mật khẩu thường đã tắt.",
+        "role": "Máy chủ này làm gì",
+        "roleHint": "Không đổi được sau khi thêm: máy chủ lối ra và lối vào được cài theo cách khác nhau.",
+        "roleExit": "Lối ra tới quốc gia của nó",
+        "roleFront": "Lối vào cho khách",
+        "tunnelPort": "Cổng đường hầm",
+        "tunnelPortHint": "Nơi máy chủ này chờ bảng điều khiển kết nối tới. Không phải cổng cho khách; cổng trống nào trên máy chủ đó cũng được.",
+        "transport": "Kiểu truyền của đường hầm",
+        "transportHint": "TCP hợp với hầu hết mọi mạng. Chỉ thử kiểu khác khi một mạng từ chối kiểu này."
       },
       "reach": {
         "address": "Địa chỉ",

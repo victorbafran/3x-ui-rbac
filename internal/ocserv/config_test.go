@@ -176,6 +176,24 @@ func TestMtuDiscoveryCanBeTurnedBackOn(t *testing.T) {
 	}
 }
 
+// mobile-dpd is how long a mobile session nobody is hearing from is kept.
+// Default thirty minutes is right on a public address; behind a front, where
+// every client is 127.0.0.1 and a returning phone cannot be recognised, it
+// has to be cut right down or ghosts pile up and fill the account.
+func TestMobileDpdDefaultsHighAndCanBeCutForATunnel(t *testing.T) {
+	def := configFor(t, Instance{Id: 1, Port: 443})
+	if !strings.Contains(def, "mobile-dpd = 1800") {
+		t.Fatalf("the default mobile-dpd is not 1800:\n%s", def)
+	}
+	low := configFor(t, Instance{Id: 1, Port: 443, MobileDPD: 90})
+	if !strings.Contains(low, "mobile-dpd = 90") {
+		t.Fatalf("a behind-tunnel inbound could not cut mobile-dpd:\n%s", low)
+	}
+	if strings.Contains(low, "mobile-dpd = 1800") {
+		t.Fatalf("the default was written alongside the override:\n%s", low)
+	}
+}
+
 // These are read once at startup, so a change has to restart the instance —
 // a rewrite of the password file alone would leave the old values running.
 func TestTuningMovesTheStructuralFingerprint(t *testing.T) {
@@ -186,6 +204,7 @@ func TestTuningMovesTheStructuralFingerprint(t *testing.T) {
 	}{
 		{"mtu", Instance{Id: 1, Port: 443, MTU: 1300}},
 		{"discovery", Instance{Id: 1, Port: 443, MTUDiscovery: true}},
+		{"mobile-dpd", Instance{Id: 1, Port: 443, MobileDPD: 90}},
 	} {
 		if base.structuralFingerprint() == tc.inst.structuralFingerprint() {
 			t.Errorf("%s did not move the structural fingerprint; ocserv would keep the old value", tc.name)

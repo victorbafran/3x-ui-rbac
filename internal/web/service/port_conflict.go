@@ -11,6 +11,8 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/amneziawgnet"
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
+	"github.com/mhsanaei/3x-ui/v3/internal/ocserv"
+	"github.com/mhsanaei/3x-ui/v3/internal/openvpn"
 	"github.com/mhsanaei/3x-ui/v3/internal/tuic"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
 
@@ -124,6 +126,22 @@ type portClaim struct {
 // portClaims is every port an inbound binds. The cisco and OpenVPN sidecars are
 // read here, not in inboundTransports, whose answer existing tags were built from.
 func portClaims(ib *model.Inbound) []portClaim {
+	switch ib.Protocol {
+	case model.Cisco:
+		switch dtls := ocserv.DTLSPort(ib); dtls {
+		case 0:
+			return []portClaim{{ib.Port, transportTCP}}
+		case ib.Port:
+			return []portClaim{{ib.Port, transportTCP | transportUDP}}
+		default:
+			return []portClaim{{ib.Port, transportTCP}, {dtls, transportUDP}}
+		}
+	case model.OpenVPN:
+		if openvpn.UsesTCP(ib) {
+			return []portClaim{{ib.Port, transportTCP}}
+		}
+		return []portClaim{{ib.Port, transportUDP}}
+	}
 	return []portClaim{{ib.Port, inboundTransports(ib.Protocol, ib.StreamSettings, ib.Settings)}}
 }
 

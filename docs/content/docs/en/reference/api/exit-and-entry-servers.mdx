@@ -41,8 +41,10 @@ _openapi:
         tunnelPort (3080 when omitted) and a transport (tcp when omitted).
         Either tool carries every inbound, TCP and UDP: Backhaul on a second UDP
         tunnel at tunnelPort + 1, BackPack on the one tunnel. The role and the
-        tool cannot be changed afterwards.'
-      url: '#enroll-a-server-the-password-or-key-is-used-once-to-install-a-key-of-the-panels-own-proven-to-work-and-then-discarded-it-is-never-stored-returns-at-once-while-the-setup-runs-behind-it-so-poll-the-list-for-the-status-an-entry-server-takes-role-front-a-tool-backhaul-the-default-or-backpack-an-optional-publicname-the-name-customers-type-which-the-inbound-form-then-offers-as-the-share-address-a-tunnelport-3080-when-omitted-and-a-transport-tcp-when-omitted-either-tool-carries-every-inbound-tcp-and-udp-backhaul-on-a-second-udp-tunnel-at-tunnelport--1-backpack-on-the-one-tunnel-the-role-and-the-tool-cannot-be-changed-afterwards'
+        tool cannot be changed afterwards. One machine is one entry server: an
+        address that is, or resolves to, an existing entry server’s is refused,
+        because each one opens every inbound’s port.'
+      url: '#enroll-a-server-the-password-or-key-is-used-once-to-install-a-key-of-the-panels-own-proven-to-work-and-then-discarded-it-is-never-stored-returns-at-once-while-the-setup-runs-behind-it-so-poll-the-list-for-the-status-an-entry-server-takes-role-front-a-tool-backhaul-the-default-or-backpack-an-optional-publicname-the-name-customers-type-which-the-inbound-form-then-offers-as-the-share-address-a-tunnelport-3080-when-omitted-and-a-transport-tcp-when-omitted-either-tool-carries-every-inbound-tcp-and-udp-backhaul-on-a-second-udp-tunnel-at-tunnelport--1-backpack-on-the-one-tunnel-the-role-and-the-tool-cannot-be-changed-afterwards-one-machine-is-one-entry-server-an-address-that-is-or-resolves-to-an-existing-entry-servers-is-refused-because-each-one-opens-every-inbounds-port'
     - depth: 2
       title: Change a server and rebuild its tunnel. New credentials re-enroll it;
         without them the stored key is kept.
@@ -85,8 +87,10 @@ _openapi:
           address), a tunnelPort (3080 when omitted) and a transport (tcp when
           omitted). Either tool carries every inbound, TCP and UDP: Backhaul on
           a second UDP tunnel at tunnelPort + 1, BackPack on the one tunnel. The
-          role and the tool cannot be changed afterwards.'
-        id: enroll-a-server-the-password-or-key-is-used-once-to-install-a-key-of-the-panels-own-proven-to-work-and-then-discarded-it-is-never-stored-returns-at-once-while-the-setup-runs-behind-it-so-poll-the-list-for-the-status-an-entry-server-takes-role-front-a-tool-backhaul-the-default-or-backpack-an-optional-publicname-the-name-customers-type-which-the-inbound-form-then-offers-as-the-share-address-a-tunnelport-3080-when-omitted-and-a-transport-tcp-when-omitted-either-tool-carries-every-inbound-tcp-and-udp-backhaul-on-a-second-udp-tunnel-at-tunnelport--1-backpack-on-the-one-tunnel-the-role-and-the-tool-cannot-be-changed-afterwards
+          role and the tool cannot be changed afterwards. One machine is one
+          entry server: an address that is, or resolves to, an existing entry
+          server’s is refused, because each one opens every inbound’s port.'
+        id: enroll-a-server-the-password-or-key-is-used-once-to-install-a-key-of-the-panels-own-proven-to-work-and-then-discarded-it-is-never-stored-returns-at-once-while-the-setup-runs-behind-it-so-poll-the-list-for-the-status-an-entry-server-takes-role-front-a-tool-backhaul-the-default-or-backpack-an-optional-publicname-the-name-customers-type-which-the-inbound-form-then-offers-as-the-share-address-a-tunnelport-3080-when-omitted-and-a-transport-tcp-when-omitted-either-tool-carries-every-inbound-tcp-and-udp-backhaul-on-a-second-udp-tunnel-at-tunnelport--1-backpack-on-the-one-tunnel-the-role-and-the-tool-cannot-be-changed-afterwards-one-machine-is-one-entry-server-an-address-that-is-or-resolves-to-an-existing-entry-servers-is-refused-because-each-one-opens-every-inbounds-port
       - content: Change a server and rebuild its tunnel. New credentials re-enroll it;
           without them the stored key is kept.
         id: change-a-server-and-rebuild-its-tunnel-new-credentials-re-enroll-it-without-them-the-stored-key-is-kept

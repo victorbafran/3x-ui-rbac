@@ -15,6 +15,7 @@ func TestPortConflict_TheSidecarsClaimWhatTheyBind(t *testing.T) {
 		offered  *model.Inbound
 		clash    bool
 		port     int
+		shared   transportBits
 	}{
 		{
 			name:     "hysteria beside cisco takes the DTLS socket",
@@ -22,6 +23,7 @@ func TestPortConflict_TheSidecarsClaimWhatTheyBind(t *testing.T) {
 			offered:  &model.Inbound{Port: 443, Protocol: model.Hysteria},
 			clash:    true,
 			port:     443,
+			shared:   transportUDP,
 		},
 		{
 			name:     "cisco beside hysteria, the other way round",
@@ -29,6 +31,7 @@ func TestPortConflict_TheSidecarsClaimWhatTheyBind(t *testing.T) {
 			offered:  &model.Inbound{Port: 443, Protocol: model.Cisco, Settings: `{}`},
 			clash:    true,
 			port:     443,
+			shared:   transportUDP,
 		},
 		{
 			name:     "with DTLS off cisco leaves UDP free",
@@ -41,6 +44,7 @@ func TestPortConflict_TheSidecarsClaimWhatTheyBind(t *testing.T) {
 			offered:  &model.Inbound{Port: 443, Protocol: model.Cisco, Settings: `{"disableUdp":true}`},
 			clash:    true,
 			port:     443,
+			shared:   transportTCP,
 		},
 		{
 			name:     "DTLS moved to its own port frees the main one for UDP",
@@ -53,6 +57,7 @@ func TestPortConflict_TheSidecarsClaimWhatTheyBind(t *testing.T) {
 			offered:  &model.Inbound{Port: 4443, Protocol: model.WireGuard},
 			clash:    true,
 			port:     4443,
+			shared:   transportUDP,
 		},
 		{
 			name:     "but only on UDP",
@@ -65,6 +70,7 @@ func TestPortConflict_TheSidecarsClaimWhatTheyBind(t *testing.T) {
 			offered:  &model.Inbound{Port: 443, Protocol: model.Cisco, Settings: `{"udpPort":4443}`},
 			clash:    true,
 			port:     4443,
+			shared:   transportUDP,
 		},
 		{
 			name:     "OpenVPN on UDP leaves TCP to a VLESS inbound",
@@ -77,6 +83,7 @@ func TestPortConflict_TheSidecarsClaimWhatTheyBind(t *testing.T) {
 			offered:  &model.Inbound{Port: 1194, Protocol: model.WireGuard},
 			clash:    true,
 			port:     1194,
+			shared:   transportUDP,
 		},
 		{
 			name:     "OpenVPN on TCP clashes with VLESS",
@@ -84,6 +91,7 @@ func TestPortConflict_TheSidecarsClaimWhatTheyBind(t *testing.T) {
 			offered:  &model.Inbound{Port: 1194, Protocol: model.VLESS, StreamSettings: `{"network":"tcp"}`},
 			clash:    true,
 			port:     1194,
+			shared:   transportTCP,
 		},
 		{
 			name:     "and leaves UDP to WireGuard",
@@ -106,8 +114,9 @@ func TestPortConflict_TheSidecarsClaimWhatTheyBind(t *testing.T) {
 				t.Fatal("the two were allowed to share a socket")
 			case !tc.clash && got != nil:
 				t.Fatalf("refused over a socket nothing holds: %s", got)
-			case tc.clash && got.Port != tc.port:
-				t.Fatalf("the refusal names port %d, want %d: %s", got.Port, tc.port, got)
+			case tc.clash && (got.Port != tc.port || got.Transports != tc.shared):
+				t.Fatalf("the refusal names port %d (%s), want %d (%s): %s",
+					got.Port, transportTagSuffix(got.Transports), tc.port, transportTagSuffix(tc.shared), got)
 			}
 		})
 	}

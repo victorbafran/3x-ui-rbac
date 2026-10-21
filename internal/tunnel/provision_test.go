@@ -10,19 +10,24 @@ import (
 // only checked "the script exists" would not notice any of them going.
 func TestTheDownloadedBinaryIsVerifiedBeforeItIsRun(t *testing.T) {
 	for what, want := range map[string]string{
-		"nothing fetches the published checksums":    "checksums.txt",
-		"the archive is never checked against them":  "sha256sum -c",
-		"a mismatch does not stop the install":       "does not match its published checksum",
-		"the version is not pinned to a known build": Release,
+		"nothing fetches the published checksums":   "checksums.txt",
+		"the archive is never checked against them": "sha256sum -c",
+		"a mismatch does not stop the install":      "does not match its published checksum",
+		"the version is not used in the url":        "$VERSION",
 	} {
 		if !strings.Contains(remoteScript, want) {
 			t.Errorf("%s: %q is missing from the install script", what, want)
 		}
 	}
-	// "latest" would hand two fronts set up months apart different binaries,
-	// which is how two ends end up disagreeing about the protocol.
+	// The version arrives as an argument, so what has to be pinned is the
+	// constant Provision passes. "latest" would hand two fronts set up months
+	// apart different binaries, which is how two ends end up disagreeing
+	// about the protocol.
 	if strings.Contains(remoteScript, "releases/latest") {
 		t.Error("the install follows latest; two fronts set up at different times would not match")
+	}
+	if !strings.HasPrefix(Release, "v") || strings.Contains(Release, "latest") {
+		t.Errorf("Release is %q, which is not one fixed published version", Release)
 	}
 }
 

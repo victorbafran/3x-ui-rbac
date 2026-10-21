@@ -36,7 +36,12 @@ export default defineConfig({
           name: 'components',
           include: ['src/test/**/*.test.tsx'],
           environment: 'jsdom',
-          setupFiles: ['./src/test/setup.ts', './src/test/setup.components.ts'],
+          // Page timers first: React's scheduler keeps the setImmediate it finds as it loads.
+          setupFiles: [
+            './src/test/setup.page-timers.ts',
+            './src/test/setup.ts',
+            './src/test/setup.components.ts',
+          ],
         },
       },
       {

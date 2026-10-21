@@ -132,3 +132,60 @@ func TestARelayNobodyUsesStillGetsAList(t *testing.T) {
 		t.Fatalf("a relay in use lost its inbound: %v", used)
 	}
 }
+
+// A blank role is an exit, because that is what every relay was before fronts
+// existed and what a client that predates the field still sends.
+func TestABlankRoleIsAnExit(t *testing.T) {
+	s := &RelayService{}
+	r, err := s.rowFrom(RelayRequest{Name: "nl", Address: "198.51.100.1"}, nil)
+	if err != nil {
+		t.Fatalf("rowFrom: %v", err)
+	}
+	if r.Role != "exit" {
+		t.Fatalf("role = %q, want exit for a relay with no role set", r.Role)
+	}
+}
+
+// A role that is neither exit nor front is a typo, and storing it would make a
+// third kind of relay nothing handles.
+func TestANonsenseRoleIsRefused(t *testing.T) {
+	s := &RelayService{}
+	_, err := s.rowFrom(RelayRequest{Name: "nl", Address: "198.51.100.1", Role: "both"}, nil)
+	if err == nil {
+		t.Fatal("a nonsense role was accepted")
+	}
+	if !strings.Contains(err.Error(), "exit or a front") {
+		t.Fatalf("refused for some other reason: %v", err)
+	}
+}
+
+// A front gets the tunnel defaults when the operator leaves them blank, and
+// its transport is validated.
+func TestAFrontTakesTheTunnelDefaults(t *testing.T) {
+	s := &RelayService{}
+	r, err := s.rowFrom(RelayRequest{Name: "ir", Address: "185.0.0.1", Role: "front"}, nil)
+	if err != nil {
+		t.Fatalf("rowFrom: %v", err)
+	}
+	if r.TunnelPort != 3080 {
+		t.Errorf("tunnel port = %d, want the default 3080", r.TunnelPort)
+	}
+	if r.Transport != "tcp" {
+		t.Errorf("transport = %q, want the default tcp", r.Transport)
+	}
+	if r.Tunnel != "backhaul" {
+		t.Errorf("tunnel = %q, want backhaul for a front", r.Tunnel)
+	}
+}
+
+// A transport Backhaul does not know would produce a tunnel that refuses to
+// start with nothing in the panel to say why, so it is caught at the form.
+func TestAFrontWithAnUnknownTransportIsRefused(t *testing.T) {
+	s := &RelayService{}
+	_, err := s.rowFrom(RelayRequest{
+		Name: "ir", Address: "185.0.0.1", Role: "front", Transport: "quic",
+	}, nil)
+	if err == nil {
+		t.Fatal("an unknown transport was accepted")
+	}
+}

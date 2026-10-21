@@ -445,7 +445,7 @@ func (s *RelayService) provisionFront(ctx context.Context, r *model.Relay) {
 		return
 	}
 
-	creds, err := frontCreds(r)
+	creds, err := frontCreds(*r)
 	if err != nil {
 		s.mark(r.Id, RelayError, err.Error())
 		return

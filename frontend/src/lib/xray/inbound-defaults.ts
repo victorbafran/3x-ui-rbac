@@ -289,6 +289,12 @@ export function createDefaultCiscoInboundSettings(): CiscoInboundSettings {
     disableUdp: false,
     maxClients: 0,
     maxSameClients: 2,
+    // Zero is the server's own default for each: MTU 1400, no discovery, and
+    // 1800 seconds before a silent phone's session is dropped. An inbound
+    // behind an entry server wants 1300 and 90, and the form says so.
+    mtu: 0,
+    mtuDiscovery: false,
+    mobileDpd: 0,
     // No countries by default: once an inbound offers any, ocserv refuses
     // every client that does not name one, so a new inbound must start with
     // the single pool it has always had.

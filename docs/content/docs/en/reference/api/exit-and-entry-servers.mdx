@@ -21,18 +21,28 @@ _openapi:
       url: '#every-server-with-the-live-state-of-its-tunnel-an-exit-carries-which-cisco-inbounds-already-offer-it-as-a-country-an-entry-server-carries-the-customer-ports-it-forwards-and-when-the-panel-is-not-dialling-it-what-its-client-last-said'
     - depth: 2
       title: 'The smaller list a cisco inbound form needs: the interface to store and
-        a name the operator recognises.'
-      url: '#the-smaller-list-a-cisco-inbound-form-needs-the-interface-to-store-and-a-name-the-operator-recognises'
+        a name the operator recognises. Exit servers only; an entry server has
+        no interface to leave through.'
+      url: '#the-smaller-list-a-cisco-inbound-form-needs-the-interface-to-store-and-a-name-the-operator-recognises-exit-servers-only-an-entry-server-has-no-interface-to-leave-through'
+    - depth: 2
+      title: 'The enabled entry servers, as the inbound form offers them for the share
+        address: id, name, label, address, publicName and whether the tunnel is
+        ready. An inbound whose share address is a front’s public name hands
+        that name to its customers in every share link, cisco login and OpenVPN
+        profile.'
+      url: '#the-enabled-entry-servers-as-the-inbound-form-offers-them-for-the-share-address-id-name-label-address-publicname-and-whether-the-tunnel-is-ready-an-inbound-whose-share-address-is-a-fronts-public-name-hands-that-name-to-its-customers-in-every-share-link-cisco-login-and-openvpn-profile'
     - depth: 2
       title: 'Enroll a server. The password or key is used once to install a key of
         the panel’s own, proven to work, and then discarded; it is never stored.
         Returns at once while the setup runs behind it, so poll the list for the
         status. An entry server takes role "front", a tool ("backhaul", the
-        default, or "backpack"), a tunnelPort (3080 when omitted) and a
-        transport (tcp when omitted). Either tool carries every inbound, TCP and
-        UDP: Backhaul on a second UDP tunnel at tunnelPort + 1, BackPack on the
-        one tunnel. The role and the tool cannot be changed afterwards.'
-      url: '#enroll-a-server-the-password-or-key-is-used-once-to-install-a-key-of-the-panels-own-proven-to-work-and-then-discarded-it-is-never-stored-returns-at-once-while-the-setup-runs-behind-it-so-poll-the-list-for-the-status-an-entry-server-takes-role-front-a-tool-backhaul-the-default-or-backpack-a-tunnelport-3080-when-omitted-and-a-transport-tcp-when-omitted-either-tool-carries-every-inbound-tcp-and-udp-backhaul-on-a-second-udp-tunnel-at-tunnelport--1-backpack-on-the-one-tunnel-the-role-and-the-tool-cannot-be-changed-afterwards'
+        default, or "backpack"), an optional publicName (the name customers
+        type, which the inbound form then offers as the share address), a
+        tunnelPort (3080 when omitted) and a transport (tcp when omitted).
+        Either tool carries every inbound, TCP and UDP: Backhaul on a second UDP
+        tunnel at tunnelPort + 1, BackPack on the one tunnel. The role and the
+        tool cannot be changed afterwards.'
+      url: '#enroll-a-server-the-password-or-key-is-used-once-to-install-a-key-of-the-panels-own-proven-to-work-and-then-discarded-it-is-never-stored-returns-at-once-while-the-setup-runs-behind-it-so-poll-the-list-for-the-status-an-entry-server-takes-role-front-a-tool-backhaul-the-default-or-backpack-an-optional-publicname-the-name-customers-type-which-the-inbound-form-then-offers-as-the-share-address-a-tunnelport-3080-when-omitted-and-a-transport-tcp-when-omitted-either-tool-carries-every-inbound-tcp-and-udp-backhaul-on-a-second-udp-tunnel-at-tunnelport--1-backpack-on-the-one-tunnel-the-role-and-the-tool-cannot-be-changed-afterwards'
     - depth: 2
       title: Change a server and rebuild its tunnel. New credentials re-enroll it;
         without them the stored key is kept.
@@ -57,18 +67,26 @@ _openapi:
           what its client last said.
         id: every-server-with-the-live-state-of-its-tunnel-an-exit-carries-which-cisco-inbounds-already-offer-it-as-a-country-an-entry-server-carries-the-customer-ports-it-forwards-and-when-the-panel-is-not-dialling-it-what-its-client-last-said
       - content: 'The smaller list a cisco inbound form needs: the interface to store
-          and a name the operator recognises.'
-        id: the-smaller-list-a-cisco-inbound-form-needs-the-interface-to-store-and-a-name-the-operator-recognises
+          and a name the operator recognises. Exit servers only; an entry server
+          has no interface to leave through.'
+        id: the-smaller-list-a-cisco-inbound-form-needs-the-interface-to-store-and-a-name-the-operator-recognises-exit-servers-only-an-entry-server-has-no-interface-to-leave-through
+      - content: 'The enabled entry servers, as the inbound form offers them for the
+          share address: id, name, label, address, publicName and whether the
+          tunnel is ready. An inbound whose share address is a front’s public
+          name hands that name to its customers in every share link, cisco login
+          and OpenVPN profile.'
+        id: the-enabled-entry-servers-as-the-inbound-form-offers-them-for-the-share-address-id-name-label-address-publicname-and-whether-the-tunnel-is-ready-an-inbound-whose-share-address-is-a-fronts-public-name-hands-that-name-to-its-customers-in-every-share-link-cisco-login-and-openvpn-profile
       - content: 'Enroll a server. The password or key is used once to install a key of
           the panel’s own, proven to work, and then discarded; it is never
           stored. Returns at once while the setup runs behind it, so poll the
           list for the status. An entry server takes role "front", a tool
-          ("backhaul", the default, or "backpack"), a tunnelPort (3080 when
-          omitted) and a transport (tcp when omitted). Either tool carries every
-          inbound, TCP and UDP: Backhaul on a second UDP tunnel at tunnelPort +
-          1, BackPack on the one tunnel. The role and the tool cannot be changed
-          afterwards.'
-        id: enroll-a-server-the-password-or-key-is-used-once-to-install-a-key-of-the-panels-own-proven-to-work-and-then-discarded-it-is-never-stored-returns-at-once-while-the-setup-runs-behind-it-so-poll-the-list-for-the-status-an-entry-server-takes-role-front-a-tool-backhaul-the-default-or-backpack-a-tunnelport-3080-when-omitted-and-a-transport-tcp-when-omitted-either-tool-carries-every-inbound-tcp-and-udp-backhaul-on-a-second-udp-tunnel-at-tunnelport--1-backpack-on-the-one-tunnel-the-role-and-the-tool-cannot-be-changed-afterwards
+          ("backhaul", the default, or "backpack"), an optional publicName (the
+          name customers type, which the inbound form then offers as the share
+          address), a tunnelPort (3080 when omitted) and a transport (tcp when
+          omitted). Either tool carries every inbound, TCP and UDP: Backhaul on
+          a second UDP tunnel at tunnelPort + 1, BackPack on the one tunnel. The
+          role and the tool cannot be changed afterwards.'
+        id: enroll-a-server-the-password-or-key-is-used-once-to-install-a-key-of-the-panels-own-proven-to-work-and-then-discarded-it-is-never-stored-returns-at-once-while-the-setup-runs-behind-it-so-poll-the-list-for-the-status-an-entry-server-takes-role-front-a-tool-backhaul-the-default-or-backpack-an-optional-publicname-the-name-customers-type-which-the-inbound-form-then-offers-as-the-share-address-a-tunnelport-3080-when-omitted-and-a-transport-tcp-when-omitted-either-tool-carries-every-inbound-tcp-and-udp-backhaul-on-a-second-udp-tunnel-at-tunnelport--1-backpack-on-the-one-tunnel-the-role-and-the-tool-cannot-be-changed-afterwards
       - content: Change a server and rebuild its tunnel. New credentials re-enroll it;
           without them the stored key is kept.
         id: change-a-server-and-rebuild-its-tunnel-new-credentials-re-enroll-it-without-them-the-stored-key-is-kept
@@ -91,7 +109,7 @@ export default function Layout(props) {
   return (
     <>
       {props.children}
-      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/relays/list","method":"get"},{"path":"/panel/api/relays/options","method":"get"},{"path":"/panel/api/relays/add","method":"post"},{"path":"/panel/api/relays/update/{id}","method":"post"},{"path":"/panel/api/relays/del/{id}","method":"post"},{"path":"/panel/api/relays/setEnable/{id}","method":"post"},{"path":"/panel/api/relays/probe/{id}","method":"post"}]} showTitle />
+      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/relays/list","method":"get"},{"path":"/panel/api/relays/options","method":"get"},{"path":"/panel/api/relays/fronts","method":"get"},{"path":"/panel/api/relays/add","method":"post"},{"path":"/panel/api/relays/update/{id}","method":"post"},{"path":"/panel/api/relays/del/{id}","method":"post"},{"path":"/panel/api/relays/setEnable/{id}","method":"post"},{"path":"/panel/api/relays/probe/{id}","method":"post"}]} showTitle />
     </>
   );
 }

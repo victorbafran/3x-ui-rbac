@@ -67,6 +67,11 @@ type Relay struct {
 	// measured on a clean path, the tunnel ran at 98% of the raw link
 	// whichever one was chosen.
 	Transport string `json:"transport" example:"tcp"`
+	// PublicName is the name customers type to connect through this front,
+	// pointed at its address. Optional, but a TLS handshake from inside Iran
+	// does not complete without a name, so a cisco customer behind a front
+	// needs one; the address alone is not enough.
+	PublicName string `json:"publicName" gorm:"column:public_name;not null;default:''" example:"tun.example.com"`
 	// TunnelToken authenticates the two ends to each other. Encrypted at rest
 	// the same way the exit's tunnel key is, and never returned to the panel
 	// UI: a tunnel whose token leaks is one anybody who finds the port can

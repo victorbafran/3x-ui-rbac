@@ -2678,7 +2678,9 @@
         "transportHint": "TCP neredeyse her ağda çalışır. Başkasını yalnızca bir ağ bunu reddettiğinde deneyin.",
         "tool": "Tünel aracı",
         "toolHint": "İkisi de her gelen bağlantıyı TCP ve UDP olarak taşır. Backhaul UDP’yi bir sonraki porttaki ikinci bir tünelde taşır; BackPack aynı tünelde taşır ve ileride panele her müşterinin gerçek adresini iletebilir. Eklendikten sonra değişmez.",
-        "udpLegHint": "Backhaul bu sunucuda UDP tüneli için {port} portunu da kullanır. Güvenlik duvarında ikisini de açın."
+        "udpLegHint": "Backhaul bu sunucuda UDP tüneli için {port} portunu da kullanır. Güvenlik duvarında ikisini de açın.",
+        "publicName": "Genel ad",
+        "publicNameHint": "Müşterilerin bu sunucu üzerinden bağlanmak için yazdığı ad; bu sunucunun adresini gösterir. İran içinden bir TLS el sıkışması ad olmadan tamamlanmaz, bu yüzden cisco müşterilerinin buna ihtiyacı vardır. Gelen bağlantı formu bunu paylaşım adresi olarak önerir, böylece bağlantılar buraya işaret eder."
       },
       "reach": {
         "address": "Adres",

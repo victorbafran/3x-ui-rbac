@@ -92,6 +92,9 @@ type RelayRequest struct {
 	// Tool is "backhaul" (the default, and what every front was before the
 	// choice) or "backpack". A front's tool is fixed once it is enrolled.
 	Tool string `json:"tool"`
+	// PublicName is the name customers type to reach a front, offered to the
+	// inbound form as the address its links should carry.
+	PublicName string `json:"publicName"`
 }
 
 // List returns every relay with the state of its tunnel.
@@ -376,6 +379,14 @@ func (s *RelayService) fillFront(r *model.Relay, req RelayRequest, base *model.R
 		}
 	}
 	r.Tunnel = string(tool)
+
+	// The same rules as an inbound's share address, because that is where
+	// this name ends up: a host or an address, no scheme and no port.
+	name, err := normalizeInboundShareHost(strings.ToLower(strings.TrimSuffix(strings.TrimSpace(req.PublicName), ".")))
+	if err != nil {
+		return fmt.Errorf("the public name %q is not a host name: %w", req.PublicName, err)
+	}
+	r.PublicName = name
 
 	port := req.TunnelPort
 	if port <= 0 {
@@ -790,6 +801,40 @@ func (s *RelayService) reconcileFront(r model.Relay) {
 	s.mark(r.Id, RelayReady, "")
 }
 
+// FrontOption is one entry server, as the inbound form offers it for the
+// address customers' links carry.
+type FrontOption struct {
+	Id         int    `json:"id"`
+	Name       string `json:"name"`
+	Label      string `json:"label"`
+	Address    string `json:"address"`
+	PublicName string `json:"publicName"`
+	Ready      bool   `json:"ready"`
+}
+
+// FrontOptions lists the enabled entry servers. An inbound carried by one
+// gives customers the front's name instead of this panel's, through the share
+// address every protocol's link, cisco login and OpenVPN profile already read.
+func (s *RelayService) FrontOptions() ([]FrontOption, error) {
+	var rows []model.Relay
+	if err := database.GetDB().Where("enabled = ? AND role = ?", true, model.RelayFront).
+		Order("name asc").Find(&rows).Error; err != nil {
+		return nil, err
+	}
+	out := make([]FrontOption, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, FrontOption{
+			Id:         r.Id,
+			Name:       r.Name,
+			Label:      r.Label,
+			Address:    r.Address,
+			PublicName: r.PublicName,
+			Ready:      r.Status == RelayReady,
+		})
+	}
+	return out, nil
+}
+
 // Options is what the cisco inbound form offers in its exit dropdown: the
 // interface to store, and a name the operator recognises.
 type RelayOption struct {
@@ -807,12 +852,28 @@ type RelayOption struct {
 }
 
 func (s *RelayService) Options() ([]RelayOption, error) {
+	out, err := s.exitOptions()
+	if err != nil {
+		return nil, err
+	}
+	return s.withThisServer(out), nil
+}
+
+// exitOptions is the enrolled exit servers, the part of Options that comes
+// from the database.
+func (s *RelayService) exitOptions() ([]RelayOption, error) {
 	var rows []model.Relay
 	if err := database.GetDB().Where("enabled = ?", true).Order("name asc").Find(&rows).Error; err != nil {
 		return nil, err
 	}
 	out := make([]RelayOption, 0, len(rows))
 	for _, r := range rows {
+		// An entry server is not a country to leave through. It has no
+		// WireGuard interface, so a country pointed at one would route its
+		// customers into an interface that does not exist.
+		if r.Role == model.RelayFront {
+			continue
+		}
 		out = append(out, RelayOption{
 			Interface:   relay.InterfaceName(r.Id),
 			Name:        r.Name,
@@ -824,7 +885,12 @@ func (s *RelayService) Options() ([]RelayOption, error) {
 		})
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Name < out[j].Name })
+	return out, nil
+}
 
+// withThisServer puts this server itself in front of the exits when its
+// country is known.
+func (s *RelayService) withThisServer(out []RelayOption) []RelayOption {
 	// This server itself, first, with an empty interface — which is exactly
 	// how a country that leaves through the panel is already stored, so
 	// nothing about the saved shape changes. Offered only when its country is
@@ -843,7 +909,7 @@ func (s *RelayService) Options() ([]RelayOption, error) {
 			Ready:       true,
 		}}, out...)
 	}
-	return out, nil
+	return out
 }
 
 // encryptRelaySecret stores the panel's tunnel key. The binding is the relay's

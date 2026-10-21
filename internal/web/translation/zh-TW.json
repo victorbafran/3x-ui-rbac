@@ -2678,7 +2678,9 @@
         "transportHint": "TCP 幾乎適合所有網路。只有某個網路拒絕它時，才嘗試其他方式。",
         "tool": "通道工具",
         "toolHint": "兩者都會轉送所有入站，TCP 和 UDP 都包括。Backhaul 用下一個連接埠上的第二條通道承載 UDP；BackPack 在同一條通道裡承載，之後還能把每位客戶的真實位址交給面板。新增後不能變更。",
-        "udpLegHint": "Backhaul 還會在這台伺服器上用連接埠 {port} 承載 UDP 通道。請在它的防火牆上把兩個連接埠都打開。"
+        "udpLegHint": "Backhaul 還會在這台伺服器上用連接埠 {port} 承載 UDP 通道。請在它的防火牆上把兩個連接埠都打開。",
+        "publicName": "公開名稱",
+        "publicNameHint": "客戶透過這台伺服器連線時輸入的名稱，指向它的位址。在伊朗境內，沒有名稱的 TLS 交握無法完成，所以 cisco 客戶需要它。入站表單隨後會把它作為分享位址推薦，讓連結指向這裡。"
       },
       "reach": {
         "address": "位址",

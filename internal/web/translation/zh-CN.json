@@ -2678,7 +2678,9 @@
         "transportHint": "TCP 几乎适合所有网络。只有某个网络拒绝它时，才尝试其他方式。",
         "tool": "隧道工具",
         "toolHint": "两者都会转发所有入站，TCP 和 UDP 都包括。Backhaul 用下一个端口上的第二条隧道承载 UDP；BackPack 在同一条隧道里承载，之后还能把每位客户的真实地址交给面板。添加后不能更改。",
-        "udpLegHint": "Backhaul 还会在这台服务器上用端口 {port} 承载 UDP 隧道。请在它的防火墙上把两个端口都打开。"
+        "udpLegHint": "Backhaul 还会在这台服务器上用端口 {port} 承载 UDP 隧道。请在它的防火墙上把两个端口都打开。",
+        "publicName": "公开名称",
+        "publicNameHint": "客户通过这台服务器连接时输入的名称，指向它的地址。在伊朗境内，没有名称的 TLS 握手无法完成，所以 cisco 客户需要它。入站表单随后会把它作为分享地址推荐，让链接指向这里。"
       },
       "reach": {
         "address": "地址",

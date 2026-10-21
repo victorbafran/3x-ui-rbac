@@ -43,6 +43,7 @@ const relays: Relay[] = [
     transport: '',
     tunnelDetail: '',
     forwardedPorts: [],
+    publicName: '',
   },
   {
     id: 2,
@@ -73,6 +74,7 @@ const relays: Relay[] = [
     transport: '',
     tunnelDetail: '',
     forwardedPorts: [],
+    publicName: '',
   },
 ];
 
@@ -97,6 +99,7 @@ const front: Relay = {
   transport: 'tcp',
   tunnelDetail: '',
   forwardedPorts: [443, 1194, 10434, 41330],
+  publicName: 'tun.example.ir',
 };
 
 const removeMut = { mutateAsync: vi.fn(async () => ({ success: true })), isPending: false };
@@ -279,6 +282,7 @@ describe('the exit servers page', () => {
       </MemoryRouter>,
     );
     const text = document.body.textContent ?? '';
+    expect(text).toContain('tun.example.ir');
     expect(text).toContain('backhaul tcp:3080 + udp:3081');
     expect(text).toContain('backpack tcp:3090');
     expect(text).not.toContain('backpack tcp:3090 + udp');

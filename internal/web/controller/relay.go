@@ -25,6 +25,7 @@ func NewRelayController(g *gin.RouterGroup) *RelayController {
 func (a *RelayController) initRouter(g *gin.RouterGroup) {
 	g.GET("/list", a.list)
 	g.GET("/options", a.options)
+	g.GET("/fronts", a.fronts)
 
 	g.POST("/add", a.add)
 	g.POST("/update/:id", a.update)
@@ -47,6 +48,17 @@ func (a *RelayController) list(c *gin.Context) {
 // status history or its last error.
 func (a *RelayController) options(c *gin.Context) {
 	rows, err := a.relayService.Options()
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "pages.relays.toasts.list"), err)
+		return
+	}
+	jsonObj(c, rows, nil)
+}
+
+// fronts feeds the inbound form's share address: the entry servers an
+// inbound's customers can be given instead of this panel's own address.
+func (a *RelayController) fronts(c *gin.Context) {
+	rows, err := a.relayService.FrontOptions()
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.relays.toasts.list"), err)
 		return

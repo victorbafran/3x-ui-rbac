@@ -2678,7 +2678,9 @@
         "transportHint": "TCP cocok untuk hampir semua jaringan. Coba yang lain hanya bila sebuah jaringan menolaknya.",
         "tool": "Alat terowongan",
         "toolHint": "Keduanya meneruskan semua inbound, TCP dan UDP. Backhaul membawa UDP lewat terowongan kedua di port berikutnya; BackPack membawanya di terowongan yang sama dan nanti bisa memberi panel alamat asli setiap pelanggan. Tidak bisa diubah setelah ditambahkan.",
-        "udpLegHint": "Backhaul juga memakai port {port} di server ini untuk terowongan UDP. Buka keduanya di firewall-nya."
+        "udpLegHint": "Backhaul juga memakai port {port} di server ini untuk terowongan UDP. Buka keduanya di firewall-nya.",
+        "publicName": "Nama publik",
+        "publicNameHint": "Nama yang diketik pelanggan untuk terhubung lewat server ini, diarahkan ke alamatnya. Jabat tangan TLS dari dalam Iran tidak selesai tanpa nama, jadi pelanggan cisco memerlukannya. Formulir inbound lalu menawarkannya sebagai alamat bagikan, agar tautan mengarah ke sini."
       },
       "reach": {
         "address": "Alamat",

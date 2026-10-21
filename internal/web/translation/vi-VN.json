@@ -2678,7 +2678,9 @@
         "transportHint": "TCP hợp với hầu hết mọi mạng. Chỉ thử kiểu khác khi một mạng từ chối kiểu này.",
         "tool": "Công cụ đường hầm",
         "toolHint": "Cả hai đều chuyển mọi inbound, cả TCP lẫn UDP. Backhaul chở UDP trên đường hầm thứ hai ở cổng kế tiếp; BackPack chở nó trên cùng đường hầm và sau này có thể đưa địa chỉ thật của từng khách cho bảng điều khiển. Không đổi được sau khi thêm.",
-        "udpLegHint": "Backhaul cũng dùng cổng {port} trên máy chủ này cho đường hầm UDP. Hãy mở cả hai trên tường lửa của nó."
+        "udpLegHint": "Backhaul cũng dùng cổng {port} trên máy chủ này cho đường hầm UDP. Hãy mở cả hai trên tường lửa của nó.",
+        "publicName": "Tên công khai",
+        "publicNameHint": "Tên khách gõ vào để kết nối qua máy chủ này, trỏ tới địa chỉ của nó. Bắt tay TLS từ bên trong Iran không hoàn tất nếu thiếu tên, nên khách dùng cisco cần nó. Biểu mẫu inbound sau đó gợi ý nó làm địa chỉ chia sẻ để các liên kết trỏ về đây."
       },
       "reach": {
         "address": "Địa chỉ",

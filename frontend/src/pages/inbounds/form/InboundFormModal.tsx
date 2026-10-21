@@ -93,6 +93,7 @@ import {
   XhttpForm,
 } from './transport';
 import { RealityForm, TlsForm } from './security';
+import { ShareAddrInput } from './ShareAddrInput';
 import { useSecurityActions } from './useSecurityActions';
 import { useInboundFallbacks } from './useInboundFallbacks';
 import FallbacksCard from './FallbacksCard';
@@ -709,7 +710,7 @@ export default function InboundFormModal({
                   t('pages.inbounds.form.shareAddrHelp'),
               }}
             >
-              <Input placeholder="edge.example.com" />
+              <ShareAddrInput />
             </FormField>
           )}
         </>

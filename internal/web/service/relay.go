@@ -547,9 +547,11 @@ func (s *RelayService) provisionFront(ctx context.Context, r *model.Relay) {
 	fields := map[string]any{
 		"status": RelayReady, "last_error": "", "last_seen": time.Now().Unix(),
 	}
-	if country, code, city, lerr := relay.Locate(ctx, relay.Server{
-		Id: r.Id, Name: r.Name, Address: r.Address, Port: r.SSHPort, User: r.SSHUser, KeyPath: r.KeyPath,
-	}); lerr == nil {
+	// A front is located by its own address, not by asking it: what a front
+	// reports about itself is where its outgoing traffic leaves, and the Iran
+	// test front's leaves through Frankfurt. Customers connect to the address.
+	if here, lerr := relay.WhereIs(ctx, r.Address); lerr == nil {
+		country, code, city := here.Country, here.CountryCode, here.City
 		fields["country"] = country
 		fields["country_code"] = code
 		fields["city"] = city

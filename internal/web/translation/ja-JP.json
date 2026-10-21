@@ -778,7 +778,7 @@
         "ciscoMaxSameClients": "アカウントあたりの端末数",
         "ciscoMaxSameClientsHint": "一つのアカウントを同時に使える端末数です。0 は既定値 2 を使います。",
         "ciscoCertFile": "証明書ファイル",
-        "ciscoCertFileHint": "両方を空にするとパネルが自己署名の RSA 証明書を生成して再利用します。鍵は RSA である必要があります。公式の Cisco Secure Client は ECDSA 鍵では接続できません。",
+        "ciscoCertFileHint": "両方を空にするとパネルが自己署名の RSA 証明書を生成して再利用します。RSA 鍵を使ってください。Cisco Secure Client の一部のバージョンは ECDSA の暗号をまったく提示せず、証明書が届く前に接続をあきらめます。",
         "ciscoKeyFile": "秘密鍵ファイル",
         "ciscoUdpPort": "DTLS ポート (UDP)",
         "ciscoUdpPortHint": "Cisco の速さは UDP 上の DTLS によるものです。0 のままなら TCP と同じポートを使います。その UDP ポートが塞がれていて別が通る場合だけ変更してください。",
@@ -833,7 +833,19 @@
         "peerNumberConfig": "Peer {n} 設定"
       },
       "sniffingDestOverride": "宛先のオーバーライド",
-      "advancedTitle": "詳細設定"
+      "advancedTitle": "詳細設定",
+      "certIssue": {
+        "button": "証明書を取得",
+        "title": "Let’s Encrypt から証明書を取得",
+        "explain": "各名前はポート 80 がこのパネルに届くようにしてください",
+        "explainHint": "Let’s Encrypt は、名前が指すアドレスのポート 80 からファイルを取得して名前を確認します。申請の前に、各名前をこのパネルか入口サーバーに向けてください。証明書は期限の 1 か月前に自動で更新され、VPN サーバーは新しい証明書を自分で読み込みます。",
+        "names": "名前",
+        "namesHint": "お客様が入力する名前を、証明書に含めたい数だけ入れてください。最初の名前は保存先フォルダーの名前にもなります。",
+        "issue": "証明書を取得する",
+        "done": "{names} の証明書、{date} まで有効",
+        "reused": "このパネルには {names} の証明書（{date} まで有効）がすでにあったので、それを再利用しました",
+        "toast": "証明書を取得"
+      }
     },
     "clients": {
       "tabBasics": "基本",

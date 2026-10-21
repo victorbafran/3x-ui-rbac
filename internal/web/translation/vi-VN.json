@@ -778,7 +778,7 @@
         "ciscoMaxSameClients": "Số thiết bị mỗi tài khoản",
         "ciscoMaxSameClientsHint": "Bao nhiêu thiết bị được dùng chung một tài khoản cùng lúc. 0 dùng giá trị mặc định 2.",
         "ciscoCertFile": "Tệp chứng chỉ",
-        "ciscoCertFileHint": "Để trống cả hai thì bảng điều khiển tạo một chứng chỉ RSA tự ký và dùng lại. Khóa phải là RSA: Cisco Secure Client chính thức không kết nối được với khóa ECDSA.",
+        "ciscoCertFileHint": "Để trống cả hai thì bảng điều khiển tạo một chứng chỉ RSA tự ký và dùng lại. Hãy dùng khóa RSA: một số phiên bản Cisco Secure Client không đưa ra bất kỳ mã hóa ECDSA nào và bỏ cuộc trước khi chứng chỉ được gửi.",
         "ciscoKeyFile": "Tệp khóa riêng",
         "ciscoUdpPort": "Cổng DTLS (UDP)",
         "ciscoUdpPortHint": "Tốc độ của Cisco đến từ DTLS chạy trên UDP. Để 0 để dùng chung cổng với TCP; chỉ đổi khi cổng UDP đó bị chặn còn cổng khác thì không.",
@@ -833,7 +833,19 @@
         "peerNumberConfig": "Cấu hình Peer {n}"
       },
       "sniffingDestOverride": "Ghi đè đích",
-      "advancedTitle": "Cài đặt nâng cao"
+      "advancedTitle": "Cài đặt nâng cao",
+      "certIssue": {
+        "button": "Lấy chứng chỉ",
+        "title": "Lấy chứng chỉ từ Let’s Encrypt",
+        "explain": "Mỗi tên phải đưa cổng 80 về đúng bảng điều khiển này",
+        "explainHint": "Let’s Encrypt kiểm tra một tên bằng cách tải một tệp từ cổng 80 của địa chỉ mà tên đó trỏ tới. Hãy trỏ mỗi tên tới bảng điều khiển này, hoặc tới một máy chủ lối vào, trước khi yêu cầu. Chứng chỉ tự gia hạn một tháng trước khi hết hạn, và máy chủ VPN tự nhận chứng chỉ mới.",
+        "names": "Tên",
+        "namesHint": "Các tên khách hàng gõ vào, bao nhiêu tên mà chứng chỉ cần bao phủ. Tên đầu tiên cũng là tên thư mục lưu chứng chỉ.",
+        "issue": "Lấy chứng chỉ",
+        "done": "Chứng chỉ cho {names}, hiệu lực đến {date}",
+        "reused": "Bảng điều khiển đã có chứng chỉ cho {names}, hiệu lực đến {date}, nên được dùng lại",
+        "toast": "Lấy chứng chỉ"
+      }
     },
     "clients": {
       "tabBasics": "Cơ bản",

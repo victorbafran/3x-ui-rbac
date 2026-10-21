@@ -778,7 +778,7 @@
         "ciscoMaxSameClients": "Hesap başına cihaz",
         "ciscoMaxSameClientsHint": "Bir hesabı aynı anda kaç cihaz kullanabilir. 0, varsayılan olan 2'yi kullanır.",
         "ciscoCertFile": "Sertifika dosyası",
-        "ciscoCertFileHint": "İkisini de boş bırakırsanız panel kendinden imzalı bir RSA sertifikası üretir ve onu yeniden kullanır. Anahtar RSA olmalı: resmi Cisco Secure Client bir ECDSA anahtarına bağlanamaz.",
+        "ciscoCertFileHint": "İkisini de boş bırakırsanız panel kendinden imzalı bir RSA sertifikası üretir ve onu yeniden kullanır. RSA anahtarı kullanın: Cisco Secure Client'ın bazı sürümleri hiç ECDSA şifresi sunmaz ve sertifika gelmeden vazgeçer.",
         "ciscoKeyFile": "Özel anahtar dosyası",
         "ciscoUdpPort": "DTLS portu (UDP)",
         "ciscoUdpPortHint": "Cisco'nun hızı UDP üzerinden çalışan DTLS'ten gelir. 0 bırakırsanız TCP ile aynı port kullanılır; yalnızca o UDP portu kapalı ve başka biri açıksa değiştirin.",
@@ -833,7 +833,19 @@
         "peerNumberConfig": "Peer {n} Yapılandırması"
       },
       "sniffingDestOverride": "Hedef geçersiz kılma",
-      "advancedTitle": "Gelişmiş Ayarlar"
+      "advancedTitle": "Gelişmiş Ayarlar",
+      "certIssue": {
+        "button": "Sertifika al",
+        "title": "Let’s Encrypt’ten sertifika al",
+        "explain": "Her ad 80 numaralı portu bu panele ulaştırmalı",
+        "explainHint": "Let’s Encrypt bir adı, adın gösterdiği adresin 80 numaralı portundan bir dosya çekerek doğrular. İstemeden önce her adı bu panele ya da bir giriş sunucusuna yönlendirin. Sertifika süresi dolmadan bir ay önce kendiliğinden yenilenir ve VPN sunucusu yenisini kendisi alır.",
+        "names": "Adlar",
+        "namesHint": "Müşterilerin yazdığı adlar, sertifikanın kapsaması gereken kadar. İlk ad, sertifikanın saklandığı klasörün de adıdır.",
+        "issue": "Sertifikayı al",
+        "done": "{names} için sertifika, {date} tarihine kadar geçerli",
+        "reused": "Bu panelde {names} için {date} tarihine kadar geçerli bir sertifika zaten vardı, o yeniden kullanıldı",
+        "toast": "Sertifika al"
+      }
     },
     "clients": {
       "tabBasics": "Temel",

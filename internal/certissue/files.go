@@ -18,6 +18,8 @@ import (
 	"path/filepath"
 	"sync"
 	"time"
+
+	"github.com/mhsanaei/3x-ui/v3/internal/web/network"
 )
 
 const (
@@ -183,7 +185,7 @@ func (c *challengeServer) listen(ctx context.Context, addr string) (stop func(),
 			"so whatever holds it has to be stopped while the certificate is issued: %w", err)
 	}
 	srv := &http.Server{Handler: c, ReadHeaderTimeout: 10 * time.Second}
-	go func() { _ = srv.Serve(ln) }()
+	go network.ServeHTTP(srv, ln, "certificate challenge")
 	return func() {
 		shutdown, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()

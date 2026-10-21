@@ -20,6 +20,27 @@ func (r Role) Valid() bool {
 	}
 }
 
+// RelayRole is which way the traffic goes through a relay, which is the whole
+// difference between the two kinds of machine the panel provisions.
+//
+// An exit changes where a customer appears to be: the panel sends their
+// traffic out through it. A front changes where they connect: it accepts them
+// in a country they can reach and carries them to the panel. The enrollment,
+// the key, the country lookup and the health reporting are the same for both,
+// which is why they are one table rather than two.
+type RelayRole string
+
+const (
+	// RelayExit is the default, so every relay enrolled before this existed
+	// keeps meaning exactly what it meant.
+	RelayExit  RelayRole = "exit"
+	RelayFront RelayRole = "front"
+)
+
+func (r RelayRole) Valid() bool {
+	return r == RelayExit || r == RelayFront
+}
+
 // Relay is a remote tunnel host the panel provisions over SSH. The SSH password
 // is used once at enrollment and never stored; only KeyPath outlives it.
 type Relay struct {
@@ -30,6 +51,27 @@ type Relay struct {
 	SSHUser   string `json:"sshUser" gorm:"not null;default:root" example:"root"`
 	KeyPath   string `json:"keyPath" gorm:"not null" example:"/etc/x-ui/relay-keys/relay-tehran-1"`
 	Tunnel    string `json:"tunnel" gorm:"not null;default:unknown" example:"backhaul"`
+
+	// Role is exit or front. Defaulted in the column so a database written
+	// before fronts existed reads back as a table full of exits, which is
+	// what those rows are.
+	Role RelayRole `json:"role" gorm:"not null;default:exit" example:"front"`
+
+	// The rest of this block is a front's and is left empty on an exit.
+	//
+	// TunnelPort is where the front listens for the panel to dial in. It is
+	// not a customer port: nothing but the panel should ever reach it.
+	TunnelPort int `json:"tunnelPort" gorm:"column:tunnel_port" example:"3080"`
+	// Transport is how the tunnel carries its traffic. Offered because a
+	// network that blocks one may pass another — not as a speed control:
+	// measured on a clean path, the tunnel ran at 98% of the raw link
+	// whichever one was chosen.
+	Transport string `json:"transport" example:"tcp"`
+	// TunnelToken authenticates the two ends to each other. Encrypted at rest
+	// the same way the exit's tunnel key is, and never returned to the panel
+	// UI: a tunnel whose token leaks is one anybody who finds the port can
+	// join.
+	TunnelToken string `json:"-" gorm:"column:tunnel_token"`
 	NodeId    int    `json:"nodeId" gorm:"index" example:"2"`
 	Status    string `json:"status" gorm:"not null;default:pending" example:"pending"`
 	LastError string `json:"lastError"`

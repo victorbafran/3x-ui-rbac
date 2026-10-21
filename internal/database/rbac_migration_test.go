@@ -1,6 +1,8 @@
 package database
 
 import (
+	"bytes"
+	"encoding/json"
 	"path/filepath"
 	"testing"
 
@@ -117,6 +119,67 @@ func TestFreshInstallSeedsSuperAdmin(t *testing.T) {
 
 // The relay table must never gain a password column: the enrollment password
 // is used once and dropped, so a DB dump cannot carry relay root access.
+// A relay enrolled before fronts existed is an exit, and the migration has to
+// say so. Reading those rows back as anything else would point the panel's
+// customers at a machine that was never meant to accept them, or stop sending
+// traffic out through one that was.
+func TestRelaysEnrolledBeforeFrontsExistedAreStillExits(t *testing.T) {
+	dbPath := filepath.Join(t.TempDir(), "x-ui.db")
+	if err := InitDB(dbPath); err != nil {
+		t.Fatalf("InitDB: %v", err)
+	}
+	t.Cleanup(func() { _ = CloseDB() })
+
+	db := GetDB()
+	// Written the way a pre-front panel wrote them: nothing in the new
+	// columns at all.
+	if err := db.Exec(
+		"INSERT INTO relays (id, name, address, ssh_port, ssh_user, key_path, tunnel) VALUES (1, ?, ?, 22, 'root', ?, 'wireguard')",
+		"relay-old", "198.51.100.4", "/etc/x-ui/relay-keys/relay-old",
+	).Error; err != nil {
+		t.Fatalf("insert an old-style row: %v", err)
+	}
+
+	var got model.Relay
+	if err := db.First(&got, 1).Error; err != nil {
+		t.Fatalf("read it back: %v", err)
+	}
+	if got.Role != model.RelayExit {
+		t.Fatalf("role read back as %q; a relay that predates fronts is an exit", got.Role)
+	}
+	if got.TunnelPort != 0 || got.TunnelToken != "" {
+		t.Errorf("a front's fields came back filled on an exit: port %d token %q", got.TunnelPort, got.TunnelToken)
+	}
+}
+
+// The role decides which machine the panel dials and which it sends customers
+// to, so a typo must not be stored as a third kind of relay nobody handles.
+func TestOnlyTheTwoRolesAreValid(t *testing.T) {
+	for _, good := range []model.RelayRole{model.RelayExit, model.RelayFront} {
+		if !good.Valid() {
+			t.Errorf("%q was refused", good)
+		}
+	}
+	for _, bad := range []model.RelayRole{"", "exits", "FRONT", "relay", "both"} {
+		if bad.Valid() {
+			t.Errorf("%q was accepted as a role", bad)
+		}
+	}
+}
+
+// The token joins the tunnel. A column that gave it back to anything reading
+// the table is one leak away from a stranger inside the tunnel, so it is
+// never serialised outward.
+func TestTheTunnelTokenIsNeverSerialised(t *testing.T) {
+	body, err := json.Marshal(model.Relay{Id: 1, Name: "front-1", TunnelToken: "s3cret-token"})
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	if bytes.Contains(body, []byte("s3cret-token")) {
+		t.Fatalf("the tunnel token is in the json the panel hands out: %s", body)
+	}
+}
+
 func TestRelayTableStoresKeyPathNotPassword(t *testing.T) {
 	dbPath := filepath.Join(t.TempDir(), "x-ui.db")
 	if err := InitDB(dbPath); err != nil {

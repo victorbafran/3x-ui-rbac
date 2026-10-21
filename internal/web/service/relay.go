@@ -89,6 +89,9 @@ type RelayRequest struct {
 	// does not require clearing fields that were never relevant.
 	TunnelPort int    `json:"tunnelPort"`
 	Transport  string `json:"transport"`
+	// Tool is "backhaul" (the default, and what every front was before the
+	// choice) or "backpack". A front's tool is fixed once it is enrolled.
+	Tool string `json:"tool"`
 }
 
 // List returns every relay with the state of its tunnel.
@@ -133,11 +136,13 @@ func (s *RelayService) List() ([]RelayView, error) {
 // and connected to nothing.
 func (s *RelayService) frontHealth(v *RelayView) {
 	running, detail := tunnel.GetManager().Status(v.Id)
-	known, connected := tunnel.Established(tunnel.Pair{
+	pair := tunnel.Pair{
 		FrontAddress: v.Address,
 		TunnelPort:   v.TunnelPort,
 		Transport:    tunnel.Transport(v.Transport),
-	})
+		Tool:         frontTool(v.Relay),
+	}
+	known, connected := tunnel.Established(pair)
 	v.TunnelUp = running
 	// Where the connection cannot be read, the udp transport or a front given
 	// by name, the live process is all there is to go on.
@@ -145,7 +150,7 @@ func (s *RelayService) frontHealth(v *RelayView) {
 	if !running {
 		v.TunnelDetail = detail
 	}
-	if ports, err := s.frontForwardedPorts(v.TunnelPort, v.SSHPort); err == nil && ports != nil {
+	if ports, err := s.frontForwardedPorts(v.TunnelPort, tunnel.UDPTunnelPort(pair), v.SSHPort); err == nil && ports != nil {
 		v.ForwardedPorts = ports
 	}
 }
@@ -355,7 +360,22 @@ func (s *RelayService) rowFrom(req RelayRequest, base *model.Relay) (*model.Rela
 // On a re-save the stored token is kept, like the exit's key, so the tunnel is
 // not rekeyed and every customer riding it is not dropped.
 func (s *RelayService) fillFront(r *model.Relay, req RelayRequest, base *model.Relay) error {
-	r.Tunnel = "backhaul"
+	tool, err := tunnel.ParseTool(req.Tool)
+	if err != nil {
+		return err
+	}
+	if base != nil {
+		// A different tool is a different binary, unit and config on the
+		// front, and the old one would be left running beside it. Moving a
+		// front from one to the other is a remove and an add.
+		was := frontTool(*base)
+		if strings.TrimSpace(req.Tool) == "" {
+			tool = was
+		} else if tool != was {
+			return fmt.Errorf("%s runs on %s; remove it and add it again to move it to %s", base.Name, was, tool)
+		}
+	}
+	r.Tunnel = string(tool)
 
 	port := req.TunnelPort
 	if port <= 0 {
@@ -370,10 +390,15 @@ func (s *RelayService) fillFront(r *model.Relay, req RelayRequest, base *model.R
 	if transport == "" {
 		transport = string(tunnel.TransportTCP)
 	}
-	if err := tunnel.ValidTransport(tunnel.Transport(transport)); err != nil {
+	if err := tunnel.ValidTransportFor(tool, tunnel.Transport(transport)); err != nil {
 		return err
 	}
 	r.Transport = transport
+	// Backhaul carries UDP on a second tunnel one port up, which has to be a
+	// port too.
+	if udp := tunnel.UDPTunnelPort(tunnel.Pair{Tool: tool, Transport: tunnel.Transport(transport), TunnelPort: port}); udp > 65535 {
+		return fmt.Errorf("tunnel port %d leaves no room for the UDP tunnel on %d; pick a lower one", port, udp)
+	}
 
 	if base != nil {
 		r.TunnelToken = base.TunnelToken
@@ -488,19 +513,24 @@ func (s *RelayService) provisionFront(ctx context.Context, r *model.Relay) {
 	}
 
 	// The front machine first: it must be listening before the panel dials.
-	if err := tunnel.Provision(ctx, tunnel.Front{Pair: pair, Credentials: creds}); err != nil {
-		s.mark(r.Id, RelayError, err.Error())
-		logger.Warningf("front %s: %v", r.Name, err)
-		return
+	// Every leg, so a Backhaul front carries UDP as well as TCP.
+	for _, leg := range tunnel.Legs(pair) {
+		if err := tunnel.Provision(ctx, tunnel.Front{Pair: leg, Credentials: creds}); err != nil {
+			s.mark(r.Id, RelayError, err.Error())
+			logger.Warningf("front %s: %v", r.Name, err)
+			return
+		}
 	}
 
 	// Then the panel's end. A front that is listening but that the panel
 	// never dials carries nothing, so this is as much a part of "ready" as
 	// the far side.
-	if err := tunnel.GetManager().Ensure(pair); err != nil {
-		s.mark(r.Id, RelayError, "the front is up but the panel could not dial it: "+err.Error())
-		logger.Warningf("front %s: %v", r.Name, err)
-		return
+	for _, leg := range tunnel.Legs(pair) {
+		if err := tunnel.GetManager().Ensure(leg); err != nil {
+			s.mark(r.Id, RelayError, "the front is up but the panel could not dial it: "+err.Error())
+			logger.Warningf("front %s: %v", r.Name, err)
+			return
+		}
 	}
 
 	fields := map[string]any{
@@ -546,24 +576,35 @@ func frontCreds(r model.Relay) (relay.Credentials, error) {
 // reconcile runs — which is the whole reason a customer's new inbound no
 // longer silently fails to appear on the front.
 func (s *RelayService) frontPair(r *model.Relay, token string) (tunnel.Pair, error) {
-	ports, err := s.frontForwardedPorts(r.TunnelPort, r.SSHPort)
-	if err != nil {
-		return tunnel.Pair{}, err
-	}
-	return tunnel.Pair{
+	pair := tunnel.Pair{
 		Id:           r.Id,
 		FrontAddress: r.Address,
 		TunnelPort:   r.TunnelPort,
 		Transport:    tunnel.Transport(r.Transport),
+		Tool:         frontTool(*r),
 		Token:        token,
-		Ports:        ports,
-	}, nil
+	}
+	ports, err := s.frontForwardedPorts(r.TunnelPort, tunnel.UDPTunnelPort(pair), r.SSHPort)
+	if err != nil {
+		return tunnel.Pair{}, err
+	}
+	pair.Ports = ports
+	return pair, nil
+}
+
+// frontTool is the tool a front's row records. Anything unreadable is read as
+// Backhaul, which is what every front was before there was a choice.
+func frontTool(r model.Relay) tunnel.Tool {
+	if tool, err := tunnel.ParseTool(r.Tunnel); err == nil {
+		return tool
+	}
+	return tunnel.ToolBackhaul
 }
 
 // frontForwardedPorts is the set of customer-facing ports a front should open,
 // taken from the panel's enabled local inbounds and kept clear of the ports
 // that must never be forwarded.
-func (s *RelayService) frontForwardedPorts(tunnelPort, sshPort int) ([]int, error) {
+func (s *RelayService) frontForwardedPorts(tunnelPort, udpTunnelPort, sshPort int) ([]int, error) {
 	var inbounds []*model.Inbound
 	if err := database.GetDB().Model(model.Inbound{}).
 		Where("node_id IS NULL").Find(&inbounds).Error; err != nil {
@@ -576,9 +617,10 @@ func (s *RelayService) frontForwardedPorts(tunnelPort, sshPort int) ([]int, erro
 	var settings SettingService
 	panelPort, _ := settings.GetPort()
 	reserved := tunnel.Reserved{
-		PanelPort:  panelPort,
-		TunnelPort: tunnelPort,
-		SSHPort:    sshPort,
+		PanelPort:     panelPort,
+		TunnelPort:    tunnelPort,
+		SSHPort:       sshPort,
+		TunnelPortUDP: udpTunnelPort,
 	}
 	return tunnel.WithACME(tunnel.ForwardedPorts(rows, reserved), reserved), nil
 }
@@ -625,7 +667,7 @@ func (s *RelayService) Delete(id int) error {
 		// about to lose its tunnel. Then the far end, and the row.
 		tunnel.GetManager().Remove(r.Id)
 		if creds, cerr := frontCreds(r); cerr == nil {
-			if err := tunnel.Teardown(ctx, tunnel.Front{Pair: tunnel.Pair{Id: r.Id}, Credentials: creds}); err != nil {
+			if err := tunnel.Teardown(ctx, tunnel.Front{Pair: tunnel.Pair{Id: r.Id, Tool: frontTool(r)}, Credentials: creds}); err != nil {
 				// The box may be gone already — often why it is being removed.
 				logger.Warningf("front %s: %v", r.Name, err)
 			}
@@ -733,13 +775,17 @@ func (s *RelayService) reconcileFront(r model.Relay) {
 	defer cancel()
 	// The far side carries the derived port set; rerunning this is how an
 	// inbound added since enrollment reaches the front without a re-save.
-	if err := tunnel.Provision(ctx, tunnel.Front{Pair: pair, Credentials: creds}); err != nil {
-		s.mark(r.Id, RelayError, err.Error())
-		return
-	}
-	if err := tunnel.GetManager().Ensure(pair); err != nil {
-		s.mark(r.Id, RelayError, err.Error())
-		return
+	// The far side restarts only when its config actually changed, so this
+	// running every minute does not drop the customers on the tunnel.
+	for _, leg := range tunnel.Legs(pair) {
+		if err := tunnel.Provision(ctx, tunnel.Front{Pair: leg, Credentials: creds}); err != nil {
+			s.mark(r.Id, RelayError, err.Error())
+			return
+		}
+		if err := tunnel.GetManager().Ensure(leg); err != nil {
+			s.mark(r.Id, RelayError, err.Error())
+			return
+		}
 	}
 	s.mark(r.Id, RelayReady, "")
 }

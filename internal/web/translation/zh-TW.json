@@ -2669,7 +2669,10 @@
         "tunnelPort": "通道連接埠",
         "tunnelPortHint": "這台伺服器等待面板連入的地方。不是客戶連接埠，那台伺服器上任何空閒連接埠都可以。",
         "transport": "通道傳輸方式",
-        "transportHint": "TCP 幾乎適合所有網路。只有某個網路拒絕它時，才嘗試其他方式。"
+        "transportHint": "TCP 幾乎適合所有網路。只有某個網路拒絕它時，才嘗試其他方式。",
+        "tool": "通道工具",
+        "toolHint": "兩者都會轉送所有入站，TCP 和 UDP 都包括。Backhaul 用下一個連接埠上的第二條通道承載 UDP；BackPack 在同一條通道裡承載，之後還能把每位客戶的真實位址交給面板。新增後不能變更。",
+        "udpLegHint": "Backhaul 還會在這台伺服器上用連接埠 {port} 承載 UDP 通道。請在它的防火牆上把兩個連接埠都打開。"
       },
       "reach": {
         "address": "位址",

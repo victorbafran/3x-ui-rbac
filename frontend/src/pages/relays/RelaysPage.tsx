@@ -40,7 +40,13 @@ import AppSidebar from '@/layouts/AppSidebar';
 import { setMessageInstance } from '@/utils/messageBus';
 import { useRelaysQuery } from '@/api/queries/useRelaysQuery';
 import { useRelayMutations } from '@/api/queries/useRelayMutations';
-import { DEFAULT_TUNNEL_PORT, TUNNEL_TRANSPORTS } from '@/schemas/relay';
+import {
+  DEFAULT_TUNNEL_PORT,
+  TUNNEL_TOOLS,
+  TUNNEL_TRANSPORTS,
+  toolOf,
+  udpLegPort,
+} from '@/schemas/relay';
 import type { Reachability, Relay, RelayFormValues } from '@/schemas/relay';
 
 // A relay is a plain server the panel reaches over SSH once. An exit sits in
@@ -70,6 +76,15 @@ function statusTag(r: Relay, t: (k: string) => string) {
     default:
       return <Tag>{r.status}</Tag>;
   }
+}
+
+// A front's tunnel as the operator needs it to open the firewall: the tool,
+// the transport and port, and Backhaul's UDP leg on the port above.
+function frontTunnelText(r: Relay): string {
+  const tool = toolOf(r.tunnel);
+  const udp = udpLegPort(tool, r.transport, r.tunnelPort);
+  const main = `${tool} ${r.transport}:${r.tunnelPort}`;
+  return udp ? `${main} + udp:${udp}` : main;
 }
 
 function bytes(n: number): string {
@@ -103,6 +118,10 @@ export default function RelaysPage() {
   const [form] = Form.useForm<RelayFormValues>();
   const role = Form.useWatch('role', form);
   const isFront = editing ? editing.role === 'front' : role === 'front';
+  const tool = Form.useWatch('tool', form) ?? 'backhaul';
+  const transport = Form.useWatch('transport', form) ?? 'tcp';
+  const tunnelPort = Form.useWatch('tunnelPort', form) ?? DEFAULT_TUNNEL_PORT;
+  const udpPort = udpLegPort(tool, transport, tunnelPort);
 
   const summary = useMemo(
     () => ({
@@ -122,6 +141,7 @@ export default function RelaysPage() {
       role: 'exit',
       tunnelPort: DEFAULT_TUNNEL_PORT,
       transport: 'tcp',
+      tool: 'backhaul',
     } as RelayFormValues);
     setFormOpen(true);
   }, [form]);
@@ -139,6 +159,7 @@ export default function RelaysPage() {
         role: r.role,
         tunnelPort: r.tunnelPort || DEFAULT_TUNNEL_PORT,
         transport: r.transport || 'tcp',
+        tool: toolOf(r.tunnel),
       } as RelayFormValues);
       setFormOpen(true);
     },
@@ -204,8 +225,7 @@ export default function RelaysPage() {
         <Space orientation="vertical" size={0}>
           <span>{r.address}</span>
           <span style={{ opacity: 0.6, fontSize: 12 }}>
-            {r.sshUser}@{r.sshPort} ·{' '}
-            {r.role === 'front' ? `${r.transport}:${r.tunnelPort}` : r.interface}
+            {r.sshUser}@{r.sshPort} · {r.role === 'front' ? frontTunnelText(r) : r.interface}
           </span>
         </Space>
       ),
@@ -460,12 +480,44 @@ export default function RelaysPage() {
             </Col>
           </Row>
           {isFront ? (
+            <Form.Item
+              name="tool"
+              label={t('pages.relays.fields.tool')}
+              tooltip={t('pages.relays.fields.toolHint')}
+            >
+              {/* Fixed once enrolled, like the role: a different tool is a
+                  different binary and unit on the front. */}
+              <Radio.Group
+                disabled={editing !== null}
+                onChange={(e) => {
+                  // A transport only one tool knows would be refused on save.
+                  if (
+                    !TUNNEL_TRANSPORTS[e.target.value as 'backhaul' | 'backpack'].includes(
+                      transport,
+                    )
+                  ) {
+                    form.setFieldValue('transport', 'tcp');
+                  }
+                }}
+              >
+                {TUNNEL_TOOLS.map((v) => (
+                  <Radio.Button key={v} value={v}>
+                    {v === 'backpack' ? 'BackPack' : 'Backhaul'}
+                  </Radio.Button>
+                ))}
+              </Radio.Group>
+            </Form.Item>
+          ) : null}
+          {isFront ? (
             <Row gutter={12}>
               <Col span={12}>
                 <Form.Item
                   name="tunnelPort"
                   label={t('pages.relays.fields.tunnelPort')}
                   tooltip={t('pages.relays.fields.tunnelPortHint')}
+                  extra={
+                    udpPort ? t('pages.relays.fields.udpLegHint', { port: udpPort }) : undefined
+                  }
                 >
                   <InputNumber
                     min={1}
@@ -481,7 +533,12 @@ export default function RelaysPage() {
                   label={t('pages.relays.fields.transport')}
                   tooltip={t('pages.relays.fields.transportHint')}
                 >
-                  <Select options={TUNNEL_TRANSPORTS.map((v) => ({ value: v, label: v }))} />
+                  <Select
+                    options={(TUNNEL_TRANSPORTS[toolOf(tool)] ?? []).map((v) => ({
+                      value: v,
+                      label: v,
+                    }))}
+                  />
                 </Form.Item>
               </Col>
             </Row>

@@ -265,6 +265,46 @@ describe('the exit servers page', () => {
     cleanup();
   });
 
+  // The operator opens the front's firewall from this row, so it names the
+  // tool and every port the tunnel listens on: Backhaul's UDP leg one port up,
+  // and nothing extra for BackPack, which carries UDP on the one tunnel.
+  it('names the tunnel tool and every port it listens on', () => {
+    rows = [
+      front,
+      { ...front, id: 4, name: 'iran-bp', label: 'Iran BP', tunnel: 'backpack', tunnelPort: 3090 },
+    ];
+    renderWithProviders(
+      <MemoryRouter>
+        <RelaysPage />
+      </MemoryRouter>,
+    );
+    const text = document.body.textContent ?? '';
+    expect(text).toContain('backhaul tcp:3080 + udp:3081');
+    expect(text).toContain('backpack tcp:3090');
+    expect(text).not.toContain('backpack tcp:3090 + udp');
+    cleanup();
+  });
+
+  // Backhaul needs a second port for UDP and the form says so before the
+  // server is added; BackPack does not, so the note goes when it is chosen.
+  it('tells the operator about the UDP port only for Backhaul', async () => {
+    rows = relays;
+    renderWithProviders(
+      <MemoryRouter>
+        <RelaysPage />
+      </MemoryRouter>,
+    );
+    fireEvent.click(screen.getByText('Add a server'));
+    await act(async () => {});
+    fireEvent.click(screen.getByText('Entry for customers'));
+    await act(async () => {});
+    expect(document.body.textContent).toContain('Backhaul also uses port 3081');
+    fireEvent.click(screen.getByText('BackPack'));
+    await act(async () => {});
+    expect(document.body.textContent).not.toContain('Backhaul also uses port');
+    cleanup();
+  });
+
   // The tunnel's port and transport only mean something for an entry server,
   // so they appear when that is chosen and not before.
   it('asks for the tunnel settings only when adding an entry server', async () => {

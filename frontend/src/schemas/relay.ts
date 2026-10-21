@@ -60,17 +60,30 @@ export type Relay = z.infer<typeof RelaySchema>;
 
 // Backhaul's transports, in the order worth trying. tcp suits almost every
 // network; the others are only worth reaching for when a network refuses it.
-export const TUNNEL_TRANSPORTS = [
-  'tcp',
-  'tcpmux',
-  'ws',
-  'wsmux',
-  'wss',
-  'wssmux',
-  'udp',
-  'udpovertcp',
-] as const;
+export type TunnelTool = 'backhaul' | 'backpack';
+export const TUNNEL_TOOLS: readonly TunnelTool[] = ['backhaul', 'backpack'];
+
+// What each tool runs, in the order worth trying. They must match the panel's
+// own lists in internal/tunnel/tool.go; a transport the binary does not know
+// is refused at startup and reads as a tunnel that never comes up.
+export const TUNNEL_TRANSPORTS: Record<TunnelTool, readonly string[]> = {
+  backhaul: ['tcp', 'tcpmux', 'ws', 'wsmux', 'wss', 'wssmux', 'udp', 'udpovertcp'],
+  backpack: ['tcp', 'tcpmux', 'ws', 'wsmux', 'wss', 'wssmux', 'kcp', 'quic', 'udp'],
+};
 export const DEFAULT_TUNNEL_PORT = 3080;
+
+// Backhaul carries a front's UDP on a second tunnel one port up; BackPack
+// carries it on the one. The operator has to open that port on the front's
+// firewall too, so the page says which it is.
+const TCP_CARRIED = new Set(['tcp', 'tcpmux', 'ws', 'wsmux', 'wss', 'wssmux']);
+export function udpLegPort(tool: string, transport: string, tunnelPort: number): number {
+  if (tool === 'backpack' || !TCP_CARRIED.has(transport) || !tunnelPort) return 0;
+  return tunnelPort + 1;
+}
+
+export function toolOf(tunnel: string): TunnelTool {
+  return tunnel === 'backpack' ? 'backpack' : 'backhaul';
+}
 export const RelayListSchema = z.object({ obj: z.array(RelaySchema).nullable().default([]) });
 
 export const RelayOptionSchema = z.object({
@@ -123,4 +136,5 @@ export interface RelayFormValues {
   role?: 'exit' | 'front';
   tunnelPort?: number;
   transport?: string;
+  tool?: TunnelTool;
 }

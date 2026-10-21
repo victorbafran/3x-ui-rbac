@@ -12,7 +12,9 @@ package relay
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
+	"io"
 	"net"
 	"strconv"
 	"strings"
@@ -122,8 +124,22 @@ func (c *Client) Close() {
 // there and nowhere else, and an operator reading "exit status 100" learns
 // nothing at all.
 func (c *Client) Run(ctx context.Context, command string) (string, error) {
+	return c.run(ctx, command, nil)
+}
+
+// Upload writes data to path on the relay through the session's input, which
+// is how a binary far too large for a command line gets there. It is written
+// beside the target and renamed over it, so nothing ever reads half a file.
+func (c *Client) Upload(ctx context.Context, path string, data []byte) error {
+	q := shellQuote(path)
+	part := shellQuote(path + ".part")
+	_, err := c.run(ctx, "umask 077; cat > "+part+" && mv -f "+part+" "+q, bytes.NewReader(data))
+	return err
+}
+
+func (c *Client) run(ctx context.Context, command string, stdin io.Reader) (string, error) {
 	if c == nil || c.conn == nil {
-		return "", fmt.Errorf("no connection to %s", c.host)
+		return "", errors.New("no connection to the relay")
 	}
 	session, err := c.conn.NewSession()
 	if err != nil {
@@ -134,6 +150,9 @@ func (c *Client) Run(ctx context.Context, command string) (string, error) {
 	var out, errOut bytes.Buffer
 	session.Stdout = &out
 	session.Stderr = &errOut
+	if stdin != nil {
+		session.Stdin = stdin
+	}
 
 	done := make(chan error, 1)
 	go func() { done <- session.Run(command) }()

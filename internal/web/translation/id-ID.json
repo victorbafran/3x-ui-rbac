@@ -2669,7 +2669,10 @@
         "tunnelPort": "Port terowongan",
         "tunnelPortHint": "Tempat server ini menunggu panel terhubung. Bukan port pelanggan; port bebas apa pun di server itu bisa dipakai.",
         "transport": "Transport terowongan",
-        "transportHint": "TCP cocok untuk hampir semua jaringan. Coba yang lain hanya bila sebuah jaringan menolaknya."
+        "transportHint": "TCP cocok untuk hampir semua jaringan. Coba yang lain hanya bila sebuah jaringan menolaknya.",
+        "tool": "Alat terowongan",
+        "toolHint": "Keduanya meneruskan semua inbound, TCP dan UDP. Backhaul membawa UDP lewat terowongan kedua di port berikutnya; BackPack membawanya di terowongan yang sama dan nanti bisa memberi panel alamat asli setiap pelanggan. Tidak bisa diubah setelah ditambahkan.",
+        "udpLegHint": "Backhaul juga memakai port {port} di server ini untuk terowongan UDP. Buka keduanya di firewall-nya."
       },
       "reach": {
         "address": "Alamat",

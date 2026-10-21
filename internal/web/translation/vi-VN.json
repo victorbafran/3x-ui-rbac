@@ -2669,7 +2669,10 @@
         "tunnelPort": "Cổng đường hầm",
         "tunnelPortHint": "Nơi máy chủ này chờ bảng điều khiển kết nối tới. Không phải cổng cho khách; cổng trống nào trên máy chủ đó cũng được.",
         "transport": "Kiểu truyền của đường hầm",
-        "transportHint": "TCP hợp với hầu hết mọi mạng. Chỉ thử kiểu khác khi một mạng từ chối kiểu này."
+        "transportHint": "TCP hợp với hầu hết mọi mạng. Chỉ thử kiểu khác khi một mạng từ chối kiểu này.",
+        "tool": "Công cụ đường hầm",
+        "toolHint": "Cả hai đều chuyển mọi inbound, cả TCP lẫn UDP. Backhaul chở UDP trên đường hầm thứ hai ở cổng kế tiếp; BackPack chở nó trên cùng đường hầm và sau này có thể đưa địa chỉ thật của từng khách cho bảng điều khiển. Không đổi được sau khi thêm.",
+        "udpLegHint": "Backhaul cũng dùng cổng {port} trên máy chủ này cho đường hầm UDP. Hãy mở cả hai trên tường lửa của nó."
       },
       "reach": {
         "address": "Địa chỉ",

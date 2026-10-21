@@ -2669,7 +2669,10 @@
         "tunnelPort": "Tünel portu",
         "tunnelPortHint": "Bu sunucunun panelin bağlanmasını beklediği yer. Müşteri portu değildir; o sunucudaki herhangi bir boş port olur.",
         "transport": "Tünel taşıması",
-        "transportHint": "TCP neredeyse her ağda çalışır. Başkasını yalnızca bir ağ bunu reddettiğinde deneyin."
+        "transportHint": "TCP neredeyse her ağda çalışır. Başkasını yalnızca bir ağ bunu reddettiğinde deneyin.",
+        "tool": "Tünel aracı",
+        "toolHint": "İkisi de her gelen bağlantıyı TCP ve UDP olarak taşır. Backhaul UDP’yi bir sonraki porttaki ikinci bir tünelde taşır; BackPack aynı tünelde taşır ve ileride panele her müşterinin gerçek adresini iletebilir. Eklendikten sonra değişmez.",
+        "udpLegHint": "Backhaul bu sunucuda UDP tüneli için {port} portunu da kullanır. Güvenlik duvarında ikisini de açın."
       },
       "reach": {
         "address": "Adres",

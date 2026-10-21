@@ -2669,7 +2669,10 @@
         "tunnelPort": "隧道端口",
         "tunnelPortHint": "这台服务器等待面板连入的地方。不是客户端口，那台服务器上任何空闲端口都可以。",
         "transport": "隧道传输方式",
-        "transportHint": "TCP 几乎适合所有网络。只有某个网络拒绝它时，才尝试其他方式。"
+        "transportHint": "TCP 几乎适合所有网络。只有某个网络拒绝它时，才尝试其他方式。",
+        "tool": "隧道工具",
+        "toolHint": "两者都会转发所有入站，TCP 和 UDP 都包括。Backhaul 用下一个端口上的第二条隧道承载 UDP；BackPack 在同一条隧道里承载，之后还能把每位客户的真实地址交给面板。添加后不能更改。",
+        "udpLegHint": "Backhaul 还会在这台服务器上用端口 {port} 承载 UDP 隧道。请在它的防火墙上把两个端口都打开。"
       },
       "reach": {
         "address": "地址",

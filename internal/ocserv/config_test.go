@@ -1,6 +1,8 @@
 package ocserv
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -209,6 +211,33 @@ func TestTuningMovesTheStructuralFingerprint(t *testing.T) {
 		if base.structuralFingerprint() == tc.inst.structuralFingerprint() {
 			t.Errorf("%s did not move the structural fingerprint; ocserv would keep the old value", tc.name)
 		}
+	}
+}
+
+// A certificate renewed at the same path is the case that bit on a real
+// server: the path never moved, so ocserv kept serving the old certificate.
+// The new content alone has to restart it, and the same content must not.
+func TestACertificateRenewedInPlaceRestartsTheInstance(t *testing.T) {
+	dir := t.TempDir()
+	cert := filepath.Join(dir, "fullchain.pem")
+	key := filepath.Join(dir, "privkey.pem")
+	write := func(path, body string) {
+		t.Helper()
+		if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write(cert, "certificate one")
+	write(key, "key one")
+	inst := Instance{Id: 1, Port: 443, CertFile: cert, KeyFile: key}
+	before := inst.structuralFingerprint()
+	if inst.structuralFingerprint() != before {
+		t.Fatal("an untouched certificate moved the fingerprint; every reconcile would restart ocserv")
+	}
+	write(cert, "certificate two")
+	write(key, "key two")
+	if inst.structuralFingerprint() == before {
+		t.Fatal("a certificate renewed in place left the fingerprint alone; ocserv would keep the old one")
 	}
 }
 

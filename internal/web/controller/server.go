@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -9,11 +10,13 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/mhsanaei/3x-ui/v3/internal/certissue"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/netsafe"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/entity"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/global"
+	"github.com/mhsanaei/3x-ui/v3/internal/web/middleware"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service/panel"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/websocket"
@@ -67,6 +70,7 @@ func (a *ServerController) initRouter(g *gin.RouterGroup) {
 	g.GET("/clientIps", a.getClientIps)
 	g.GET("/fail2banStatus", a.getFail2banStatus)
 
+	g.POST("/issueCert", a.issueCert)
 	g.POST("/stopXrayService", a.stopXrayService)
 	g.POST("/restartXrayService", a.restartXrayService)
 	g.POST("/installXray/:version", a.installXray)
@@ -423,6 +427,42 @@ func (a *ServerController) getWebCertFiles(c *gin.Context) {
 		return
 	}
 	jsonObj(c, gin.H{"webCertFile": certFile, "webKeyFile": keyFile}, nil)
+}
+
+// issueCertRequest names the certificate an inbound form asks for.
+type issueCertRequest struct {
+	Names []string `json:"names"`
+}
+
+// issueCert fetches a Let's Encrypt certificate for the names an inbound will
+// be reached by, and says where it landed so the form can fill its two
+// fields. It runs while the request waits: an order takes seconds, and the
+// operator is looking at the button. Super admin only, through the
+// /panel/api/server/ prefix rule: it opens port 80 and writes under the
+// panel's own directory.
+func (a *ServerController) issueCert(c *gin.Context) {
+	req, ok := middleware.BindJSONAndValidate[issueCertRequest](c)
+	if !ok {
+		return
+	}
+	// The panel's server gives every response 30 seconds. An order whose
+	// proof travels through an entry server can take longer, so this one
+	// asks for more; where the writer cannot be extended the order is held
+	// inside the 30 instead, so the page gets an answer either way rather
+	// than a dropped connection.
+	limit := 3 * time.Minute
+	if err := http.NewResponseController(c.Writer).SetWriteDeadline(time.Now().Add(limit + 15*time.Second)); err != nil {
+		limit = 25 * time.Second
+	}
+	ctx, cancel := context.WithTimeout(c.Request.Context(), limit)
+	defer cancel()
+	res, err := certissue.Issue(ctx, req.Names)
+	if err != nil {
+		logger.Warningf("certificate for %v: %v", req.Names, err)
+		jsonMsg(c, I18nWeb(c, "pages.inbounds.certIssue.toast"), err)
+		return
+	}
+	jsonObj(c, res, nil)
 }
 
 // getNewX25519Cert generates a new X25519 certificate.

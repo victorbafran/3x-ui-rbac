@@ -7057,6 +7057,65 @@
         }
       }
     },
+    "/panel/api/server/issueCert": {
+      "post": {
+        "tags": [
+          "Server"
+        ],
+        "summary": "Fetch a Let’s Encrypt certificate for the names an inbound is reached by, and return where it landed so the cisco form can fill its two fields. Let’s Encrypt checks each name by fetching a file from port 80 of the address it points at, so every name must lead port 80 to this panel, directly or through an entry server. The key is RSA. A certificate for exactly these names with more than a month left is handed back instead of reissued. The panel renews it a month before it expires, and the VPN server picks the new file up on its own. Runs while the request waits; port 80 must be free on this server.",
+        "operationId": "post_panel_api_server_issueCert",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "names": [
+                  "tun.example.com",
+                  "vpn.example.com"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "certFile": "/etc/x-ui/certs/tun.example.com/fullchain.pem",
+                    "keyFile": "/etc/x-ui/certs/tun.example.com/privkey.pem",
+                    "names": [
+                      "tun.example.com",
+                      "vpn.example.com"
+                    ],
+                    "notAfter": "2027-01-19T13:31:06Z",
+                    "reused": false
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/panel/api/server/descendants": {
       "get": {
         "tags": [

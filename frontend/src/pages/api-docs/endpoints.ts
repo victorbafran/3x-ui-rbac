@@ -599,6 +599,15 @@ export const sections: readonly Section[] = [
           '{\n  "success": true,\n  "obj": {\n    "webCertFile": "/root/cert/example.com/fullchain.pem",\n    "webKeyFile": "/root/cert/example.com/privkey.pem"\n  }\n}',
       },
       {
+        method: 'POST',
+        path: '/panel/api/server/issueCert',
+        summary:
+          'Fetch a Let\u2019s Encrypt certificate for the names an inbound is reached by, and return where it landed so the cisco form can fill its two fields. Let\u2019s Encrypt checks each name by fetching a file from port 80 of the address it points at, so every name must lead port 80 to this panel, directly or through an entry server. The key is RSA. A certificate for exactly these names with more than a month left is handed back instead of reissued. The panel renews it a month before it expires, and the VPN server picks the new file up on its own. Runs while the request waits; port 80 must be free on this server.',
+        body: '{\n  "names": ["tun.example.com", "vpn.example.com"]\n}',
+        response:
+          '{\n  "success": true,\n  "obj": {\n    "certFile": "/etc/x-ui/certs/tun.example.com/fullchain.pem",\n    "keyFile": "/etc/x-ui/certs/tun.example.com/privkey.pem",\n    "names": ["tun.example.com", "vpn.example.com"],\n    "notAfter": "2027-01-19T13:31:06Z",\n    "reused": false\n  }\n}',
+      },
+      {
         method: 'GET',
         path: '/panel/api/server/descendants',
         summary:

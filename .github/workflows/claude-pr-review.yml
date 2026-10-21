@@ -84,6 +84,20 @@ jobs:
             echo "done=true" >> "$GITHUB_OUTPUT"
             echo "::notice::#${PR} already carries a review; nothing to review."
           fi
+      # Without the secret the action dies at its env check before the model starts
+      # and uploads nothing, so `post` could only blame a transcript that never existed.
+      - name: Require the Claude credential
+        if: steps.reviewed.outputs.done != 'true'
+        env:
+          HAS_CREDENTIAL: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN != '' }}
+        run: |
+          set -euo pipefail
+          if [ "$HAS_CREDENTIAL" = "true" ]; then
+            exit 0
+          fi
+          gh pr comment "$PR" --repo "$REPO" --body "No review ran on this head: ${REPO} has no \`CLAUDE_CODE_OAUTH_TOKEN\` Actions secret, so the reviewer could not start. Nothing in this pull request was examined. Once a maintainer adds the secret, \`@claude review\` asks for one."
+          echo "::error::${REPO} has no CLAUDE_CODE_OAUTH_TOKEN Actions secret, so no review can run. Create the token with 'claude setup-token' and store it with 'gh secret set CLAUDE_CODE_OAUTH_TOKEN --repo ${REPO}'."
+          exit 1
 
   # Its token can read the pull request and nothing more: the model writes
   # /tmp/review.md and the `post` job, which runs no model, publishes it.
@@ -396,8 +410,13 @@ jobs:
         env:
           HEAD_SHA: ${{ needs.prepare.outputs.sha }}
           BODY: ${{ runner.temp }}/review/review.md
+          TRANSCRIPT: ${{ runner.temp }}/transcript/claude-execution-output.json
         run: |
           set -euo pipefail
+          if [ ! -s "$BODY" ] && [ ! -f "$TRANSCRIPT" ]; then
+            echo "::error::The review job uploaded neither a review of ${HEAD_SHA} for #${PR} nor a transcript, so the cause is in its log: read the review job's claude-code-action step before re-running."
+            exit 1
+          fi
           if [ ! -s "$BODY" ]; then
             echo "::error::The review run ended without writing a review of ${HEAD_SHA} for #${PR}. Read the uploaded transcript before re-running."
             exit 1

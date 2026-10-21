@@ -575,11 +575,12 @@ func (s *RelayService) frontForwardedPorts(tunnelPort, sshPort int) ([]int, erro
 	}
 	var settings SettingService
 	panelPort, _ := settings.GetPort()
-	return tunnel.ForwardedPorts(rows, tunnel.Reserved{
+	reserved := tunnel.Reserved{
 		PanelPort:  panelPort,
 		TunnelPort: tunnelPort,
 		SSHPort:    sshPort,
-	}), nil
+	}
+	return tunnel.WithACME(tunnel.ForwardedPorts(rows, reserved), reserved), nil
 }
 
 func (s *RelayService) mark(id int, status, lastError string) {

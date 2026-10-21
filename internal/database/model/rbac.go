@@ -44,13 +44,13 @@ func (r RelayRole) Valid() bool {
 // Relay is a remote tunnel host the panel provisions over SSH. The SSH password
 // is used once at enrollment and never stored; only KeyPath outlives it.
 type Relay struct {
-	Id        int    `json:"id" gorm:"primaryKey;autoIncrement" example:"1"`
-	Name      string `json:"name" gorm:"uniqueIndex;not null" example:"relay-tehran-1"`
-	Address   string `json:"address" gorm:"not null" example:"185.0.0.1"`
-	SSHPort   int    `json:"sshPort" gorm:"not null;default:22" example:"22"`
-	SSHUser   string `json:"sshUser" gorm:"not null;default:root" example:"root"`
-	KeyPath   string `json:"keyPath" gorm:"not null" example:"/etc/x-ui/relay-keys/relay-tehran-1"`
-	Tunnel    string `json:"tunnel" gorm:"not null;default:unknown" example:"backhaul"`
+	Id      int    `json:"id" gorm:"primaryKey;autoIncrement" example:"1"`
+	Name    string `json:"name" gorm:"uniqueIndex;not null" example:"relay-tehran-1"`
+	Address string `json:"address" gorm:"not null" example:"185.0.0.1"`
+	SSHPort int    `json:"sshPort" gorm:"not null;default:22" example:"22"`
+	SSHUser string `json:"sshUser" gorm:"not null;default:root" example:"root"`
+	KeyPath string `json:"keyPath" gorm:"not null" example:"/etc/x-ui/relay-keys/relay-tehran-1"`
+	Tunnel  string `json:"tunnel" gorm:"not null;default:unknown" example:"backhaul"`
 
 	// Role is exit or front. Defaulted in the column so a database written
 	// before fronts existed reads back as a table full of exits, which is
@@ -72,12 +72,12 @@ type Relay struct {
 	// UI: a tunnel whose token leaks is one anybody who finds the port can
 	// join.
 	TunnelToken string `json:"-" gorm:"column:tunnel_token"`
-	NodeId    int    `json:"nodeId" gorm:"index" example:"2"`
-	Status    string `json:"status" gorm:"not null;default:pending" example:"pending"`
-	LastError string `json:"lastError"`
-	LastSeen  int64  `json:"lastSeen" example:"0"`
-	Enabled   bool   `json:"enabled" gorm:"not null;default:true" example:"true"`
-	CreatedAt int64  `json:"createdAt" gorm:"autoCreateTime" example:"1760000000"`
+	NodeId      int    `json:"nodeId" gorm:"index" example:"2"`
+	Status      string `json:"status" gorm:"not null;default:pending" example:"pending"`
+	LastError   string `json:"lastError"`
+	LastSeen    int64  `json:"lastSeen" example:"0"`
+	Enabled     bool   `json:"enabled" gorm:"not null;default:true" example:"true"`
+	CreatedAt   int64  `json:"createdAt" gorm:"autoCreateTime" example:"1760000000"`
 
 	// Label is what a customer reads when this relay is offered as a country,
 	// where Name is the identifier the VPN server matches on.

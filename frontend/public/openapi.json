@@ -7096,19 +7096,6 @@
                     },
                     "obj": {}
                   }
-                },
-                "example": {
-                  "success": true,
-                  "obj": {
-                    "certFile": "/etc/x-ui/certs/tun.example.com/fullchain.pem",
-                    "keyFile": "/etc/x-ui/certs/tun.example.com/privkey.pem",
-                    "names": [
-                      "tun.example.com",
-                      "vpn.example.com"
-                    ],
-                    "notAfter": "2027-01-19T13:31:06Z",
-                    "reused": false
-                  }
                 }
               }
             }

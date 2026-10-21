@@ -48,6 +48,10 @@ export const RelaySchema = z.object({
   role: z.enum(['exit', 'front']).catch('exit'),
   tunnelPort: z.number().default(0),
   transport: z.string().default(''),
+  // The name customers type to connect through a front. A TLS handshake from
+  // inside Iran does not complete without a name, so it is the address an
+  // inbound behind the front should hand out, not the bare IP.
+  publicName: z.string().default(''),
   // A front's own: what its client last said when it is not running, and the
   // customer ports it carries right now.
   tunnelDetail: z.string().default(''),
@@ -96,6 +100,32 @@ export const RelayOptionSchema = z.object({
   ready: z.boolean().default(false),
 });
 export type RelayOption = z.infer<typeof RelayOptionSchema>;
+// An entry server as the inbound form offers it for the address customers'
+// links carry.
+export const FrontOptionSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  label: z.string().default(''),
+  address: z.string().default(''),
+  publicName: z.string().default(''),
+  ready: z.boolean().default(false),
+});
+export type FrontOption = z.infer<typeof FrontOptionSchema>;
+export const FrontOptionListSchema = z.object({
+  obj: z.array(FrontOptionSchema).nullable().default([]),
+});
+
+// What the share-address box suggests: each front's public name, or its
+// address when it has none, labelled so the operator knows which server it is.
+export function frontShareOptions(fronts: FrontOption[]): { value: string; label: string }[] {
+  return fronts
+    .map((f) => {
+      const value = f.publicName || f.address;
+      return { value, label: `${f.label || f.name} — ${value}` };
+    })
+    .filter((o) => o.value !== '');
+}
+
 export const RelayOptionListSchema = z.object({
   obj: z.array(RelayOptionSchema).nullable().default([]),
 });
@@ -137,4 +167,5 @@ export interface RelayFormValues {
   tunnelPort?: number;
   transport?: string;
   tool?: TunnelTool;
+  publicName?: string;
 }

@@ -1679,14 +1679,20 @@ export const sections: readonly Section[] = [
         method: 'GET',
         path: '/panel/api/relays/options',
         summary:
-          'The smaller list a cisco inbound form needs: the interface to store and a name the operator recognises.',
+          'The smaller list a cisco inbound form needs: the interface to store and a name the operator recognises. Exit servers only; an entry server has no interface to leave through.',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/relays/fronts',
+        summary:
+          'The enabled entry servers, as the inbound form offers them for the share address: id, name, label, address, publicName and whether the tunnel is ready. An inbound whose share address is a front\u2019s public name hands that name to its customers in every share link, cisco login and OpenVPN profile.',
       },
       {
         method: 'POST',
         path: '/panel/api/relays/add',
         summary:
-          'Enroll a server. The password or key is used once to install a key of the panel\u2019s own, proven to work, and then discarded; it is never stored. Returns at once while the setup runs behind it, so poll the list for the status. An entry server takes role "front", a tool ("backhaul", the default, or "backpack"), a tunnelPort (3080 when omitted) and a transport (tcp when omitted). Either tool carries every inbound, TCP and UDP: Backhaul on a second UDP tunnel at tunnelPort + 1, BackPack on the one tunnel. The role and the tool cannot be changed afterwards.',
-        body: '{\n  "name": "iran-front",\n  "label": "Iran",\n  "address": "203.0.113.9",\n  "sshPort": 22,\n  "sshUser": "root",\n  "password": "...",\n  "role": "front",\n  "tool": "backhaul",\n  "tunnelPort": 3080,\n  "transport": "tcp"\n}',
+          'Enroll a server. The password or key is used once to install a key of the panel\u2019s own, proven to work, and then discarded; it is never stored. Returns at once while the setup runs behind it, so poll the list for the status. An entry server takes role "front", a tool ("backhaul", the default, or "backpack"), an optional publicName (the name customers type, which the inbound form then offers as the share address), a tunnelPort (3080 when omitted) and a transport (tcp when omitted). Either tool carries every inbound, TCP and UDP: Backhaul on a second UDP tunnel at tunnelPort + 1, BackPack on the one tunnel. The role and the tool cannot be changed afterwards.',
+        body: '{\n  "name": "iran-front",\n  "label": "Iran",\n  "address": "203.0.113.9",\n  "sshPort": 22,\n  "sshUser": "root",\n  "password": "...",\n  "role": "front",\n  "publicName": "tun.example.com",\n  "tool": "backhaul",\n  "tunnelPort": 3080,\n  "transport": "tcp"\n}',
       },
       {
         method: 'POST',

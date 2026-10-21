@@ -3,11 +3,11 @@ import { useMemo } from 'react';
 
 import { HttpUtil } from '@/utils';
 import { parseMsg } from '@/utils/zodValidate';
-import { RelayListSchema, RelayOptionListSchema } from '@/schemas/relay';
-import type { Relay, RelayOption } from '@/schemas/relay';
+import { FrontOptionListSchema, RelayListSchema, RelayOptionListSchema } from '@/schemas/relay';
+import type { FrontOption, Relay, RelayOption } from '@/schemas/relay';
 import { keys } from '@/api/queryKeys';
 
-export type { Relay, RelayOption };
+export type { FrontOption, Relay, RelayOption };
 
 async function fetchRelays(): Promise<Relay[]> {
   const msg = await HttpUtil.get('/panel/api/relays/list', undefined, { silent: true });
@@ -53,4 +53,24 @@ export function useRelayOptions() {
     retry: false,
   });
   return { ...query, options: query.data ?? [] };
+}
+
+async function fetchFrontOptions(): Promise<FrontOption[]> {
+  const msg = await HttpUtil.get('/panel/api/relays/fronts', undefined, { silent: true });
+  if (!msg?.success) return [];
+  const validated = parseMsg(msg, FrontOptionListSchema, 'relays/fronts');
+  return Array.isArray(validated.obj) ? validated.obj : [];
+}
+
+// The entry servers an inbound's customers can be given instead of this
+// panel's address. Silent on failure for the reason useRelayOptions is: a
+// reseller cannot read the relay routes, and gets a plain text box.
+export function useFrontOptions() {
+  const query = useQuery({
+    queryKey: keys.relays.fronts(),
+    queryFn: fetchFrontOptions,
+    staleTime: 60_000,
+    retry: false,
+  });
+  return { ...query, fronts: query.data ?? [] };
 }

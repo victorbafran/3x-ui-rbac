@@ -12,6 +12,7 @@ export const keys = {
     root: () => ['relays'] as const,
     list: () => ['relays', 'list'] as const,
     options: () => ['relays', 'options'] as const,
+    fronts: () => ['relays', 'fronts'] as const,
   },
   admins: {
     root: () => ['admins'] as const,

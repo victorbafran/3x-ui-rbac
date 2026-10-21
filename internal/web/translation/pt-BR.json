@@ -2672,7 +2672,9 @@
         "transportHint": "TCP funciona em quase qualquer rede. Tente outro só quando uma rede recusar este.",
         "tool": "Ferramenta do túnel",
         "toolHint": "As duas levam todos os inbounds, TCP e UDP. O Backhaul leva o UDP num segundo túnel na porta seguinte; o BackPack leva no mesmo túnel e depois pode passar ao painel o endereço real de cada cliente. Não muda depois de adicionado.",
-        "udpLegHint": "O Backhaul também usa a porta {port} deste servidor para o túnel UDP. Abra as duas no firewall dele."
+        "udpLegHint": "O Backhaul também usa a porta {port} deste servidor para o túnel UDP. Abra as duas no firewall dele.",
+        "publicName": "Nome público",
+        "publicNameHint": "O nome que os clientes digitam para se conectar por este servidor, apontado para o endereço dele. Um handshake TLS de dentro do Irã não se completa sem um nome, então os clientes cisco precisam dele. O formulário do inbound o oferece depois como endereço de compartilhamento, para os links apontarem para cá."
       },
       "reach": {
         "address": "Endereço",

@@ -157,6 +157,7 @@ export default function RelaysPage() {
         sshPort: r.sshPort,
         sshUser: r.sshUser,
         role: r.role,
+        publicName: r.publicName,
         tunnelPort: r.tunnelPort || DEFAULT_TUNNEL_PORT,
         transport: r.transport || 'tcp',
         tool: toolOf(r.tunnel),
@@ -223,7 +224,10 @@ export default function RelaysPage() {
       key: 'server',
       render: (_: unknown, r: Relay) => (
         <Space orientation="vertical" size={0}>
-          <span>{r.address}</span>
+          <span>
+            {r.address}
+            {r.role === 'front' && r.publicName ? ` · ${r.publicName}` : ''}
+          </span>
           <span style={{ opacity: 0.6, fontSize: 12 }}>
             {r.sshUser}@{r.sshPort} · {r.role === 'front' ? frontTunnelText(r) : r.interface}
           </span>
@@ -479,6 +483,15 @@ export default function RelaysPage() {
               </Form.Item>
             </Col>
           </Row>
+          {isFront ? (
+            <Form.Item
+              name="publicName"
+              label={t('pages.relays.fields.publicName')}
+              tooltip={t('pages.relays.fields.publicNameHint')}
+            >
+              <Input placeholder="tun.example.com" />
+            </Form.Item>
+          ) : null}
           {isFront ? (
             <Form.Item
               name="tool"

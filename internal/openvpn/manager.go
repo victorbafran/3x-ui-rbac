@@ -396,7 +396,7 @@ func (m *Manager) CollectTraffic() ([]Traffic, []string) {
 				logger.Warningf("openvpn: could not disconnect %s past their device limit: %v", over.Login, err)
 				continue
 			}
-			logger.Infof("openvpn: %s was past their device limit; the newest device was disconnected", over.Login)
+			logger.Infof("openvpn: %s was past their device limit; their oldest connection was disconnected", over.Login)
 		}
 	}
 

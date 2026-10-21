@@ -1204,6 +1204,7 @@ export default function InboundFormModal({
                     Protocols.TUIC,
                     Protocols.MASQUE,
                     Protocols.CISCO,
+                    Protocols.OPENVPN,
                   ] as string[]
                 ).includes(protocol) || isFallbackHost
                   ? [

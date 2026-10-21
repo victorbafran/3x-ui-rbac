@@ -381,6 +381,34 @@ describe('InboundFormModal', () => {
 
   // xray-core runs MASQUE only on its own transport behind TLS, and leases tunnel
   // addresses from settings.address; picking the protocol must seed all three.
+  // Every OpenVPN field was built, registered and translated, and none of
+  // them was ever on screen: the Protocol tab is rendered only for protocols
+  // on a hand-written list, and openvpn was not on it. The operator saw a
+  // protocol they could pick and then no way to configure it — no exit
+  // country, no devices per account, no certificate.
+  //
+  // It survived the sweep that added openvpn to the other protocol lists
+  // because this one is written as Protocols.CISCO rather than the quoted
+  // 'cisco' that sweep searched for.
+  it('gives an OpenVPN inbound its Protocol tab and the fields on it', async () => {
+    renderModal();
+
+    chooseVirtualizedProtocol('openvpn');
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 0));
+    });
+
+    const tab = screen.queryByRole('tab', { name: 'Protocol' });
+    expect(
+      tab,
+      'an OpenVPN inbound has no Protocol tab, so none of its settings can be reached',
+    ).not.toBeNull();
+    fireEvent.click(tab!);
+
+    expect(await screen.findByLabelText('Devices per account')).toBeTruthy();
+    expect(screen.getByLabelText('Traffic leaves through')).toBeTruthy();
+  });
+
   it('adds a MASQUE inbound on its own transport with TLS and an address pool', async () => {
     const post = vi.mocked(HttpUtil.post);
     post.mockClear();

@@ -215,6 +215,9 @@ func (s *RelayService) Add(req RelayRequest) (*model.Relay, error) {
 	if err != nil {
 		return nil, err
 	}
+	if err := s.refuseASecondFront(r); err != nil {
+		return nil, err
+	}
 	if strings.TrimSpace(req.Password) == "" && strings.TrimSpace(req.PrivateKey) == "" {
 		return nil, fmt.Errorf("a password or a private key is needed once, to install the panel's own key")
 	}
@@ -276,6 +279,9 @@ func (s *RelayService) Update(id int, req RelayRequest) error {
 	// delete and a fresh add, and the panel says so rather than half-doing it.
 	if updated.Role != existing.Role {
 		return fmt.Errorf("a relay's role cannot be changed; remove it and add it again as %s", updated.Role)
+	}
+	if err := s.refuseASecondFront(updated); err != nil {
+		return err
 	}
 	fields := map[string]any{
 		"name": updated.Name, "label": updated.Label, "address": updated.Address,
@@ -625,7 +631,10 @@ func (s *RelayService) frontForwardedPorts(tunnelPort, udpTunnelPort, sshPort in
 	}
 	rows := make([]tunnel.Inbound, 0, len(inbounds))
 	for _, ib := range inbounds {
-		rows = append(rows, tunnel.Inbound{Port: ib.Port, Enabled: ib.Enable, Local: true})
+		// every port it binds: cisco's DTLS may sit on a UDP port of its own.
+		for _, c := range portClaims(ib) {
+			rows = append(rows, tunnel.Inbound{Port: c.port, Enabled: ib.Enable, Local: true})
+		}
 	}
 	var settings SettingService
 	panelPort, _ := settings.GetPort()

@@ -149,6 +149,12 @@ func InstanceFromInbound(ib *model.Inbound) (Instance, bool) {
 	}, true
 }
 
+// DTLSPort is the UDP port a cisco inbound holds, zero with DTLS off. Settings
+// alone: an inbound with no client yet still owns the port its first one opens.
+func DTLSPort(ib *model.Inbound) int {
+	return 0
+}
+
 // entitlement works out which countries one client may pick.
 //
 // A client that names none gets every country the inbound offers. That is the

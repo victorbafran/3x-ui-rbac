@@ -116,6 +116,27 @@ func masqueTransports(streamSettings string) transportBits {
 	return bits
 }
 
+type portClaim struct {
+	port int
+	bits transportBits
+}
+
+// portClaims is every port an inbound binds. The cisco and OpenVPN sidecars are
+// read here, not in inboundTransports, whose answer existing tags were built from.
+func portClaims(ib *model.Inbound) []portClaim {
+	return []portClaim{{ib.Port, inboundTransports(ib.Protocol, ib.StreamSettings, ib.Settings)}}
+}
+
+func claimedOn(claims []portClaim, port int) transportBits {
+	var bits transportBits
+	for _, c := range claims {
+		if c.port == port {
+			bits |= c.bits
+		}
+	}
+	return bits
+}
+
 // bindAddr is a listen address plus sockopt.v6only. xray listens on "tcp"/"udp",
 // so Go opens every wildcard, 0.0.0.0 included, dual-stack unless v6only is set.
 type bindAddr struct {
@@ -264,7 +285,8 @@ func (s *InboundService) checkPortConflict(inbound *model.Inbound, ignoreId int)
 }
 
 func checkPortConflictTx(db *gorm.DB, inbound *model.Inbound, ignoreId int) (*portConflictDetail, error) {
-	newBits := inboundTransports(inbound.Protocol, inbound.StreamSettings, inbound.Settings)
+	claims := portClaims(inbound)
+	newBits := claimedOn(claims, inbound.Port)
 
 	// The internal Xray API inbound (tag "api", loopback TCP) isn't a DB row,
 	// so a local user inbound reusing its port would leave Xray binding the
@@ -369,8 +391,13 @@ func checkPortConflictTx(db *gorm.DB, inbound *model.Inbound, ignoreId int) (*po
 		}
 	}
 
+	ports := make([]int, 0, len(claims))
+	for _, c := range claims {
+		ports = append(ports, c.port)
+	}
 	var candidates []*model.Inbound
-	q := db.Model(model.Inbound{}).Where("port = ?", inbound.Port)
+	// a cisco row's DTLS port is in its settings, not the port column.
+	q := db.Model(model.Inbound{}).Where("(port IN ? OR protocol = ?)", ports, model.Cisco)
 	if ignoreId > 0 {
 		q = q.Where("id != ?", ignoreId)
 	}
@@ -385,19 +412,21 @@ func checkPortConflictTx(db *gorm.DB, inbound *model.Inbound, ignoreId int) (*po
 		if !listenOverlaps(inboundBindAddr(c), inboundBindAddr(inbound)) {
 			continue
 		}
-		existingBits := inboundTransports(c.Protocol, c.StreamSettings, c.Settings)
-		shared := existingBits & newBits
-		if shared == 0 {
-			continue
+		theirs := portClaims(c)
+		for _, mine := range claims {
+			shared := claimedOn(theirs, mine.port) & mine.bits
+			if shared == 0 {
+				continue
+			}
+			return &portConflictDetail{
+				InboundID:  c.Id,
+				Remark:     c.Remark,
+				Tag:        c.Tag,
+				Listen:     c.Listen,
+				Port:       mine.port,
+				Transports: shared,
+			}, nil
 		}
-		return &portConflictDetail{
-			InboundID:  c.Id,
-			Remark:     c.Remark,
-			Tag:        c.Tag,
-			Listen:     c.Listen,
-			Port:       c.Port,
-			Transports: shared,
-		}, nil
 	}
 	return nil, nil
 }

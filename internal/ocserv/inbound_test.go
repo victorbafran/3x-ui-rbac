@@ -102,3 +102,25 @@ func TestInstanceFromInboundReadsTheNetworkSettings(t *testing.T) {
 		t.Fatalf("limits = %d/%d, want 50/3", inst.MaxClients, inst.MaxSameClients)
 	}
 }
+
+// Unreadable settings claim the default, DTLS on the TCP port, which is the
+// claim that keeps a neighbour off it.
+func TestDTLSPortFollowsTheSettings(t *testing.T) {
+	cases := []struct {
+		settings string
+		want     int
+	}{
+		{`{}`, 443},
+		{`{"udpPort":4443}`, 4443},
+		{`{"udpPort":4443,"disableUdp":true}`, 0},
+		{`not json`, 443},
+	}
+	for _, tc := range cases {
+		if got := DTLSPort(ciscoInbound(tc.settings)); got != tc.want {
+			t.Errorf("DTLSPort(%s) = %d, want %d", tc.settings, got, tc.want)
+		}
+	}
+	if got := DTLSPort(&model.Inbound{Port: 443, Protocol: model.VLESS}); got != 0 {
+		t.Errorf("a vless inbound reported DTLS on %d", got)
+	}
+}

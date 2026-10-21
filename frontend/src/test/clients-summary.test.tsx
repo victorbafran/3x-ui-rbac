@@ -155,6 +155,72 @@ describe('client summary always reflects the server, never a client_stats recomp
     expect(result.current.clientSpeed['shared@example.test']).toEqual({ up: 10, down: 5 });
   });
 
+  // cisco and openvpn meter their own clients and push their own samples.
+  // They were not in the source union, so a sample from either was folded
+  // into xray's bucket — where the next xray push, which arrives every few
+  // seconds and knows nothing about them, overwrote it. The customer saw the
+  // right total usage and a blank speed.
+  it("keeps a cisco and an openvpn sample out of xray's bucket", async () => {
+    const result = await loadedHook();
+
+    act(() => {
+      result.current.applyTrafficEvent({
+        clientTrafficSource: 'openvpn',
+        clientTrafficIntervalMs: 10_000,
+        clientTraffics: [{ email: 'shared@example.test', up: 1000, down: 2000 }],
+      });
+    });
+    expect(result.current.clientSpeed['shared@example.test']).toEqual({ up: 100, down: 200 });
+
+    act(() => {
+      result.current.applyTrafficEvent({
+        clientTrafficSource: 'cisco',
+        clientTrafficIntervalMs: 10_000,
+        clientTraffics: [{ email: 'shared@example.test', up: 500, down: 500 }],
+      });
+    });
+    // Both sources count, because one customer may hold both protocols.
+    expect(result.current.clientSpeed['shared@example.test']).toEqual({ up: 150, down: 250 });
+
+    // An xray sample must not wipe either of them.
+    act(() => {
+      result.current.applyTrafficEvent({
+        clientTrafficSource: 'xray',
+        clientTrafficIntervalMs: 10_000,
+        clientTraffics: [{ email: 'shared@example.test', up: 100, down: 100 }],
+      });
+    });
+    expect(result.current.clientSpeed['shared@example.test']).toEqual({ up: 160, down: 260 });
+  });
+
+  // A source the page has never heard of is xray's, which is the only one
+  // that does not name itself. What matters is not the number it produces on
+  // its own — every bucket is summed, so any bucket gives the same total —
+  // but that the next xray sample REPLACES it. Landing in a bucket of its
+  // own, it would sit there until it expired, adding a phantom speed to
+  // every xray sample that followed.
+  it("folds an unknown source into xray's bucket so xray replaces it", async () => {
+    const result = await loadedHook();
+
+    act(() => {
+      result.current.applyTrafficEvent({
+        clientTrafficSource: 'something-new' as never,
+        clientTrafficIntervalMs: 10_000,
+        clientTraffics: [{ email: 'shared@example.test', up: 1000, down: 1000 }],
+      });
+    });
+    expect(result.current.clientSpeed['shared@example.test']).toEqual({ up: 100, down: 100 });
+
+    act(() => {
+      result.current.applyTrafficEvent({
+        clientTrafficSource: 'xray',
+        clientTrafficIntervalMs: 10_000,
+        clientTraffics: [{ email: 'shared@example.test', up: 50, down: 50 }],
+      });
+    });
+    expect(result.current.clientSpeed['shared@example.test']).toEqual({ up: 5, down: 5 });
+  });
+
   it('expires stale per-source speeds without clearing the other source', async () => {
     const result = await loadedHook();
     vi.useFakeTimers();

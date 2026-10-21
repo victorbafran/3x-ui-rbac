@@ -1,6 +1,8 @@
 package job
 
 import (
+	"time"
+
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 	"github.com/mhsanaei/3x-ui/v3/internal/openvpn"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
@@ -16,6 +18,9 @@ import (
 // disagree with themselves depending on which protocol a customer is on.
 type OpenVPNJob struct {
 	inboundService service.InboundService
+	// lastSpeedSample is when the previous push measured from, so the rate
+	// is divided by the interval that actually elapsed.
+	lastSpeedSample time.Time
 }
 
 func NewOpenVPNJob() *OpenVPNJob { return new(OpenVPNJob) }
@@ -67,10 +72,20 @@ func (j *OpenVPNJob) Run() {
 		})
 	}
 
+	sampledAt := time.Now()
+	sampleInterval := speedSampleInterval(j.lastSpeedSample, sampledAt)
+	persisted := true
 	if len(traffics) > 0 || len(clientTraffics) > 0 {
 		if _, _, err := j.inboundService.AddTraffic(traffics, clientTraffics); err != nil {
 			logger.Warning("openvpn job: add traffic failed:", err)
+			persisted = false
 		}
+	}
+	// Only after it is stored: a speed shown for traffic the database refused
+	// is a number that disagrees with the total printed beside it.
+	if persisted {
+		broadcastSidecarSpeed("openvpn", clientTraffics, sampleInterval)
+		j.lastSpeedSample = sampledAt
 	}
 
 	j.inboundService.RefreshLocalOnlineClients(onlineEmails, activeTags)

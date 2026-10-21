@@ -125,8 +125,9 @@ const trafficPayloadSchema = {
     clientTraffics: { type: 'array', items: { $ref: '#/components/schemas/ClientTraffic' } },
     clientTrafficSource: {
       type: 'string',
-      enum: ['xray', 'tuic'],
-      description: 'Present for native TUIC samples; omitted Xray samples default to xray.',
+      enum: ['xray', 'tuic', 'cisco', 'openvpn'],
+      description:
+        'Names the protocol that metered the sample, so each one expires separately. Omitted on Xray samples, which default to xray.',
     },
     clientTrafficIntervalMs: {
       type: 'integer',

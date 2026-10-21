@@ -98,7 +98,13 @@ export interface ClientSpeedEntry {
   down: number;
 }
 
-type ClientSpeedSource = 'xray' | 'tuic';
+// Each protocol that meters its own clients pushes under its own name, so
+// one sidecar going quiet expires only its own speeds. cisco and openvpn
+// were missing here, which is why a connected customer on either showed
+// the right total usage and no speed at all.
+type ClientSpeedSource = 'xray' | 'tuic' | 'cisco' | 'openvpn';
+
+const CLIENT_SPEED_SOURCES: readonly ClientSpeedSource[] = ['xray', 'tuic', 'cisco', 'openvpn'];
 
 type ClientStatRow = ClientTraffic & { email?: string };
 
@@ -305,7 +311,12 @@ export function useClients(options: UseClientsOptions = {}) {
     Partial<Record<ClientSpeedSource, Record<string, ClientSpeedEntry>>>
   >({});
   const clientSpeedExpiryTimers = useRef<Partial<Record<ClientSpeedSource, number>>>({});
-  const clientSpeedSourceVersions = useRef<Record<ClientSpeedSource, number>>({ xray: 0, tuic: 0 });
+  const clientSpeedSourceVersions = useRef<Record<ClientSpeedSource, number>>(
+    Object.fromEntries(CLIENT_SPEED_SOURCES.map((s) => [s, 0])) as Record<
+      ClientSpeedSource,
+      number
+    >,
+  );
   const clientSpeed = useMemo(() => {
     const combined: Record<string, ClientSpeedEntry> = {};
     for (const source of Object.values(clientSpeedBySource)) {
@@ -751,7 +762,7 @@ export function useClients(options: UseClientsOptions = {}) {
       const p = payload as {
         onlineClients?: string[];
         clientTraffics?: { email: string; up: number; down: number }[];
-        clientTrafficSource?: 'xray' | 'tuic';
+        clientTrafficSource?: ClientSpeedSource;
         clientTrafficIntervalMs?: number;
       };
       if (Array.isArray(p.onlineClients)) {
@@ -764,7 +775,13 @@ export function useClients(options: UseClientsOptions = {}) {
         // dropped and an unchanged result returns the previous object — which lets
         // React bail out of the update instead of re-rendering the table.
         const next: Record<string, ClientSpeedEntry> = {};
-        const source = p.clientTrafficSource === 'tuic' ? 'tuic' : 'xray';
+        // An unknown or absent source is xray's, which is the only one that
+        // does not name itself.
+        const source: ClientSpeedSource = CLIENT_SPEED_SOURCES.includes(
+          p.clientTrafficSource as ClientSpeedSource,
+        )
+          ? (p.clientTrafficSource as ClientSpeedSource)
+          : 'xray';
         const sampleIntervalMs =
           typeof p.clientTrafficIntervalMs === 'number' &&
           Number.isFinite(p.clientTrafficIntervalMs) &&

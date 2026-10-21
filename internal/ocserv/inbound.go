@@ -149,6 +149,23 @@ func InstanceFromInbound(ib *model.Inbound) (Instance, bool) {
 	}, true
 }
 
+// DTLSPort is the UDP port a cisco inbound holds, zero with DTLS off. Settings
+// alone: an inbound with no client yet still owns the port its first one opens.
+func DTLSPort(ib *model.Inbound) int {
+	if ib == nil || ib.Protocol != model.Cisco {
+		return 0
+	}
+	var parsed struct {
+		UDPPort    int  `json:"udpPort"`
+		DisableUDP bool `json:"disableUdp"`
+	}
+	_ = json.Unmarshal([]byte(ib.Settings), &parsed)
+	if parsed.DisableUDP {
+		return 0
+	}
+	return Instance{Port: ib.Port, UDPPort: parsed.UDPPort}.udpPort()
+}
+
 // entitlement works out which countries one client may pick.
 //
 // A client that names none gets every country the inbound offers. That is the

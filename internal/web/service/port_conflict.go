@@ -11,6 +11,8 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/amneziawgnet"
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
+	"github.com/mhsanaei/3x-ui/v3/internal/ocserv"
+	"github.com/mhsanaei/3x-ui/v3/internal/openvpn"
 	"github.com/mhsanaei/3x-ui/v3/internal/tuic"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
 
@@ -112,6 +114,43 @@ func masqueTransports(streamSettings string) transportBits {
 	}
 	if !h2 || slices.Contains(stream.TLSSettings.ALPN, "h3") {
 		bits |= transportUDP
+	}
+	return bits
+}
+
+type portClaim struct {
+	port int
+	bits transportBits
+}
+
+// portClaims is every port an inbound binds. The cisco and OpenVPN sidecars are
+// read here, not in inboundTransports, whose answer existing tags were built from.
+func portClaims(ib *model.Inbound) []portClaim {
+	switch ib.Protocol {
+	case model.Cisco:
+		switch dtls := ocserv.DTLSPort(ib); dtls {
+		case 0:
+			return []portClaim{{ib.Port, transportTCP}}
+		case ib.Port:
+			return []portClaim{{ib.Port, transportTCP | transportUDP}}
+		default:
+			return []portClaim{{ib.Port, transportTCP}, {dtls, transportUDP}}
+		}
+	case model.OpenVPN:
+		if openvpn.UsesTCP(ib) {
+			return []portClaim{{ib.Port, transportTCP}}
+		}
+		return []portClaim{{ib.Port, transportUDP}}
+	}
+	return []portClaim{{ib.Port, inboundTransports(ib.Protocol, ib.StreamSettings, ib.Settings)}}
+}
+
+func claimedOn(claims []portClaim, port int) transportBits {
+	var bits transportBits
+	for _, c := range claims {
+		if c.port == port {
+			bits |= c.bits
+		}
 	}
 	return bits
 }
@@ -264,7 +303,8 @@ func (s *InboundService) checkPortConflict(inbound *model.Inbound, ignoreId int)
 }
 
 func checkPortConflictTx(db *gorm.DB, inbound *model.Inbound, ignoreId int) (*portConflictDetail, error) {
-	newBits := inboundTransports(inbound.Protocol, inbound.StreamSettings, inbound.Settings)
+	claims := portClaims(inbound)
+	newBits := claimedOn(claims, inbound.Port)
 
 	// The internal Xray API inbound (tag "api", loopback TCP) isn't a DB row,
 	// so a local user inbound reusing its port would leave Xray binding the
@@ -369,8 +409,13 @@ func checkPortConflictTx(db *gorm.DB, inbound *model.Inbound, ignoreId int) (*po
 		}
 	}
 
+	ports := make([]int, 0, len(claims))
+	for _, c := range claims {
+		ports = append(ports, c.port)
+	}
 	var candidates []*model.Inbound
-	q := db.Model(model.Inbound{}).Where("port = ?", inbound.Port)
+	// a cisco row's DTLS port is in its settings, not the port column.
+	q := db.Model(model.Inbound{}).Where("(port IN ? OR protocol = ?)", ports, model.Cisco)
 	if ignoreId > 0 {
 		q = q.Where("id != ?", ignoreId)
 	}
@@ -385,19 +430,21 @@ func checkPortConflictTx(db *gorm.DB, inbound *model.Inbound, ignoreId int) (*po
 		if !listenOverlaps(inboundBindAddr(c), inboundBindAddr(inbound)) {
 			continue
 		}
-		existingBits := inboundTransports(c.Protocol, c.StreamSettings, c.Settings)
-		shared := existingBits & newBits
-		if shared == 0 {
-			continue
+		theirs := portClaims(c)
+		for _, mine := range claims {
+			shared := claimedOn(theirs, mine.port) & mine.bits
+			if shared == 0 {
+				continue
+			}
+			return &portConflictDetail{
+				InboundID:  c.Id,
+				Remark:     c.Remark,
+				Tag:        c.Tag,
+				Listen:     c.Listen,
+				Port:       mine.port,
+				Transports: shared,
+			}, nil
 		}
-		return &portConflictDetail{
-			InboundID:  c.Id,
-			Remark:     c.Remark,
-			Tag:        c.Tag,
-			Listen:     c.Listen,
-			Port:       c.Port,
-			Transports: shared,
-		}, nil
 	}
 	return nil, nil
 }

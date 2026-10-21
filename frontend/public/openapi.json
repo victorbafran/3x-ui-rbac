@@ -17168,9 +17168,11 @@
                   "type": "string",
                   "enum": [
                     "xray",
-                    "tuic"
+                    "tuic",
+                    "cisco",
+                    "openvpn"
                   ],
-                  "description": "Present for native TUIC samples; omitted Xray samples default to xray."
+                  "description": "Names the protocol that metered the sample, so each one expires separately. Omitted on Xray samples, which default to xray."
                 },
                 "clientTrafficIntervalMs": {
                   "type": "integer",

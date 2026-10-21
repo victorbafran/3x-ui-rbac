@@ -1,6 +1,8 @@
 package job
 
 import (
+	"time"
+
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 	"github.com/mhsanaei/3x-ui/v3/internal/ocserv"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
@@ -12,6 +14,9 @@ import (
 // traffic read through occtl into the usual client and inbound accounting.
 type CiscoJob struct {
 	inboundService service.InboundService
+	// lastSpeedSample is when the previous push measured from, so the rate
+	// is divided by the interval that actually elapsed.
+	lastSpeedSample time.Time
 }
 
 // NewCiscoJob creates a new cisco reconcile/traffic job instance.
@@ -66,10 +71,20 @@ func (j *CiscoJob) Run() {
 		})
 	}
 
+	sampledAt := time.Now()
+	sampleInterval := speedSampleInterval(j.lastSpeedSample, sampledAt)
+	persisted := true
 	if len(traffics) > 0 || len(clientTraffics) > 0 {
 		if _, _, err := j.inboundService.AddTraffic(traffics, clientTraffics); err != nil {
 			logger.Warning("cisco job: add traffic failed:", err)
+			persisted = false
 		}
+	}
+	// Only after it is stored: a speed shown for traffic the database refused
+	// is a number that disagrees with the total printed beside it.
+	if persisted {
+		broadcastSidecarSpeed("cisco", clientTraffics, sampleInterval)
+		j.lastSpeedSample = sampledAt
 	}
 
 	j.inboundService.RefreshLocalOnlineClients(onlineEmails, activeTags)

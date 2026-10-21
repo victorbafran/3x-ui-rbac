@@ -5,6 +5,8 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+
+	"github.com/mhsanaei/3x-ui/v3/internal/util/filestamp"
 )
 
 // Instance is the desired runtime configuration of one cisco inbound. A single
@@ -195,6 +197,11 @@ func (inst Instance) structuralFingerprint() string {
 		strconv.Itoa(inst.maxSameClients()),
 		inst.CertFile,
 		inst.KeyFile,
+		// The content as well as the path. ocserv reads its certificate once
+		// at startup, and a certificate renewed in place kept being served
+		// stale until something else happened to restart it.
+		filestamp.Of(inst.CertFile),
+		filestamp.Of(inst.KeyFile),
 		strconv.Itoa(inst.udpPort()),
 		strconv.FormatBool(inst.DisableUDP),
 		strconv.Itoa(inst.mtu()),

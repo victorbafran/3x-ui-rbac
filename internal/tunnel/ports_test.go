@@ -118,3 +118,39 @@ func TestRemovingEveryInboundEmptiesTheList(t *testing.T) {
 		t.Error("an empty list reads the same as a full one, so the front would never be told")
 	}
 }
+
+// A name pointing at a front can only get a certificate if Let's Encrypt's
+// fetch on port 80 reaches the panel, so port 80 rides every front, in order.
+func TestPortEightyRidesEveryFront(t *testing.T) {
+	reserved := Reserved{PanelPort: 2096, TunnelPort: 3080, SSHPort: 22}
+	got := WithACME([]int{443, 1194}, reserved)
+	want := []int{80, 443, 1194}
+	if !SamePorts(got, want) {
+		t.Fatalf("got %v, want %v", got, want)
+	}
+	if got := WithACME(nil, reserved); !SamePorts(got, []int{80}) {
+		t.Fatalf("a front with no inbounds yet got %v, want port 80 alone", got)
+	}
+}
+
+// An inbound already on port 80 is forwarded once, not twice.
+func TestPortEightyIsNotForwardedTwice(t *testing.T) {
+	got := WithACME([]int{80, 443}, Reserved{PanelPort: 2096, TunnelPort: 3080, SSHPort: 22})
+	if !SamePorts(got, []int{80, 443}) {
+		t.Fatalf("got %v", got)
+	}
+}
+
+// The reserved ports still win. A panel served on port 80 must not have its
+// login published on the front just because certificates also use the port.
+func TestAReservedPortEightyStaysReserved(t *testing.T) {
+	for _, reserved := range []Reserved{
+		{PanelPort: 80, TunnelPort: 3080, SSHPort: 22},
+		{PanelPort: 2096, TunnelPort: 80, SSHPort: 22},
+		{PanelPort: 2096, TunnelPort: 3080, SSHPort: 80},
+	} {
+		if got := WithACME([]int{443}, reserved); !SamePorts(got, []int{443}) {
+			t.Errorf("with %+v reserved, port 80 was forwarded anyway: %v", reserved, got)
+		}
+	}
+}

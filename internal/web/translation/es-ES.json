@@ -778,7 +778,7 @@
         "ciscoMaxSameClients": "Dispositivos por cuenta",
         "ciscoMaxSameClientsHint": "Cuántos dispositivos pueden usar una cuenta a la vez. 0 usa el valor predeterminado de 2.",
         "ciscoCertFile": "Archivo de certificado",
-        "ciscoCertFileHint": "Deja ambos vacíos y el panel generará un certificado RSA autofirmado y lo reutilizará. La clave debe ser RSA: el cliente oficial Cisco Secure Client no conecta con una ECDSA.",
+        "ciscoCertFileHint": "Deja ambos vacíos y el panel generará un certificado RSA autofirmado y lo reutilizará. Usa una clave RSA: algunas versiones de Cisco Secure Client no ofrecen ningún cifrado ECDSA y abandonan antes de recibir el certificado.",
         "ciscoKeyFile": "Archivo de clave privada",
         "ciscoUdpPort": "Puerto DTLS (UDP)",
         "ciscoUdpPortHint": "La velocidad de Cisco viene de DTLS, que va por UDP. Deja 0 para usar el mismo puerto que TCP; cámbialo solo si ese puerto UDP está bloqueado y otro no.",
@@ -833,7 +833,19 @@
         "peerNumberConfig": "Config Peer {n}"
       },
       "sniffingDestOverride": "Anulación de destino",
-      "advancedTitle": "Configuración avanzada"
+      "advancedTitle": "Configuración avanzada",
+      "certIssue": {
+        "button": "Obtener un certificado",
+        "title": "Obtener un certificado de Let’s Encrypt",
+        "explain": "Cada nombre tiene que llevar el puerto 80 hasta este panel",
+        "explainHint": "Let’s Encrypt comprueba un nombre descargando un archivo del puerto 80 de la dirección a la que apunta. Apunta cada nombre a este panel, o a un servidor de entrada, antes de pedirlo. El certificado se renueva solo un mes antes de caducar y el servidor VPN recoge el nuevo por su cuenta.",
+        "names": "Nombres",
+        "namesHint": "Los nombres que escriben los clientes, tantos como deba cubrir el certificado. El primero da nombre también a la carpeta donde se guarda.",
+        "issue": "Obtener el certificado",
+        "done": "Certificado para {names}, válido hasta {date}",
+        "reused": "Este panel ya tenía un certificado para {names}, válido hasta {date}, así que se reutilizó",
+        "toast": "Obtener un certificado"
+      }
     },
     "clients": {
       "tabBasics": "Básico",

@@ -778,7 +778,7 @@
         "ciscoMaxSameClients": "每个账号的设备数",
         "ciscoMaxSameClientsHint": "同一账号可同时使用的设备数量。填 0 使用默认值 2。",
         "ciscoCertFile": "证书文件",
-        "ciscoCertFileHint": "两项都留空时，面板会生成一份自签名 RSA 证书并重复使用。密钥必须是 RSA：官方 Cisco Secure Client 无法连接 ECDSA 密钥。",
+        "ciscoCertFileHint": "两项都留空时，面板会生成一份自签名 RSA 证书并重复使用。请使用 RSA 密钥：部分版本的 Cisco Secure Client 完全不提供 ECDSA 加密套件，会在收到证书之前就放弃连接。",
         "ciscoKeyFile": "私钥文件",
         "ciscoUdpPort": "DTLS 端口（UDP）",
         "ciscoUdpPortHint": "Cisco 的速度来自运行在 UDP 上的 DTLS。填 0 表示与 TCP 同端口；仅当该 UDP 端口被封而另一个可用时才更改。",
@@ -833,7 +833,19 @@
         "peerNumberConfig": "Peer {n} 配置"
       },
       "sniffingDestOverride": "目标覆盖",
-      "advancedTitle": "高级设置"
+      "advancedTitle": "高级设置",
+      "certIssue": {
+        "button": "获取证书",
+        "title": "从 Let’s Encrypt 获取证书",
+        "explain": "每个名称都必须让 80 端口回到这个面板",
+        "explainHint": "Let’s Encrypt 会从名称所指地址的 80 端口下载一个文件来验证名称。申请前，请把每个名称指向这个面板或某台入口服务器。证书会在到期前一个月自动续期，VPN 服务器会自己换上新证书。",
+        "names": "名称",
+        "namesHint": "客户输入的名称，证书需要覆盖几个就填几个。第一个名称也是保存证书的文件夹名。",
+        "issue": "获取证书",
+        "done": "{names} 的证书，有效期至 {date}",
+        "reused": "面板已有 {names} 的证书（有效期至 {date}），已直接沿用",
+        "toast": "获取证书"
+      }
     },
     "clients": {
       "tabBasics": "基本",

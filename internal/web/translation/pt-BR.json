@@ -778,7 +778,7 @@
         "ciscoMaxSameClients": "Dispositivos por conta",
         "ciscoMaxSameClientsHint": "Quantos dispositivos podem usar uma conta ao mesmo tempo. 0 usa o padrão de 2.",
         "ciscoCertFile": "Arquivo de certificado",
-        "ciscoCertFileHint": "Deixe ambos vazios e o painel gera um certificado RSA autoassinado e o reutiliza. A chave precisa ser RSA: o Cisco Secure Client oficial não conecta a uma ECDSA.",
+        "ciscoCertFileHint": "Deixe ambos vazios e o painel gera um certificado RSA autoassinado e o reutiliza. Use uma chave RSA: algumas versões do Cisco Secure Client não oferecem nenhuma cifra ECDSA e desistem antes de o certificado ser enviado.",
         "ciscoKeyFile": "Arquivo de chave privada",
         "ciscoUdpPort": "Porta DTLS (UDP)",
         "ciscoUdpPortHint": "A velocidade do Cisco vem do DTLS, que roda em UDP. Deixe 0 para usar a mesma porta do TCP; mude só se essa porta UDP estiver bloqueada e outra não.",
@@ -833,7 +833,19 @@
         "peerNumberConfig": "Config Peer {n}"
       },
       "sniffingDestOverride": "Substituição de destino",
-      "advancedTitle": "Configurações avançadas"
+      "advancedTitle": "Configurações avançadas",
+      "certIssue": {
+        "button": "Obter um certificado",
+        "title": "Obter um certificado do Let’s Encrypt",
+        "explain": "Cada nome tem de levar a porta 80 até este painel",
+        "explainHint": "O Let’s Encrypt confere um nome buscando um arquivo na porta 80 do endereço para onde o nome aponta. Aponte cada nome para este painel, ou para um servidor de entrada, antes de pedir. O certificado se renova sozinho um mês antes de vencer, e o servidor VPN pega o novo por conta própria.",
+        "names": "Nomes",
+        "namesHint": "Os nomes que os clientes digitam, quantos o certificado deve cobrir. O primeiro também dá nome à pasta onde ele fica.",
+        "issue": "Obter o certificado",
+        "done": "Certificado para {names}, válido até {date}",
+        "reused": "Este painel já tinha um certificado para {names}, válido até {date}, então ele foi reutilizado",
+        "toast": "Obter um certificado"
+      }
     },
     "clients": {
       "tabBasics": "Básico",

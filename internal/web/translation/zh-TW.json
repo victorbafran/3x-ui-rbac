@@ -778,7 +778,7 @@
         "ciscoMaxSameClients": "每個帳號的裝置數",
         "ciscoMaxSameClientsHint": "同一帳號可同時使用的裝置數量。填 0 使用預設值 2。",
         "ciscoCertFile": "憑證檔案",
-        "ciscoCertFileHint": "兩項都留空時，面板會產生一份自簽 RSA 憑證並重複使用。金鑰必須是 RSA：官方 Cisco Secure Client 無法連線至 ECDSA 金鑰。",
+        "ciscoCertFileHint": "兩項都留空時，面板會產生一份自簽 RSA 憑證並重複使用。請使用 RSA 金鑰：部分版本的 Cisco Secure Client 完全不提供 ECDSA 加密套件，會在收到憑證之前就放棄連線。",
         "ciscoKeyFile": "私鑰檔案",
         "ciscoUdpPort": "DTLS 連接埠（UDP）",
         "ciscoUdpPortHint": "Cisco 的速度來自執行在 UDP 上的 DTLS。填 0 表示與 TCP 同一個連接埠；僅當該 UDP 連接埠被封鎖而另一個可用時才更改。",
@@ -833,7 +833,19 @@
         "peerNumberConfig": "Peer {n} 設定"
       },
       "sniffingDestOverride": "目標覆寫",
-      "advancedTitle": "進階設定"
+      "advancedTitle": "進階設定",
+      "certIssue": {
+        "button": "取得憑證",
+        "title": "從 Let’s Encrypt 取得憑證",
+        "explain": "每個名稱都必須讓 80 連接埠回到這個面板",
+        "explainHint": "Let’s Encrypt 會從名稱所指位址的 80 連接埠下載一個檔案來驗證名稱。申請前，請把每個名稱指向這個面板或某台入口伺服器。憑證會在到期前一個月自動續期，VPN 伺服器會自己換上新憑證。",
+        "names": "名稱",
+        "namesHint": "客戶輸入的名稱，憑證需要涵蓋幾個就填幾個。第一個名稱也是存放憑證的資料夾名稱。",
+        "issue": "取得憑證",
+        "done": "{names} 的憑證，有效期至 {date}",
+        "reused": "面板已有 {names} 的憑證（有效期至 {date}），已直接沿用",
+        "toast": "取得憑證"
+      }
     },
     "clients": {
       "tabBasics": "基本",

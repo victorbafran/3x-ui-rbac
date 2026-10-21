@@ -778,7 +778,7 @@
         "ciscoMaxSameClients": "Perangkat per akun",
         "ciscoMaxSameClientsHint": "Berapa perangkat boleh memakai satu akun bersamaan. 0 memakai nilai bawaan 2.",
         "ciscoCertFile": "Berkas sertifikat",
-        "ciscoCertFileHint": "Kosongkan keduanya dan panel membuat sertifikat RSA bertanda tangan sendiri lalu memakainya kembali. Kuncinya harus RSA: klien resmi Cisco Secure Client tidak bisa terhubung ke ECDSA.",
+        "ciscoCertFileHint": "Kosongkan keduanya dan panel membuat sertifikat RSA bertanda tangan sendiri lalu memakainya kembali. Pakai kunci RSA: beberapa versi Cisco Secure Client sama sekali tidak menawarkan cipher ECDSA dan menyerah sebelum sertifikat dikirim.",
         "ciscoKeyFile": "Berkas kunci privat",
         "ciscoUdpPort": "Port DTLS (UDP)",
         "ciscoUdpPortHint": "Kecepatan Cisco berasal dari DTLS yang berjalan di UDP. Biarkan 0 untuk memakai port yang sama dengan TCP; ubah hanya jika port UDP itu diblokir dan yang lain tidak.",
@@ -833,7 +833,19 @@
         "peerNumberConfig": "Konfig Peer {n}"
       },
       "sniffingDestOverride": "Penggantian tujuan",
-      "advancedTitle": "Pengaturan Lanjutan"
+      "advancedTitle": "Pengaturan Lanjutan",
+      "certIssue": {
+        "button": "Ambil sertifikat",
+        "title": "Ambil sertifikat dari Let’s Encrypt",
+        "explain": "Setiap nama harus membawa port 80 kembali ke panel ini",
+        "explainHint": "Let’s Encrypt memeriksa sebuah nama dengan mengambil file dari port 80 alamat yang ditunjuk nama itu. Arahkan setiap nama ke panel ini, atau ke server masuk, sebelum meminta. Sertifikat diperbarui sendiri sebulan sebelum kedaluwarsa, dan server VPN mengambil yang baru dengan sendirinya.",
+        "names": "Nama",
+        "namesHint": "Nama yang diketik pelanggan, sebanyak yang harus dicakup sertifikat. Nama pertama juga menjadi nama folder tempat sertifikat disimpan.",
+        "issue": "Ambil sertifikatnya",
+        "done": "Sertifikat untuk {names}, berlaku sampai {date}",
+        "reused": "Panel ini sudah punya sertifikat untuk {names}, berlaku sampai {date}, jadi dipakai lagi",
+        "toast": "Ambil sertifikat"
+      }
     },
     "clients": {
       "tabBasics": "Dasar",

@@ -5,6 +5,8 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/mhsanaei/3x-ui/v3/internal/util/filestamp"
 )
 
 // Instance is one OpenVPN sidecar: everything the panel knows about an
@@ -163,6 +165,11 @@ func (inst Instance) structuralFingerprint() string {
 		strconv.Itoa(inst.maxSameClients()),
 		inst.CertFile,
 		inst.KeyFile,
+		// The content as well as the path, for the same reason as cisco: the
+		// certificate is read at startup, and one replaced in place would
+		// otherwise stay stale until an unrelated restart.
+		filestamp.Of(inst.CertFile),
+		filestamp.Of(inst.KeyFile),
 		strings.TrimSpace(inst.Exit),
 	}, "|")
 }

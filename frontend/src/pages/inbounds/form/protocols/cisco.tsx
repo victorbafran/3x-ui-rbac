@@ -5,6 +5,7 @@ import { Alert, AutoComplete, Button, Form, Input, InputNumber, Select, Space, S
 import { useFieldArray, useFormContext, useWatch } from 'react-hook-form';
 
 import { FormField } from '@/components/form/rhf';
+import { CertIssueButton } from '@/pages/inbounds/form/CertIssueButton';
 import { useInboundOptions } from '@/api/queries/useInboundOptions';
 import { useRelayOptions } from '@/api/queries/useRelaysQuery';
 import type { RelayOption } from '@/schemas/relay';
@@ -255,6 +256,7 @@ export default function CiscoFields() {
       <FormField name={['settings', 'keyFile']} label={t('pages.inbounds.form.ciscoKeyFile')}>
         <Input placeholder="/etc/ssl/private/vpn.key" />
       </FormField>
+      <CertIssueButton certField="settings.certFile" keyField="settings.keyFile" />
       <LocationList />
     </>
   );

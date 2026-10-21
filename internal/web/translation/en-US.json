@@ -779,7 +779,7 @@
         "ciscoMaxSameClients": "Devices per account",
         "ciscoMaxSameClientsHint": "How many devices may use one account at the same time. 0 uses the default of 2.",
         "ciscoCertFile": "Certificate file",
-        "ciscoCertFileHint": "Leave both empty and the panel generates a self-signed RSA certificate and reuses it. The key must be RSA: the official Cisco Secure Client cannot connect to an ECDSA one.",
+        "ciscoCertFileHint": "Leave both empty and the panel generates a self-signed RSA certificate and reuses it. Use an RSA key: some versions of Cisco Secure Client offer no ECDSA cipher at all and give up before the certificate is sent.",
         "ciscoKeyFile": "Private key file",
         "ciscoUdpPort": "DTLS port (UDP)",
         "ciscoUdpPortHint": "DTLS is what makes Cisco fast, and it rides UDP. Leave 0 to use the same port as TCP. Set another only when that UDP port is blocked and another is not.",
@@ -833,7 +833,19 @@
         "peerNumber": "Peer {n}",
         "peerNumberConfig": "Peer {n} config"
       },
-      "sniffingDestOverride": "Destination override"
+      "sniffingDestOverride": "Destination override",
+      "certIssue": {
+        "button": "Get a certificate",
+        "title": "Get a certificate from Let’s Encrypt",
+        "explain": "Each name has to lead port 80 back to this panel",
+        "explainHint": "Let’s Encrypt checks a name by fetching a file from port 80 of the address the name points at. Point every name at this panel, or at an entry server, before asking. The certificate renews itself a month before it expires, and the VPN server picks the new one up on its own.",
+        "names": "Names",
+        "namesHint": "The names customers type, as many as the certificate should cover. The first one also names the folder it is kept in.",
+        "issue": "Get the certificate",
+        "done": "Certificate for {names}, valid until {date}",
+        "reused": "This panel already had a certificate for {names}, valid until {date}, so it was used again",
+        "toast": "Get a certificate"
+      }
     },
     "clients": {
       "tabBasics": "Basics",

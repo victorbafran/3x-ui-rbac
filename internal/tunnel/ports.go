@@ -63,6 +63,35 @@ func ForwardedPorts(inbounds []Inbound, reserved Reserved) []int {
 	return out
 }
 
+// ACMEPort rides every front whether or not an inbound uses it. Let's
+// Encrypt proves a name by fetching a file from port 80 of whatever the name
+// points at, and for a name that points at a front that request has to reach
+// the panel, the only machine holding the answer. The first real tunnel had
+// port 80 added by hand for exactly this. Whatever listens on the panel's
+// port 80 is published on the front too, which on a VPN panel is normally
+// nothing at all between issuances.
+const ACMEPort = 80
+
+// WithACME adds ACMEPort to a list from ForwardedPorts unless something
+// reserved claims it, keeping the list sorted and free of duplicates.
+func WithACME(ports []int, reserved Reserved) []int {
+	for _, p := range []int{reserved.PanelPort, reserved.TunnelPort, reserved.SSHPort} {
+		if p == ACMEPort {
+			return ports
+		}
+	}
+	for _, p := range ports {
+		if p == ACMEPort {
+			return ports
+		}
+	}
+	out := make([]int, 0, len(ports)+1)
+	out = append(out, ports...)
+	out = append(out, ACMEPort)
+	sort.Ints(out)
+	return out
+}
+
 // SamePorts reports whether two lists are the same set, so a reconcile can
 // tell "nothing to do" from "rewrite the front and restart it".
 //

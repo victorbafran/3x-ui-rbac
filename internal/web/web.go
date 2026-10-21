@@ -323,6 +323,10 @@ const (
 	// stacks overlapping samplers; subscribers rate-limit alerts to 1/min anyway.
 	cadenceCPUAlarm    = "@every 1m"
 	cadenceMemoryAlarm = "@every 1m"
+	// Twice a day against a month of margin: sixty chances to renew a
+	// certificate before a customer meets an expired one, and the check is
+	// a directory read when nothing is due.
+	cadenceCertRenew = "@every 12h"
 )
 
 // startTask schedules background jobs (Xray checks, traffic jobs, cron
@@ -373,6 +377,13 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 	relayJob := job.NewRelayJob()
 	_, _ = s.cron.AddJob(cadenceRelay, relayJob)
 	go relayJob.Run()
+
+	// Renew the certificates the panel issued for its inbounds. Run once at
+	// start as well: a panel restarted more often than the cadence would
+	// otherwise never reach its first check.
+	certRenewJob := job.NewCertRenewJob()
+	_, _ = s.cron.AddJob(cadenceCertRenew, certRenewJob)
+	go certRenewJob.Run()
 
 	tuicJob := job.NewTuicJob()
 	_, _ = s.cron.AddJob(cadenceTuic, tuicJob)

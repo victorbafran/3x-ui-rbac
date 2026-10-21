@@ -41,8 +41,36 @@ export const RelaySchema = z.object({
     .array(z.string())
     .nullish()
     .transform((v) => v ?? []),
+
+  // An exit carries customers out to its country. A front is the address
+  // customers connect to, with the panel's own inbounds reaching it through
+  // a tunnel. Rows written before fronts existed come back as exits.
+  role: z.enum(['exit', 'front']).catch('exit'),
+  tunnelPort: z.number().default(0),
+  transport: z.string().default(''),
+  // A front's own: what its client last said when it is not running, and the
+  // customer ports it carries right now.
+  tunnelDetail: z.string().default(''),
+  forwardedPorts: z
+    .array(z.number())
+    .nullish()
+    .transform((v) => v ?? []),
 });
 export type Relay = z.infer<typeof RelaySchema>;
+
+// Backhaul's transports, in the order worth trying. tcp suits almost every
+// network; the others are only worth reaching for when a network refuses it.
+export const TUNNEL_TRANSPORTS = [
+  'tcp',
+  'tcpmux',
+  'ws',
+  'wsmux',
+  'wss',
+  'wssmux',
+  'udp',
+  'udpovertcp',
+] as const;
+export const DEFAULT_TUNNEL_PORT = 3080;
 export const RelayListSchema = z.object({ obj: z.array(RelaySchema).nullable().default([]) });
 
 export const RelayOptionSchema = z.object({
@@ -90,4 +118,9 @@ export interface RelayFormValues {
   password?: string;
   privateKey?: string;
   enabled?: boolean;
+  // Fixed once the server is enrolled: the backend refuses to turn an exit
+  // into a front or back, because each is installed differently.
+  role?: 'exit' | 'front';
+  tunnelPort?: number;
+  transport?: string;
 }

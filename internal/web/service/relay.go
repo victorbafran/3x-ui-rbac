@@ -61,6 +61,11 @@ type RelayView struct {
 	// InUseBy names the inbounds that offer this relay as a country, which is
 	// what makes deleting it a question rather than a button.
 	InUseBy []string `json:"inUseBy"`
+	// A front's own: what its client last said when it is not running, and
+	// the customer ports it carries right now, derived the same way
+	// provisioning derives them so the page shows what the front really opens.
+	TunnelDetail   string `json:"tunnelDetail"`
+	ForwardedPorts []int  `json:"forwardedPorts"`
 }
 
 // RelayRequest is what the operator fills in. Password and PrivateKey are
@@ -95,23 +100,54 @@ func (s *RelayService) List() ([]RelayView, error) {
 	usage := s.usage()
 	out := make([]RelayView, 0, len(rows))
 	for _, r := range rows {
-		h := relay.Check(relay.Server{Id: r.Id})
-		out = append(out, RelayView{
-			Relay:        r,
-			Interface:    relay.InterfaceName(r.Id),
-			TunnelUp:     h.Up,
-			Healthy:      h.Healthy(),
-			HandshakeAgo: int64(h.HandshakeAge.Seconds()),
-			Received:     h.Received,
-			Sent:         h.Sent,
+		view := RelayView{
+			Relay: r,
 			// A miss in the map is a nil slice, and a nil slice marshals to
 			// null rather than []. The page reads .length off this and a null
 			// took the whole page down, so the empty case is made explicit
 			// here rather than left to whoever reads the JSON next.
-			InUseBy: inUse(usage, relay.InterfaceName(r.Id)),
-		})
+			InUseBy:        inUse(usage, relay.InterfaceName(r.Id)),
+			ForwardedPorts: []int{},
+		}
+		if r.Role == model.RelayFront {
+			s.frontHealth(&view)
+		} else {
+			h := relay.Check(relay.Server{Id: r.Id})
+			view.Interface = relay.InterfaceName(r.Id)
+			view.TunnelUp = h.Up
+			view.Healthy = h.Healthy()
+			view.HandshakeAgo = int64(h.HandshakeAge.Seconds())
+			view.Received = h.Received
+			view.Sent = h.Sent
+		}
+		out = append(out, view)
 	}
 	return out, nil
+}
+
+// frontHealth fills in what a front's tunnel is doing. A front carries no
+// WireGuard, and asking WireGuard about it reported every working front as
+// silent. Its health is read from the panel's own end instead: the supervised
+// client that dials it, and whether that client really holds a connection to
+// the front's tunnel port — a client retrying against a dead front is alive
+// and connected to nothing.
+func (s *RelayService) frontHealth(v *RelayView) {
+	running, detail := tunnel.GetManager().Status(v.Id)
+	known, connected := tunnel.Established(tunnel.Pair{
+		FrontAddress: v.Address,
+		TunnelPort:   v.TunnelPort,
+		Transport:    tunnel.Transport(v.Transport),
+	})
+	v.TunnelUp = running
+	// Where the connection cannot be read, the udp transport or a front given
+	// by name, the live process is all there is to go on.
+	v.Healthy = running && (connected || !known)
+	if !running {
+		v.TunnelDetail = detail
+	}
+	if ports, err := s.frontForwardedPorts(v.TunnelPort, v.SSHPort); err == nil && ports != nil {
+		v.ForwardedPorts = ports
+	}
 }
 
 // usage maps an interface name to the inbounds whose countries point at it.

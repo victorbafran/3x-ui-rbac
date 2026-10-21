@@ -38,6 +38,11 @@ const relays: Relay[] = [
     received: 2048,
     sent: 1024,
     inUseBy: ['cisco-1'],
+    role: 'exit',
+    tunnelPort: 0,
+    transport: '',
+    tunnelDetail: '',
+    forwardedPorts: [],
   },
   {
     id: 2,
@@ -63,8 +68,36 @@ const relays: Relay[] = [
     received: 0,
     sent: 0,
     inUseBy: [],
+    role: 'exit',
+    tunnelPort: 0,
+    transport: '',
+    tunnelDetail: '',
+    forwardedPorts: [],
   },
 ];
+
+// A front in Iran that the panel's client is connected to, carrying four of
+// the panel's inbound ports.
+const front: Relay = {
+  ...relays[1],
+  id: 3,
+  name: 'iran-front',
+  label: 'Iran',
+  address: '203.0.113.9',
+  sshPort: 22,
+  tunnel: 'backhaul',
+  status: 'ready',
+  lastError: '',
+  interface: '',
+  tunnelUp: true,
+  healthy: true,
+  inUseBy: [],
+  role: 'front',
+  tunnelPort: 3080,
+  transport: 'tcp',
+  tunnelDetail: '',
+  forwardedPorts: [443, 1194, 10434, 41330],
+};
 
 const removeMut = { mutateAsync: vi.fn(async () => ({ success: true })), isPending: false };
 
@@ -180,6 +213,75 @@ describe('the exit servers page', () => {
     await act(async () => {});
     expect(document.body.textContent).toContain('Remove Netherlands?');
     expect(removeMut.mutateAsync).not.toHaveBeenCalled();
+    cleanup();
+  });
+
+  // An entry server is a different kind of thing from an exit, and the row
+  // has to say so: it shows the ports customers can reach through it rather
+  // than WireGuard counters it does not have.
+  it('marks an entry server and lists the ports it carries', () => {
+    rows = [relays[0], front];
+    renderWithProviders(
+      <MemoryRouter>
+        <RelaysPage />
+      </MemoryRouter>,
+    );
+    const table = within(document.querySelector('.ant-table') as HTMLElement);
+    expect(table.getByText('Entry')).toBeTruthy();
+    expect(table.getByText('Exit')).toBeTruthy();
+    expect(document.body.textContent).toContain('Forwards 443, 1194, 10434, 41330');
+    expect(document.body.textContent).toContain('tcp:3080');
+    cleanup();
+  });
+
+  // A front whose client is alive but holds no connection must not look
+  // healthy, and must not be described with WireGuard's words either.
+  it('says an entry server is not connected rather than calling it silent', () => {
+    rows = [{ ...front, healthy: false }];
+    renderWithProviders(
+      <MemoryRouter>
+        <RelaysPage />
+      </MemoryRouter>,
+    );
+    const table = within(document.querySelector('.ant-table') as HTMLElement);
+    expect(table.getByText('Not connected')).toBeTruthy();
+    expect(table.queryByText('No handshake')).toBeNull();
+    expect(table.queryByText('Working')).toBeNull();
+    cleanup();
+  });
+
+  // When the panel's own end is down, what the client last said is the only
+  // clue the operator has.
+  it('shows why the panel is not dialling an entry server', () => {
+    rows = [
+      { ...front, tunnelUp: false, healthy: false, tunnelDetail: 'backhaul exited: bind refused' },
+    ];
+    renderWithProviders(
+      <MemoryRouter>
+        <RelaysPage />
+      </MemoryRouter>,
+    );
+    expect(document.body.textContent).toContain('backhaul exited: bind refused');
+    cleanup();
+  });
+
+  // The tunnel's port and transport only mean something for an entry server,
+  // so they appear when that is chosen and not before.
+  it('asks for the tunnel settings only when adding an entry server', async () => {
+    rows = relays;
+    renderWithProviders(
+      <MemoryRouter>
+        <RelaysPage />
+      </MemoryRouter>,
+    );
+    fireEvent.click(screen.getByText('Add a server'));
+    await act(async () => {});
+    expect(document.body.textContent).not.toContain('Tunnel port');
+    fireEvent.click(screen.getByText('Entry for customers'));
+    await act(async () => {});
+    expect(document.body.textContent).toContain('Tunnel port');
+    expect(document.body.textContent).toContain('Tunnel transport');
+    expect(document.body.textContent).toContain('Customers connect to this server’s address');
     cleanup();
   });
 });

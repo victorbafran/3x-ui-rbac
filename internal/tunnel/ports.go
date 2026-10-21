@@ -32,6 +32,9 @@ type Reserved struct {
 	// SSHPort keeps an operator from locking themselves out of the front by
 	// forwarding its own management port into the tunnel.
 	SSHPort int
+	// TunnelPortUDP is the port of Backhaul's UDP leg, zero for a tunnel
+	// with none. Forwarding it would collide with that leg's own listener.
+	TunnelPortUDP int
 }
 
 // ForwardedPorts is the list a front should open, derived rather than typed.
@@ -41,7 +44,7 @@ type Reserved struct {
 // would drop every customer riding it.
 func ForwardedPorts(inbounds []Inbound, reserved Reserved) []int {
 	blocked := map[int]bool{}
-	for _, p := range []int{reserved.PanelPort, reserved.TunnelPort, reserved.SSHPort} {
+	for _, p := range []int{reserved.PanelPort, reserved.TunnelPort, reserved.SSHPort, reserved.TunnelPortUDP} {
 		if p > 0 {
 			blocked[p] = true
 		}
@@ -75,7 +78,7 @@ const ACMEPort = 80
 // WithACME adds ACMEPort to a list from ForwardedPorts unless something
 // reserved claims it, keeping the list sorted and free of duplicates.
 func WithACME(ports []int, reserved Reserved) []int {
-	for _, p := range []int{reserved.PanelPort, reserved.TunnelPort, reserved.SSHPort} {
+	for _, p := range []int{reserved.PanelPort, reserved.TunnelPort, reserved.SSHPort, reserved.TunnelPortUDP} {
 		if p == ACMEPort {
 			return ports
 		}

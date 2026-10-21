@@ -47,9 +47,9 @@ func Established(p Pair) (known, up bool) {
 }
 
 // carriedOverTCP is whether a transport keeps TCP connections open to the
-// front. Every transport but udp does, udpovertcp included.
+// front. udp, kcp and quic ride datagrams and leave nothing in the TCP table.
 func carriedOverTCP(t Transport) bool {
-	return t != TransportUDP
+	return tcpCarried(t)
 }
 
 // establishedTo reads a socket table in the format of /proc/net/tcp or

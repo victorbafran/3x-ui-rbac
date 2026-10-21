@@ -2,10 +2,14 @@ package tunnel
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/relay"
 )
@@ -14,9 +18,9 @@ import (
 // enrollment left behind — the same machinery the exit servers use, because
 // the operator should not have two different ways to hand the panel a server.
 //
-// What goes on the machine is Backhaul and nothing else: no panel, no
-// accounts, one config and one unit. An operator who stops renting it should
-// be able to see that what is there is a tunnel and only a tunnel.
+// What goes on the machine is the tunnel and nothing else: no panel, no
+// accounts, one config and one unit per leg. An operator who stops renting it
+// should be able to see that what is there is a tunnel and only a tunnel.
 
 // Release is the Backhaul version the panel installs. Pinned rather than
 // "latest": an operator standing up a second front months later should get
@@ -24,7 +28,75 @@ import (
 // protocol and the tunnel simply never completes.
 const Release = "v0.7.2"
 
-// remoteScript installs Backhaul on the front machine and runs this tunnel.
+// The step both install scripts share once the binary is in place: write the
+// config and the unit, and restart only when either changed or the unit is not
+// running. The reconcile that keeps a front's ports current runs this every
+// minute; a script that restarted unconditionally would drop every customer
+// on the tunnel every minute while reporting success.
+const applyStep = `
+umask 077
+mkdir -p "$(dirname "$CONF_PATH")"
+# base64 rather than a literal: the config has newlines and quotes in it,
+# and quoting that through a shell is where the mistakes live.
+NEW_CONF="$CONF_PATH.new"
+printf %s "$CONF_B64" | base64 -d > "$NEW_CONF"
+CHANGED=0
+if cmp -s "$NEW_CONF" "$CONF_PATH" 2>/dev/null; then
+  rm -f "$NEW_CONF"
+else
+  mv -f "$NEW_CONF" "$CONF_PATH"
+  CHANGED=1
+fi
+
+UNIT_FILE="/etc/systemd/system/${UNIT}.service"
+NEW_UNIT="$UNIT_FILE.new"
+cat > "$NEW_UNIT" <<EOF
+[Unit]
+Description=$DESCRIPTION ($UNIT)
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=$BIN -c $CONF_PATH
+Restart=always
+RestartSec=3
+LimitNOFILE=1048576
+
+[Install]
+WantedBy=multi-user.target
+EOF
+chmod 644 "$NEW_UNIT"
+if cmp -s "$NEW_UNIT" "$UNIT_FILE" 2>/dev/null; then
+  rm -f "$NEW_UNIT"
+else
+  mv -f "$NEW_UNIT" "$UNIT_FILE"
+  systemctl daemon-reload
+  CHANGED=1
+fi
+systemctl enable -q "$UNIT" 2>/dev/null || true
+
+# A rebuild that produces the same tunnel must not drop the customers on it.
+if [ "$CHANGED" = 1 ] || [ "$NEED" = 1 ] || ! systemctl is-active -q "$UNIT"; then
+  systemctl restart "$UNIT"
+  echo "restarted $UNIT"
+fi
+
+# Report what is true rather than that the command returned. A unit that
+# started and exited looks identical to one that is serving, and the operator
+# would be told the tunnel was up.
+for _ in 1 2 3 4 5 6 7 8 9 10; do
+  if ss -lnt 2>/dev/null | grep -q ":${TUNNEL_PORT} " || ss -lnu 2>/dev/null | grep -q ":${TUNNEL_PORT} "; then
+    echo "listening on ${TUNNEL_PORT}"
+    exit 0
+  fi
+  sleep 1
+done
+echo "the tunnel started but nothing is listening on ${TUNNEL_PORT}"
+systemctl --no-pager -n 10 status "$UNIT" 2>&1 | tail -10
+exit 1
+`
+
+// remoteScript installs Backhaul on the front machine and runs one leg.
 //
 // Written to be run again safely. An operator who re-saves a tunnel, or a
 // reconcile after a reboot, must end up with the same single unit rather than
@@ -32,6 +104,8 @@ const Release = "v0.7.2"
 const remoteScript = `#!/bin/bash
 set -eu
 CONF_PATH="$1"; UNIT="$2"; VERSION="$3"; TUNNEL_PORT="$4"; CONF_B64="$5"
+BIN=/usr/local/bin/backhaul
+DESCRIPTION="Backhaul tunnel for x-ui"
 export DEBIAN_FRONTEND=noninteractive
 
 case "$(uname -m)" in
@@ -48,8 +122,8 @@ command -v curl >/dev/null 2>&1 || { echo "no curl on this host"; exit 1; }
 # Only when it is missing or a different version: re-running must not pull a
 # binary down every reconcile, and must not swap it under a live tunnel.
 NEED=1
-if [ -x /usr/local/bin/backhaul ]; then
-  if /usr/local/bin/backhaul -v 2>/dev/null | grep -q "${VERSION#v}"; then NEED=0; fi
+if [ -x "$BIN" ]; then
+  if "$BIN" -v 2>/dev/null | grep -q "${VERSION#v}"; then NEED=0; fi
 fi
 
 if [ "$NEED" = 1 ]; then
@@ -65,49 +139,29 @@ if [ "$NEED" = 1 ]; then
     || { echo "the downloaded backhaul does not match its published checksum"; exit 1; }
   tar -xzf "$TMP/$FILE" -C "$TMP" backhaul 2>/dev/null || tar -xzf "$TMP/$FILE" -C "$TMP"
   [ -f "$TMP/backhaul" ] || { echo "the archive held no backhaul binary"; exit 1; }
-  install -m 0755 "$TMP/backhaul" /usr/local/bin/backhaul
+  install -m 0755 "$TMP/backhaul" "$BIN"
 fi
+` + applyStep
 
-umask 077
-mkdir -p "$(dirname "$CONF_PATH")"
-# base64 rather than a literal: the config has newlines and quotes in it,
-# and quoting that through a shell is where the mistakes live.
-printf %s "$CONF_B64" | base64 -d > "$CONF_PATH"
-
-cat > "/etc/systemd/system/${UNIT}.service" <<EOF
-[Unit]
-Description=Backhaul tunnel for x-ui ($UNIT)
-After=network.target
-
-[Service]
-Type=simple
-ExecStart=/usr/local/bin/backhaul -c $CONF_PATH
-Restart=always
-RestartSec=3
-LimitNOFILE=1048576
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-systemctl daemon-reload
-systemctl enable -q "$UNIT" 2>/dev/null || true
-systemctl restart "$UNIT"
-
-# Report what is true rather than that the command returned. A unit that
-# started and exited looks identical to one that is serving, and the operator
-# would be told the tunnel was up.
-for _ in 1 2 3 4 5 6 7 8 9 10; do
-  if ss -lnt 2>/dev/null | grep -q ":${TUNNEL_PORT} " || ss -lnu 2>/dev/null | grep -q ":${TUNNEL_PORT} "; then
-    echo "listening on ${TUNNEL_PORT}"
-    exit 0
-  fi
-  sleep 1
-done
-echo "backhaul started but nothing is listening on ${TUNNEL_PORT}"
-systemctl --no-pager -n 10 status "$UNIT" 2>&1 | tail -10
-exit 1
-`
+// backpackRemoteScript runs one BackPack tunnel. The binary is not fetched
+// here: the panel downloads it, checks BackPack's release signature, and
+// uploads it, because a front in Iran may not reach GitHub at all. It is
+// installed under its own name so a BackPack the operator runs from
+// /usr/local/bin/backpack is never touched.
+const backpackRemoteScript = `#!/bin/bash
+set -eu
+CONF_PATH="$1"; UNIT="$2"; TUNNEL_PORT="$3"; CONF_B64="$4"; UPLOADED="${5:-}"
+BIN=/usr/local/bin/x-ui-backpack
+DESCRIPTION="BackPack tunnel for x-ui"
+NEED=0
+if [ -n "$UPLOADED" ]; then
+  [ -f "$UPLOADED" ] || { echo "the uploaded backpack binary is missing"; exit 1; }
+  install -m 0755 "$UPLOADED" "$BIN"
+  rm -f "$UPLOADED"
+  NEED=1
+fi
+[ -x "$BIN" ] || { echo "no backpack binary on this host"; exit 1; }
+` + applyStep
 
 // teardownScript takes the panel's footprint off a machine being given back.
 // A front released with a live tunnel is a machine still carrying somebody's
@@ -126,15 +180,31 @@ fi
 echo "tunnel removed"
 `
 
+// backpackTeardownScript is teardownScript for BackPack. It removes only the
+// panel's own binary, x-ui-backpack, and only once no panel tunnel uses it.
+const backpackTeardownScript = `#!/bin/bash
+set -u
+CONF_PATH="$1"; UNIT="$2"
+systemctl disable -q --now "$UNIT" 2>/dev/null || true
+rm -f "/etc/systemd/system/${UNIT}.service" "$CONF_PATH"
+systemctl daemon-reload 2>/dev/null || true
+if ! ls /etc/systemd/system/x-ui-backpack-*.service >/dev/null 2>&1; then
+  rm -f /usr/local/bin/x-ui-backpack
+  rmdir /etc/x-ui-backpack 2>/dev/null || true
+fi
+echo "tunnel removed"
+`
+
 // Front is what Provision needs to reach and configure the near machine.
 type Front struct {
 	Pair        Pair
 	Credentials relay.Credentials
 }
 
-// Provision installs Backhaul on the front and starts this tunnel. It returns
-// only once the tunnel port is actually listening, so "provisioned" means the
-// machine is accepting the panel rather than that a command exited zero.
+// Provision installs the tool on the front and starts one leg of a tunnel. It
+// returns only once that leg's port is actually listening, so "provisioned"
+// means the machine is accepting the panel rather than that a command exited
+// zero. Callers provision every leg from Legs.
 func Provision(ctx context.Context, f Front) error {
 	config, err := ServerConfig(f.Pair)
 	if err != nil {
@@ -146,13 +216,18 @@ func Provision(ctx context.Context, f Front) error {
 	}
 	defer client.Close()
 
-	out, err := client.RunScript(ctx, "x-ui-backhaul.sh", remoteScript,
-		RemoteConfigPath(f.Pair.Id),
-		UnitName(f.Pair.Id),
-		Release,
-		strconv.Itoa(f.Pair.TunnelPort),
-		base64.StdEncoding.EncodeToString([]byte(config)),
-	)
+	var out string
+	if f.Pair.Tool.norm() == ToolBackPack {
+		out, err = provisionBackPack(ctx, client, f.Pair, config)
+	} else {
+		out, err = client.RunScript(ctx, "x-ui-backhaul.sh", remoteScript,
+			f.Pair.remoteConfigPath(),
+			f.Pair.unitName(),
+			Release,
+			strconv.Itoa(f.Pair.TunnelPort),
+			base64.StdEncoding.EncodeToString([]byte(config)),
+		)
+	}
 	if err != nil {
 		return fmt.Errorf("set up the tunnel: %w: %s", err, lastLine(out))
 	}
@@ -162,7 +237,100 @@ func Provision(ctx context.Context, f Front) error {
 	return nil
 }
 
-// Teardown removes the panel's footprint from a front machine.
+// provisionBackPack pushes the verified binary when the front's copy differs
+// and then applies the leg. The comparison is by content, so a reconcile does
+// not upload tens of megabytes every minute.
+func provisionBackPack(ctx context.Context, client *relay.Client, p Pair, config string) (string, error) {
+	machine, err := client.Run(ctx, "uname -m")
+	if err != nil {
+		return "", fmt.Errorf("could not tell what the front runs on: %w", err)
+	}
+	arch, err := backpackArch(strings.TrimSpace(machine))
+	if err != nil {
+		return "", err
+	}
+	local, err := FetchBackPack(ctx, arch)
+	if err != nil {
+		return "", err
+	}
+	want, err := fileSHA256(local)
+	if err != nil {
+		return "", err
+	}
+	have, _ := client.Run(ctx, "sha256sum /usr/local/bin/"+backpackBinaryName+" 2>/dev/null | cut -d' ' -f1")
+	uploaded := ""
+	if strings.TrimSpace(have) != want {
+		data, err := os.ReadFile(local)
+		if err != nil {
+			return "", fmt.Errorf("could not read the verified backpack binary: %w", err)
+		}
+		uploaded = "/tmp/" + backpackBinaryName + ".upload"
+		if err := client.Upload(ctx, uploaded, data); err != nil {
+			return "", fmt.Errorf("could not send backpack to the front: %w", err)
+		}
+	}
+	return client.RunScript(ctx, "x-ui-backpack.sh", backpackRemoteScript,
+		p.remoteConfigPath(),
+		p.unitName(),
+		strconv.Itoa(p.TunnelPort),
+		base64.StdEncoding.EncodeToString([]byte(config)),
+		uploaded,
+	)
+}
+
+// backpackArch maps uname -m to the architecture BackPack names its releases
+// after.
+func backpackArch(machine string) (string, error) {
+	switch machine {
+	case "x86_64", "amd64":
+		return "amd64", nil
+	case "aarch64", "arm64":
+		return "arm64", nil
+	case "armv7l", "armv7":
+		return "armv7", nil
+	case "armv6l", "armv6":
+		return "armv6", nil
+	case "armv5l", "armv5tel", "armv5tejl", "armv5":
+		return "armv5", nil
+	case "i386", "i686", "386":
+		return "386", nil
+	case "s390x":
+		return "s390x", nil
+	}
+	return "", fmt.Errorf("BackPack publishes no build for %s", machine)
+}
+
+var hashCache sync.Map // path -> sha256 hex, for a binary that never changes in place
+
+func fileSHA256(path string) (string, error) {
+	if v, ok := hashCache.Load(path); ok {
+		return v.(string), nil
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return "", fmt.Errorf("could not read %s: %w", path, err)
+	}
+	sum := sha256.Sum256(data)
+	h := hex.EncodeToString(sum[:])
+	hashCache.Store(path, h)
+	return h, nil
+}
+
+// teardownLegs is every leg a front could have, whatever its transport is now:
+// removing a leg that was never set up is harmless, and leaving Backhaul's UDP
+// leg behind would keep a port open on a machine that has been given back.
+func teardownLegs(p Pair) []Pair {
+	p.Tool = p.Tool.norm()
+	p.Leg = ""
+	if p.Tool == ToolBackPack {
+		return []Pair{p}
+	}
+	udp := p
+	udp.Leg = LegUDP
+	return []Pair{p, udp}
+}
+
+// Teardown removes the panel's footprint from a front machine, every leg.
 func Teardown(ctx context.Context, f Front) error {
 	client, err := relay.Dial(ctx, f.Credentials)
 	if err != nil {
@@ -170,9 +338,14 @@ func Teardown(ctx context.Context, f Front) error {
 	}
 	defer client.Close()
 
-	if _, err := client.RunScript(ctx, "x-ui-backhaul-down.sh", teardownScript,
-		RemoteConfigPath(f.Pair.Id), UnitName(f.Pair.Id)); err != nil {
-		return fmt.Errorf("remove the tunnel: %w", err)
+	script, name := teardownScript, "x-ui-backhaul-down.sh"
+	if f.Pair.Tool.norm() == ToolBackPack {
+		script, name = backpackTeardownScript, "x-ui-backpack-down.sh"
+	}
+	for _, leg := range teardownLegs(f.Pair) {
+		if _, err := client.RunScript(ctx, name, script, leg.remoteConfigPath(), leg.unitName()); err != nil {
+			return fmt.Errorf("remove the tunnel: %w", err)
+		}
 	}
 	return nil
 }

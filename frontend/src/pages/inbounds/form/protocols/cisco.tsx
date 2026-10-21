@@ -246,6 +246,31 @@ export default function CiscoFields() {
       >
         <InputNumber min={0} max={100} placeholder="2" style={{ width: '100%' }} />
       </FormField>
+      {/* The two settings an inbound behind an entry server needs, measured
+          on a real tunnel. Shown here so a save through the form carries
+          them instead of dropping them, which is what happened before. */}
+      <FormField
+        name={['settings', 'mtu']}
+        label={t('pages.inbounds.form.ciscoMtu')}
+        tooltip={t('pages.inbounds.form.ciscoMtuHint')}
+      >
+        <InputNumber min={0} max={1500} placeholder="1400" style={{ width: '100%' }} />
+      </FormField>
+      <FormField
+        name={['settings', 'mtuDiscovery']}
+        label={t('pages.inbounds.form.ciscoMtuDiscovery')}
+        tooltip={t('pages.inbounds.form.ciscoMtuDiscoveryHint')}
+        valueProp="checked"
+      >
+        <Switch />
+      </FormField>
+      <FormField
+        name={['settings', 'mobileDpd']}
+        label={t('pages.inbounds.form.ciscoMobileDpd')}
+        tooltip={t('pages.inbounds.form.ciscoMobileDpdHint')}
+      >
+        <InputNumber min={0} max={86400} placeholder="1800" style={{ width: '100%' }} />
+      </FormField>
       <FormField
         name={['settings', 'certFile']}
         label={t('pages.inbounds.form.ciscoCertFile')}

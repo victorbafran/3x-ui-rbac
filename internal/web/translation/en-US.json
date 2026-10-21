@@ -2669,7 +2669,10 @@
         "tunnelPort": "Tunnel port",
         "tunnelPortHint": "Where this server waits for the panel to dial in. Not a customer port; any free port on that server works.",
         "transport": "Tunnel transport",
-        "transportHint": "TCP suits almost every network. Try another only when a network refuses this one."
+        "transportHint": "TCP suits almost every network. Try another only when a network refuses this one.",
+        "tool": "Tunnel tool",
+        "toolHint": "Both carry every inbound, TCP and UDP. Backhaul carries UDP on a second tunnel one port up; BackPack carries it on the same tunnel and can later hand the panel each customer’s real address. Fixed once the server is added.",
+        "udpLegHint": "Backhaul also uses port {port} on this server, for the UDP tunnel. Open both on its firewall."
       },
       "reach": {
         "address": "Address",

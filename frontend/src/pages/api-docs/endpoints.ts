@@ -1685,8 +1685,8 @@ export const sections: readonly Section[] = [
         method: 'POST',
         path: '/panel/api/relays/add',
         summary:
-          'Enroll a server. The password or key is used once to install a key of the panel\u2019s own, proven to work, and then discarded; it is never stored. Returns at once while the setup runs behind it, so poll the list for the status. An entry server takes role "front", a tunnelPort (3080 when omitted) and a transport (tcp when omitted); the role cannot be changed afterwards.',
-        body: '{\n  "name": "iran-front",\n  "label": "Iran",\n  "address": "203.0.113.9",\n  "sshPort": 22,\n  "sshUser": "root",\n  "password": "...",\n  "role": "front",\n  "tunnelPort": 3080,\n  "transport": "tcp"\n}',
+          'Enroll a server. The password or key is used once to install a key of the panel\u2019s own, proven to work, and then discarded; it is never stored. Returns at once while the setup runs behind it, so poll the list for the status. An entry server takes role "front", a tool ("backhaul", the default, or "backpack"), a tunnelPort (3080 when omitted) and a transport (tcp when omitted). Either tool carries every inbound, TCP and UDP: Backhaul on a second UDP tunnel at tunnelPort + 1, BackPack on the one tunnel. The role and the tool cannot be changed afterwards.',
+        body: '{\n  "name": "iran-front",\n  "label": "Iran",\n  "address": "203.0.113.9",\n  "sshPort": 22,\n  "sshUser": "root",\n  "password": "...",\n  "role": "front",\n  "tool": "backhaul",\n  "tunnelPort": 3080,\n  "transport": "tcp"\n}',
       },
       {
         method: 'POST',

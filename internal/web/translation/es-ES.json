@@ -2669,7 +2669,10 @@
         "tunnelPort": "Puerto del túnel",
         "tunnelPortHint": "Donde este servidor espera a que el panel se conecte. No es un puerto de clientes; sirve cualquier puerto libre de ese servidor.",
         "transport": "Transporte del túnel",
-        "transportHint": "TCP funciona en casi cualquier red. Prueba otro solo cuando una red rechace este."
+        "transportHint": "TCP funciona en casi cualquier red. Prueba otro solo cuando una red rechace este.",
+        "tool": "Herramienta del túnel",
+        "toolHint": "Las dos llevan todos los inbounds, TCP y UDP. Backhaul lleva el UDP en un segundo túnel en el puerto siguiente; BackPack lo lleva en el mismo túnel y más adelante puede pasar al panel la dirección real de cada cliente. No se cambia después de añadirlo.",
+        "udpLegHint": "Backhaul también usa el puerto {port} de este servidor para el túnel UDP. Abre los dos en su cortafuegos."
       },
       "reach": {
         "address": "Dirección",

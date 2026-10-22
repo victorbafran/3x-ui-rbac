@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
+	"github.com/mhsanaei/3x-ui/v3/internal/relay"
 )
 
 // A location only becomes a country once its pool actually leaves through that
@@ -96,6 +97,10 @@ func ensureLocationRoute(r locationRoute) {
 			return
 		}
 	}
+	// A network the operator typed for a country can sit outside what exits accept.
+	if err := relay.EnsureExitSNAT(r.CIDR, exit); err != nil {
+		logger.Warningf("ocserv: %s reaches %s but cannot be answered: %v", r.CIDR, exit, err)
+	}
 	logger.Infof("ocserv: %s now leaves through %s", r.CIDR, exit)
 }
 
@@ -106,6 +111,7 @@ func removeLocationRoute(r locationRoute) {
 	if runtime.GOOS != "linux" || r.CIDR == "" {
 		return
 	}
+	relay.RemoveExitSNAT(r.CIDR)
 	table := strconv.Itoa(r.Table)
 	for ipRuleExists(r.CIDR, r.Table) {
 		if err := run("ip", "rule", "del", "from", r.CIDR, "lookup", table); err != nil {

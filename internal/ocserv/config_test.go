@@ -304,3 +304,16 @@ func TestRealClientIPReadsTheHeaderOnLoopbackOnly(t *testing.T) {
 		t.Error("switching real client IP does not restart ocserv, which reads it once")
 	}
 }
+
+// Without an IPv6 address a client keeps its own, and a client that ignores the
+// bypass-protocol hint sends IPv6 straight past the tunnel; each inbound gets
+// its own private /64, so the client's IPv6 goes into the tunnel instead.
+func TestEveryClientGetsAPrivateIPv6AddressSoNoneLeaks(t *testing.T) {
+	one := configFor(t, Instance{Id: 1, Port: 443})
+	six := configFor(t, Instance{Id: 6, Port: 8443})
+	for cfg, want := range map[string]string{one: "fd5a:3c71:9e04:1::/64", six: "fd5a:3c71:9e04:6::/64"} {
+		if !strings.Contains(cfg, "ipv6-network = "+want+"\n") || !strings.Contains(cfg, "ipv6-subnet-prefix = 128\n") {
+			t.Errorf("config lacks ipv6-network %s with a /128 per client:\n%s", want, cfg)
+		}
+	}
+}

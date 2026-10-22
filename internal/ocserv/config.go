@@ -99,6 +99,12 @@ func (inst Instance) network() string {
 	return inst.Network
 }
 
+// ipv6Network is a private /64 per inbound: an address from it pulls a client's
+// IPv6 into the tunnel, and this host does not forward IPv6, so none leaks past.
+func (inst Instance) ipv6Network() string {
+	return fmt.Sprintf("fd5a:3c71:9e04:%x::/64", uint16(inst.Id))
+}
+
 func (inst Instance) netmask() string {
 	if inst.Netmask == "" {
 		return "255.255.255.0"
@@ -200,6 +206,7 @@ func (inst Instance) structuralFingerprint() string {
 		strconv.Itoa(inst.Port),
 		inst.network(),
 		inst.netmask(),
+		inst.ipv6Network(),
 		strings.Join(inst.dns(), ","),
 		strconv.Itoa(inst.maxClients()),
 		strconv.Itoa(inst.maxSameClients()),
@@ -324,6 +331,8 @@ func renderConfig(inst Instance, certFile, keyFile string) string {
 	w("device = %s", inst.deviceName())
 	w("ipv4-network = %s", inst.network())
 	w("ipv4-netmask = %s", inst.netmask())
+	w("ipv6-network = %s", inst.ipv6Network())
+	w("ipv6-subnet-prefix = 128")
 	for _, d := range inst.dns() {
 		w("dns = %s", d)
 	}

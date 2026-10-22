@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
+	"github.com/mhsanaei/3x-ui/v3/internal/relay"
 )
 
 // An inbound only becomes a country once its pool actually leaves through
@@ -135,6 +136,10 @@ func ensureExit(cidr, exit string, table int) {
 			return
 		}
 	}
+	// The default pool, 10.1.x, is outside what an exit accepts.
+	if err := relay.EnsureExitSNAT(cidr, exit); err != nil {
+		logger.Warningf("openvpn: %s reaches %s but cannot be answered: %v", cidr, exit, err)
+	}
 	logger.Infof("openvpn: %s now leaves through %s", cidr, exit)
 }
 
@@ -145,6 +150,7 @@ func removeExit(cidr string, table int) {
 	if runtime.GOOS != "linux" || cidr == "" {
 		return
 	}
+	relay.RemoveExitSNAT(cidr)
 	t := strconv.Itoa(table)
 	for ipRuleExists(cidr, table) {
 		if err := run("ip", "rule", "del", "from", cidr, "lookup", t); err != nil {

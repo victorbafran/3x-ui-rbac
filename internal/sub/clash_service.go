@@ -124,16 +124,19 @@ func (s *SubClashService) getClash(subId string, host string, legacy bool) (stri
 	header := subReq.subscriptionUserinfo(traffic)
 
 	if mode, remark := subReq.resolveInfoNodeRemark(subId, emails, traffic, len(proxies) > 0); mode != infoNodeNone {
-		dummyProxy := map[string]any{
-			"name":   remark,
-			"type":   "socks5",
-			"server": "127.0.0.1",
-			"port":   1080,
+		var dummies []map[string]any
+		for i, line := range strings.Split(remark, "\n") {
+			dummies = append(dummies, map[string]any{
+				"name":   line,
+				"type":   "socks5",
+				"server": "127.0.0.1",
+				"port":   infoBasePort + i,
+			})
 		}
 		if mode == infoNodeExpired || mode == infoNodeDepleted {
-			proxies = []map[string]any{dummyProxy}
+			proxies = dummies
 		} else {
-			proxies = append([]map[string]any{dummyProxy}, proxies...)
+			proxies = append(dummies, proxies...)
 		}
 	}
 
@@ -316,7 +319,7 @@ func isDummyProxy(proxy map[string]any) bool {
 	case float64:
 		port = int(p)
 	}
-	return typ == "socks5" && server == "127.0.0.1" && port == 1080
+	return typ == "socks5" && server == "127.0.0.1" && port >= infoBasePort && port < infoBasePort+maxInfoLines
 }
 
 func fallbackProxyName(proxy map[string]any, idx int) string {

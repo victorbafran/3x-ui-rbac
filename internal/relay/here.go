@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -74,6 +75,25 @@ func WhereAmI(ctx context.Context) Here {
 	}
 	return here.value
 }
+
+// KnownHere is the cached answer and never a lookup, for a subscription that
+// must not wait on one; an unknown or stale answer is refreshed in the background.
+func KnownHere() (Here, bool) {
+	here.Lock()
+	v, fresh := here.value, time.Since(here.at) < hereTTL
+	here.Unlock()
+	if !fresh && hereRefreshing.CompareAndSwap(false, true) {
+		go func() {
+			defer hereRefreshing.Store(false)
+			ctx, cancel := context.WithTimeout(context.Background(), 3*lookupTimeout)
+			defer cancel()
+			WhereAmI(ctx)
+		}()
+	}
+	return v, v.Known()
+}
+
+var hereRefreshing atomic.Bool
 
 // ForgetWhereAmI drops the cached answer, for tests and for an operator who
 // has just moved the panel.

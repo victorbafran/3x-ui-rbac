@@ -1684,6 +1684,8 @@
       "subCalendarExpireInclusiveDesc": "Default off. For clients renewing on day 1 with a midnight cutoff in the panel timezone, report the previous month's last second in subscription expiry headers. Actual cutoff and renewals are unchanged. Clients use their own timezone and may consider the subscription expired one second early.",
       "subInfoNodeEnable": "Configuración de información separada / Nodo ficticio",
       "subInfoNodeEnableDesc": "Si está activado, la información de tráfico y días restantes se muestra en un nodo SOCKS ficticio arriba, y las suscripciones caducadas o agotadas devuelven solo el estado.",
+      "subInfoLines": "Líneas de información",
+      "subInfoLinesDesc": "Cada línea se convierte en su propia entrada al principio de la suscripción, con las mismas variables que la plantilla de nombre. Una línea cuyo valor es ilimitado se omite. Vacío conserva la única entrada que crea la plantilla de nombre.",
       "subExpiredTemplate": "Plantilla de expirado",
       "subExpiredTemplateDesc": "Plantilla para el nodo ficticio cuando la suscripción ha expirado.",
       "subTrafficDepletedTemplate": "Plantilla de tráfico agotado",

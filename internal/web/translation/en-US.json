@@ -1882,6 +1882,8 @@
       "subCalendarExpireInclusiveDesc": "Default off. For clients renewing on day 1 with a midnight cutoff in the panel timezone, report the previous month's last second in subscription expiry headers. Actual cutoff and renewals are unchanged. Clients use their own timezone and may consider the subscription expired one second early.",
       "subInfoNodeEnable": "Separate Info Config / Dummy Node",
       "subInfoNodeEnableDesc": "When enabled, remarks and remaining traffic/days are served as a separate dummy SOCKS config at the top, and expired/depleted subscriptions return only the status config.",
+      "subInfoLines": "Info lines",
+      "subInfoLinesDesc": "Each line becomes its own entry at the top of the subscription, with the same variables as the remark template. A line whose value is unlimited is left out. Empty keeps the single entry the remark template makes.",
       "subExpiredTemplate": "Expired Template",
       "subExpiredTemplateDesc": "Template for the dummy config when the subscriber account has expired.",
       "subTrafficDepletedTemplate": "Traffic Depleted Template",

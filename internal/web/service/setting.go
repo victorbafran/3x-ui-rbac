@@ -83,6 +83,7 @@ var defaultValueMap = map[string]string{
 	"remarkTemplate":              DefaultRemarkTemplate,
 	"subShowIdentityOnAllLinks":   "false",
 	"subInfoNodeEnable":           "false",
+	"subInfoLines":                "",
 	"subCalendarExpireInclusive":  "false",
 	"subExpiredTemplate":          DefaultSubExpiredTemplate,
 	"subTrafficDepletedTemplate":  DefaultSubTrafficDepletedTemplate,
@@ -769,6 +770,12 @@ func (s *SettingService) GetSubInfoNodeEnable() (bool, error) {
 
 func (s *SettingService) GetSubCalendarExpireInclusive() (bool, error) {
 	return s.getBool("subCalendarExpireInclusive")
+}
+
+// GetSubInfoLines is the info entries' template, one entry per line; empty keeps
+// the single entry the remark template makes.
+func (s *SettingService) GetSubInfoLines() (string, error) {
+	return s.getString("subInfoLines")
 }
 
 func (s *SettingService) GetSubExpiredTemplate() (string, error) {

@@ -59,6 +59,7 @@ type SubService struct {
 	usageShown                 map[string]bool
 	showIdentityOnAllLinks     bool
 	subInfoNodeEnable          bool
+	subInfoLines               string
 	subCalendarExpireInclusive bool
 	calendarExpireLocation     *time.Location
 	subExpiredTemplate         string
@@ -262,6 +263,9 @@ func (s *SubService) loadRemarkSettings() {
 	if enabled, err := s.settingService.GetSubInfoNodeEnable(); err == nil && enabled {
 		s.subInfoNodeEnable = enabled
 	}
+	if lines, err := s.settingService.GetSubInfoLines(); err == nil {
+		s.subInfoLines = lines
+	}
 	if tmpl, err := s.settingService.GetSubExpiredTemplate(); err == nil && tmpl != "" {
 		s.subExpiredTemplate = tmpl
 	}
@@ -459,6 +463,9 @@ func (s *SubService) resolveInfoNodeRemark(subId string, uniqueEmails []string, 
 	}
 
 	if hasEntries {
+		if lines := s.infoLines(ctx); len(lines) > 0 {
+			return infoNodeActive, strings.Join(lines, "\n")
+		}
 		tmpl := s.remarkTemplate
 		if tmpl == "" {
 			tmpl = service.DefaultRemarkTemplate
@@ -470,6 +477,28 @@ func (s *SubService) resolveInfoNodeRemark(subId string, uniqueEmails []string, 
 	}
 
 	return infoNodeNone, ""
+}
+
+// infoBasePort and maxInfoLines bound the info entries: each gets its own port,
+// since some apps fold entries that share an address into one.
+const (
+	infoBasePort = 1080
+	maxInfoLines = 8
+)
+
+// infoLines expands the info template, one entry per line; a line left with no
+// value, such as days left on an unlimited client, is dropped.
+func (s *SubService) infoLines(ctx remarkContext) []string {
+	var out []string
+	for _, line := range strings.Split(strings.ReplaceAll(s.subInfoLines, "\r\n", "\n"), "\n") {
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
+		if got := strings.TrimSpace(expandRemarkVars(line, ctx)); got != "" && len(out) < maxInfoLines {
+			out = append(out, got)
+		}
+	}
+	return out
 }
 
 func (s *SubService) getSubs(subId string) ([]string, []string, int64, xray.ClientTraffic, error) {
@@ -583,11 +612,14 @@ func (s *SubService) getSubs(subId string) ([]string, []string, int64, xray.Clie
 	traffic.Enable = hasEnabledClient
 
 	if mode, remark := s.resolveInfoNodeRemark(subId, uniqueEmails, traffic, len(result) > 0); mode != infoNodeNone {
-		dummyLink := fmt.Sprintf("socks://127.0.0.1:1080#%s", strings.ReplaceAll(url.QueryEscape(remark), "+", "%20"))
-		if mode == infoNodeExpired || mode == infoNodeDepleted {
-			return []string{dummyLink}, emails, lastOnline, traffic, nil
+		var dummies []string
+		for i, line := range strings.Split(remark, "\n") {
+			dummies = append(dummies, fmt.Sprintf("socks://127.0.0.1:%d#%s", infoBasePort+i, strings.ReplaceAll(url.QueryEscape(line), "+", "%20")))
 		}
-		result = append([]string{dummyLink}, result...)
+		if mode == infoNodeExpired || mode == infoNodeDepleted {
+			return dummies, emails, lastOnline, traffic, nil
+		}
+		result = append(dummies, result...)
 	}
 
 	return result, emails, lastOnline, traffic, nil

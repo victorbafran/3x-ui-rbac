@@ -166,6 +166,7 @@ export interface AllSetting {
   subIncyRoutingRules: string;
   subIncySortOrder: string;
   subIncySupportEmail: string;
+  subInfoLines: string;
   subInfoNodeEnable: boolean;
   subJsonAlwaysArray: boolean;
   subJsonAutoDetect: boolean;
@@ -354,6 +355,7 @@ export interface AllSettingView {
   subIncyRoutingRules: string;
   subIncySortOrder: string;
   subIncySupportEmail: string;
+  subInfoLines: string;
   subInfoNodeEnable: boolean;
   subJsonAlwaysArray: boolean;
   subJsonAutoDetect: boolean;

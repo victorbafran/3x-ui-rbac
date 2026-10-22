@@ -1684,6 +1684,8 @@
       "subCalendarExpireInclusiveDesc": "Default off. For clients renewing on day 1 with a midnight cutoff in the panel timezone, report the previous month's last second in subscription expiry headers. Actual cutoff and renewals are unchanged. Clients use their own timezone and may consider the subscription expired one second early.",
       "subInfoNodeEnable": "تكوين معلومات منفصل / عقدة وهمية",
       "subInfoNodeEnableDesc": "عند التفعيل، يتم عرض الملاحظات وحركة المرور/الأيام المتبقية كتكوين SOCKS منفصل في الأعلى، وعند انتهاء الصلاحية أو نفاد البيانات يتم إرجاع تكوين الحالة فقط.",
+      "subInfoLines": "أسطر المعلومات",
+      "subInfoLinesDesc": "يصبح كل سطر إدخالًا مستقلًا في أعلى الاشتراك، بالمتغيرات نفسها التي في قالب الاسم. السطر الذي قيمته غير محدودة يُحذف. إن تُرك فارغًا يبقى الإدخال الواحد الذي يصنعه قالب الاسم.",
       "subExpiredTemplate": "قالب انتهاء الصلاحية",
       "subExpiredTemplateDesc": "قالب التكوين الوهمي عند انتهاء صلاحية اشتراك المستخدم.",
       "subTrafficDepletedTemplate": "قالب نفاد البيانات",

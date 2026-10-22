@@ -555,6 +555,9 @@ export const SCHEMAS: Record<string, unknown> = {
       "subIncySupportEmail": {
         "type": "string"
       },
+      "subInfoLines": {
+        "type": "string"
+      },
       "subInfoNodeEnable": {
         "type": "boolean"
       },
@@ -847,6 +850,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "subIncyRoutingRules",
       "subIncySortOrder",
       "subIncySupportEmail",
+      "subInfoLines",
       "subInfoNodeEnable",
       "subJsonAlwaysArray",
       "subJsonAutoDetect",
@@ -1331,6 +1335,9 @@ export const SCHEMAS: Record<string, unknown> = {
       "subIncySupportEmail": {
         "type": "string"
       },
+      "subInfoLines": {
+        "type": "string"
+      },
       "subInfoNodeEnable": {
         "type": "boolean"
       },
@@ -1631,6 +1638,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "subIncyRoutingRules",
       "subIncySortOrder",
       "subIncySupportEmail",
+      "subInfoLines",
       "subInfoNodeEnable",
       "subJsonAlwaysArray",
       "subJsonAutoDetect",

@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"maps"
 	"slices"
+	"strings"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
+	"github.com/mhsanaei/3x-ui/v3/internal/relay"
 )
 
 // hostEndpoints loads an inbound's enabled hosts for the given subscription
@@ -29,14 +31,76 @@ func (s *SubService) hostEndpoints(inbound *model.Inbound, format string) []map[
 		return nil
 	}
 	defaultDest := s.resolveInboundAddress(inbound)
+	countries := hostCountries(hosts)
 	eps := make([]map[string]any, 0, len(hosts))
 	for _, h := range hosts {
 		if slices.Contains(h.ExcludeFromSubTypes, format) {
 			continue
 		}
-		eps = append(eps, hostToExternalProxyMap(h, defaultDest, inbound.Port))
+		ep := hostToExternalProxyMap(h, defaultDest, inbound.Port)
+		if c := countries[h.Id]; c != "" {
+			ep["country"] = c
+		}
+		eps = append(eps, ep)
 	}
 	return eps
+}
+
+// localCountryLabel is this server's own flag and country; a variable so a test
+// can stand in for the location lookup.
+var localCountryLabel = func() string {
+	if h, ok := relay.KnownHere(); ok {
+		return relay.LabelFor(h.Country, h.CountryCode)
+	}
+	return ""
+}
+
+// hostCountries labels every host of an inbound that offers countries: an exit's
+// own label, or this server's for a host that leaves here. Nil when none does.
+func hostCountries(hosts []*model.Host) map[int]string {
+	var exitIDs []int
+	for _, h := range hosts {
+		if id, ok := relay.InterfaceID(h.Exit); ok {
+			exitIDs = append(exitIDs, id)
+		}
+	}
+	if len(exitIDs) == 0 {
+		return nil
+	}
+	var relays []model.Relay
+	if err := database.GetDB().Where("id IN ?", exitIDs).Find(&relays).Error; err != nil {
+		logger.Warning("SubService - hostCountries:", err)
+	}
+	labels := make(map[int]string, len(relays))
+	for _, r := range relays {
+		labels[r.Id] = strings.TrimSpace(r.Label)
+		if labels[r.Id] == "" {
+			labels[r.Id] = r.Name
+		}
+	}
+	local := localCountryLabel()
+	out := make(map[int]string, len(hosts))
+	for _, h := range hosts {
+		if id, ok := relay.InterfaceID(h.Exit); ok {
+			out[h.Id] = labels[id]
+		} else {
+			out[h.Id] = local
+		}
+	}
+	return out
+}
+
+// withCountry puts a host's country first in its config name, unless the name
+// already shows that flag, as a template naming the country itself would.
+func withCountry(remark, country string) string {
+	fields := strings.Fields(country)
+	if len(fields) == 0 || strings.Contains(remark, fields[0]) {
+		return remark
+	}
+	if strings.TrimSpace(remark) == "" {
+		return strings.TrimSpace(country)
+	}
+	return strings.TrimSpace(country) + " " + remark
 }
 
 // hostToExternalProxyMap projects a Host onto the externalProxy entry shape the
@@ -248,7 +312,8 @@ func (s *SubService) renderHostRemark(inbound *model.Inbound, client model.Clien
 		return
 	}
 	tmpl, _ := ep["remark"].(string)
-	ep["remark"] = s.genHostRemark(inbound, client, tmpl, transport)
+	country, _ := ep["country"].(string)
+	ep["remark"] = withCountry(s.genHostRemark(inbound, client, tmpl, transport), country)
 	ep["remarkFinal"] = true
 }
 

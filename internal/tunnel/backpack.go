@@ -64,6 +64,10 @@ func backpackServerConfig(p Pair) string {
 	w("heartbeat = 40")
 	w("nodelay = true")
 	w("accept_udp = true")
+	if p.ProxyProtocol {
+		// TCP only: UDP flows arrive bare, which is what ocserv's DTLS wants.
+		w("proxy_protocol = true")
+	}
 	w("log_level = \"info\"")
 	w("ports = [")
 	for _, port := range normalisePorts(p.Ports, p.TunnelPort) {

@@ -784,6 +784,8 @@
         "ciscoMtuDiscoveryHint": "Off by default. It needs ICMP to come back, and on a path that swallows it a fixed MTU is far steadier.",
         "ciscoMobileDpd": "Mobile session timeout (seconds)",
         "ciscoMobileDpdHint": "How long the server keeps a phone’s session after it stops hearing from it. Empty or 0 is 1800. Behind an entry server use 90: every phone shares one address there, so each network switch leaves a ghost holding a device slot for this long.",
+        "ciscoProxyProtocol": "Customer's real IP (entry servers only)",
+        "ciscoProxyProtocolHint": "Takes each customer's real address from a BackPack entry server, so device limits, bans and the online list see the customer rather than the entry server. The inbound then listens on this server only and is reached through entry servers alone, so give customers the entry server's address.",
         "ciscoCertFile": "Certificate file",
         "ciscoCertFileHint": "Leave both empty and the panel generates a self-signed RSA certificate and reuses it. Use an RSA key: some versions of Cisco Secure Client offer no ECDSA cipher at all and give up before the certificate is sent.",
         "ciscoKeyFile": "Private key file",
@@ -2631,6 +2633,8 @@
       "reachTitle": "What {name} can reach",
       "saved": "Saved. Setting the server up takes a few minutes.",
       "forwards": "Forwards {ports}",
+      "realIpPorts": "Real client IP: {ports}",
+      "realIpNeedsBackpack": "Not carried: {ports}. Real client IP needs a BackPack entry server.",
       "noPorts": "No ports to forward yet",
       "summary": {
         "total": "Servers",

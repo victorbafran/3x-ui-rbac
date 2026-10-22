@@ -262,7 +262,7 @@ func TestTeardownCoversEveryLegAndOnlyThePanelsBinary(t *testing.T) {
 	if len(legs) != 2 || legs[1].unitName() != "backhaul-x-ui-4-udp" {
 		t.Fatalf("backhaul teardown legs: %+v", legs)
 	}
-	if legs := teardownLegs(Pair{Id: 4, Tool: ToolBackPack}); len(legs) != 1 || legs[0].unitName() != "x-ui-backpack-4" {
+	if legs := teardownLegs(Pair{Id: 4, Tool: ToolBackPack}); len(legs) != 2 || legs[0].unitName() != "x-ui-backpack-4" || legs[1].unitName() != "x-ui-backpack-4-proxy" {
 		t.Fatalf("backpack teardown legs: %+v", legs)
 	}
 	if strings.Contains(backpackTeardownScript, "rm -f /usr/local/bin/backpack") {

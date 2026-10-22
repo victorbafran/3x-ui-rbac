@@ -115,7 +115,7 @@ func TestAFrontOpensCiscosOwnDTLSPort(t *testing.T) {
 	if err := database.GetDB().Create(ib).Error; err != nil {
 		t.Fatal(err)
 	}
-	ports, err := (&RelayService{}).frontForwardedPorts(3080, 0, 22)
+	ports, _, err := (&RelayService{}).frontForwardedPorts(3080, 0, 22)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -123,5 +123,37 @@ func TestAFrontOpensCiscosOwnDTLSPort(t *testing.T) {
 		if !slices.Contains(ports, want) {
 			t.Errorf("the front does not open %d: %v", want, ports)
 		}
+	}
+}
+
+// Each service's own switch decides the leg its port rides: cisco's setting,
+// and Xray's per transport or in sockopt. OpenVPN cannot read the header.
+func TestTheRealIPPortsAreTheOnesWhoseServiceWantsTheHeader(t *testing.T) {
+	for _, tc := range []struct {
+		name    string
+		inbound model.Inbound
+		proxied bool
+	}{
+		{"cisco with real client IP", model.Inbound{Port: 443, Protocol: model.Cisco, Settings: `{"proxyProtocol":true}`}, true},
+		{"xray over ws", model.Inbound{Port: 10434, Protocol: model.VLESS, StreamSettings: `{"network":"ws","wsSettings":{"acceptProxyProtocol":true}}`}, true},
+		{"xray in sockopt", model.Inbound{Port: 2096, Protocol: model.VLESS, StreamSettings: `{"network":"xhttp","sockopt":{"acceptProxyProtocol":true}}`}, true},
+		{"plain xray", model.Inbound{Port: 41330, Protocol: model.VLESS, StreamSettings: `{"network":"tcp"}`}, false},
+		{"openvpn, which cannot read it", model.Inbound{Port: 1194, Protocol: model.OpenVPN, Settings: `{"proxyProtocol":true}`}, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			setupRelayDB(t)
+			ib := tc.inbound
+			ib.Tag, ib.Enable = "under-test", true
+			if err := database.GetDB().Create(&ib).Error; err != nil {
+				t.Fatal(err)
+			}
+			plain, proxied, err := (&RelayService{}).frontForwardedPorts(3080, 3081, 22)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if slices.Contains(proxied, ib.Port) != tc.proxied || slices.Contains(plain, ib.Port) == tc.proxied {
+				t.Errorf("port %d: plain %v, proxied %v; want it proxied=%v", ib.Port, plain, proxied, tc.proxied)
+			}
+		})
 	}
 }

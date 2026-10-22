@@ -283,3 +283,24 @@ func TestUdpChangesMoveTheStructuralFingerprint(t *testing.T) {
 		t.Error("disabling UDP did not move the fingerprint")
 	}
 }
+
+// The header names the customer, so anyone able to dial in direct could forge
+// one; real client IP therefore listens where only an entry server reaches.
+func TestRealClientIPReadsTheHeaderOnLoopbackOnly(t *testing.T) {
+	cfg := configFor(t, Instance{Id: 1, Port: 443, Listen: "0.0.0.0", ProxyProtocol: true})
+	for _, want := range []string{"listen-host = 127.0.0.1\n", "listen-proxy-proto = true\n"} {
+		if !strings.Contains(cfg, want) {
+			t.Errorf("config lacks %q:\n%s", want, cfg)
+		}
+	}
+	plain := configFor(t, Instance{Id: 1, Port: 443})
+	if strings.Contains(plain, "listen-proxy-proto") || !strings.Contains(plain, "listen-host = 0.0.0.0\n") {
+		t.Errorf("an ordinary inbound was told to expect a header:\n%s", plain)
+	}
+	loop := Instance{Id: 1, Port: 443, Listen: "127.0.0.1"}
+	withHeader := loop
+	withHeader.ProxyProtocol = true
+	if loop.structuralFingerprint() == withHeader.structuralFingerprint() {
+		t.Error("switching real client IP does not restart ocserv, which reads it once")
+	}
+}

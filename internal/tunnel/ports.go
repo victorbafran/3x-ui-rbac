@@ -1,6 +1,9 @@
 package tunnel
 
-import "sort"
+import (
+	"slices"
+	"sort"
+)
 
 // Which ports a front machine opens for customers.
 //
@@ -18,6 +21,8 @@ type Inbound struct {
 	// panel. A front in front of this panel cannot carry it: the traffic
 	// would arrive here and have nowhere to go.
 	Local bool
+	// Proxy is whether the service on Port expects a PROXY v2 header.
+	Proxy bool
 }
 
 // Reserved is what must never be forwarded, whatever the inbounds say.
@@ -32,9 +37,9 @@ type Reserved struct {
 	// SSHPort keeps an operator from locking themselves out of the front by
 	// forwarding its own management port into the tunnel.
 	SSHPort int
-	// TunnelPortUDP is the port of Backhaul's UDP leg, zero for a tunnel
-	// with none. Forwarding it would collide with that leg's own listener.
-	TunnelPortUDP int
+	// SecondTunnelPort is the port of a second leg, zero for a tunnel that
+	// can have none. Forwarding it would collide with that leg's own listener.
+	SecondTunnelPort int
 }
 
 // ForwardedPorts is the list a front should open, derived rather than typed.
@@ -44,7 +49,7 @@ type Reserved struct {
 // would drop every customer riding it.
 func ForwardedPorts(inbounds []Inbound, reserved Reserved) []int {
 	blocked := map[int]bool{}
-	for _, p := range []int{reserved.PanelPort, reserved.TunnelPort, reserved.SSHPort, reserved.TunnelPortUDP} {
+	for _, p := range []int{reserved.PanelPort, reserved.TunnelPort, reserved.SSHPort, reserved.SecondTunnelPort} {
 		if p > 0 {
 			blocked[p] = true
 		}
@@ -78,7 +83,7 @@ const ACMEPort = 80
 // WithACME adds ACMEPort to a list from ForwardedPorts unless something
 // reserved claims it, keeping the list sorted and free of duplicates.
 func WithACME(ports []int, reserved Reserved) []int {
-	for _, p := range []int{reserved.PanelPort, reserved.TunnelPort, reserved.SSHPort, reserved.TunnelPortUDP} {
+	for _, p := range []int{reserved.PanelPort, reserved.TunnelPort, reserved.SSHPort, reserved.SecondTunnelPort} {
 		if p == ACMEPort {
 			return ports
 		}
@@ -110,4 +115,21 @@ func SamePorts(a, b []int) bool {
 		}
 	}
 	return true
+}
+
+// SplitPorts divides what a front opens by whether the service expects a
+// PROXY v2 header. A port either way is proxied: that leg carries UDP bare.
+func SplitPorts(inbounds []Inbound, reserved Reserved) (plain, proxied []int) {
+	var wanting []Inbound
+	for _, ib := range inbounds {
+		if ib.Proxy {
+			wanting = append(wanting, ib)
+		}
+	}
+	proxied = ForwardedPorts(wanting, reserved)
+	plain = without(ForwardedPorts(inbounds, reserved), proxied)
+	if !slices.Contains(proxied, ACMEPort) {
+		plain = WithACME(plain, reserved)
+	}
+	return plain, proxied
 }

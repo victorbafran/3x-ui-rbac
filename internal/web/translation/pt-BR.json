@@ -783,6 +783,8 @@
         "ciscoMtuDiscoveryHint": "Desligada por padrão. Precisa que o ICMP volte, e numa rota que o engole um MTU fixo é muito mais estável.",
         "ciscoMobileDpd": "Tempo de sessão móvel (segundos)",
         "ciscoMobileDpdHint": "Por quanto tempo o servidor mantém a sessão de um celular depois de parar de ouvi-lo. Vazio ou 0 é 1800. Atrás de um servidor de entrada use 90: lá todos os celulares compartilham um endereço, então cada troca de rede deixa uma sessão fantasma ocupando uma vaga de dispositivo por esse tempo.",
+        "ciscoProxyProtocol": "IP real do cliente (somente servidores de entrada)",
+        "ciscoProxyProtocolHint": "Recebe o endereço real de cada cliente de um servidor de entrada BackPack, para que limites de dispositivos, bloqueios e a lista de conectados vejam o cliente e não o servidor de entrada. O inbound passa a escutar só neste servidor e só é alcançado pelos servidores de entrada, então entregue aos clientes o endereço do servidor de entrada.",
         "ciscoCertFile": "Arquivo de certificado",
         "ciscoCertFileHint": "Deixe ambos vazios e o painel gera um certificado RSA autoassinado e o reutiliza. Use uma chave RSA: algumas versões do Cisco Secure Client não oferecem nenhuma cifra ECDSA e desistem antes de o certificado ser enviado.",
         "ciscoKeyFile": "Arquivo de chave privada",
@@ -2631,6 +2633,8 @@
       "reachTitle": "O que {name} alcança",
       "saved": "Salvo. Preparar o servidor leva alguns minutos.",
       "forwards": "Encaminha {ports}",
+      "realIpPorts": "IP real: {ports}",
+      "realIpNeedsBackpack": "Não encaminhado: {ports}. O IP real do cliente precisa de um servidor de entrada BackPack.",
       "noPorts": "Ainda não há portas para encaminhar",
       "summary": {
         "total": "Servidores",

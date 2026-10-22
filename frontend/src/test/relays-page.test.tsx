@@ -43,6 +43,7 @@ const relays: Relay[] = [
     transport: '',
     tunnelDetail: '',
     forwardedPorts: [],
+    proxyPorts: [],
     publicName: '',
   },
   {
@@ -74,6 +75,7 @@ const relays: Relay[] = [
     transport: '',
     tunnelDetail: '',
     forwardedPorts: [],
+    proxyPorts: [],
     publicName: '',
   },
 ];
@@ -98,7 +100,8 @@ const front: Relay = {
   tunnelPort: 3080,
   transport: 'tcp',
   tunnelDetail: '',
-  forwardedPorts: [443, 1194, 10434, 41330],
+  forwardedPorts: [1194, 10434, 41330],
+  proxyPorts: [],
   publicName: 'tun.example.ir',
 };
 
@@ -232,7 +235,7 @@ describe('the exit servers page', () => {
     const table = within(document.querySelector('.ant-table') as HTMLElement);
     expect(table.getByText('Entry')).toBeTruthy();
     expect(table.getByText('Exit')).toBeTruthy();
-    expect(document.body.textContent).toContain('Forwards 443, 1194, 10434, 41330');
+    expect(document.body.textContent).toContain('Forwards 1194, 10434, 41330');
     expect(document.body.textContent).toContain('tcp:3080');
     cleanup();
   });
@@ -286,6 +289,34 @@ describe('the exit servers page', () => {
     expect(text).toContain('backhaul tcp:3080 + udp:3081');
     expect(text).toContain('backpack tcp:3090');
     expect(text).not.toContain('backpack tcp:3090 + udp');
+    cleanup();
+  });
+
+  // Real-IP ports ride BackPack's second tunnel, whose port the firewall needs
+  // too; a Backhaul front cannot carry them, and the row must say so.
+  it('shows where the real-IP ports go, and where they cannot', () => {
+    rows = [
+      {
+        ...front,
+        id: 4,
+        name: 'iran-bp',
+        label: 'Iran BP',
+        tunnel: 'backpack',
+        tunnelPort: 3090,
+        proxyPorts: [443],
+      },
+      { ...front, id: 5, name: 'iran-bh', label: 'Iran BH', proxyPorts: [8443] },
+    ];
+    renderWithProviders(
+      <MemoryRouter>
+        <RelaysPage />
+      </MemoryRouter>,
+    );
+    const text = document.body.textContent ?? '';
+    expect(text).toContain('backpack tcp:3090 + proxy:3091');
+    expect(text).toContain('Real client IP: 443');
+    expect(text).toContain('Not carried: 8443. Real client IP needs a BackPack entry server.');
+    expect(text).not.toContain('Real client IP: 8443');
     cleanup();
   });
 

@@ -33,6 +33,10 @@ type Instance struct {
 	// blocked and another is not.
 	UDPPort int
 
+	// ProxyProtocol takes each customer's real address from a PROXY v2 header
+	// and listens on loopback only, where nothing but an entry server reaches.
+	ProxyProtocol bool
+
 	// DisableUDP turns DTLS off outright. Worth doing when UDP is blocked
 	// for good: without it every session spends switch-to-tcp-timeout
 	// seconds trying DTLS before falling back, on every single connect.
@@ -78,6 +82,10 @@ type Instance struct {
 }
 
 func (inst Instance) listenAddr() string {
+	// Loopback, or anyone could dial in direct with a forged header.
+	if inst.ProxyProtocol {
+		return "127.0.0.1"
+	}
 	if inst.Listen == "" {
 		return "0.0.0.0"
 	}
@@ -204,6 +212,7 @@ func (inst Instance) structuralFingerprint() string {
 		filestamp.Of(inst.KeyFile),
 		strconv.Itoa(inst.udpPort()),
 		strconv.FormatBool(inst.DisableUDP),
+		strconv.FormatBool(inst.ProxyProtocol),
 		strconv.Itoa(inst.mtu()),
 		strconv.FormatBool(inst.MTUDiscovery),
 		strconv.Itoa(inst.mobileDPD()),
@@ -279,6 +288,9 @@ func renderConfig(inst Instance, certFile, keyFile string) string {
 	w("auth = \"plain[passwd=%s]\"", passwdPathForID(inst.Id))
 	w("listen-host = %s", inst.listenAddr())
 	w("tcp-port = %d", inst.Port)
+	if inst.ProxyProtocol {
+		w("listen-proxy-proto = true")
+	}
 	// Without a udp-port there is no DTLS at all, and the client stops
 	// waiting for one. With UDP blocked that is the faster answer: DTLS is
 	// what makes this protocol quick, but a DTLS that never forms only

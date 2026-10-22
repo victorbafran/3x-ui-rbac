@@ -195,10 +195,24 @@ func (m *Manager) Reconcile(wanted []Pair) {
 		}
 	}
 
+	m.drop(func(key string) bool { return !keep[key] })
+}
+
+// Retain stops tunnel id's legs that are not in keep: a leg the front no
+// longer carries would otherwise dial a port nothing listens on, for ever.
+func (m *Manager) Retain(id int, keep []Pair) {
+	want := make(map[string]bool, len(keep))
+	for _, p := range keep {
+		want[p.Key()] = true
+	}
+	m.drop(func(key string) bool { return ownedBy(key, id) && !want[key] })
+}
+
+func (m *Manager) drop(unwanted func(key string) bool) {
 	m.mu.Lock()
 	var stale []*managed
 	for key, cur := range m.procs {
-		if !keep[key] {
+		if unwanted(key) {
 			stale = append(stale, cur)
 			delete(m.procs, key)
 		}

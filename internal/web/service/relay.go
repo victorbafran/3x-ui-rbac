@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -66,6 +67,9 @@ type RelayView struct {
 	// provisioning derives them so the page shows what the front really opens.
 	TunnelDetail   string `json:"tunnelDetail"`
 	ForwardedPorts []int  `json:"forwardedPorts"`
+	// ProxyPorts are the forwarded ports whose service wants the customer's
+	// real address; only a BackPack front carries them.
+	ProxyPorts []int `json:"proxyPorts"`
 }
 
 // RelayRequest is what the operator fills in. Password and PrivateKey are
@@ -114,6 +118,7 @@ func (s *RelayService) List() ([]RelayView, error) {
 			// here rather than left to whoever reads the JSON next.
 			InUseBy:        inUse(usage, relay.InterfaceName(r.Id)),
 			ForwardedPorts: []int{},
+			ProxyPorts:     []int{},
 		}
 		if r.Role == model.RelayFront {
 			s.frontHealth(&view)
@@ -153,8 +158,9 @@ func (s *RelayService) frontHealth(v *RelayView) {
 	if !running {
 		v.TunnelDetail = detail
 	}
-	if ports, err := s.frontForwardedPorts(v.TunnelPort, tunnel.UDPTunnelPort(pair), v.SSHPort); err == nil && ports != nil {
-		v.ForwardedPorts = ports
+	if plain, proxied, err := s.frontForwardedPorts(v.TunnelPort, tunnel.SecondTunnelPort(pair), v.SSHPort); err == nil {
+		v.ForwardedPorts = plain
+		v.ProxyPorts = proxied
 	}
 }
 
@@ -411,10 +417,10 @@ func (s *RelayService) fillFront(r *model.Relay, req RelayRequest, base *model.R
 		return err
 	}
 	r.Transport = transport
-	// Backhaul carries UDP on a second tunnel one port up, which has to be a
-	// port too.
-	if udp := tunnel.UDPTunnelPort(tunnel.Pair{Tool: tool, Transport: tunnel.Transport(transport), TunnelPort: port}); udp > 65535 {
-		return fmt.Errorf("tunnel port %d leaves no room for the UDP tunnel on %d; pick a lower one", port, udp)
+	// The second leg, Backhaul's UDP or BackPack's real-IP one, sits one port
+	// up, which has to be a port too.
+	if second := tunnel.SecondTunnelPort(tunnel.Pair{Tool: tool, Transport: tunnel.Transport(transport), TunnelPort: port}); second > 65535 {
+		return fmt.Errorf("tunnel port %d leaves no room for the second tunnel on %d; pick a lower one", port, second)
 	}
 
 	if base != nil {
@@ -530,25 +536,24 @@ func (s *RelayService) provisionFront(ctx context.Context, r *model.Relay) {
 	}
 
 	// The front machine first: it must be listening before the panel dials.
-	// Every leg, so a Backhaul front carries UDP as well as TCP.
-	for _, leg := range tunnel.Legs(pair) {
-		if err := tunnel.Provision(ctx, tunnel.Front{Pair: leg, Credentials: creds}); err != nil {
-			s.mark(r.Id, RelayError, err.Error())
-			logger.Warningf("front %s: %v", r.Name, err)
-			return
-		}
+	if err := tunnel.Provision(ctx, tunnel.Front{Pair: pair, Credentials: creds}); err != nil {
+		s.mark(r.Id, RelayError, err.Error())
+		logger.Warningf("front %s: %v", r.Name, err)
+		return
 	}
 
 	// Then the panel's end. A front that is listening but that the panel
 	// never dials carries nothing, so this is as much a part of "ready" as
 	// the far side.
-	for _, leg := range tunnel.Legs(pair) {
+	legs := tunnel.Legs(pair)
+	for _, leg := range legs {
 		if err := tunnel.GetManager().Ensure(leg); err != nil {
 			s.mark(r.Id, RelayError, "the front is up but the panel could not dial it: "+err.Error())
 			logger.Warningf("front %s: %v", r.Name, err)
 			return
 		}
 	}
+	tunnel.GetManager().Retain(r.Id, legs)
 
 	fields := map[string]any{
 		"status": RelayReady, "last_error": "", "last_seen": time.Now().Unix(),
@@ -603,11 +608,11 @@ func (s *RelayService) frontPair(r *model.Relay, token string) (tunnel.Pair, err
 		Tool:         frontTool(*r),
 		Token:        token,
 	}
-	ports, err := s.frontForwardedPorts(r.TunnelPort, tunnel.UDPTunnelPort(pair), r.SSHPort)
+	plain, proxied, err := s.frontForwardedPorts(r.TunnelPort, tunnel.SecondTunnelPort(pair), r.SSHPort)
 	if err != nil {
 		return tunnel.Pair{}, err
 	}
-	pair.Ports = ports
+	pair.Ports, pair.ProxyPorts = plain, proxied
 	return pair, nil
 }
 
@@ -620,31 +625,55 @@ func frontTool(r model.Relay) tunnel.Tool {
 	return tunnel.ToolBackhaul
 }
 
-// frontForwardedPorts is the set of customer-facing ports a front should open,
-// taken from the panel's enabled local inbounds and kept clear of the ports
-// that must never be forwarded.
-func (s *RelayService) frontForwardedPorts(tunnelPort, udpTunnelPort, sshPort int) ([]int, error) {
+// frontForwardedPorts is what a front should open, from the panel's enabled
+// local inbounds, split by whether the service wants the customer's address.
+func (s *RelayService) frontForwardedPorts(tunnelPort, secondTunnelPort, sshPort int) (plain, proxied []int, err error) {
 	var inbounds []*model.Inbound
 	if err := database.GetDB().Model(model.Inbound{}).
 		Where("node_id IS NULL").Find(&inbounds).Error; err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	rows := make([]tunnel.Inbound, 0, len(inbounds))
 	for _, ib := range inbounds {
+		proxy := wantsProxyHeader(ib)
 		// every port it binds: cisco's DTLS may sit on a UDP port of its own.
 		for _, c := range portClaims(ib) {
-			rows = append(rows, tunnel.Inbound{Port: c.port, Enabled: ib.Enable, Local: true})
+			rows = append(rows, tunnel.Inbound{Port: c.port, Enabled: ib.Enable, Local: true, Proxy: proxy})
 		}
 	}
 	var settings SettingService
 	panelPort, _ := settings.GetPort()
 	reserved := tunnel.Reserved{
-		PanelPort:     panelPort,
-		TunnelPort:    tunnelPort,
-		SSHPort:       sshPort,
-		TunnelPortUDP: udpTunnelPort,
+		PanelPort:        panelPort,
+		TunnelPort:       tunnelPort,
+		SSHPort:          sshPort,
+		SecondTunnelPort: secondTunnelPort,
 	}
-	return tunnel.WithACME(tunnel.ForwardedPorts(rows, reserved), reserved), nil
+	plain, proxied = tunnel.SplitPorts(rows, reserved)
+	return plain, proxied, nil
+}
+
+// wantsProxyHeader is whether an inbound's service reads the customer's address
+// from a PROXY v2 header; Xray keeps the switch per transport or in sockopt.
+func wantsProxyHeader(ib *model.Inbound) bool {
+	switch ib.Protocol {
+	case model.Cisco:
+		return ocserv.ExpectsProxyHeader(ib)
+	case model.OpenVPN:
+		return false
+	}
+	var stream map[string]any
+	if json.Unmarshal([]byte(ib.StreamSettings), &stream) != nil {
+		return false
+	}
+	for _, key := range []string{"sockopt", "tcpSettings", "rawSettings", "wsSettings", "httpupgradeSettings"} {
+		if section, ok := stream[key].(map[string]any); ok {
+			if on, _ := section["acceptProxyProtocol"].(bool); on {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func (s *RelayService) mark(id int, status, lastError string) {
@@ -799,16 +828,18 @@ func (s *RelayService) reconcileFront(r model.Relay) {
 	// inbound added since enrollment reaches the front without a re-save.
 	// The far side restarts only when its config actually changed, so this
 	// running every minute does not drop the customers on the tunnel.
-	for _, leg := range tunnel.Legs(pair) {
-		if err := tunnel.Provision(ctx, tunnel.Front{Pair: leg, Credentials: creds}); err != nil {
-			s.mark(r.Id, RelayError, err.Error())
-			return
-		}
+	if err := tunnel.Provision(ctx, tunnel.Front{Pair: pair, Credentials: creds}); err != nil {
+		s.mark(r.Id, RelayError, err.Error())
+		return
+	}
+	legs := tunnel.Legs(pair)
+	for _, leg := range legs {
 		if err := tunnel.GetManager().Ensure(leg); err != nil {
 			s.mark(r.Id, RelayError, err.Error())
 			return
 		}
 	}
+	tunnel.GetManager().Retain(r.Id, legs)
 	s.mark(r.Id, RelayReady, "")
 }
 

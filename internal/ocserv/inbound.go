@@ -33,6 +33,7 @@ type ciscoSettings struct {
 	MaxSameClients int      `json:"maxSameClients"`
 	UDPPort        int      `json:"udpPort"`
 	DisableUDP     bool     `json:"disableUdp"`
+	ProxyProtocol  bool     `json:"proxyProtocol"`
 	MTU            int      `json:"mtu"`
 	MTUDiscovery   bool     `json:"mtuDiscovery"`
 	MobileDPD      int      `json:"mobileDpd"`
@@ -140,6 +141,7 @@ func InstanceFromInbound(ib *model.Inbound) (Instance, bool) {
 		MaxSameClients: parsed.MaxSameClients,
 		UDPPort:        parsed.UDPPort,
 		DisableUDP:     parsed.DisableUDP,
+		ProxyProtocol:  parsed.ProxyProtocol,
 		MTU:            parsed.MTU,
 		MTUDiscovery:   parsed.MTUDiscovery,
 		MobileDPD:      parsed.MobileDPD,
@@ -164,6 +166,19 @@ func DTLSPort(ib *model.Inbound) int {
 		return 0
 	}
 	return Instance{Port: ib.Port, UDPPort: parsed.UDPPort}.udpPort()
+}
+
+// ExpectsProxyHeader is whether a cisco inbound takes the customer's address
+// from a PROXY v2 header, read from the settings alone like DTLSPort.
+func ExpectsProxyHeader(ib *model.Inbound) bool {
+	if ib == nil || ib.Protocol != model.Cisco {
+		return false
+	}
+	var parsed struct {
+		ProxyProtocol bool `json:"proxyProtocol"`
+	}
+	_ = json.Unmarshal([]byte(ib.Settings), &parsed)
+	return parsed.ProxyProtocol
 }
 
 // entitlement works out which countries one client may pick.

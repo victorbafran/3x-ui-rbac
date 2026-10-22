@@ -783,6 +783,8 @@
         "ciscoMtuDiscoveryHint": "Mati secara bawaan. Butuh ICMP kembali, dan pada jalur yang menelannya MTU tetap jauh lebih stabil.",
         "ciscoMobileDpd": "Batas waktu sesi ponsel (detik)",
         "ciscoMobileDpdHint": "Berapa lama server menyimpan sesi ponsel setelah tidak mendengarnya lagi. Kosong atau 0 berarti 1800. Di balik server masuk pakai 90: di sana semua ponsel berbagi satu alamat, jadi setiap ganti jaringan meninggalkan sesi hantu yang memakai satu slot perangkat selama itu.",
+        "ciscoProxyProtocol": "IP asli pelanggan (hanya lewat server masuk)",
+        "ciscoProxyProtocolHint": "Mengambil alamat asli setiap pelanggan dari server masuk BackPack, sehingga batas perangkat, blokir, dan daftar online melihat pelanggan, bukan server masuk. Inbound lalu hanya mendengarkan di server ini dan hanya bisa dijangkau lewat server masuk, jadi berikan alamat server masuk kepada pelanggan.",
         "ciscoCertFile": "Berkas sertifikat",
         "ciscoCertFileHint": "Kosongkan keduanya dan panel membuat sertifikat RSA bertanda tangan sendiri lalu memakainya kembali. Pakai kunci RSA: beberapa versi Cisco Secure Client sama sekali tidak menawarkan cipher ECDSA dan menyerah sebelum sertifikat dikirim.",
         "ciscoKeyFile": "Berkas kunci privat",
@@ -2631,6 +2633,8 @@
       "reachTitle": "Apa yang bisa dijangkau {name}",
       "saved": "Tersimpan. Menyiapkan server butuh beberapa menit.",
       "forwards": "Meneruskan {ports}",
+      "realIpPorts": "IP asli: {ports}",
+      "realIpNeedsBackpack": "Tidak diteruskan: {ports}. IP asli pelanggan butuh server masuk BackPack.",
       "noPorts": "Belum ada port untuk diteruskan",
       "summary": {
         "total": "Server",

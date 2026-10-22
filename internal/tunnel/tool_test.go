@@ -89,15 +89,12 @@ func TestEveryFrontCarriesUDPOneWayOrTheOther(t *testing.T) {
 	if udp.unitName() == main.unitName() || udp.remoteConfigPath() == main.remoteConfigPath() || udp.localConfigPath() == main.localConfigPath() {
 		t.Fatal("the two legs share a unit or a config")
 	}
-	if got := UDPTunnelPort(goodPair()); got != main.TunnelPort+1 {
-		t.Fatalf("UDPTunnelPort = %d", got)
+	if got := SecondTunnelPort(goodPair()); got != main.TunnelPort+1 {
+		t.Fatalf("SecondTunnelPort = %d", got)
 	}
 
 	if legs := Legs(backpackPair()); len(legs) != 1 {
 		t.Fatalf("a backpack front has %d legs; it carries UDP itself", len(legs))
-	}
-	if UDPTunnelPort(backpackPair()) != 0 {
-		t.Fatal("a backpack front reserved a UDP tunnel port it does not use")
 	}
 
 	// A tunnel that already rides udp, or carries UDP over TCP, must not be

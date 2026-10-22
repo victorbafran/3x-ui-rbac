@@ -23,6 +23,7 @@ import {
   Table,
   Tag,
   Tooltip,
+  Typography,
   message,
 } from 'antd';
 import {
@@ -79,12 +80,14 @@ function statusTag(r: Relay, t: (k: string) => string) {
 }
 
 // A front's tunnel as the operator needs it to open the firewall: the tool,
-// the transport and port, and Backhaul's UDP leg on the port above.
+// the transport and port, and a second leg on the port above when it has one.
 function frontTunnelText(r: Relay): string {
   const tool = toolOf(r.tunnel);
   const udp = udpLegPort(tool, r.transport, r.tunnelPort);
   const main = `${tool} ${r.transport}:${r.tunnelPort}`;
-  return udp ? `${main} + udp:${udp}` : main;
+  if (udp) return `${main} + udp:${udp}`;
+  if (tool === 'backpack' && r.proxyPorts.length) return `${main} + proxy:${r.tunnelPort + 1}`;
+  return main;
 }
 
 function bytes(n: number): string {
@@ -267,10 +270,23 @@ export default function RelaysPage() {
         // is which customer ports it opens, because a port missing here is a
         // customer who cannot connect through it.
         if (r.role === 'front') {
-          return r.forwardedPorts.length ? (
-            t('pages.relays.forwards', { ports: r.forwardedPorts.join(', ') })
-          ) : (
-            <span style={{ opacity: 0.5 }}>{t('pages.relays.noPorts')}</span>
+          const realIp = r.proxyPorts.join(', ');
+          return (
+            <Space orientation="vertical" size={0}>
+              {r.forwardedPorts.length ? (
+                t('pages.relays.forwards', { ports: r.forwardedPorts.join(', ') })
+              ) : (
+                <span style={{ opacity: 0.5 }}>{t('pages.relays.noPorts')}</span>
+              )}
+              {realIp && toolOf(r.tunnel) === 'backpack'
+                ? t('pages.relays.realIpPorts', { ports: realIp })
+                : null}
+              {realIp && toolOf(r.tunnel) !== 'backpack' ? (
+                <Typography.Text type="warning">
+                  {t('pages.relays.realIpNeedsBackpack', { ports: realIp })}
+                </Typography.Text>
+              ) : null}
+            </Space>
           );
         }
         return r.tunnelUp ? `↓ ${bytes(r.received)} · ↑ ${bytes(r.sent)}` : '—';

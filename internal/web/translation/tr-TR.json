@@ -783,6 +783,8 @@
         "ciscoMtuDiscoveryHint": "Varsayılan olarak kapalıdır. ICMP’nin geri gelmesi gerekir; onu yutan bir yolda sabit MTU çok daha kararlıdır.",
         "ciscoMobileDpd": "Mobil oturum süresi (saniye)",
         "ciscoMobileDpdHint": "Sunucunun bir telefonun oturumunu, ondan haber almayı bıraktıktan sonra ne kadar tuttuğu. Boş veya 0, 1800’dür. Bir giriş sunucusunun arkasında 90 kullanın: orada tüm telefonlar tek bir adresi paylaşır, bu yüzden her ağ değişimi bu süre boyunca bir cihaz yerini tutan hayalet bir oturum bırakır.",
+        "ciscoProxyProtocol": "Müşterinin gerçek IP'si (yalnızca giriş sunucuları)",
+        "ciscoProxyProtocolHint": "Her müşterinin gerçek adresini BackPack giriş sunucusundan alır; böylece cihaz sınırı, engellemeler ve çevrimiçi listesi giriş sunucusunu değil müşteriyi görür. Inbound bundan sonra yalnızca bu sunucuda dinler ve yalnızca giriş sunucuları üzerinden erişilir; müşterilere giriş sunucusunun adresini verin.",
         "ciscoCertFile": "Sertifika dosyası",
         "ciscoCertFileHint": "İkisini de boş bırakırsanız panel kendinden imzalı bir RSA sertifikası üretir ve onu yeniden kullanır. RSA anahtarı kullanın: Cisco Secure Client'ın bazı sürümleri hiç ECDSA şifresi sunmaz ve sertifika gelmeden vazgeçer.",
         "ciscoKeyFile": "Özel anahtar dosyası",
@@ -2631,6 +2633,8 @@
       "reachTitle": "{name} neye erişebiliyor",
       "saved": "Kaydedildi. Sunucunun hazırlanması birkaç dakika sürer.",
       "forwards": "Yönlendirilen: {ports}",
+      "realIpPorts": "Gerçek IP: {ports}",
+      "realIpNeedsBackpack": "Yönlendirilmiyor: {ports}. Müşterinin gerçek IP'si için BackPack giriş sunucusu gerekir.",
       "noPorts": "Henüz yönlendirilecek port yok",
       "summary": {
         "total": "Sunucular",

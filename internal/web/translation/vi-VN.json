@@ -783,6 +783,8 @@
         "ciscoMtuDiscoveryHint": "Mặc định tắt. Nó cần ICMP quay về, và trên đường truyền nuốt mất ICMP thì MTU cố định ổn định hơn nhiều.",
         "ciscoMobileDpd": "Thời gian giữ phiên di động (giây)",
         "ciscoMobileDpdHint": "Máy chủ giữ phiên của điện thoại bao lâu sau khi không còn nghe thấy nó. Để trống hoặc 0 là 1800. Phía sau máy chủ lối vào hãy dùng 90: ở đó mọi điện thoại dùng chung một địa chỉ, nên mỗi lần đổi mạng lại để lại một phiên ma chiếm một suất thiết bị suốt thời gian đó.",
+        "ciscoProxyProtocol": "IP thật của khách (chỉ qua máy chủ vào)",
+        "ciscoProxyProtocolHint": "Lấy địa chỉ thật của mỗi khách từ máy chủ vào BackPack, để giới hạn thiết bị, lệnh chặn và danh sách trực tuyến thấy chính khách chứ không phải máy chủ vào. Sau đó inbound chỉ lắng nghe trên máy chủ này và chỉ đến được qua các máy chủ vào, nên hãy đưa cho khách địa chỉ của máy chủ vào.",
         "ciscoCertFile": "Tệp chứng chỉ",
         "ciscoCertFileHint": "Để trống cả hai thì bảng điều khiển tạo một chứng chỉ RSA tự ký và dùng lại. Hãy dùng khóa RSA: một số phiên bản Cisco Secure Client không đưa ra bất kỳ mã hóa ECDSA nào và bỏ cuộc trước khi chứng chỉ được gửi.",
         "ciscoKeyFile": "Tệp khóa riêng",
@@ -2631,6 +2633,8 @@
       "reachTitle": "{name} vào được những đâu",
       "saved": "Đã lưu. Chuẩn bị máy chủ mất vài phút.",
       "forwards": "Chuyển tiếp {ports}",
+      "realIpPorts": "IP thật: {ports}",
+      "realIpNeedsBackpack": "Không chuyển tiếp: {ports}. IP thật của khách cần máy chủ vào BackPack.",
       "noPorts": "Chưa có cổng nào để chuyển tiếp",
       "summary": {
         "total": "Máy chủ",

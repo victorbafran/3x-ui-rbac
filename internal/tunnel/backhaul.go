@@ -88,6 +88,11 @@ type Pair struct {
 	// panel. Mirrored rather than remapped: a customer's existing profile
 	// keeps working with nothing changed but the address.
 	Ports []int
+	// ProxyPorts are ports whose service expects a PROXY v2 header naming the
+	// customer; Legs moves them onto BackPack's proxy leg.
+	ProxyPorts []int
+	// ProxyProtocol is set by Legs on the leg that sends that header.
+	ProxyProtocol bool
 }
 
 // ServerConfig is what runs on the front machine — the one customers reach.

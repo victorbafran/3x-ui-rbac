@@ -295,6 +295,7 @@ export function createDefaultCiscoInboundSettings(): CiscoInboundSettings {
     mtu: 0,
     mtuDiscovery: false,
     mobileDpd: 0,
+    proxyProtocol: false,
     // No countries by default: once an inbound offers any, ocserv refuses
     // every client that does not name one, so a new inbound must start with
     // the single pool it has always had.

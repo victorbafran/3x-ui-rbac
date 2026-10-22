@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -75,6 +76,15 @@ else
 fi
 systemctl enable -q "$UNIT" 2>/dev/null || true
 
+# Staging lets go of a changed leg's ports before any leg binds them again.
+if [ "$MODE" = stage ]; then
+  if [ "$CHANGED" = 1 ] || [ "$NEED" = 1 ]; then
+    systemctl stop "$UNIT" 2>/dev/null || true
+    echo "stopped $UNIT to change it"
+  fi
+  exit 0
+fi
+
 # A rebuild that produces the same tunnel must not drop the customers on it.
 if [ "$CHANGED" = 1 ] || [ "$NEED" = 1 ] || ! systemctl is-active -q "$UNIT"; then
   systemctl restart "$UNIT"
@@ -103,7 +113,7 @@ exit 1
 // a second one beside it.
 const remoteScript = `#!/bin/bash
 set -eu
-CONF_PATH="$1"; UNIT="$2"; VERSION="$3"; TUNNEL_PORT="$4"; CONF_B64="$5"
+CONF_PATH="$1"; UNIT="$2"; VERSION="$3"; TUNNEL_PORT="$4"; CONF_B64="$5"; MODE="${6:-apply}"
 BIN=/usr/local/bin/backhaul
 DESCRIPTION="Backhaul tunnel for x-ui"
 export DEBIAN_FRONTEND=noninteractive
@@ -150,14 +160,16 @@ fi
 // /usr/local/bin/backpack is never touched.
 const backpackRemoteScript = `#!/bin/bash
 set -eu
-CONF_PATH="$1"; UNIT="$2"; TUNNEL_PORT="$3"; CONF_B64="$4"; UPLOADED="${5:-}"
+CONF_PATH="$1"; UNIT="$2"; TUNNEL_PORT="$3"; CONF_B64="$4"; UPLOADED="${5:-}"; MODE="${6:-apply}"
 BIN=/usr/local/bin/x-ui-backpack
 DESCRIPTION="BackPack tunnel for x-ui"
 NEED=0
+# Every leg is told of a new binary; the first to see the file installs it.
 if [ -n "$UPLOADED" ]; then
-  [ -f "$UPLOADED" ] || { echo "the uploaded backpack binary is missing"; exit 1; }
-  install -m 0755 "$UPLOADED" "$BIN"
-  rm -f "$UPLOADED"
+  if [ -f "$UPLOADED" ]; then
+    install -m 0755 "$UPLOADED" "$BIN"
+    rm -f "$UPLOADED"
+  fi
   NEED=1
 fi
 [ -x "$BIN" ] || { echo "no backpack binary on this host"; exit 1; }
@@ -169,6 +181,10 @@ fi
 const teardownScript = `#!/bin/bash
 set -u
 CONF_PATH="$1"; UNIT="$2"
+if [ ! -e "/etc/systemd/system/${UNIT}.service" ] && [ ! -e "$CONF_PATH" ]; then
+  echo "nothing to remove"
+  exit 0
+fi
 systemctl disable -q --now "$UNIT" 2>/dev/null || true
 rm -f "/etc/systemd/system/${UNIT}.service" "$CONF_PATH"
 systemctl daemon-reload 2>/dev/null || true
@@ -185,6 +201,10 @@ echo "tunnel removed"
 const backpackTeardownScript = `#!/bin/bash
 set -u
 CONF_PATH="$1"; UNIT="$2"
+if [ ! -e "/etc/systemd/system/${UNIT}.service" ] && [ ! -e "$CONF_PATH" ]; then
+  echo "nothing to remove"
+  exit 0
+fi
 systemctl disable -q --now "$UNIT" 2>/dev/null || true
 rm -f "/etc/systemd/system/${UNIT}.service" "$CONF_PATH"
 systemctl daemon-reload 2>/dev/null || true
@@ -201,47 +221,102 @@ type Front struct {
 	Credentials relay.Credentials
 }
 
-// Provision installs the tool on the front and starts one leg of a tunnel. It
-// returns only once that leg's port is actually listening, so "provisioned"
-// means the machine is accepting the panel rather than that a command exited
-// zero. Callers provision every leg from Legs.
+// remote is the part of an SSH session that provisioning uses.
+type remote interface {
+	Run(ctx context.Context, command string) (string, error)
+	Upload(ctx context.Context, path string, data []byte) error
+	RunScript(ctx context.Context, name, body string, args ...string) (string, error)
+}
+
+// Provision brings every leg of a front to what the panel wants and returns
+// once each leg's port is listening, not merely once a command exited zero.
 func Provision(ctx context.Context, f Front) error {
-	config, err := ServerConfig(f.Pair)
-	if err != nil {
-		return err
-	}
 	client, err := relay.Dial(ctx, f.Credentials)
 	if err != nil {
 		return fmt.Errorf("reach the tunnel server: %w", err)
 	}
 	defer client.Close()
-
-	var out string
+	uploaded := ""
 	if f.Pair.Tool.norm() == ToolBackPack {
-		out, err = provisionBackPack(ctx, client, f.Pair, config)
-	} else {
-		out, err = client.RunScript(ctx, "x-ui-backhaul.sh", remoteScript,
-			f.Pair.remoteConfigPath(),
-			f.Pair.unitName(),
-			Release,
-			strconv.Itoa(f.Pair.TunnelPort),
-			base64.StdEncoding.EncodeToString([]byte(config)),
-		)
+		if uploaded, err = pushBackPack(ctx, client); err != nil {
+			return err
+		}
 	}
-	if err != nil {
-		return fmt.Errorf("set up the tunnel: %w: %s", err, lastLine(out))
+	return provisionLegs(ctx, client, f.Pair, uploaded)
+}
+
+// provisionLegs stops every changed leg and removes every unwanted one before
+// any starts: BackPack skips a busy forwarded port for good, so a port moving
+// between legs must be let go before it is bound again.
+func provisionLegs(ctx context.Context, r remote, p Pair, uploaded string) error {
+	legs := Legs(p)
+	configs := make([]string, len(legs))
+	for i, leg := range legs {
+		config, err := ServerConfig(leg)
+		if err != nil {
+			return err
+		}
+		configs[i] = config
 	}
-	if !strings.Contains(out, "listening on") {
-		return fmt.Errorf("the tunnel did not come up: %s", lastLine(out))
+	for i, leg := range legs {
+		if out, err := runLeg(ctx, r, leg, configs[i], uploaded, "stage"); err != nil {
+			return fmt.Errorf("set up the tunnel: %w: %s", err, lastLine(out))
+		}
+	}
+	if err := removeLegs(ctx, r, unwantedLegs(p, legs)); err != nil {
+		return err
+	}
+	for i, leg := range legs {
+		out, err := runLeg(ctx, r, leg, configs[i], "", "apply")
+		if err != nil {
+			return fmt.Errorf("set up the tunnel: %w: %s", err, lastLine(out))
+		}
+		if !strings.Contains(out, "listening on") {
+			return fmt.Errorf("the tunnel did not come up: %s", lastLine(out))
+		}
 	}
 	return nil
 }
 
-// provisionBackPack pushes the verified binary when the front's copy differs
-// and then applies the leg. The comparison is by content, so a reconcile does
-// not upload tens of megabytes every minute.
-func provisionBackPack(ctx context.Context, client *relay.Client, p Pair, config string) (string, error) {
-	machine, err := client.Run(ctx, "uname -m")
+func runLeg(ctx context.Context, r remote, leg Pair, config, uploaded, mode string) (string, error) {
+	b64 := base64.StdEncoding.EncodeToString([]byte(config))
+	port := strconv.Itoa(leg.TunnelPort)
+	if leg.Tool.norm() == ToolBackPack {
+		return r.RunScript(ctx, "x-ui-backpack.sh", backpackRemoteScript,
+			leg.remoteConfigPath(), leg.unitName(), port, b64, uploaded, mode)
+	}
+	return r.RunScript(ctx, "x-ui-backhaul.sh", remoteScript,
+		leg.remoteConfigPath(), leg.unitName(), Release, port, b64, mode)
+}
+
+// unwantedLegs is every leg the front could carry that Legs no longer asks for.
+func unwantedLegs(p Pair, wanted []Pair) []Pair {
+	var out []Pair
+	for _, leg := range teardownLegs(p) {
+		if !slices.ContainsFunc(wanted, func(w Pair) bool { return w.Key() == leg.Key() }) {
+			out = append(out, leg)
+		}
+	}
+	return out
+}
+
+func removeLegs(ctx context.Context, r remote, legs []Pair) error {
+	for _, leg := range legs {
+		script, name := teardownScript, "x-ui-backhaul-down.sh"
+		if leg.Tool.norm() == ToolBackPack {
+			script, name = backpackTeardownScript, "x-ui-backpack-down.sh"
+		}
+		if _, err := r.RunScript(ctx, name, script, leg.remoteConfigPath(), leg.unitName()); err != nil {
+			return fmt.Errorf("remove the tunnel: %w", err)
+		}
+	}
+	return nil
+}
+
+// pushBackPack uploads the verified binary when the front's copy differs and
+// says where; compared by content, so a reconcile uploads nothing.
+func pushBackPack(ctx context.Context, r remote) (string, error) {
+	machine, err := r.Run(ctx, "uname -m")
 	if err != nil {
 		return "", fmt.Errorf("could not tell what the front runs on: %w", err)
 	}
@@ -257,25 +332,19 @@ func provisionBackPack(ctx context.Context, client *relay.Client, p Pair, config
 	if err != nil {
 		return "", err
 	}
-	have, _ := client.Run(ctx, "sha256sum /usr/local/bin/"+backpackBinaryName+" 2>/dev/null | cut -d' ' -f1")
-	uploaded := ""
-	if strings.TrimSpace(have) != want {
-		data, err := os.ReadFile(local)
-		if err != nil {
-			return "", fmt.Errorf("could not read the verified backpack binary: %w", err)
-		}
-		uploaded = "/tmp/" + backpackBinaryName + ".upload"
-		if err := client.Upload(ctx, uploaded, data); err != nil {
-			return "", fmt.Errorf("could not send backpack to the front: %w", err)
-		}
+	have, _ := r.Run(ctx, "sha256sum /usr/local/bin/"+backpackBinaryName+" 2>/dev/null | cut -d' ' -f1")
+	if strings.TrimSpace(have) == want {
+		return "", nil
 	}
-	return client.RunScript(ctx, "x-ui-backpack.sh", backpackRemoteScript,
-		p.remoteConfigPath(),
-		p.unitName(),
-		strconv.Itoa(p.TunnelPort),
-		base64.StdEncoding.EncodeToString([]byte(config)),
-		uploaded,
-	)
+	data, err := os.ReadFile(local)
+	if err != nil {
+		return "", fmt.Errorf("could not read the verified backpack binary: %w", err)
+	}
+	uploaded := "/tmp/" + backpackBinaryName + ".upload"
+	if err := r.Upload(ctx, uploaded, data); err != nil {
+		return "", fmt.Errorf("could not send backpack to the front: %w", err)
+	}
+	return uploaded, nil
 }
 
 // backpackArch maps uname -m to the architecture BackPack names its releases
@@ -317,17 +386,17 @@ func fileSHA256(path string) (string, error) {
 }
 
 // teardownLegs is every leg a front could have, whatever its transport is now:
-// removing a leg that was never set up is harmless, and leaving Backhaul's UDP
-// leg behind would keep a port open on a machine that has been given back.
+// removing a leg that was never set up is harmless, and leaving one behind
+// would keep a port open on a machine that has been given back.
 func teardownLegs(p Pair) []Pair {
 	p.Tool = p.Tool.norm()
 	p.Leg = ""
+	second := p
+	second.Leg = LegUDP
 	if p.Tool == ToolBackPack {
-		return []Pair{p}
+		second.Leg = LegProxy
 	}
-	udp := p
-	udp.Leg = LegUDP
-	return []Pair{p, udp}
+	return []Pair{p, second}
 }
 
 // Teardown removes the panel's footprint from a front machine, every leg.
@@ -338,16 +407,7 @@ func Teardown(ctx context.Context, f Front) error {
 	}
 	defer client.Close()
 
-	script, name := teardownScript, "x-ui-backhaul-down.sh"
-	if f.Pair.Tool.norm() == ToolBackPack {
-		script, name = backpackTeardownScript, "x-ui-backpack-down.sh"
-	}
-	for _, leg := range teardownLegs(f.Pair) {
-		if _, err := client.RunScript(ctx, name, script, leg.remoteConfigPath(), leg.unitName()); err != nil {
-			return fmt.Errorf("remove the tunnel: %w", err)
-		}
-	}
-	return nil
+	return removeLegs(ctx, client, teardownLegs(f.Pair))
 }
 
 // lastLine is what the remote said last, which is where its scripts put the

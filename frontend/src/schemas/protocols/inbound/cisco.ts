@@ -77,6 +77,9 @@ export const CiscoInboundSettingsSchema = z
     // second device and each switch leaves a ghost holding a device slot for
     // this long; 90 was measured to clear them.
     mobileDpd: z.number().int().min(0).max(86400).default(0),
+    // The customer's address from a BackPack entry server's PROXY header; the
+    // inbound then listens on loopback, reachable through entry servers only.
+    proxyProtocol: z.boolean().default(false),
     // An operator-supplied keypair. Left empty the panel generates a
     // self-signed RSA pair and reuses it. Use RSA: some versions of Cisco's own
     // Secure Client offer no ECDSA cipher and give up before the certificate is

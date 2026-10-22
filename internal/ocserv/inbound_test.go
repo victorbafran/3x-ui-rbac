@@ -124,3 +124,14 @@ func TestDTLSPortFollowsTheSettings(t *testing.T) {
 		t.Errorf("a vless inbound reported DTLS on %d", got)
 	}
 }
+
+// Read from the settings alone, so a port is put on the real-IP leg before the
+// inbound has its first client.
+func TestExpectsProxyHeaderNeedsNoClient(t *testing.T) {
+	if !ExpectsProxyHeader(ciscoInbound(`{"proxyProtocol":true}`)) {
+		t.Error("a cisco inbound with real client IP on and no client was read as off")
+	}
+	if ExpectsProxyHeader(&model.Inbound{Protocol: model.VLESS, Settings: `{"proxyProtocol":true}`}) {
+		t.Error("a vless inbound was read as cisco")
+	}
+}

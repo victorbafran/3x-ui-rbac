@@ -59,6 +59,12 @@ export const RelaySchema = z.object({
     .array(z.number())
     .nullish()
     .transform((v) => v ?? []),
+  // Forwarded ports whose service wants the customer's real address; only a
+  // BackPack front carries them, on its second tunnel one port up.
+  proxyPorts: z
+    .array(z.number())
+    .nullish()
+    .transform((v) => v ?? []),
 });
 export type Relay = z.infer<typeof RelaySchema>;
 

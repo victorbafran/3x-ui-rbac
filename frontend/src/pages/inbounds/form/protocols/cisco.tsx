@@ -272,6 +272,14 @@ export default function CiscoFields() {
         <InputNumber min={0} max={86400} placeholder="1800" style={{ width: '100%' }} />
       </FormField>
       <FormField
+        name={['settings', 'proxyProtocol']}
+        label={t('pages.inbounds.form.ciscoProxyProtocol')}
+        tooltip={t('pages.inbounds.form.ciscoProxyProtocolHint')}
+        valueProp="checked"
+      >
+        <Switch />
+      </FormField>
+      <FormField
         name={['settings', 'certFile']}
         label={t('pages.inbounds.form.ciscoCertFile')}
         tooltip={t('pages.inbounds.form.ciscoCertFileHint')}

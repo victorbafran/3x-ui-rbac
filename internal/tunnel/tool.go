@@ -3,6 +3,7 @@ package tunnel
 import (
 	"fmt"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -106,14 +107,36 @@ func tcpCarried(t Transport) bool {
 // no second.
 const LegUDP = "udp"
 
-// Legs is every tunnel one front needs, the main one first.
+// LegProxy names BackPack's second tunnel, one port up, which sends a PROXY v2
+// header on every connection; BackPack can switch that on only per tunnel.
+const LegProxy = "proxy"
+
+// Legs is every tunnel one front needs, the main one first. A port rides
+// exactly one leg: two listeners cannot share it on the front.
 func Legs(p Pair) []Pair {
 	p.Tool = p.Tool.norm()
 	p.Leg = ""
-	if p.Tool == ToolBackPack || !tcpCarried(p.Transport) || p.Transport == TransportUDPoTCP {
-		// BackPack carries UDP itself; a Backhaul tunnel that already rides
-		// udp, or carries UDP over TCP, must not be doubled — two tunnels on
-		// one UDP port silently split its traffic between them.
+	p.ProxyProtocol = false
+	proxied := normalisePorts(p.ProxyPorts, p.TunnelPort)
+	p.ProxyPorts = nil
+	p.Ports = without(p.Ports, proxied)
+
+	if p.Tool == ToolBackPack {
+		if len(proxied) == 0 {
+			return []Pair{p}
+		}
+		px := p
+		px.Leg = LegProxy
+		px.TunnelPort = p.TunnelPort + 1
+		px.Ports = proxied
+		px.ProxyProtocol = true
+		return []Pair{p, px}
+	}
+	// Backhaul's own PROXY support is unmeasured, so its fronts leave those
+	// ports out: forwarded without the header, their services refuse anyway.
+	if !tcpCarried(p.Transport) || p.Transport == TransportUDPoTCP {
+		// A Backhaul tunnel that already rides udp, or carries UDP over TCP,
+		// must not be doubled: two tunnels on one UDP port split its traffic.
 		return []Pair{p}
 	}
 	udp := p
@@ -123,16 +146,30 @@ func Legs(p Pair) []Pair {
 	return []Pair{p, udp}
 }
 
-// UDPTunnelPort is the port Backhaul's UDP leg listens on, zero when the front
-// needs no second leg. Reserved like the main tunnel port, so no inbound on it
-// is ever forwarded into a collision.
-func UDPTunnelPort(p Pair) int {
+// SecondTunnelPort is the port one above the tunnel's, which Backhaul's UDP
+// leg or BackPack's proxy leg listens on, and zero when the front can have
+// neither. BackPack's is reserved even while unused, so switching real client
+// IP on later never collides with a forwarded inbound.
+func SecondTunnelPort(p Pair) int {
+	if p.Tool.norm() == ToolBackPack {
+		return p.TunnelPort + 1
+	}
 	for _, leg := range Legs(p) {
 		if leg.Leg == LegUDP {
 			return leg.TunnelPort
 		}
 	}
 	return 0
+}
+
+func without(ports, drop []int) []int {
+	out := make([]int, 0, len(ports))
+	for _, port := range ports {
+		if !slices.Contains(drop, port) {
+			out = append(out, port)
+		}
+	}
+	return out
 }
 
 // Key names one leg of one tunnel: the id, and the leg after it when there is

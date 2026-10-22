@@ -897,6 +897,35 @@ func (s *RelayService) reconcileFront(r model.Relay) {
 	s.mark(r.Id, RelayReady, "")
 }
 
+// banOnFront is tunnel.Ban; a variable so a test can stand in for the SSH.
+var banOnFront = tunnel.Ban
+
+// BanOnFronts cuts addresses off at every enabled entry server for d: a customer
+// behind one connects there, and this panel's firewall never sees them.
+func (s *RelayService) BanOnFronts(ips []string, d time.Duration) {
+	var fronts []model.Relay
+	if err := database.GetDB().Where("enabled = ? AND role = ?", true, model.RelayFront).
+		Find(&fronts).Error; err != nil {
+		logger.Warning("device limit: could not list the entry servers:", err)
+		return
+	}
+	for _, r := range fronts {
+		creds, err := frontCreds(r)
+		if err != nil {
+			logger.Warningf("device limit: %s: %v", r.Name, err)
+			continue
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		err = banOnFront(ctx, creds, ips, d)
+		cancel()
+		if err != nil {
+			logger.Warningf("device limit: could not cut %v off at %s: %v", ips, r.Name, err)
+			continue
+		}
+		logger.Infof("device limit: %v cut off at %s for %s", ips, r.Name, d)
+	}
+}
+
 // FrontOption is one entry server, as the inbound form offers it for the
 // address customers' links carry.
 type FrontOption struct {

@@ -20,6 +20,7 @@ import { ALPN_OPTION, UTLS_FINGERPRINT } from '@/schemas/primitives';
 import { CipherSuitesSelect } from '@/components/form';
 import { FormField, rhfZodValidate } from '@/components/form/rhf';
 import { useNodesQuery } from '@/api/queries/useNodesQuery';
+import { useRelayOptions } from '@/api/queries/useRelaysQuery';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { catTabLabel } from '@/pages/settings/catTabLabel';
 import { HostFinalMaskForm, HostMuxForm, HostSockoptForm } from './json-forms';
@@ -68,6 +69,7 @@ function defaultsFor(host: HostRecord | null): FormShape {
     sockoptParams: asString(host?.sockoptParams),
     finalMask: host?.finalMask ?? '',
     vlessRoute: host?.vlessRoute ?? '',
+    exit: host?.exit ?? '',
     excludeFromSubTypes:
       (host?.excludeFromSubTypes as BulkAddHostValues['excludeFromSubTypes']) ?? [],
     nodeGuids: host?.nodeGuids ?? [],
@@ -110,6 +112,15 @@ export default function HostFormModal({
 
   const { nodes } = useNodesQuery();
 
+  // Exits only: an empty value already means this server.
+  const { options: relayOptions } = useRelayOptions();
+  const exitSelectOptions = useMemo(
+    () =>
+      relayOptions
+        .filter((o) => o.interface !== '')
+        .map((o) => ({ value: o.interface, label: o.label || o.name })),
+    [relayOptions],
+  );
   const inboundSelectOptions = useMemo(
     () =>
       inboundOptions.map((ib) => ({
@@ -257,6 +268,13 @@ export default function HostFormModal({
                       tooltip={t('pages.hosts.hints.port')}
                     >
                       <InputNumber min={0} max={65535} />
+                    </FormField>
+                    <FormField
+                      name="exit"
+                      label={t('pages.hosts.fields.exit')}
+                      tooltip={t('pages.hosts.hints.exit')}
+                    >
+                      <Select allowClear options={exitSelectOptions} />
                     </FormField>
                     <FormField
                       name="tags"

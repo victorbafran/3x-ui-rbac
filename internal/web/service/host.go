@@ -56,6 +56,7 @@ func newHostGroup(h *model.Host, groupId string) *entity.HostGroup {
 		SockoptParams:          h.SockoptParams,
 		FinalMask:              h.FinalMask,
 		VlessRoute:             h.VlessRoute,
+		Exit:                   h.Exit,
 		ExcludeFromSubTypes:    h.ExcludeFromSubTypes,
 		NodeGuids:              h.NodeGuids,
 		MihomoIpVersion:        h.MihomoIpVersion,
@@ -145,6 +146,7 @@ func buildHostRows(groupId string, req *entity.HostGroup) []*model.Host {
 				SockoptParams:          req.SockoptParams,
 				FinalMask:              req.FinalMask,
 				VlessRoute:             req.VlessRoute,
+				Exit:                   req.Exit,
 				ExcludeFromSubTypes:    req.ExcludeFromSubTypes,
 				NodeGuids:              req.NodeGuids,
 				MihomoIpVersion:        req.MihomoIpVersion,
@@ -166,6 +168,8 @@ func adoptedHostRows(groups []*entity.HostGroup, nodeInboundId, centralInboundId
 		}
 		scoped := *g
 		scoped.InboundIds = []int{centralInboundId}
+		// a node's exit names a tunnel on the node, not on this panel.
+		scoped.Exit = ""
 		rows = append(rows, buildHostRows(g.GroupId, &scoped)...)
 	}
 	return rows
@@ -232,12 +236,15 @@ func (s *HostService) AddHostGroup(req *entity.HostGroup) ([]*model.Host, error)
 	if err := validateFinalMaskJSONSalamander(req.FinalMask); err != nil {
 		return nil, err
 	}
-	created := buildHostRows(groupId, req)
-
+	var created []*model.Host
 	err := database.GetDB().Transaction(func(tx *gorm.DB) error {
 		if err := validateInboundsExist(tx, req.InboundIds); err != nil {
 			return err
 		}
+		if err := settleHostExit(tx, groupId, req); err != nil {
+			return err
+		}
+		created = buildHostRows(groupId, req)
 		if len(created) > 0 {
 			return tx.Create(&created).Error
 		}
@@ -253,8 +260,7 @@ func (s *HostService) UpdateHostGroup(groupId string, req *entity.HostGroup) ([]
 	if err := validateFinalMaskJSONSalamander(req.FinalMask); err != nil {
 		return nil, err
 	}
-	created := buildHostRows(groupId, req)
-
+	var created []*model.Host
 	err := database.GetDB().Transaction(func(tx *gorm.DB) error {
 		var count int64
 		if err := tx.Model(&model.Host{}).Where("group_id = ?", groupId).Count(&count).Error; err != nil {
@@ -266,6 +272,10 @@ func (s *HostService) UpdateHostGroup(groupId string, req *entity.HostGroup) ([]
 		if err := validateInboundsExist(tx, req.InboundIds); err != nil {
 			return err
 		}
+		if err := settleHostExit(tx, groupId, req); err != nil {
+			return err
+		}
+		created = buildHostRows(groupId, req)
 		if err := tx.Where("group_id = ?", groupId).Delete(&model.Host{}).Error; err != nil {
 			return err
 		}

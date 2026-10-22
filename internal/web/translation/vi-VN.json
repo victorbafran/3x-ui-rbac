@@ -2456,6 +2456,7 @@
         "sockoptParams": "Sockopt",
         "finalMask": "Final Mask",
         "vlessRoute": "Đường VLESS",
+        "exit": "Quốc gia ra",
         "mihomoIpVersion": "Phiên bản IP",
         "mihomoX25519": "Mihomo X25519",
         "shuffleHost": "Xáo trộn host",
@@ -2472,6 +2473,7 @@
         "serverDescription": "Ghi chú tùy chọn hiển thị bên dưới ghi chú.",
         "allowInsecure": "Bỏ qua xác minh chứng chỉ TLS (allowInsecure / skip-cert-verify).",
         "vlessRoute": "Một giá trị định tuyến VLESS (0-65535) được nhúng vào UUID, ví dụ 443. Để trống nếu không dùng.",
+        "exit": "Quốc gia mà mục này đi ra, là một trong các máy chủ ra của bạn. Tạo nhiều mục cùng địa chỉ, mỗi mục một quốc gia ra, và mỗi khách tự chọn quốc gia trong ứng dụng của mình. Chỉ VLESS; bảng điều khiển tự đặt tuyến VLESS.",
         "remark": "Nhãn đơn giản cho host này. Chỉ hiển thị làm tên cấu hình khi inbound không có ghi chú riêng."
       },
       "remarkVars": {

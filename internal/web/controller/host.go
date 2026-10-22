@@ -12,6 +12,15 @@ import (
 
 type HostController struct {
 	hostService service.HostService
+	xrayService service.XrayService
+}
+
+// reloadIfExit asks Xray to reload when an edit touched a host that leaves
+// through an exit: those hosts are routing rules, the rest only feed links.
+func (a *HostController) reloadIfExit(touched bool) {
+	if touched {
+		a.xrayService.SetToNeedRestart()
+	}
 }
 
 func NewHostController(g *gin.RouterGroup) *HostController {
@@ -88,6 +97,7 @@ func (a *HostController) add(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "pages.hosts.toasts.add"), err)
 		return
 	}
+	a.reloadIfExit(req.Exit != "")
 	jsonMsgObj(c, I18nWeb(c, "pages.hosts.toasts.add"), created, nil)
 }
 
@@ -97,20 +107,24 @@ func (a *HostController) update(c *gin.Context) {
 	if !ok {
 		return
 	}
+	hadExit := a.hostService.HostsUseExit(groupId)
 	updated, err := a.hostService.UpdateHostGroup(groupId, req)
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.hosts.toasts.update"), err)
 		return
 	}
+	a.reloadIfExit(hadExit || req.Exit != "")
 	jsonMsgObj(c, I18nWeb(c, "pages.hosts.toasts.update"), updated, nil)
 }
 
 func (a *HostController) del(c *gin.Context) {
 	groupId := c.Param("groupId")
+	hadExit := a.hostService.HostsUseExit(groupId)
 	if err := a.hostService.DeleteHostGroup(groupId); err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.hosts.toasts.delete"), err)
 		return
 	}
+	a.reloadIfExit(hadExit)
 	jsonMsg(c, I18nWeb(c, "pages.hosts.toasts.delete"), nil)
 }
 
@@ -127,6 +141,7 @@ func (a *HostController) setEnable(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "pages.hosts.toasts.update"), err)
 		return
 	}
+	a.reloadIfExit(a.hostService.HostsUseExit(groupId))
 	jsonMsg(c, I18nWeb(c, "pages.hosts.toasts.update"), nil)
 }
 
@@ -158,6 +173,7 @@ func (a *HostController) bulkSetEnable(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "pages.hosts.toasts.update"), err)
 		return
 	}
+	a.reloadIfExit(a.hostService.HostsUseExit(req.Ids...))
 	jsonMsg(c, I18nWeb(c, "pages.hosts.toasts.update"), nil)
 }
 
@@ -169,9 +185,11 @@ func (a *HostController) bulkDel(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "pages.hosts.toasts.delete"), err)
 		return
 	}
+	hadExit := a.hostService.HostsUseExit(req.Ids...)
 	if err := a.hostService.DeleteHostsGroup(req.Ids); err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.hosts.toasts.delete"), err)
 		return
 	}
+	a.reloadIfExit(hadExit)
 	jsonMsg(c, I18nWeb(c, "pages.hosts.toasts.delete"), nil)
 }

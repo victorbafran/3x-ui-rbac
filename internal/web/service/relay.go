@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 	"sync"
@@ -170,26 +171,47 @@ func (s *RelayService) frontHealth(v *RelayView) {
 func (s *RelayService) usage() map[string][]string {
 	out := map[string][]string{}
 	var inbounds []*model.Inbound
-	// Both protocols can point a country at a relay, and deleting one that is
-	// still in use has to be refused whichever protocol is using it.
-	if err := database.GetDB().Where("protocol IN ?", []model.Protocol{model.Cisco, model.OpenVPN}).Find(&inbounds).Error; err != nil {
-		return out
-	}
-	for _, ib := range inbounds {
-		inst, ok := ocserv.InstanceFromInbound(ib)
-		if !ok {
-			continue
-		}
-		for _, l := range inst.Locations {
-			exit := strings.TrimSpace(l.Exit)
-			if exit == "" {
-				continue
-			}
+	// Read from the settings, not from a served instance: an inbound with no
+	// client yet still points at the exit it will use for its first one.
+	if err := database.GetDB().Where("protocol IN ?", []model.Protocol{model.Cisco, model.OpenVPN}).Order("id asc").Find(&inbounds).Error; err == nil {
+		for _, ib := range inbounds {
 			name := ib.Remark
 			if name == "" {
 				name = ib.Tag
 			}
-			out[exit] = appendOnce(out[exit], name)
+			for _, exit := range settingsExits(ib.Settings) {
+				out[exit] = appendOnce(out[exit], name)
+			}
+		}
+	}
+	var hosts []model.Host
+	if err := database.GetDB().Where("exit_iface <> ''").Order("id asc").Find(&hosts).Error; err == nil {
+		for _, h := range hosts {
+			out[h.Exit] = appendOnce(out[h.Exit], "host "+h.Remark)
+		}
+	}
+	return out
+}
+
+// settingsExits is every exit an inbound's settings name: OpenVPN's own and
+// each cisco country's.
+func settingsExits(settings string) []string {
+	var parsed struct {
+		Exit      string `json:"exit"`
+		Locations []struct {
+			Exit string `json:"exit"`
+		} `json:"locations"`
+	}
+	if json.Unmarshal([]byte(settings), &parsed) != nil {
+		return nil
+	}
+	var out []string
+	if e := strings.TrimSpace(parsed.Exit); e != "" {
+		out = append(out, e)
+	}
+	for _, l := range parsed.Locations {
+		if e := strings.TrimSpace(l.Exit); e != "" {
+			out = append(out, e)
 		}
 	}
 	return out
@@ -510,6 +532,9 @@ func (s *RelayService) enrollAndProvision(id int, password, privateKey string) {
 	if err := database.GetDB().Model(&model.Relay{Id: id}).Updates(fields).Error; err != nil {
 		logger.Warningf("relay %s: could not record the tunnel: %v", r.Name, err)
 	}
+	if err := relay.EnsureXrayExit(r.Id); err != nil {
+		logger.Warningf("relay %s: Xray cannot leave through it yet: %v", r.Name, err)
+	}
 	logger.Infof("relay %s is ready; traffic for that country leaves through %s", r.Name, r.Address)
 }
 
@@ -695,6 +720,7 @@ func (s *RelayService) SetEnable(id int, enable bool) error {
 	}
 	if !enable {
 		relay.Down(relay.Server{Id: r.Id})
+		relay.RemoveXrayExit(r.Id)
 		s.mark(id, RelayDisabled, "")
 		return nil
 	}
@@ -731,6 +757,7 @@ func (s *RelayService) Delete(id int) error {
 	if used := s.usage()[relay.InterfaceName(r.Id)]; len(used) > 0 {
 		return fmt.Errorf("%s is still offered as a country by %s; remove it there first", r.Name, strings.Join(used, ", "))
 	}
+	defer relay.RemoveXrayExit(r.Id)
 	if err := relay.Teardown(ctx, relay.Server{
 		Id: r.Id, Name: r.Name, Address: r.Address, Port: r.SSHPort, User: r.SSHUser, KeyPath: r.KeyPath,
 	}); err != nil {
@@ -778,6 +805,7 @@ func (s *RelayService) Reconcile() {
 			continue
 		}
 		if relay.Check(relay.Server{Id: r.Id}).Healthy() {
+			s.ensureXrayExit(r)
 			continue
 		}
 		panelKey, err := decryptRelaySecret(r.Id, r.WgPrivate)
@@ -792,7 +820,33 @@ func (s *RelayService) Reconcile() {
 			s.mark(r.Id, RelayError, err.Error())
 			continue
 		}
+		s.ensureXrayExit(r)
 		s.mark(r.Id, RelayReady, "")
+	}
+	s.downOrphans()
+}
+
+// ensureXrayExit keeps the exit's source address, table and rule in place;
+// wg-quick restarting the interface takes the address away with it.
+func (s *RelayService) ensureXrayExit(r model.Relay) {
+	if err := relay.EnsureXrayExit(r.Id); err != nil {
+		logger.Warningf("relay %s: Xray cannot leave through it: %v", r.Name, err)
+	}
+}
+
+// downOrphans takes down any tunnel this panel brought up for a relay that no
+// longer exists; a delete racing a save once left one up for days.
+func (s *RelayService) downOrphans() {
+	var ids []int
+	if err := database.GetDB().Model(&model.Relay{}).Pluck("id", &ids).Error; err != nil {
+		return
+	}
+	for _, id := range relay.LocalInterfaceIDs() {
+		if slices.Contains(ids, id) {
+			continue
+		}
+		logger.Warningf("relay %d no longer exists; taking down its leftover tunnel %s", id, relay.InterfaceName(id))
+		relay.DownOrphan(id, filepath.Join(relayKeyDir(), fmt.Sprintf("relay-%d", id)))
 	}
 }
 

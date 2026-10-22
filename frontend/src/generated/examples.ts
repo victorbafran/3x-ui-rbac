@@ -713,6 +713,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "excludeFromSubTypes": [
       ""
     ],
+    "exit": "wgr9",
     "finalMask": "",
     "fingerprint": "",
     "groupId": "",
@@ -758,6 +759,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "excludeFromSubTypes": [
       ""
     ],
+    "exit": "",
     "finalMask": "",
     "fingerprint": "",
     "groupId": "",

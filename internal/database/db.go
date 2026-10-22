@@ -201,6 +201,9 @@ func initModels() error {
 	if err := migrateClientResetWeekdayColumns(); err != nil {
 		return err
 	}
+	if err := migrateHostExitColumn(); err != nil {
+		return err
+	}
 	if err := migrateSyncOrphanColumns(); err != nil {
 		return err
 	}
@@ -389,6 +392,15 @@ func migrateClientResetWeekdayColumns() error {
 		}
 	}
 	return nil
+}
+
+// A NULL exit_iface fails every comparison against the empty string, and a
+// host saved before the column existed must read as having no exit.
+func migrateHostExitColumn() error {
+	if !db.Migrator().HasColumn(&model.Host{}, "exit_iface") {
+		return nil
+	}
+	return db.Exec("UPDATE hosts SET exit_iface = '' WHERE exit_iface IS NULL").Error
 }
 
 // AutoMigrate adds the column; this only backfills the NULLs an older SQLite

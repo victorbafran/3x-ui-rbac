@@ -2456,6 +2456,7 @@
         "sockoptParams": "Sockopt",
         "finalMask": "Final Mask",
         "vlessRoute": "VLESS ルート",
+        "exit": "出口の国",
         "mihomoIpVersion": "IP バージョン",
         "mihomoX25519": "Mihomo X25519",
         "shuffleHost": "ホストをシャッフル",
@@ -2472,6 +2473,7 @@
         "serverDescription": "備考の下に表示される任意のメモ。",
         "allowInsecure": "TLS 証明書の検証をスキップします（allowInsecure / skip-cert-verify）。",
         "vlessRoute": "UUID に埋め込まれる単一の VLESS ルート値（0〜65535）。例: 443。なしの場合は空欄にします。",
+        "exit": "このエントリーが出ていく国（出口サーバーのいずれか）。同じアドレスで出口の国が異なるエントリーを複数作ると、各顧客が自分のアプリで国を選べます。VLESS のみ。VLESS ルートはパネルが設定します。",
         "remark": "このホストのプレーンなラベル。インバウンド自身に備考がない場合にのみ設定名として表示されます。"
       },
       "remarkVars": {

@@ -2455,6 +2455,7 @@
         "sockoptParams": "Sockopt",
         "finalMask": "Final Mask",
         "vlessRoute": "Rute VLESS",
+        "exit": "Negara keluar",
         "mihomoIpVersion": "Versi IP",
         "mihomoX25519": "Mihomo X25519",
         "shuffleHost": "Acak host",
@@ -2472,6 +2473,7 @@
         "serverDescription": "Catatan opsional yang ditampilkan di bawah catatan.",
         "allowInsecure": "Lewati verifikasi sertifikat TLS (allowInsecure / skip-cert-verify).",
         "vlessRoute": "Satu nilai rute VLESS (0-65535) yang disisipkan ke UUID, mis. 443. Biarkan kosong jika tidak ada.",
+        "exit": "Negara tempat entri ini keluar, salah satu server keluar Anda. Buat beberapa entri dengan alamat yang sama dan negara keluar berbeda, lalu setiap pelanggan memilih negara di aplikasinya sendiri. Hanya VLESS; panel mengatur rute VLESS untuk Anda.",
         "remark": "Label sederhana untuk host ini. Ditampilkan sebagai nama konfigurasi hanya ketika inbound tidak memiliki catatan tersendiri."
       },
       "remarkVars": {

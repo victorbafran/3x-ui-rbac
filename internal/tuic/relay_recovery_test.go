@@ -198,6 +198,26 @@ func TestAudit3UDPAssociationMustRecoverAfterBridgeReadFailure(t *testing.T) {
 	}
 }
 
+// audit3EchoOn sends payload over send until its echo returns over want. A
+// datagram either way may be lost, so a silent try is resent; an echo on the
+// other transport is the failure under test and is never retried.
+func audit3EchoOn(t *testing.T, c *clientquic.Conn, send, want uint8, pkt uint16, payload string) {
+	t.Helper()
+	for try := range uint16(5) {
+		audit3SendPacket(t, c, send, 43221, pkt+try, payload)
+		if _, p, err := audit3ReceivePacket(c, want, time.Second); err == nil {
+			if string(p) != payload {
+				t.Fatalf("the echo on transport %d carried %q, want %q", want, p, payload)
+			}
+			return
+		}
+		if _, p, err := audit3ReceivePacket(c, 1-want, 50*time.Millisecond); err == nil {
+			t.Fatalf("the echo of %q came back on transport %d instead of %d: %q", payload, 1-want, want, p)
+		}
+	}
+	t.Fatalf("no echo of %q on transport %d after 5 sends", payload, want)
+}
+
 func TestAudit3FirstTransportReturnsPositiveEchoAfterOppositeModePacket(t *testing.T) {
 	for _, first := range []uint8{packetTransportDatagram, packetTransportStream} {
 		name := "datagram-first"
@@ -208,14 +228,8 @@ func TestAudit3FirstTransportReturnsPositiveEchoAfterOppositeModePacket(t *testi
 			relayAddr, u, _ := audit3RestartableSOCKS(t)
 			audit3StartUDPEcho(u, nil)
 			_, c, _, _ := startLifecycleTestServer(t, relayAddr, "audit3-first-mode@x")
-			audit3SendPacket(t, c, first, 43221, 1, "first")
-			if _, p, err := audit3ReceivePacket(c, first, time.Second); err != nil || string(p) != "first" {
-				t.Fatalf("initial mode echo %q %v", p, err)
-			}
-			audit3SendPacket(t, c, 1-first, 43221, 2, "opposite")
-			if _, p, err := audit3ReceivePacket(c, first, time.Second); err != nil || string(p) != "opposite" {
-				t.Fatalf("opposite request response did not keep first transport: %q %v", p, err)
-			}
+			audit3EchoOn(t, c, first, first, 1, "first")
+			audit3EchoOn(t, c, 1-first, first, 10, "opposite")
 		})
 	}
 }

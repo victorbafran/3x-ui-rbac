@@ -33,12 +33,23 @@ jobs:
       PR: ${{ github.event.pull_request.number || github.event.issue.number }}
     outputs:
       sha: ${{ steps.pinned-sha.outputs.sha }}
-      done: ${{ steps.reviewed.outputs.done }}
+      done: ${{ steps.no-token.outputs.done || steps.reviewed.outputs.done }}
     steps:
+      # Without the owner's token the model cannot run, and `post` then failed on
+      # every pull request for want of a review body; skip both quietly instead.
+      - name: Skip when no Claude token is configured
+        id: no-token
+        env:
+          CLAUDE_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+        run: |
+          if [ -z "$CLAUDE_TOKEN" ]; then
+            echo "done=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::No CLAUDE_CODE_OAUTH_TOKEN secret is set, so no review runs."
+          fi
       # A custom prompt puts the action in agent mode, which never reacts on its
       # own, so the requester gets no sign the run started.
       - name: Acknowledge the request
-        if: github.event_name == 'issue_comment'
+        if: github.event_name == 'issue_comment' && steps.no-token.outputs.done != 'true'
         continue-on-error: true
         env:
           COMMENT_ID: ${{ github.event.comment.id }}

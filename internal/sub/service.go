@@ -24,6 +24,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 	"github.com/mhsanaei/3x-ui/v3/internal/ocserv"
 	"github.com/mhsanaei/3x-ui/v3/internal/openvpn"
+	"github.com/mhsanaei/3x-ui/v3/internal/relay"
 	"github.com/mhsanaei/3x-ui/v3/internal/tuic"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/maskcompat"
@@ -3204,6 +3205,8 @@ func (s *SubService) openvpnProfileFor(inbound *model.Inbound, client model.Clie
 	if label == "" {
 		label = "OpenVPN"
 	}
+	// The app lists a profile by its file name, so the country goes in there too.
+	label = withCountry(label, openvpnCountry(inbound))
 	return OpenVPNProfile{
 		Email:     client.Email,
 		Label:     label,
@@ -3215,6 +3218,20 @@ func (s *SubService) openvpnProfileFor(inbound *model.Inbound, client model.Clie
 		Port:      inbound.Port,
 		UseTCP:    openvpn.UsesTCP(inbound),
 	}, true
+}
+
+// openvpnCountry is where an inbound's traffic leaves: its exit's label, this
+// server's own, or nothing for an exit that is not one of the panel's relays.
+func openvpnCountry(inbound *model.Inbound) string {
+	exit := openvpn.ExitOf(inbound)
+	if exit == "" {
+		return localCountryLabel()
+	}
+	id, ok := relay.InterfaceID(exit)
+	if !ok {
+		return ""
+	}
+	return relayLabels([]int{id})[id]
 }
 
 // openvpnFileName keeps two files from arriving under one name.

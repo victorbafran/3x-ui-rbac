@@ -240,3 +240,21 @@ func TestTheLabelSurvivesAHalfFailedLookup(t *testing.T) {
 		t.Errorf("nothing at all gave %q", got)
 	}
 }
+
+// A label splits back into the flag and the name it was made from, and one
+// with no flag in front is all name.
+func TestALabelSplitsIntoItsFlagAndName(t *testing.T) {
+	for _, tc := range []struct{ label, flag, name string }{
+		{"\U0001F1F3\U0001F1F1 Netherlands", "\U0001F1F3\U0001F1F1", "Netherlands"},
+		{"\U0001F1EC\U0001F1E7 United Kingdom", "\U0001F1EC\U0001F1E7", "United Kingdom"},
+		{"Netherlands", "", "Netherlands"},
+		{"\U0001F1F3\U0001F1F1", "\U0001F1F3\U0001F1F1", ""},
+		{"uk exit", "", "uk exit"},
+		{"", "", ""},
+	} {
+		flag, name := SplitLabel(tc.label)
+		if flag != tc.flag || name != tc.name {
+			t.Errorf("SplitLabel(%q) = %q, %q; want %q, %q", tc.label, flag, name, tc.flag, tc.name)
+		}
+	}
+}

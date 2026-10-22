@@ -46,3 +46,19 @@ func LabelFor(countryName, countryCode string) string {
 		return ""
 	}
 }
+
+// SplitLabel takes a label back apart into its flag and its name; one with no
+// flag in front is all name.
+func SplitLabel(label string) (flag, name string) {
+	label = strings.TrimSpace(label)
+	first, rest, _ := strings.Cut(label, " ")
+	if first == "" {
+		return "", label
+	}
+	for _, r := range first {
+		if r < 0x1F1E6 || r > 0x1F1FF {
+			return "", label
+		}
+	}
+	return first, strings.TrimSpace(rest)
+}

@@ -122,7 +122,11 @@ func (m *Manager) ensureLocked(inst Instance) error {
 	}
 
 	if had {
-		_ = cur.proc.Stop()
+		logger.Infof("openvpn: restarting inbound %d (was running: %v, settings changed: %v)",
+			inst.Id, running, cur.structuralFP != newStructFP)
+		if err := cur.proc.Stop(); err != nil && running {
+			logger.Warningf("openvpn: inbound %d did not stop: %v", inst.Id, err)
+		}
 		delete(m.procs, inst.Id)
 	}
 
@@ -150,6 +154,8 @@ func (m *Manager) ensureLocked(inst Instance) error {
 	if err := writeFile(configPathForID(inst.Id), []byte(cfg), 0o644); err != nil {
 		return fmt.Errorf("write the config: %w", err)
 	}
+	// A server the manager lost holds the tun device, and every start fails busy.
+	stopStrays(configPathForID(inst.Id))
 	// A socket left by a killed process blocks the new bind.
 	_ = os.Remove(managementSocketForID(inst.Id))
 

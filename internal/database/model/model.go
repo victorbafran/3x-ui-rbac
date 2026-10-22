@@ -1159,6 +1159,10 @@ type Host struct {
 	// group (bytes 6-7), which xray reads via net.PortFromBytes(id[6:8]). Empty = none.
 	VlessRoute string `json:"vlessRoute" form:"vlessRoute" gorm:"column:vless_route" example:"443"`
 
+	// Exit is the exit server (its wgrN interface) this host's VLESS route leaves
+	// through; the column avoids the word exit, which some SQL dialects reserve.
+	Exit string `json:"exit" form:"exit" gorm:"column:exit_iface;default:''" example:"wgr9"`
+
 	ExcludeFromSubTypes []string `json:"excludeFromSubTypes" form:"excludeFromSubTypes" gorm:"serializer:json;column:exclude_from_sub_types"`
 
 	MihomoIpVersion string `json:"mihomoIpVersion" form:"mihomoIpVersion" gorm:"column:mihomo_ip_version" validate:"omitempty,oneof=dual ipv4 ipv6 ipv4-prefer ipv6-prefer"`

@@ -2456,6 +2456,7 @@
         "sockoptParams": "Sockopt",
         "finalMask": "Máscara final",
         "vlessRoute": "Ruta VLESS",
+        "exit": "País de salida",
         "mihomoIpVersion": "Versión de IP",
         "mihomoX25519": "Mihomo X25519",
         "shuffleHost": "Barajar host",
@@ -2472,6 +2473,7 @@
         "serverDescription": "Nota opcional que se muestra bajo las notas.",
         "allowInsecure": "Omitir la verificación del certificado TLS (allowInsecure / skip-cert-verify).",
         "vlessRoute": "Un único valor de ruta VLESS (0-65535) incrustado en el UUID, p. ej. 443. Déjalo en blanco para ninguno.",
+        "exit": "El país por el que sale esta entrada, uno de tus servidores de salida. Crea varias entradas con la misma dirección y un país de salida distinto cada una, y cada cliente elige el país en su propia app. Solo VLESS; el panel fija la ruta VLESS por ti.",
         "remark": "Una etiqueta simple para este host. Se muestra como nombre de la configuración solo cuando el inbound no tiene notas propias."
       },
       "remarkVars": {

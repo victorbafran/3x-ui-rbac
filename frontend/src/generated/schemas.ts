@@ -2801,6 +2801,11 @@ export const SCHEMAS: Record<string, unknown> = {
         },
         "type": "array"
       },
+      "exit": {
+        "description": "Exit is the exit server (its wgrN interface) this host's VLESS route leaves\nthrough; the column avoids the word exit, which some SQL dialects reserve.",
+        "example": "wgr9",
+        "type": "string"
+      },
       "finalMask": {
         "description": "FinalMask is a JSON object of xray finalmask masks (tcp/udp/quicParams),\nmerged into this host's JSON-subscription stream. Empty = no override.",
         "type": "string"
@@ -2925,6 +2930,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "createdAt",
       "echConfigList",
       "excludeFromSubTypes",
+      "exit",
       "finalMask",
       "fingerprint",
       "groupId",
@@ -2977,6 +2983,9 @@ export const SCHEMAS: Record<string, unknown> = {
           "type": "string"
         },
         "type": "array"
+      },
+      "exit": {
+        "type": "string"
       },
       "finalMask": {
         "type": "string"
@@ -3098,6 +3107,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "cipherSuites",
       "echConfigList",
       "excludeFromSubTypes",
+      "exit",
       "finalMask",
       "fingerprint",
       "groupId",

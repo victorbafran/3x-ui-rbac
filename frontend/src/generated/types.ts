@@ -659,6 +659,7 @@ export interface Host {
   createdAt: number;
   echConfigList: string;
   excludeFromSubTypes: string[];
+  exit: string;
   finalMask: string;
   fingerprint: string;
   groupId: string;
@@ -695,6 +696,7 @@ export interface HostGroup {
   cipherSuites: string;
   echConfigList: string;
   excludeFromSubTypes: string[];
+  exit: string;
   finalMask: string;
   fingerprint: string;
   groupId: string;

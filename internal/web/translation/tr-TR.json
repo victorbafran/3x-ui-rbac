@@ -2455,6 +2455,7 @@
         "sockoptParams": "Sockopt",
         "finalMask": "Son Maske",
         "vlessRoute": "VLESS yönlendirme",
+        "exit": "Çıkış ülkesi",
         "mihomoIpVersion": "IP sürümü",
         "mihomoX25519": "Mihomo X25519",
         "shuffleHost": "Host'u karıştır",
@@ -2472,6 +2473,7 @@
         "serverDescription": "Açıklamanın altında gösterilen isteğe bağlı not.",
         "allowInsecure": "TLS sertifika doğrulamasını atla (allowInsecure / skip-cert-verify).",
         "vlessRoute": "UUID'ye gömülen tek bir VLESS rota değeri (0-65535), örn. 443. Hiçbiri için boş bırakın.",
+        "exit": "Bu kaydın çıktığı ülke, çıkış sunucularınızdan biri. Aynı adresle her biri farklı çıkış ülkesine sahip birkaç kayıt oluşturun; her müşteri ülkeyi kendi uygulamasında seçer. Yalnızca VLESS; VLESS rotasını panel ayarlar.",
         "remark": "Bu host için düz bir etiket. Yalnızca gelen bağlantının kendi açıklaması yoksa yapılandırma adı olarak gösterilir."
       },
       "remarkVars": {

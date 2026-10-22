@@ -2456,6 +2456,7 @@
         "sockoptParams": "Sockopt",
         "finalMask": "Final Mask",
         "vlessRoute": "VLESS 路由",
+        "exit": "出口国家",
         "mihomoIpVersion": "IP 版本",
         "mihomoX25519": "Mihomo X25519",
         "shuffleHost": "随机打乱 Host",
@@ -2472,6 +2473,7 @@
         "serverDescription": "可选备注，显示在备注下方。",
         "allowInsecure": "跳过 TLS 证书验证（allowInsecure / skip-cert-verify）。",
         "vlessRoute": "嵌入 UUID 的单个 VLESS 路由值（0-65535），例如 443。留空表示不路由。",
+        "exit": "此条目从哪个国家出去，即你的某台出口服务器。用同一地址建多个条目、各配一个出口国家，每位客户就能在自己的应用里选择国家。仅限 VLESS；VLESS 路由由面板自动设置。",
         "remark": "此主机的纯文本标签。仅当入站没有自己的备注时，才作为配置名称显示。"
       },
       "remarkVars": {

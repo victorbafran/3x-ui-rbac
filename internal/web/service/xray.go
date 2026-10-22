@@ -14,6 +14,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/amneziawg"
 	"github.com/mhsanaei/3x-ui/v3/internal/amneziawgnet"
 	"github.com/mhsanaei/3x-ui/v3/internal/config"
+	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 	"github.com/mhsanaei/3x-ui/v3/internal/tuic"
@@ -455,6 +456,14 @@ func (s *XrayService) GetXrayConfig() (*xray.Config, error) {
 	// lets Xray bind an egress socket to it at all; this call only builds
 	// the Xray-side outbound/routing-rule half.
 	injectAmneziawgV6Egress(xrayConfig, inbounds)
+
+	var exitHosts []*model.Host
+	if err := database.GetDB().Where("exit_iface <> '' AND is_disabled = ?", false).
+		Order("sort_order asc, id asc").Find(&exitHosts).Error; err != nil {
+		logger.Warning("read the hosts that leave through an exit:", err)
+	} else {
+		injectExitRoutes(xrayConfig, inbounds, exitHosts)
+	}
 
 	// Wire the panel's own HTTP traffic through the configured outbound, after
 	// the subscription merge so subscription outbound tags are valid targets.

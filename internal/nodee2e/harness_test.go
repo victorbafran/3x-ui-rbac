@@ -48,14 +48,31 @@ type panel struct {
 	logOut *os.File
 }
 
+// handedOut is every port freePort has returned: an inbound's port is often
+// never bound in these tests, so the OS hands the same "free" port out again.
+var (
+	handedOutMu sync.Mutex
+	handedOut   = map[int]bool{}
+)
+
 func freePort(t *testing.T) int {
 	t.Helper()
-	l, err := net.Listen("tcp", "127.0.0.1:0")
-	if err != nil {
-		t.Fatalf("free port: %v", err)
+	handedOutMu.Lock()
+	defer handedOutMu.Unlock()
+	for range 50 {
+		l, err := net.Listen("tcp", "127.0.0.1:0")
+		if err != nil {
+			t.Fatalf("free port: %v", err)
+		}
+		port := l.Addr().(*net.TCPAddr).Port
+		_ = l.Close()
+		if !handedOut[port] {
+			handedOut[port] = true
+			return port
+		}
 	}
-	defer l.Close()
-	return l.Addr().(*net.TCPAddr).Port
+	t.Fatal("free port: the OS kept returning ports already handed out")
+	return 0
 }
 
 func (p *panel) env() []string {

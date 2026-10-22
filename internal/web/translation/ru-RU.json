@@ -1684,6 +1684,8 @@
       "subCalendarExpireInclusiveDesc": "Default off. For clients renewing on day 1 with a midnight cutoff in the panel timezone, report the previous month's last second in subscription expiry headers. Actual cutoff and renewals are unchanged. Clients use their own timezone and may consider the subscription expired one second early.",
       "subInfoNodeEnable": "Отдельный инфо-конфиг / фиктивный узел",
       "subInfoNodeEnableDesc": "Если включено, примечание и остаток трафика/дней отображаются отдельным SOCKS-конфигом вверху, а при истечении срока/трафика возвращается только статус.",
+      "subInfoLines": "Информационные строки",
+      "subInfoLinesDesc": "Каждая строка становится отдельной записью в начале подписки, с теми же переменными, что и шаблон имени. Строка с безлимитным значением пропускается. Пусто — остаётся одна запись, которую делает шаблон имени.",
       "subExpiredTemplate": "Шаблон истекшей подписки",
       "subExpiredTemplateDesc": "Шаблон для фиктивного узла, когда срок действия подписки истек.",
       "subTrafficDepletedTemplate": "Шаблон исчерпания трафика",

@@ -581,6 +581,9 @@
           "subIncySupportEmail": {
             "type": "string"
           },
+          "subInfoLines": {
+            "type": "string"
+          },
           "subInfoNodeEnable": {
             "type": "boolean"
           },
@@ -873,6 +876,7 @@
           "subIncyRoutingRules",
           "subIncySortOrder",
           "subIncySupportEmail",
+          "subInfoLines",
           "subInfoNodeEnable",
           "subJsonAlwaysArray",
           "subJsonAutoDetect",
@@ -1357,6 +1361,9 @@
           "subIncySupportEmail": {
             "type": "string"
           },
+          "subInfoLines": {
+            "type": "string"
+          },
           "subInfoNodeEnable": {
             "type": "boolean"
           },
@@ -1657,6 +1664,7 @@
           "subIncyRoutingRules",
           "subIncySortOrder",
           "subIncySupportEmail",
+          "subInfoLines",
           "subInfoNodeEnable",
           "subJsonAlwaysArray",
           "subJsonAutoDetect",

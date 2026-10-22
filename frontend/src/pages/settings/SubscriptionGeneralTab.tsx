@@ -198,6 +198,21 @@ export default function SubscriptionGeneralTab({
                   onChange={(v) => updateSetting({ subInfoNodeEnable: v })}
                 />
               </SettingListItem>
+              <SettingListItem
+                paddings="small"
+                title={t('pages.settings.subInfoLines')}
+                description={t('pages.settings.subInfoLinesDesc')}
+              >
+                <Input.TextArea
+                  value={allSetting.subInfoLines}
+                  disabled={!allSetting.subInfoNodeEnable}
+                  onChange={(e) => updateSetting({ subInfoLines: e.target.value })}
+                  autoSize={{ minRows: 3, maxRows: 8 }}
+                  placeholder={
+                    '👤 {{EMAIL}}\n⏳ {{DAYS_LEFT}}\n📶 {{TRAFFIC_LEFT}}\n📅 {{EXPIRE_DATE}}'
+                  }
+                />
+              </SettingListItem>
 
               <SettingListItem
                 paddings="small"

@@ -1684,6 +1684,8 @@
       "subCalendarExpireInclusiveDesc": "Default off. For clients renewing on day 1 with a midnight cutoff in the panel timezone, report the previous month's last second in subscription expiry headers. Actual cutoff and renewals are unchanged. Clients use their own timezone and may consider the subscription expired one second early.",
       "subInfoNodeEnable": "Ayrı Bilgi Yapılandırması / Sahte Düğüm",
       "subInfoNodeEnableDesc": "Etkinleştirildiğinde, notlar ve kalan trafik/günler en üstte ayrı bir sahte SOCKS yapılandırması olarak sunulur; süresi dolmuş veya kotası bitmiş abonelikler yalnızca durum yapılandırmasını alır.",
+      "subInfoLines": "Bilgi satırları",
+      "subInfoLinesDesc": "Her satır, aboneliğin başında kendi kaydı olur ve ad şablonuyla aynı değişkenleri kullanır. Değeri sınırsız olan satır gösterilmez. Boş bırakılırsa ad şablonunun oluşturduğu tek kayıt kalır.",
       "subExpiredTemplate": "Süresi Dolmuş Şablonu",
       "subExpiredTemplateDesc": "Abonelik süresi dolduğunda sahte yapılandırma için kullanılacak şablon.",
       "subTrafficDepletedTemplate": "Trafik Tükendi Şablonu",

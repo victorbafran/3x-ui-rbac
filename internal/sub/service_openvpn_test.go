@@ -19,6 +19,7 @@ type openvpnInbound struct {
 	port     int
 	useTCP   bool
 	protocol model.Protocol
+	exit     string
 }
 
 // seedProtocolSub puts the given inbounds into a fresh DB with one client
@@ -39,8 +40,8 @@ func seedProtocolSub(t *testing.T, email, subID, password string, inbounds ...op
 
 	for _, in := range inbounds {
 		settings := fmt.Sprintf(
-			`{"useTcp":%t,"clients":[{"email":%q,"password":%q,"subId":%q,"enable":true}]}`,
-			in.useTCP, email, password, subID,
+			`{"useTcp":%t,"exit":%q,"clients":[{"email":%q,"password":%q,"subId":%q,"enable":true}]}`,
+			in.useTCP, in.exit, email, password, subID,
 		)
 		ib := &model.Inbound{
 			Id: in.id, UserId: 1, Remark: in.remark, Enable: true, Port: in.port,
@@ -284,5 +285,38 @@ func TestProfilesDoNotSurviveIntoTheNextRequest(t *testing.T) {
 	}
 	if len(s.openvpnProfiles) != 0 {
 		t.Fatalf("the previous customer's profile is still here: %+v", s.openvpnProfiles)
+	}
+}
+
+// Each file is named for the country its traffic leaves from, flag first on the
+// page and the country first in the file name, which is what the app shows.
+func TestEachFileIsNamedForTheCountryItLeavesFrom(t *testing.T) {
+	seedProtocolSub(t, "ovpn-user", "sub-ovpn", "pw123456",
+		openvpnInbound{id: 1, remark: "VIP", port: 1194, protocol: model.OpenVPN, exit: "wgr9"},
+		openvpnInbound{id: 2, remark: "VIP", port: 1195, protocol: model.OpenVPN},
+		openvpnInbound{id: 3, remark: "Other", port: 1196, protocol: model.OpenVPN, exit: "eth1"},
+	)
+	hereIs(t, "🇩🇪 Germany")
+	if err := database.GetDB().Create(&model.Relay{Id: 9, Name: "uk", Label: "🇬🇧 United Kingdom", Address: "198.51.100.9", KeyPath: "/k", Tunnel: "wireguard", Role: model.RelayExit}).Error; err != nil {
+		t.Fatal(err)
+	}
+
+	s := (&SubService{}).ForRequest("vpn.example.com")
+	if _, _, _, _, err := s.getSubs("sub-ovpn"); err != nil {
+		t.Fatalf("getSubs: %v", err)
+	}
+	byID := map[int]OpenVPNProfile{}
+	for _, p := range s.openvpnProfiles {
+		byID[p.InboundId] = p
+	}
+	for id, want := range map[int][2]string{
+		1: {"🇬🇧 United Kingdom VIP", "United-Kingdom-VIP.ovpn"},
+		2: {"🇩🇪 Germany VIP", "Germany-VIP.ovpn"},
+		// Not one of the panel's exits, so where it leaves is not known.
+		3: {"Other", "Other.ovpn"},
+	} {
+		if got := byID[id]; got.Label != want[0] || got.FileName != want[1] {
+			t.Errorf("inbound %d: label %q, file %q; want %q, %q", id, got.Label, got.FileName, want[0], want[1])
+		}
 	}
 }

@@ -67,17 +67,7 @@ func hostCountries(hosts []*model.Host) map[int]string {
 	if len(exitIDs) == 0 {
 		return nil
 	}
-	var relays []model.Relay
-	if err := database.GetDB().Where("id IN ?", exitIDs).Find(&relays).Error; err != nil {
-		logger.Warning("SubService - hostCountries:", err)
-	}
-	labels := make(map[int]string, len(relays))
-	for _, r := range relays {
-		labels[r.Id] = strings.TrimSpace(r.Label)
-		if labels[r.Id] == "" {
-			labels[r.Id] = r.Name
-		}
-	}
+	labels := relayLabels(exitIDs)
 	local := localCountryLabel()
 	out := make(map[int]string, len(hosts))
 	for _, h := range hosts {
@@ -90,17 +80,39 @@ func hostCountries(hosts []*model.Host) map[int]string {
 	return out
 }
 
-// withCountry puts a host's country first in its config name, unless the name
-// already shows that flag, as a template naming the country itself would.
+// relayLabels is what a customer reads for each exit: its label, else its name.
+func relayLabels(ids []int) map[int]string {
+	var relays []model.Relay
+	if err := database.GetDB().Where("id IN ?", ids).Find(&relays).Error; err != nil {
+		logger.Warning("SubService - relayLabels:", err)
+	}
+	labels := make(map[int]string, len(relays))
+	for _, r := range relays {
+		labels[r.Id] = strings.TrimSpace(r.Label)
+		if labels[r.Id] == "" {
+			labels[r.Id] = r.Name
+		}
+	}
+	return labels
+}
+
+// withCountry puts a host's country first in its config name. A name showing
+// the flag stays as it is; one already spelling the country gains the flag only.
 func withCountry(remark, country string) string {
-	fields := strings.Fields(country)
-	if len(fields) == 0 || strings.Contains(remark, fields[0]) {
+	country = strings.TrimSpace(country)
+	flag, name := relay.SplitLabel(country)
+	switch {
+	case country == "", flag != "" && strings.Contains(remark, flag):
 		return remark
+	case name != "" && strings.Contains(strings.ToLower(remark), strings.ToLower(name)):
+		if flag == "" {
+			return remark
+		}
+		return flag + " " + remark
+	case strings.TrimSpace(remark) == "":
+		return country
 	}
-	if strings.TrimSpace(remark) == "" {
-		return strings.TrimSpace(country)
-	}
-	return strings.TrimSpace(country) + " " + remark
+	return country + " " + remark
 }
 
 // hostToExternalProxyMap projects a Host onto the externalProxy entry shape the

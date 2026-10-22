@@ -60,6 +60,19 @@ func UsesTCP(ib *model.Inbound) bool {
 	return parsed.UseTCP
 }
 
+// ExitOf is the interface an OpenVPN inbound's traffic leaves through, empty
+// for this host itself.
+func ExitOf(ib *model.Inbound) string {
+	if ib == nil || ib.Protocol != model.OpenVPN {
+		return ""
+	}
+	var parsed openvpnSettings
+	if err := json.Unmarshal([]byte(ib.Settings), &parsed); err != nil {
+		return ""
+	}
+	return strings.TrimSpace(parsed.Exit)
+}
+
 // InstanceFromInbound derives the sidecar config for an OpenVPN inbound,
 // serving one account per enabled client. Returns false when the inbound is
 // not a usable OpenVPN inbound or has no client to serve: a server nobody can

@@ -22,6 +22,10 @@ func linkNames(t *testing.T, links []string) []string {
 	return names
 }
 
+// No test asks the network where it runs, which would name every entry after
+// CI's country; a test that wants one says so through hereIs.
+func init() { localCountryLabel = func() string { return "" } }
+
 func hereIs(t *testing.T, label string) {
 	t.Helper()
 	saved := localCountryLabel
@@ -73,6 +77,10 @@ func TestACountryIsNamedOnce(t *testing.T) {
 		{"🇬🇧 انگلیس ali", "🇬🇧 United Kingdom", "🇬🇧 انگلیس ali"},
 		{"", "🇬🇧 United Kingdom", "🇬🇧 United Kingdom"},
 		{"n-ennn-n@e", "", "n-ennn-n@e"},
+		{"Germany", "🇩🇪 Germany", "🇩🇪 Germany"},
+		{"vip-germany", "🇩🇪 Germany", "🇩🇪 vip-germany"},
+		{"Netherlands ali", "Netherlands", "Netherlands ali"},
+		{"ali", "Netherlands", "Netherlands ali"},
 	} {
 		if got := withCountry(tc.remark, tc.country); got != tc.want {
 			t.Errorf("withCountry(%q, %q) = %q, want %q", tc.remark, tc.country, got, tc.want)

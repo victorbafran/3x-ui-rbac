@@ -193,6 +193,11 @@ if ! ls /etc/systemd/system/backhaul-x-ui-*.service >/dev/null 2>&1; then
   rm -f /usr/local/bin/backhaul
   rmdir /etc/backhaul 2>/dev/null || true
 fi
+# The device-limit bans go with the last tunnel of either tool.
+if ! ls /etc/systemd/system/backhaul-x-ui-*.service >/dev/null 2>&1 &&
+  ! ls /etc/systemd/system/x-ui-backpack-*.service >/dev/null 2>&1; then
+  nft delete table inet x_ui_limit 2>/dev/null || true
+fi
 echo "tunnel removed"
 `
 
@@ -211,6 +216,11 @@ systemctl daemon-reload 2>/dev/null || true
 if ! ls /etc/systemd/system/x-ui-backpack-*.service >/dev/null 2>&1; then
   rm -f /usr/local/bin/x-ui-backpack
   rmdir /etc/x-ui-backpack 2>/dev/null || true
+fi
+# The device-limit bans go with the last tunnel of either tool.
+if ! ls /etc/systemd/system/backhaul-x-ui-*.service >/dev/null 2>&1 &&
+  ! ls /etc/systemd/system/x-ui-backpack-*.service >/dev/null 2>&1; then
+  nft delete table inet x_ui_limit 2>/dev/null || true
 fi
 echo "tunnel removed"
 `

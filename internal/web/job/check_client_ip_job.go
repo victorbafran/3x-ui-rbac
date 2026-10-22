@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"runtime"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -371,6 +372,9 @@ func (j *CheckClientIpJob) processObserved(observed map[string]map[string]int64,
 	committed = true
 
 	published := j.publishBans(bans)
+	if ips := bannedIPs(published); len(ips) > 0 {
+		banOnFronts(ips)
+	}
 
 	// Xray disconnects run after the commit so their network round-trips never
 	// extend the scan's write transaction (node syncs upsert the same table).
@@ -571,6 +575,8 @@ type pendingBan struct {
 	email      string
 	candidates []IPWithTimestamp
 	keptLive   int
+	// banned is what publishBans wrote for fail2ban, the subset not yet banned.
+	banned []IPWithTimestamp
 }
 
 // publishBans returns the clients whose lines reached the log. bannedSeen
@@ -606,9 +612,45 @@ func (j *CheckClientIpJob) publishBans(bans []pendingBan) []pendingBan {
 		}
 		j.recordBannedSeen(b.email, b.candidates, actionable)
 		logger.Infof("[LIMIT_IP] Client %s: Kept %d live IPs, queued %d old IPs for fail2ban", b.email, b.keptLive, len(actionable))
+		b.banned = actionable
 		published = append(published, b)
 	}
 	return published
+}
+
+// banOnFronts carries bans to the entry servers, where a customer behind one
+// connects; fail2ban here only sees the tunnel's loopback. A variable for tests.
+var banOnFronts = func(ips []string) {
+	go (&service.RelayService{}).BanOnFronts(ips, ipLimitBanTime())
+}
+
+// bannedIPs is every address the published bans wrote, each once.
+func bannedIPs(published []pendingBan) []string {
+	seen := map[string]bool{}
+	var out []string
+	for _, b := range published {
+		for _, ip := range b.banned {
+			if !seen[ip.IP] {
+				seen[ip.IP] = true
+				out = append(out, ip.IP)
+			}
+		}
+	}
+	return out
+}
+
+// ipLimitBanTime is the jail's own ban length, so an entry server lets an
+// address back in when this panel does; 30 minutes, x-ui.sh's default, failing that.
+func ipLimitBanTime() time.Duration {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	out, err := exec.CommandContext(ctx, "fail2ban-client", "get", "3x-ipl", "bantime").Output()
+	if err == nil {
+		if secs, perr := strconv.Atoi(strings.TrimSpace(string(out))); perr == nil && secs > 0 {
+			return time.Duration(secs) * time.Second
+		}
+	}
+	return 30 * time.Minute
 }
 
 // writeBanLines emits one line per address; the wording is load-bearing, since

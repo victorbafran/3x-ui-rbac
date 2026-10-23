@@ -519,12 +519,12 @@ export default function RelaysPage() {
               <Radio.Group
                 disabled={editing !== null}
                 onChange={(e) => {
-                  // A transport only one tool knows would be refused on save.
-                  if (
-                    !TUNNEL_TRANSPORTS[e.target.value as 'backhaul' | 'backpack'].includes(
-                      transport,
-                    )
-                  ) {
+                  const next = e.target.value as 'backhaul' | 'backpack';
+                  // BackPack starts on stealth, which hid cisco's handshake from
+                  // the filter on the Iran front; an unknown transport is refused.
+                  if (next === 'backpack' && transport === 'tcp') {
+                    form.setFieldValue('transport', 'stealth');
+                  } else if (!TUNNEL_TRANSPORTS[next].includes(transport)) {
                     form.setFieldValue('transport', 'tcp');
                   }
                 }}

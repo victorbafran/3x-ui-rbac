@@ -164,3 +164,29 @@ func TestRetainStopsOnlyThisTunnelsUnwantedLegs(t *testing.T) {
 		}
 	}
 }
+
+// Seen on the Iran front: the filter on the way out dropped every copy of the
+// one packet holding cisco's ClientHello while the tunnel's own small packets
+// passed. A stealth front hides it on both legs, the real-IP one included.
+func TestAStealthFrontHidesTheRealIPLegToo(t *testing.T) {
+	p := realIPPair()
+	p.Transport = TransportStealth
+	for _, leg := range Legs(p) {
+		srv, err := ServerConfig(leg)
+		if err != nil {
+			t.Fatalf("leg %q: %v", leg.Leg, err)
+		}
+		cli, err := ClientConfig(leg)
+		if err != nil {
+			t.Fatalf("leg %q: %v", leg.Leg, err)
+		}
+		for _, conf := range []string{srv, cli} {
+			if !strings.Contains(conf, `transport = "stealth"`) {
+				t.Errorf("leg %q does not ride stealth:\n%s", leg.Leg, conf)
+			}
+		}
+	}
+	if px := Legs(p)[1]; !px.ProxyProtocol {
+		t.Error("the real-IP leg lost its PROXY header on stealth")
+	}
+}

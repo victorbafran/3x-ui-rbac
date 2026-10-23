@@ -46,6 +46,9 @@ func (t Tool) norm() Tool {
 const (
 	TransportKCP  Transport = "kcp"
 	TransportQUIC Transport = "quic"
+	// TransportStealth wraps the stream in a Noise layer keyed by the token, so
+	// a filter on the way out cannot read the ClientHellos the tunnel carries.
+	TransportStealth Transport = "stealth"
 )
 
 // backhaulTransports are the eight Backhaul accepts, offered unchanged.
@@ -54,12 +57,12 @@ var backhaulTransports = []Transport{
 	TransportWSS, TransportWSSMux, TransportUDP, TransportUDPoTCP,
 }
 
-// backpackTransports are the carriers BackPack runs with nothing but a token.
-// It ships more — stealth, pck, xdi and spoof — but those need raw sockets,
-// extra keys or a provider that lets forged packets out, and none is offered
-// until it has been measured on a real front.
+// backpackTransports are the carriers BackPack runs with nothing but a token,
+// stealth first: on the Iran front plain tcp let the filter drop cisco's
+// ClientHello, and stealth carried PROXY, UDP and 400-800 Mbit/s like tcp.
+// pck, xdi and spoof need raw sockets or forged packets and wait to be measured.
 var backpackTransports = []Transport{
-	TransportTCP, TransportTCPMux, TransportWS, TransportWSMux,
+	TransportStealth, TransportTCP, TransportTCPMux, TransportWS, TransportWSMux,
 	TransportWSS, TransportWSSMux, TransportKCP, TransportQUIC, TransportUDP,
 }
 

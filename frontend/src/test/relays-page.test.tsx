@@ -340,6 +340,30 @@ describe('the exit servers page', () => {
     cleanup();
   });
 
+  // A new BackPack front starts on stealth, and going back to Backhaul, which
+  // has no stealth, falls back to tcp rather than a transport it would refuse.
+  it('starts a BackPack entry server on stealth', async () => {
+    rows = relays;
+    renderWithProviders(
+      <MemoryRouter>
+        <RelaysPage />
+      </MemoryRouter>,
+    );
+    fireEvent.click(screen.getByText('Add a server'));
+    await act(async () => {});
+    fireEvent.click(screen.getByText('Entry for customers'));
+    await act(async () => {});
+    const shown = () => document.querySelector('#transport')?.closest('.ant-select')?.textContent;
+    expect(shown()).toBe('tcp');
+    fireEvent.click(screen.getByText('BackPack'));
+    await act(async () => {});
+    expect(shown()).toBe('stealth');
+    fireEvent.click(screen.getByText('Backhaul'));
+    await act(async () => {});
+    expect(shown()).toBe('tcp');
+    cleanup();
+  });
+
   // The tunnel's port and transport only mean something for an entry server,
   // so they appear when that is chosen and not before.
   it('asks for the tunnel settings only when adding an entry server', async () => {

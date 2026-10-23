@@ -78,7 +78,7 @@ export const TUNNEL_TOOLS: readonly TunnelTool[] = ['backhaul', 'backpack'];
 // is refused at startup and reads as a tunnel that never comes up.
 export const TUNNEL_TRANSPORTS: Record<TunnelTool, readonly string[]> = {
   backhaul: ['tcp', 'tcpmux', 'ws', 'wsmux', 'wss', 'wssmux', 'udp', 'udpovertcp'],
-  backpack: ['tcp', 'tcpmux', 'ws', 'wsmux', 'wss', 'wssmux', 'kcp', 'quic', 'udp'],
+  backpack: ['stealth', 'tcp', 'tcpmux', 'ws', 'wsmux', 'wss', 'wssmux', 'kcp', 'quic', 'udp'],
 };
 export const DEFAULT_TUNNEL_PORT = 3080;
 

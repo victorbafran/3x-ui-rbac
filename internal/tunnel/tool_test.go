@@ -41,9 +41,17 @@ func TestEachToolAcceptsOnlyItsOwnTransports(t *testing.T) {
 	if err := ValidTransportFor(ToolBackhaul, TransportUDPoTCP); err != nil {
 		t.Errorf("backhaul refused udpovertcp: %v", err)
 	}
+	// Measured on the Iran front: stealth hides what the tunnel carries, and
+	// carries the PROXY header and UDP. Backhaul has no such transport.
+	if err := ValidTransportFor(ToolBackPack, TransportStealth); err != nil {
+		t.Errorf("backpack refused stealth: %v", err)
+	}
+	if err := ValidTransportFor(ToolBackhaul, TransportStealth); err == nil {
+		t.Error("backhaul accepted stealth, which it does not have")
+	}
 	// Not offered until measured on a real front: these need raw sockets,
 	// extra keys, or a provider that lets forged packets out.
-	for _, unmeasured := range []Transport{"spoof", "pck", "xdi", "stealth"} {
+	for _, unmeasured := range []Transport{"spoof", "pck", "xdi"} {
 		if err := ValidTransportFor(ToolBackPack, unmeasured); err == nil {
 			t.Errorf("backpack accepted %s before anybody measured it", unmeasured)
 		}

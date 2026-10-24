@@ -63,7 +63,9 @@ export function CertIssueControl({
       const said = obj.reused
         ? t('pages.inbounds.certIssue.reused', vars)
         : t('pages.inbounds.certIssue.done', vars);
-      messageApi.success(doneNote ? `${said}. ${doneNote}` : said);
+      messageApi.success(
+        doneNote ? t('pages.settings.certIssue.withNote', { said, note: doneNote }) : said,
+      );
       setOpen(false);
     } finally {
       setBusy(false);
@@ -77,7 +79,11 @@ export function CertIssueControl({
         icon={<SafetyCertificateOutlined />}
         onClick={() => {
           setError('');
-          setNames(initialNames.map((s) => s.trim()).filter(Boolean));
+          // A name already typed survives closing the dialog; the suggestion only
+          // fills an empty one.
+          setNames((cur) =>
+            cur.length > 0 ? cur : initialNames.map((s) => s.trim()).filter(Boolean),
+          );
           setOpen(true);
         }}
         style={{ marginBottom: 16 }}
@@ -132,8 +138,13 @@ export function certNameFrom(...candidates: (string | undefined)[]): string[] {
       }
     }
     host = host.replace(/:\d+$/, '');
-    if (!host || host.includes(':') || /^[\d.]+$/.test(host)) continue;
+    if (!host || isAddress(host)) continue;
     return [host];
   }
   return [];
+}
+
+// An IP address rather than a name, as a browser's hostname or a typed host.
+export function isAddress(host: string): boolean {
+  return host.includes(':') || /^[\d.]+$/.test(host);
 }

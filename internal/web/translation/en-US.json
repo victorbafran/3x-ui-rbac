@@ -1620,7 +1620,9 @@
         "subExplain": "The subscription name has to lead port 80 back to this server",
         "subHint": "Use the name in your customers' subscription links and point it at this server, or at an entry server that carries port 80. The certificate renews itself a month before it expires, and the subscription server serves the new one without a restart.",
         "namesHint": "The name in the address, as many as the certificate should cover. The first one also names the folder it is kept in.",
-        "saveThenRestart": "Save the settings, then restart the panel"
+        "saveThenRestart": "Save the settings, then restart the panel",
+        "saveThenRestartByName": "Save the settings and restart the panel, then open it by this name instead of the IP address",
+        "withNote": "{said}. {note}"
       },
       "subCertPath": "Public Key Path",
       "subCertPathDesc": "The public key file path for the subscription service. (begins with ‘/‘)",

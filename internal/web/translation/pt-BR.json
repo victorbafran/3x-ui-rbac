@@ -1418,7 +1418,9 @@
         "subExplain": "O nome da assinatura precisa levar a porta 80 até este servidor",
         "subHint": "Use o nome dos links de assinatura dos seus clientes e aponte-o para este servidor, ou para um servidor de entrada que encaminhe a porta 80. O certificado se renova sozinho um mês antes de expirar, e o servidor de assinatura passa a usar o novo sem reiniciar.",
         "namesHint": "O nome no endereço, quantos o certificado deve cobrir. O primeiro também dá nome à pasta onde ele fica.",
-        "saveThenRestart": "Salve as configurações e depois reinicie o painel"
+        "saveThenRestart": "Salve as configurações e depois reinicie o painel",
+        "saveThenRestartByName": "Salve as configurações e reinicie o painel; depois abra-o por este nome em vez do endereço IP",
+        "withNote": "{said}. {note}"
       },
       "subCertPath": "Caminho da Chave Pública",
       "subCertPathDesc": "O caminho do arquivo de chave pública para o serviço de assinatura. (começa com ‘/‘)",

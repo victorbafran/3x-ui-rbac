@@ -1418,7 +1418,9 @@
         "subExplain": "Tên gói đăng ký phải đưa cổng 80 về máy chủ này",
         "subHint": "Dùng tên trong liên kết đăng ký của khách hàng và trỏ nó về máy chủ này, hoặc về một máy chủ vào có chuyển cổng 80. Chứng chỉ tự gia hạn một tháng trước khi hết hạn và máy chủ đăng ký dùng chứng chỉ mới mà không cần khởi động lại.",
         "namesHint": "Tên trong địa chỉ, bao nhiêu tên mà chứng chỉ cần bao phủ. Tên đầu tiên cũng là tên thư mục lưu chứng chỉ.",
-        "saveThenRestart": "Lưu cài đặt, sau đó khởi động lại bảng điều khiển"
+        "saveThenRestart": "Lưu cài đặt, sau đó khởi động lại bảng điều khiển",
+        "saveThenRestartByName": "Lưu cài đặt và khởi động lại bảng điều khiển, sau đó mở bằng tên này thay vì địa chỉ IP",
+        "withNote": "{said}. {note}"
       },
       "subCertPath": "Đường dẫn file chứng chỉ gói đăng ký",
       "subCertPathDesc": "Điền vào đường dẫn đầy đủ (bắt đầu với '/')",

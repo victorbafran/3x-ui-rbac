@@ -143,16 +143,28 @@ func Issue(ctx context.Context, rawNames []string) (Result, error) {
 	issueMu.Lock()
 	defer issueMu.Unlock()
 
+	wanted := names
 	dir := certDir(names[0])
 	if meta, err := readMeta(dir); err == nil {
-		if covers(meta.Names, names) && time.Until(meta.NotAfter) > RenewBefore && pairExists(dir) {
+		healthy := time.Until(meta.NotAfter) > RenewBefore
+		if covers(meta.Names, names) && healthy && pairExists(dir) {
 			return resultFor(dir, meta, true), nil
 		}
-		// The folder is named for the first name alone; another screen asking
-		// for a different set must not drop the names it already vouches for.
-		names = withHeld(names, meta.Names)
+		// The folder is named for the first name alone. A healthy one's names
+		// still renew and are kept; a due one may hold a name gone elsewhere.
+		if wider := withHeld(names, meta.Names); healthy && len(wider) <= maxNames {
+			names = wider
+		}
 	}
-	return issueOrder(ctx, dir, names)
+	res, err := issueOrder(ctx, dir, names)
+	if err != nil && len(names) > len(wanted) {
+		// A held name that stopped leading port 80 here must not cost the
+		// names asked for; those are ordered alone.
+		if alone, aerr := issueOrder(ctx, dir, wanted); aerr == nil {
+			return alone, nil
+		}
+	}
+	return res, err
 }
 
 // issueOrder is issueLocked; a variable so a test can see what is ordered.
@@ -286,16 +298,16 @@ func RenewDue(ctx context.Context, now time.Time) []error {
 			continue
 		}
 		dir := filepath.Join(baseDir(), e.Name())
-		meta, err := readMeta(dir)
-		if err != nil {
-			// A directory the panel did not write, or one it never finished.
-			continue
-		}
-		if !dueForRenewal(meta.NotAfter, now) {
-			continue
-		}
+		// Read under the lock, so an issue that rewrote the folder while this
+		// waited is not undone by an order for the names it replaced.
 		issueMu.Lock()
-		_, err = issueLocked(ctx, dir, meta.Names)
+		meta, err := readMeta(dir)
+		if err != nil || !dueForRenewal(meta.NotAfter, now) {
+			// Not due, or a directory the panel did not write or never finished.
+			issueMu.Unlock()
+			continue
+		}
+		_, err = issueOrder(ctx, dir, meta.Names)
 		issueMu.Unlock()
 		if err != nil {
 			errs = append(errs, fmt.Errorf("renewing %s: %w", strings.Join(meta.Names, ", "), err))

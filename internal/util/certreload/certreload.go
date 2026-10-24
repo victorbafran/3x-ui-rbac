@@ -7,11 +7,15 @@ import (
 	"sync"
 	"time"
 
+	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/filestamp"
 )
 
 // checkEvery is how often the files are looked at; a variable for tests.
 var checkEvery = 30 * time.Second
+
+// loadPair is tls.LoadX509KeyPair; a variable so a test can renew mid-load.
+var loadPair = tls.LoadX509KeyPair
 
 // Loader holds the certificate last read from a pair of files.
 type Loader struct {
@@ -20,18 +24,21 @@ type Loader struct {
 	mu      sync.Mutex
 	cert    *tls.Certificate
 	stamp   string
+	failed  string
 	checked time.Time
 	now     func() time.Time
 }
 
-// New reads the pair once, failing exactly as tls.LoadX509KeyPair does.
+// New reads the pair once, failing exactly as tls.LoadX509KeyPair does. The
+// stamp is taken first, so a renewal landing mid-load is read at the next check.
 func New(certFile, keyFile string) (*Loader, error) {
-	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+	l := &Loader{certFile: certFile, keyFile: keyFile, now: time.Now}
+	stamp := l.stampNow()
+	cert, err := loadPair(certFile, keyFile)
 	if err != nil {
 		return nil, err
 	}
-	l := &Loader{certFile: certFile, keyFile: keyFile, cert: &cert, now: time.Now}
-	l.stamp, l.checked = l.stampNow(), l.now()
+	l.cert, l.stamp, l.checked = &cert, stamp, l.now()
 	return l, nil
 }
 
@@ -47,8 +54,14 @@ func (l *Loader) GetCertificate(*tls.ClientHelloInfo) (*tls.Certificate, error) 
 	if now := l.now(); now.Sub(l.checked) >= checkEvery {
 		l.checked = now
 		if stamp := l.stampNow(); stamp != l.stamp {
-			if cert, err := tls.LoadX509KeyPair(l.certFile, l.keyFile); err == nil {
-				l.cert, l.stamp = &cert, stamp
+			cert, err := loadPair(l.certFile, l.keyFile)
+			switch {
+			case err == nil:
+				l.cert, l.stamp, l.failed = &cert, stamp, ""
+			case stamp != l.failed:
+				// Said once per content, not at every check while it stays broken.
+				l.failed = stamp
+				logger.Warningf("certificate %s changed but will not load; still serving the previous one: %v", l.certFile, err)
 			}
 		}
 	}

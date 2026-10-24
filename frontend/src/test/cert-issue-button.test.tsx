@@ -52,6 +52,21 @@ describe('the certificate button on a cisco inbound', () => {
     cleanup();
   });
 
+  // A name typed and then the dialog closed is still there when it reopens.
+  it('keeps the names typed across closing the dialog', async () => {
+    renderWithProviders(<Harness />);
+    fireEvent.click(screen.getByText('Get a certificate'));
+    await act(async () => {});
+    const input = document.querySelector('.ant-modal input') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: 'tun.example.ir,' } });
+    await act(async () => {});
+    fireEvent.click(screen.getByText('Cancel'));
+    await act(async () => {});
+    fireEvent.click(screen.getByText('Get a certificate'));
+    await act(async () => {});
+    expect(document.querySelector('.ant-modal')?.textContent).toContain('tun.example.ir');
+  });
+
   // The whole point: the operator types the name customers use and the two
   // fields fill themselves, so nobody has to know where certificates live.
   it('fills both fields with the certificate it got', async () => {

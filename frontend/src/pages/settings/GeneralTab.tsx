@@ -9,7 +9,7 @@ import {
   SafetyCertificateOutlined,
   SettingOutlined,
 } from '@ant-design/icons';
-import { CertIssueControl, certNameFrom } from '@/components/CertIssueControl';
+import { CertIssueControl, certNameFrom, isAddress } from '@/components/CertIssueControl';
 import type { AllSetting } from '@/models/setting';
 import { isOutboundProtocol } from '@/schemas/primitives';
 import { HttpUtil, LanguageManager } from '@/utils';
@@ -400,7 +400,13 @@ export default function GeneralTab({ allSetting, updateSetting }: GeneralTabProp
                   explain={t('pages.settings.certIssue.panelExplain')}
                   explainHint={t('pages.settings.certIssue.panelHint')}
                   namesHint={t('pages.settings.certIssue.namesHint')}
-                  doneNote={t('pages.settings.certIssue.saveThenRestart')}
+                  doneNote={
+                    // Opened by IP, the restart lands on an address the new
+                    // certificate does not name.
+                    isAddress(window.location.hostname)
+                      ? t('pages.settings.certIssue.saveThenRestartByName')
+                      : t('pages.settings.certIssue.saveThenRestart')
+                  }
                   onIssued={(cert) =>
                     updateSetting({ webCertFile: cert.certFile, webKeyFile: cert.keyFile })
                   }

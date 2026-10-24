@@ -4,7 +4,7 @@ import { MemoryRouter } from 'react-router';
 
 import { HttpUtil } from '@/utils';
 import { AllSetting } from '@/models/setting';
-import { certNameFrom } from '@/components/CertIssueControl';
+import { certNameFrom, isAddress } from '@/components/CertIssueControl';
 import GeneralTab from '@/pages/settings/GeneralTab';
 import SubscriptionGeneralTab from '@/pages/settings/SubscriptionGeneralTab';
 import { renderWithProviders } from './test-utils';
@@ -62,6 +62,8 @@ describe('getting a certificate from the settings', () => {
       webCertFile: '/etc/x-ui/certs/panel.example.ir/fullchain.pem',
       webKeyFile: '/etc/x-ui/certs/panel.example.ir/privkey.pem',
     });
+    // The operator is told the certificate only takes after a save and a restart.
+    expect(await screen.findByText(/Save the settings, then restart the panel/)).toBeTruthy();
   });
 
   // With no subscription domain, the host customers' links carry is offered.
@@ -88,6 +90,14 @@ describe('getting a certificate from the settings', () => {
       subCertFile: '/etc/x-ui/certs/sub.example.ir/fullchain.pem',
       subKeyFile: '/etc/x-ui/certs/sub.example.ir/privkey.pem',
     });
+  });
+
+  // Opened by IP, the panel's note says to come back by name after the restart.
+  it('tells an address from a name', () => {
+    expect(isAddress('212.95.35.41')).toBe(true);
+    expect(isAddress('[2001:db8::1]')).toBe(true);
+    expect(isAddress('panel.example.ir')).toBe(false);
+    expect(isAddress('localhost')).toBe(false);
   });
 
   // An address is not something this issuer asks for, so it is never offered.

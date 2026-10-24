@@ -108,6 +108,9 @@ func TestAHalfWrittenRenewalKeepsTheOldCertificate(t *testing.T) {
 	if err != nil || serial(t, got) != 1 {
 		t.Fatalf("served %v, err %v; want the old certificate kept", got, err)
 	}
+	if l.failed == "" {
+		t.Error("a renewal that would not load left no trace to report")
+	}
 	write(t, keyFile, b.key)
 	*clock = clock.Add(checkEvery)
 	got, _ = l.GetCertificate(nil)
@@ -128,5 +131,33 @@ func TestAPairThatWillNotLoadFailsAtStart(t *testing.T) {
 	write(t, filepath.Join(dir, "k.pem"), b.key)
 	if _, err := New(filepath.Join(dir, "c.pem"), filepath.Join(dir, "k.pem")); err == nil {
 		t.Fatal("a certificate with someone else's key was accepted")
+	}
+}
+
+// A renewal landing while the server starts is picked up at the next check:
+// the stamp is taken before the load, never after it.
+func TestARenewalDuringStartIsPickedUp(t *testing.T) {
+	dir := t.TempDir()
+	certFile, keyFile := filepath.Join(dir, "fullchain.pem"), filepath.Join(dir, "privkey.pem")
+	a, b := newPair(t, 1), newPair(t, 2)
+	write(t, certFile, a.cert)
+	write(t, keyFile, a.key)
+	saved := loadPair
+	loadPair = func(c, k string) (tls.Certificate, error) {
+		cert, err := saved(c, k)
+		write(t, certFile, b.cert)
+		write(t, keyFile, b.key)
+		return cert, err
+	}
+	l, err := New(certFile, keyFile)
+	loadPair = saved
+	if err != nil {
+		t.Fatal(err)
+	}
+	clock := time.Now().Add(checkEvery)
+	l.now = func() time.Time { return clock }
+	got, _ := l.GetCertificate(nil)
+	if serial(t, got) != 2 {
+		t.Errorf("served serial %d; the renewal that landed during start was missed", serial(t, got))
 	}
 }

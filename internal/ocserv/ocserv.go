@@ -76,6 +76,9 @@ const defaultRuntimeDir = "/var/lib/x-ui/ocserv"
 // runtimeDirOverride lets tests point the package at a temporary directory.
 var runtimeDirOverride string
 
+// Dir is runtimeDir, for a full backup to find each inbound's keys.
+func Dir() string { return runtimeDir() }
+
 func runtimeDir() string {
 	if runtimeDirOverride != "" {
 		return runtimeDirOverride

@@ -142,12 +142,9 @@ func LocalInterfaceIDs() []int {
 	return ids
 }
 
-// DownOrphan takes down the panel's end of a tunnel whose relay is gone, and
-// forgets its key.
-func DownOrphan(id int, keyPath string) {
+// DownOrphan takes down the panel's end of a tunnel whose relay is gone. The
+// key stays: an older database restored over a newer one leaves relays out.
+func DownOrphan(id int) {
 	downLocal(Server{Id: id})
 	RemoveXrayExit(id)
-	if keyPath != "" {
-		_ = os.Remove(keyPath)
-	}
 }

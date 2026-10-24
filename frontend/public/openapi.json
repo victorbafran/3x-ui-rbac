@@ -6945,8 +6945,22 @@
         "tags": [
           "Server"
         ],
-        "summary": "Stream a full database backup as an attachment: the SQLite .db file on SQLite panels, or a pg_dump custom-format archive (.dump) on PostgreSQL panels. Use as a manual backup.",
+        "summary": "Stream a full database backup as an attachment: the SQLite .db file on SQLite panels, or a pg_dump custom-format archive (.dump) on PostgreSQL panels. Use as a manual backup. With full=1 it streams a .tar.gz holding the database and the files it relies on: issued certificates, relay SSH keys, OpenVPN and cisco keys, and the node-token key. That archive opens the servers it names; keep it private.",
         "operationId": "get_panel_api_server_getDb",
+        "parameters": [
+          {
+            "name": "full",
+            "in": "query",
+            "required": false,
+            "description": "Set to 1 for the full backup with its files; leave it out for the database alone.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1"
+              ]
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -7888,7 +7902,7 @@
         "tags": [
           "Server"
         ],
-        "summary": "Restore the panel DB from an uploaded backup (multipart form, field name \"db\"). SQLite panels accept a SQLite database (.db) or a SQLite migration dump (.dump); PostgreSQL panels accept a pg_dump archive (.dump), a SQLite database (.db), or a SQLite migration dump. The panel restarts after restore. Destructive.",
+        "summary": "Restore the panel DB from an uploaded backup (multipart form, field name \"db\"). SQLite panels accept a SQLite database (.db) or a SQLite migration dump (.dump); PostgreSQL panels accept a pg_dump archive (.dump), a SQLite database (.db), or a SQLite migration dump. Both accept a full backup (.tar.gz from getDb?full=1): its files are put back first, each one it replaces kept in a pre-restore folder beside the database, and undone if the database does not import. The panel restarts after restore. Destructive.",
         "operationId": "post_panel_api_server_importDB",
         "requestBody": {
           "required": true,

@@ -1770,6 +1770,11 @@ var lazilyMintedSettingKeys = map[string]bool{
 }
 
 func (s *ServerService) ImportDB(file multipart.File, keepHostSettings bool) error {
+	if full, err := isFullBackup(file); err != nil {
+		return common.NewErrorf("Error reading uploaded file: %v", err)
+	} else if full {
+		return s.importFullBackup(file, keepHostSettings)
+	}
 	if database.IsPostgres() {
 		return s.importPostgresDB(file, keepHostSettings)
 	}

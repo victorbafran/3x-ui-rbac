@@ -73,6 +73,9 @@ var runtimeDirOverride string
 //
 // /var/lib rather than /etc, because the panel's own systemd unit runs with
 // ProtectSystem=full and may not write /etc outside its own directory.
+// Dir is runtimeDir, for a full backup to find each inbound's keys.
+func Dir() string { return runtimeDir() }
+
 func runtimeDir() string {
 	if runtimeDirOverride != "" {
 		return runtimeDirOverride

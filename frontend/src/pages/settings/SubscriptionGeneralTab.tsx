@@ -10,6 +10,7 @@ import {
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router';
+import { CertIssueControl, certNameFrom } from '@/components/CertIssueControl';
 import type { AllSetting } from '@/models/setting';
 import type { SubProfileMode } from '@/schemas/setting';
 import { onNumber } from '@/utils/onNumber';
@@ -397,6 +398,26 @@ export default function SubscriptionGeneralTab({
           label: catTabLabel(<SafetyCertificateOutlined />, t('pages.settings.certs'), isMobile),
           children: (
             <>
+              <SettingListItem
+                paddings="small"
+                title={t('pages.inbounds.certIssue.button')}
+                description={t('pages.settings.certIssue.subExplain')}
+              >
+                <CertIssueControl
+                  initialNames={certNameFrom(
+                    allSetting.subDomain,
+                    allSetting.subURI,
+                    allSetting.webDomain,
+                  )}
+                  explain={t('pages.settings.certIssue.subExplain')}
+                  explainHint={t('pages.settings.certIssue.subHint')}
+                  namesHint={t('pages.settings.certIssue.namesHint')}
+                  doneNote={t('pages.settings.certIssue.saveThenRestart')}
+                  onIssued={(cert) =>
+                    updateSetting({ subCertFile: cert.certFile, subKeyFile: cert.keyFile })
+                  }
+                />
+              </SettingListItem>
               <SettingListItem
                 paddings="small"
                 title={t('pages.settings.subCertPath')}

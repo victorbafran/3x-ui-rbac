@@ -7080,7 +7080,7 @@
         "tags": [
           "Server"
         ],
-        "summary": "Fetch a Let’s Encrypt certificate for the names an inbound is reached by, and return where it landed so the cisco form can fill its two fields. Let’s Encrypt checks each name by fetching a file from port 80 of the address it points at, so every name must lead port 80 to this panel, directly or through an entry server. The key is RSA. A certificate for exactly these names with more than a month left is handed back instead of reissued. The panel renews it a month before it expires, and the VPN server picks the new file up on its own. Runs while the request waits; port 80 must be free on this server.",
+        "summary": "Fetch a Let’s Encrypt certificate for the names an inbound, the panel or the subscription server is reached by, and return where it landed so the cisco form or the settings can fill their two fields. Let’s Encrypt checks each name by fetching a file from port 80 of the address it points at, so every name must lead port 80 to this panel, directly or through an entry server. The key is RSA. A certificate already covering these names with more than a month left is handed back instead of reissued; a new name joins the names its folder already holds rather than replacing them. The panel renews it a month before it expires, and the VPN, panel and subscription servers pick the new file up on their own. Runs while the request waits; port 80 must be free on this server.",
         "operationId": "post_panel_api_server_issueCert",
         "requestBody": {
           "required": true,

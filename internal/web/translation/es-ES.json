@@ -1412,6 +1412,14 @@
       "subListenDesc": "Dejar en blanco por defecto para monitorear todas las IPs.",
       "subPort": "Puerto de Suscripción",
       "subPortDesc": "El número de puerto para el servicio de suscripción debe estar sin usar en el servidor. También se usa para construir el enlace/QR de suscripción mostrado en el panel cuando «URI de proxy inverso» está vacío — si la suscripción se accede a través de un proxy inverso en otro puerto, configure «URI de proxy inverso» en su lugar.",
+      "certIssue": {
+        "panelExplain": "El nombre del panel debe llevar el puerto 80 a este servidor",
+        "panelHint": "Let’s Encrypt comprueba el nombre descargando un archivo del puerto 80 de la dirección a la que apunta, así que apúntalo primero directamente a este servidor. El certificado se renueva solo un mes antes de caducar y el panel sirve el nuevo sin reiniciar.",
+        "subExplain": "El nombre de la suscripción debe llevar el puerto 80 a este servidor",
+        "subHint": "Usa el nombre de los enlaces de suscripción de tus clientes y apúntalo a este servidor, o a un servidor de entrada que lleve el puerto 80. El certificado se renueva solo un mes antes de caducar y el servidor de suscripción sirve el nuevo sin reiniciar.",
+        "namesHint": "El nombre de la dirección, tantos como deba cubrir el certificado. El primero también da nombre a la carpeta donde se guarda.",
+        "saveThenRestart": "Guarda la configuración y luego reinicia el panel"
+      },
       "subCertPath": "Ruta del Archivo de Clave Pública del Certificado de Suscripción",
       "subCertPathDesc": "Complete con una ruta absoluta que comience con '/'",
       "subKeyPath": "Ruta del Archivo de Clave Privada del Certificado de Suscripción",

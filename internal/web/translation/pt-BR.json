@@ -1412,6 +1412,14 @@
       "subListenDesc": "O endereço IP para o serviço de assinatura. (deixe em branco para escutar em todos os IPs)",
       "subPort": "Porta de Escuta",
       "subPortDesc": "O número da porta para o serviço de assinatura. (deve ser uma porta não usada). Também é usada para construir o link/QR de assinatura exibido no painel quando \"URI de Proxy Reverso\" abaixo estiver vazio — se a assinatura for acessada por um proxy reverso em outra porta, configure \"URI de Proxy Reverso\" em vez disso.",
+      "certIssue": {
+        "panelExplain": "O nome do painel precisa levar a porta 80 até este servidor",
+        "panelHint": "O Let’s Encrypt verifica o nome buscando um arquivo na porta 80 do endereço para onde ele aponta, então aponte o nome diretamente para este servidor primeiro. O certificado se renova sozinho um mês antes de expirar, e o painel passa a usar o novo sem reiniciar.",
+        "subExplain": "O nome da assinatura precisa levar a porta 80 até este servidor",
+        "subHint": "Use o nome dos links de assinatura dos seus clientes e aponte-o para este servidor, ou para um servidor de entrada que encaminhe a porta 80. O certificado se renova sozinho um mês antes de expirar, e o servidor de assinatura passa a usar o novo sem reiniciar.",
+        "namesHint": "O nome no endereço, quantos o certificado deve cobrir. O primeiro também dá nome à pasta onde ele fica.",
+        "saveThenRestart": "Salve as configurações e depois reinicie o painel"
+      },
       "subCertPath": "Caminho da Chave Pública",
       "subCertPathDesc": "O caminho do arquivo de chave pública para o serviço de assinatura. (começa com ‘/‘)",
       "subKeyPath": "Caminho da Chave Privada",

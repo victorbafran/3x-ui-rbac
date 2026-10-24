@@ -160,9 +160,9 @@ func TestACertificateWithLifeLeftIsHandedBack(t *testing.T) {
 	}
 }
 
-// Fewer names, more names, or a month from expiry: each of those needs a new
-// certificate, and handing back the old one would leave a customer with a
-// name the certificate does not vouch for.
+// More names, or a month from expiry: each of those needs a new certificate,
+// and handing back the old one would leave a customer with a name the
+// certificate does not vouch for.
 func TestADifferentOrExpiringCertificateIsNotHandedBack(t *testing.T) {
 	base := isolate(t)
 	dir := filepath.Join(base, "tun.example.ir")
@@ -180,6 +180,60 @@ func TestADifferentOrExpiringCertificateIsNotHandedBack(t *testing.T) {
 	}
 	if _, err := Issue(context.Background(), []string{"tun.example.ir"}); err == nil {
 		t.Fatal("a certificate ten days from expiry was handed back")
+	}
+}
+
+// The folder is named for the first name alone, so the panel's settings asking
+// for one name of a cisco certificate get that certificate, not a smaller one.
+func TestAFolderHoldingMoreNamesIsHandedBack(t *testing.T) {
+	base := isolate(t)
+	names := []string{"tun.example.ir", "vpn.example.ir"}
+	dir := filepath.Join(base, names[0])
+	notAfter := time.Now().Add(60 * 24 * time.Hour)
+	chain, key := selfSigned(t, names[0], notAfter)
+	if err := writeFiles(dir, chain, key, Meta{Names: names, NotAfter: notAfter.UTC()}); err != nil {
+		t.Fatal(err)
+	}
+	res, err := Issue(context.Background(), []string{"tun.example.ir"})
+	if err != nil {
+		t.Fatalf("a certificate already covering the name was not reused: %v", err)
+	}
+	if !res.Reused || len(res.Names) != 2 {
+		t.Fatalf("got %+v; want the held certificate with both its names", res)
+	}
+}
+
+// A new name joins the folder's names rather than replacing them, or issuing
+// for the panel would quietly drop a name cisco customers type.
+func TestANewNameIsAddedToTheNamesHeld(t *testing.T) {
+	base := isolate(t)
+	held := []string{"tun.example.ir", "vpn.example.ir"}
+	notAfter := time.Now().Add(60 * 24 * time.Hour)
+	chain, key := selfSigned(t, held[0], notAfter)
+	if err := writeFiles(filepath.Join(base, held[0]), chain, key, Meta{Names: held, NotAfter: notAfter.UTC()}); err != nil {
+		t.Fatal(err)
+	}
+	var ordered []string
+	saved := issueOrder
+	issueOrder = func(_ context.Context, _ string, names []string) (Result, error) {
+		ordered = names
+		return Result{}, nil
+	}
+	t.Cleanup(func() { issueOrder = saved })
+	if _, err := Issue(context.Background(), []string{"tun.example.ir", "sub.example.ir"}); err != nil {
+		t.Fatal(err)
+	}
+	if want := "tun.example.ir,sub.example.ir,vpn.example.ir"; strings.Join(ordered, ",") != want {
+		t.Errorf("ordered %v, want %s", ordered, want)
+	}
+
+	got := withHeld([]string{"tun.example.ir", "sub.example.ir"}, []string{"tun.example.ir", "vpn.example.ir"})
+	want := []string{"tun.example.ir", "sub.example.ir", "vpn.example.ir"}
+	if strings.Join(got, ",") != strings.Join(want, ",") {
+		t.Errorf("ordered %v, want %v", got, want)
+	}
+	if !covers([]string{"a.ir", "b.ir"}, []string{"b.ir"}) || covers([]string{"a.ir"}, []string{"a.ir", "b.ir"}) {
+		t.Error("covers is wrong about which set holds which")
 	}
 }
 

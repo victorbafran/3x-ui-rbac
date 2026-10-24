@@ -1412,6 +1412,14 @@
       "subListenDesc": "Mặc định để trống để nghe tất cả các IP",
       "subPort": "Cổng gói đăng ký",
       "subPortDesc": "Số cổng dịch vụ đăng ký phải chưa được sử dụng trên máy chủ. Cũng được dùng để tạo liên kết/QR đăng ký hiển thị trên bảng điều khiển khi \"URI proxy trung gian\" bên dưới để trống — nếu đăng ký được truy cập qua proxy trung gian trên một cổng khác, hãy đặt \"URI proxy trung gian\" thay thế.",
+      "certIssue": {
+        "panelExplain": "Tên của bảng điều khiển phải đưa cổng 80 về máy chủ này",
+        "panelHint": "Let’s Encrypt kiểm tra tên bằng cách tải một tệp từ cổng 80 của địa chỉ mà tên trỏ tới, vì vậy hãy trỏ tên thẳng về máy chủ này trước. Chứng chỉ tự gia hạn một tháng trước khi hết hạn và bảng điều khiển dùng chứng chỉ mới mà không cần khởi động lại.",
+        "subExplain": "Tên gói đăng ký phải đưa cổng 80 về máy chủ này",
+        "subHint": "Dùng tên trong liên kết đăng ký của khách hàng và trỏ nó về máy chủ này, hoặc về một máy chủ vào có chuyển cổng 80. Chứng chỉ tự gia hạn một tháng trước khi hết hạn và máy chủ đăng ký dùng chứng chỉ mới mà không cần khởi động lại.",
+        "namesHint": "Tên trong địa chỉ, bao nhiêu tên mà chứng chỉ cần bao phủ. Tên đầu tiên cũng là tên thư mục lưu chứng chỉ.",
+        "saveThenRestart": "Lưu cài đặt, sau đó khởi động lại bảng điều khiển"
+      },
       "subCertPath": "Đường dẫn file chứng chỉ gói đăng ký",
       "subCertPathDesc": "Điền vào đường dẫn đầy đủ (bắt đầu với '/')",
       "subKeyPath": "Đường dẫn file khóa của chứng chỉ gói đăng ký",

@@ -19,6 +19,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -131,9 +132,9 @@ func validHostname(name string) bool {
 }
 
 // Issue returns a certificate for the names, fetching one from Let's Encrypt
-// unless the panel already holds one for exactly these names with plenty of
-// life left. Let's Encrypt allows five duplicates of a certificate a week, and
-// an operator pressing the button twice should not spend one.
+// unless the panel already holds one covering them with plenty of life left.
+// Let's Encrypt allows five duplicates of a certificate a week, and an
+// operator pressing the button twice should not spend one.
 func Issue(ctx context.Context, rawNames []string) (Result, error) {
 	names, err := NormalizeNames(rawNames)
 	if err != nil {
@@ -143,12 +144,19 @@ func Issue(ctx context.Context, rawNames []string) (Result, error) {
 	defer issueMu.Unlock()
 
 	dir := certDir(names[0])
-	if meta, err := readMeta(dir); err == nil && sameNames(meta.Names, names) &&
-		time.Until(meta.NotAfter) > RenewBefore && pairExists(dir) {
-		return resultFor(dir, meta, true), nil
+	if meta, err := readMeta(dir); err == nil {
+		if covers(meta.Names, names) && time.Until(meta.NotAfter) > RenewBefore && pairExists(dir) {
+			return resultFor(dir, meta, true), nil
+		}
+		// The folder is named for the first name alone; another screen asking
+		// for a different set must not drop the names it already vouches for.
+		names = withHeld(names, meta.Names)
 	}
-	return issueLocked(ctx, dir, names)
+	return issueOrder(ctx, dir, names)
 }
+
+// issueOrder is issueLocked; a variable so a test can see what is ordered.
+var issueOrder = issueLocked
 
 // issueLocked runs one ACME order. The caller holds issueMu.
 func issueLocked(ctx context.Context, dir string, names []string) (Result, error) {
@@ -300,16 +308,25 @@ func dueForRenewal(notAfter, now time.Time) bool {
 	return !now.Add(RenewBefore).Before(notAfter)
 }
 
-func sameNames(a, b []string) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for i := range a {
-		if a[i] != b[i] {
+// covers reports whether a certificate for held vouches for every wanted name.
+func covers(held, wanted []string) bool {
+	for _, n := range wanted {
+		if !slices.Contains(held, n) {
 			return false
 		}
 	}
 	return true
+}
+
+// withHeld is the wanted names, in order, followed by any held name they lack.
+func withHeld(wanted, held []string) []string {
+	out := slices.Clone(wanted)
+	for _, n := range held {
+		if !slices.Contains(out, n) {
+			out = append(out, n)
+		}
+	}
+	return out
 }
 
 func resultFor(dir string, meta Meta, reused bool) Result {

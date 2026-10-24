@@ -83,16 +83,18 @@ _openapi:
         node.
       url: '#return-this-panels-own-web-tls-certificate-and-key-file-paths-the-central-panel-calls-it-on-a-node-via-the-node-api-token-so-set-cert-from-panel-fills-a-node-assigned-inbound-with-paths-that-exist-on-the-node'
     - depth: 2
-      title: Fetch a Let’s Encrypt certificate for the names an inbound is reached by,
-        and return where it landed so the cisco form can fill its two fields.
-        Let’s Encrypt checks each name by fetching a file from port 80 of the
-        address it points at, so every name must lead port 80 to this panel,
-        directly or through an entry server. The key is RSA. A certificate for
-        exactly these names with more than a month left is handed back instead
-        of reissued. The panel renews it a month before it expires, and the VPN
-        server picks the new file up on its own. Runs while the request waits;
-        port 80 must be free on this server.
-      url: '#fetch-a-lets-encrypt-certificate-for-the-names-an-inbound-is-reached-by-and-return-where-it-landed-so-the-cisco-form-can-fill-its-two-fields-lets-encrypt-checks-each-name-by-fetching-a-file-from-port-80-of-the-address-it-points-at-so-every-name-must-lead-port-80-to-this-panel-directly-or-through-an-entry-server-the-key-is-rsa-a-certificate-for-exactly-these-names-with-more-than-a-month-left-is-handed-back-instead-of-reissued-the-panel-renews-it-a-month-before-it-expires-and-the-vpn-server-picks-the-new-file-up-on-its-own-runs-while-the-request-waits-port-80-must-be-free-on-this-server'
+      title: Fetch a Let’s Encrypt certificate for the names an inbound, the panel or
+        the subscription server is reached by, and return where it landed so the
+        cisco form or the settings can fill their two fields. Let’s Encrypt
+        checks each name by fetching a file from port 80 of the address it
+        points at, so every name must lead port 80 to this panel, directly or
+        through an entry server. The key is RSA. A certificate already covering
+        these names with more than a month left is handed back instead of
+        reissued; a new name joins the names its folder already holds rather
+        than replacing them. The panel renews it a month before it expires, and
+        the VPN, panel and subscription servers pick the new file up on their
+        own. Runs while the request waits; port 80 must be free on this server.
+      url: '#fetch-a-lets-encrypt-certificate-for-the-names-an-inbound-the-panel-or-the-subscription-server-is-reached-by-and-return-where-it-landed-so-the-cisco-form-or-the-settings-can-fill-their-two-fields-lets-encrypt-checks-each-name-by-fetching-a-file-from-port-80-of-the-address-it-points-at-so-every-name-must-lead-port-80-to-this-panel-directly-or-through-an-entry-server-the-key-is-rsa-a-certificate-already-covering-these-names-with-more-than-a-month-left-is-handed-back-instead-of-reissued-a-new-name-joins-the-names-its-folder-already-holds-rather-than-replacing-them-the-panel-renews-it-a-month-before-it-expires-and-the-vpn-panel-and-subscription-servers-pick-the-new-file-up-on-their-own-runs-while-the-request-waits-port-80-must-be-free-on-this-server'
     - depth: 2
       title: Read-only summaries (guid, parentGuid, name, address, status, versions)
         of the nodes this panel manages. A parent panel calls it on a node (via
@@ -251,16 +253,19 @@ _openapi:
           from Panel" fills a node-assigned inbound with paths that exist on the
           node.
         id: return-this-panels-own-web-tls-certificate-and-key-file-paths-the-central-panel-calls-it-on-a-node-via-the-node-api-token-so-set-cert-from-panel-fills-a-node-assigned-inbound-with-paths-that-exist-on-the-node
-      - content: Fetch a Let’s Encrypt certificate for the names an inbound is reached
-          by, and return where it landed so the cisco form can fill its two
-          fields. Let’s Encrypt checks each name by fetching a file from port 80
-          of the address it points at, so every name must lead port 80 to this
-          panel, directly or through an entry server. The key is RSA. A
-          certificate for exactly these names with more than a month left is
-          handed back instead of reissued. The panel renews it a month before it
-          expires, and the VPN server picks the new file up on its own. Runs
-          while the request waits; port 80 must be free on this server.
-        id: fetch-a-lets-encrypt-certificate-for-the-names-an-inbound-is-reached-by-and-return-where-it-landed-so-the-cisco-form-can-fill-its-two-fields-lets-encrypt-checks-each-name-by-fetching-a-file-from-port-80-of-the-address-it-points-at-so-every-name-must-lead-port-80-to-this-panel-directly-or-through-an-entry-server-the-key-is-rsa-a-certificate-for-exactly-these-names-with-more-than-a-month-left-is-handed-back-instead-of-reissued-the-panel-renews-it-a-month-before-it-expires-and-the-vpn-server-picks-the-new-file-up-on-its-own-runs-while-the-request-waits-port-80-must-be-free-on-this-server
+      - content: Fetch a Let’s Encrypt certificate for the names an inbound, the panel
+          or the subscription server is reached by, and return where it landed
+          so the cisco form or the settings can fill their two fields. Let’s
+          Encrypt checks each name by fetching a file from port 80 of the
+          address it points at, so every name must lead port 80 to this panel,
+          directly or through an entry server. The key is RSA. A certificate
+          already covering these names with more than a month left is handed
+          back instead of reissued; a new name joins the names its folder
+          already holds rather than replacing them. The panel renews it a month
+          before it expires, and the VPN, panel and subscription servers pick
+          the new file up on their own. Runs while the request waits; port 80
+          must be free on this server.
+        id: fetch-a-lets-encrypt-certificate-for-the-names-an-inbound-the-panel-or-the-subscription-server-is-reached-by-and-return-where-it-landed-so-the-cisco-form-or-the-settings-can-fill-their-two-fields-lets-encrypt-checks-each-name-by-fetching-a-file-from-port-80-of-the-address-it-points-at-so-every-name-must-lead-port-80-to-this-panel-directly-or-through-an-entry-server-the-key-is-rsa-a-certificate-already-covering-these-names-with-more-than-a-month-left-is-handed-back-instead-of-reissued-a-new-name-joins-the-names-its-folder-already-holds-rather-than-replacing-them-the-panel-renews-it-a-month-before-it-expires-and-the-vpn-panel-and-subscription-servers-pick-the-new-file-up-on-their-own-runs-while-the-request-waits-port-80-must-be-free-on-this-server
       - content: Read-only summaries (guid, parentGuid, name, address, status, versions)
           of the nodes this panel manages. A parent panel calls it on a node
           (via the node API token) to surface transitive sub-nodes in a chained

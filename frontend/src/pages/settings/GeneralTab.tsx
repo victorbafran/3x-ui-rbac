@@ -9,6 +9,7 @@ import {
   SafetyCertificateOutlined,
   SettingOutlined,
 } from '@ant-design/icons';
+import { CertIssueControl, certNameFrom, isAddress } from '@/components/CertIssueControl';
 import type { AllSetting } from '@/models/setting';
 import { isOutboundProtocol } from '@/schemas/primitives';
 import { HttpUtil, LanguageManager } from '@/utils';
@@ -389,6 +390,28 @@ export default function GeneralTab({ allSetting, updateSetting }: GeneralTabProp
           label: catTabLabel(<SafetyCertificateOutlined />, t('pages.settings.certs'), isMobile),
           children: (
             <>
+              <SettingListItem
+                paddings="small"
+                title={t('pages.inbounds.certIssue.button')}
+                description={t('pages.settings.certIssue.panelExplain')}
+              >
+                <CertIssueControl
+                  initialNames={certNameFrom(allSetting.webDomain)}
+                  explain={t('pages.settings.certIssue.panelExplain')}
+                  explainHint={t('pages.settings.certIssue.panelHint')}
+                  namesHint={t('pages.settings.certIssue.namesHint')}
+                  doneNote={
+                    // Opened by IP, the restart lands on an address the new
+                    // certificate does not name.
+                    isAddress(window.location.hostname)
+                      ? t('pages.settings.certIssue.saveThenRestartByName')
+                      : t('pages.settings.certIssue.saveThenRestart')
+                  }
+                  onIssued={(cert) =>
+                    updateSetting({ webCertFile: cert.certFile, webKeyFile: cert.keyFile })
+                  }
+                />
+              </SettingListItem>
               <SettingListItem
                 paddings="small"
                 title={t('pages.settings.publicKeyPath')}

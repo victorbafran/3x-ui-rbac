@@ -19,6 +19,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -131,9 +132,9 @@ func validHostname(name string) bool {
 }
 
 // Issue returns a certificate for the names, fetching one from Let's Encrypt
-// unless the panel already holds one for exactly these names with plenty of
-// life left. Let's Encrypt allows five duplicates of a certificate a week, and
-// an operator pressing the button twice should not spend one.
+// unless the panel already holds one covering them with plenty of life left.
+// Let's Encrypt allows five duplicates of a certificate a week, and an
+// operator pressing the button twice should not spend one.
 func Issue(ctx context.Context, rawNames []string) (Result, error) {
 	names, err := NormalizeNames(rawNames)
 	if err != nil {
@@ -142,13 +143,32 @@ func Issue(ctx context.Context, rawNames []string) (Result, error) {
 	issueMu.Lock()
 	defer issueMu.Unlock()
 
+	wanted := names
 	dir := certDir(names[0])
-	if meta, err := readMeta(dir); err == nil && sameNames(meta.Names, names) &&
-		time.Until(meta.NotAfter) > RenewBefore && pairExists(dir) {
-		return resultFor(dir, meta, true), nil
+	if meta, err := readMeta(dir); err == nil {
+		healthy := time.Until(meta.NotAfter) > RenewBefore
+		if covers(meta.Names, names) && healthy && pairExists(dir) {
+			return resultFor(dir, meta, true), nil
+		}
+		// The folder is named for the first name alone. A healthy one's names
+		// still renew and are kept; a due one may hold a name gone elsewhere.
+		if wider := withHeld(names, meta.Names); healthy && len(wider) <= maxNames {
+			names = wider
+		}
 	}
-	return issueLocked(ctx, dir, names)
+	res, err := issueOrder(ctx, dir, names)
+	if err != nil && len(names) > len(wanted) {
+		// A held name that stopped leading port 80 here must not cost the
+		// names asked for; those are ordered alone.
+		if alone, aerr := issueOrder(ctx, dir, wanted); aerr == nil {
+			return alone, nil
+		}
+	}
+	return res, err
 }
+
+// issueOrder is issueLocked; a variable so a test can see what is ordered.
+var issueOrder = issueLocked
 
 // issueLocked runs one ACME order. The caller holds issueMu.
 func issueLocked(ctx context.Context, dir string, names []string) (Result, error) {
@@ -278,16 +298,16 @@ func RenewDue(ctx context.Context, now time.Time) []error {
 			continue
 		}
 		dir := filepath.Join(baseDir(), e.Name())
-		meta, err := readMeta(dir)
-		if err != nil {
-			// A directory the panel did not write, or one it never finished.
-			continue
-		}
-		if !dueForRenewal(meta.NotAfter, now) {
-			continue
-		}
+		// Read under the lock, so an issue that rewrote the folder while this
+		// waited is not undone by an order for the names it replaced.
 		issueMu.Lock()
-		_, err = issueLocked(ctx, dir, meta.Names)
+		meta, err := readMeta(dir)
+		if err != nil || !dueForRenewal(meta.NotAfter, now) {
+			// Not due, or a directory the panel did not write or never finished.
+			issueMu.Unlock()
+			continue
+		}
+		_, err = issueOrder(ctx, dir, meta.Names)
 		issueMu.Unlock()
 		if err != nil {
 			errs = append(errs, fmt.Errorf("renewing %s: %w", strings.Join(meta.Names, ", "), err))
@@ -300,16 +320,25 @@ func dueForRenewal(notAfter, now time.Time) bool {
 	return !now.Add(RenewBefore).Before(notAfter)
 }
 
-func sameNames(a, b []string) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for i := range a {
-		if a[i] != b[i] {
+// covers reports whether a certificate for held vouches for every wanted name.
+func covers(held, wanted []string) bool {
+	for _, n := range wanted {
+		if !slices.Contains(held, n) {
 			return false
 		}
 	}
 	return true
+}
+
+// withHeld is the wanted names, in order, followed by any held name they lack.
+func withHeld(wanted, held []string) []string {
+	out := slices.Clone(wanted)
+	for _, n := range held {
+		if !slices.Contains(out, n) {
+			out = append(out, n)
+		}
+	}
+	return out
 }
 
 func resultFor(dir string, meta Meta, reused bool) Result {

@@ -1412,6 +1412,16 @@
       "subListenDesc": "Abonelik hizmeti için IP adresi. (tüm IP'leri dinlemek için boş bırakın)",
       "subPort": "Dinleme Portu",
       "subPortDesc": "Abonelik hizmeti için port numarası. (kullanılmayan bir port olmalıdır). Ayrıca, aşağıdaki \"Ters Proxy URI\" boşsa panelde gösterilen abonelik bağlantısı/QR kodunu oluşturmak için de kullanılır — abonelik farklı bir portta ters proxy üzerinden erişiliyorsa bunun yerine \"Ters Proxy URI\"yi ayarlayın.",
+      "certIssue": {
+        "panelExplain": "Panelin adı 80 numaralı portu bu sunucuya ulaştırmalı",
+        "panelHint": "Let’s Encrypt adı, işaret ettiği adresin 80 numaralı portundan bir dosya alarak doğrular; bu yüzden önce adı doğrudan bu sunucuya yönlendirin. Sertifika sona ermeden bir ay önce kendini yeniler ve panel yenisini yeniden başlatmadan kullanır.",
+        "subExplain": "Abonelik adı 80 numaralı portu bu sunucuya ulaştırmalı",
+        "subHint": "Müşterilerinizin abonelik bağlantılarındaki adı kullanın ve bu sunucuya ya da 80 numaralı portu taşıyan bir giriş sunucusuna yönlendirin. Sertifika sona ermeden bir ay önce kendini yeniler ve abonelik sunucusu yenisini yeniden başlatmadan kullanır.",
+        "namesHint": "Adresteki ad; sertifikanın kapsaması gereken kadar. İlk ad, saklandığı klasörün de adıdır.",
+        "saveThenRestart": "Ayarları kaydedin, ardından paneli yeniden başlatın",
+        "saveThenRestartByName": "Ayarları kaydedip paneli yeniden başlatın, sonra paneli IP adresi yerine bu adla açın",
+        "withNote": "{said}. {note}"
+      },
       "subCertPath": "Genel Anahtar Yolu",
       "subCertPathDesc": "Abonelik hizmeti için genel anahtar dosya yolu. ('/' ile başlar)",
       "subKeyPath": "Özel Anahtar Yolu",

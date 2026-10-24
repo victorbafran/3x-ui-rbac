@@ -1412,6 +1412,16 @@
       "subListenDesc": "Alamat IP untuk layanan langganan. (biarkan kosong untuk mendengarkan semua IP)",
       "subPort": "Port Pendengar",
       "subPortDesc": "Nomor port untuk layanan langganan. (harus menjadi port yang tidak digunakan). Juga digunakan untuk membangun tautan/QR langganan yang ditampilkan di panel ketika \"URI Proxy Terbalik\" di bawah kosong — jika langganan diakses melalui reverse proxy pada port yang berbeda, atur \"URI Proxy Terbalik\" sebagai gantinya.",
+      "certIssue": {
+        "panelExplain": "Nama panel harus mengarahkan port 80 ke server ini",
+        "panelHint": "Let’s Encrypt memeriksa nama dengan mengambil file dari port 80 alamat yang ditunjuknya, jadi arahkan nama langsung ke server ini terlebih dahulu. Sertifikat diperbarui sendiri sebulan sebelum kedaluwarsa, dan panel memakai yang baru tanpa restart.",
+        "subExplain": "Nama langganan harus mengarahkan port 80 ke server ini",
+        "subHint": "Gunakan nama di tautan langganan pelanggan Anda dan arahkan ke server ini, atau ke server masuk yang meneruskan port 80. Sertifikat diperbarui sendiri sebulan sebelum kedaluwarsa, dan server langganan memakai yang baru tanpa restart.",
+        "namesHint": "Nama di alamat, sebanyak yang harus dicakup sertifikat. Nama pertama juga menjadi nama folder tempat sertifikat disimpan.",
+        "saveThenRestart": "Simpan pengaturan, lalu restart panel",
+        "saveThenRestartByName": "Simpan pengaturan dan restart panel, lalu buka dengan nama ini, bukan alamat IP",
+        "withNote": "{said}. {note}"
+      },
       "subCertPath": "Path Kunci Publik",
       "subCertPathDesc": "Path berkas kunci publik untuk layanan langganan. (dimulai dengan ‘/‘)",
       "subKeyPath": "Path Kunci Privat",

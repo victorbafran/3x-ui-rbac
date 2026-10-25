@@ -43,6 +43,16 @@ _openapi:
         Used by the panel’s "Export all inbound links" action.
       url: '#return-every-protocol-url-vless-vmess-trojan-ss-hysteria-mtproto-across-all-inbounds-and-all-of-their-clients-links-are-rendered-through-the-subscription-engine-so-the-configured-remark-template-name-only-display-part-is-applied-per-client--the-same-output-the-client-infoqr-pages-use-protocols-without-a-url-form-socks-http-mixed-wireguard-dokodemo-tunnel-contribute-nothing-used-by-the-panels-export-all-inbound-links-action'
     - depth: 2
+      title: 'Return one entry per client of the inbound, in settings order: its share
+        links and, for WireGuard, AmneziaWG and TUIC, its full config files, all
+        rendered by the subscription engine. Behind an IPv6 entry server each
+        address comes as its IPv6 variant, or an IPv6 and an IPv4 pair whose
+        remarks carry the configured family marker. A reseller sharing the
+        inbound sees only their own clients, and needs the clients.viewLinks
+        switch, as the client windows'' links do. Used by the panel''s inbound
+        info window and its "Export links" action.'
+      url: '#return-one-entry-per-client-of-the-inbound-in-settings-order-its-share-links-and-for-wireguard-amneziawg-and-tuic-its-full-config-files-all-rendered-by-the-subscription-engine-behind-an-ipv6-entry-server-each-address-comes-as-its-ipv6-variant-or-an-ipv6-and-an-ipv4-pair-whose-remarks-carry-the-configured-family-marker-a-reseller-sharing-the-inbound-sees-only-their-own-clients-and-needs-the-clientsviewlinks-switch-as-the-client-windows-links-do-used-by-the-panels-inbound-info-window-and-its-export-links-action'
+    - depth: 2
       title: Fetch a single inbound by numeric ID.
       url: '#fetch-a-single-inbound-by-numeric-id'
     - depth: 2
@@ -139,6 +149,15 @@ _openapi:
           (socks, http, mixed, wireguard, dokodemo, tunnel) contribute nothing.
           Used by the panel’s "Export all inbound links" action.
         id: return-every-protocol-url-vless-vmess-trojan-ss-hysteria-mtproto-across-all-inbounds-and-all-of-their-clients-links-are-rendered-through-the-subscription-engine-so-the-configured-remark-template-name-only-display-part-is-applied-per-client--the-same-output-the-client-infoqr-pages-use-protocols-without-a-url-form-socks-http-mixed-wireguard-dokodemo-tunnel-contribute-nothing-used-by-the-panels-export-all-inbound-links-action
+      - content: 'Return one entry per client of the inbound, in settings order: its
+          share links and, for WireGuard, AmneziaWG and TUIC, its full config
+          files, all rendered by the subscription engine. Behind an IPv6 entry
+          server each address comes as its IPv6 variant, or an IPv6 and an IPv4
+          pair whose remarks carry the configured family marker. A reseller
+          sharing the inbound sees only their own clients, and needs the
+          clients.viewLinks switch, as the client windows'' links do. Used by
+          the panel''s inbound info window and its "Export links" action.'
+        id: return-one-entry-per-client-of-the-inbound-in-settings-order-its-share-links-and-for-wireguard-amneziawg-and-tuic-its-full-config-files-all-rendered-by-the-subscription-engine-behind-an-ipv6-entry-server-each-address-comes-as-its-ipv6-variant-or-an-ipv6-and-an-ipv4-pair-whose-remarks-carry-the-configured-family-marker-a-reseller-sharing-the-inbound-sees-only-their-own-clients-and-needs-the-clientsviewlinks-switch-as-the-client-windows-links-do-used-by-the-panels-inbound-info-window-and-its-export-links-action
       - content: Fetch a single inbound by numeric ID.
         id: fetch-a-single-inbound-by-numeric-id
       - content: Create a new inbound. Send the full inbound payload (protocol, port,
@@ -201,7 +220,7 @@ export default function Layout(props) {
   return (
     <>
       {props.children}
-      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/inbounds/list","method":"get"},{"path":"/panel/api/inbounds/list/slim","method":"get"},{"path":"/panel/api/inbounds/options","method":"get"},{"path":"/panel/api/inbounds/allLinks","method":"get"},{"path":"/panel/api/inbounds/get/{id}","method":"get"},{"path":"/panel/api/inbounds/add","method":"post"},{"path":"/panel/api/inbounds/del/{id}","method":"post"},{"path":"/panel/api/inbounds/bulkDel","method":"post"},{"path":"/panel/api/inbounds/update/{id}","method":"post"},{"path":"/panel/api/inbounds/setEnable/{id}","method":"post"},{"path":"/panel/api/inbounds/{id}/subSortIndex","method":"post"},{"path":"/panel/api/inbounds/{id}/resetTraffic","method":"post"},{"path":"/panel/api/inbounds/{id}/delAllClients","method":"post"},{"path":"/panel/api/inbounds/resetAllTraffics","method":"post"},{"path":"/panel/api/inbounds/import","method":"post"},{"path":"/panel/api/inbounds/pushClientTraffics","method":"post"},{"path":"/panel/api/inbounds/{id}/fallbacks","method":"get"},{"path":"/panel/api/inbounds/{id}/fallbacks","method":"post"}]} showTitle />
+      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/inbounds/list","method":"get"},{"path":"/panel/api/inbounds/list/slim","method":"get"},{"path":"/panel/api/inbounds/options","method":"get"},{"path":"/panel/api/inbounds/allLinks","method":"get"},{"path":"/panel/api/inbounds/{id}/links","method":"get"},{"path":"/panel/api/inbounds/get/{id}","method":"get"},{"path":"/panel/api/inbounds/add","method":"post"},{"path":"/panel/api/inbounds/del/{id}","method":"post"},{"path":"/panel/api/inbounds/bulkDel","method":"post"},{"path":"/panel/api/inbounds/update/{id}","method":"post"},{"path":"/panel/api/inbounds/setEnable/{id}","method":"post"},{"path":"/panel/api/inbounds/{id}/subSortIndex","method":"post"},{"path":"/panel/api/inbounds/{id}/resetTraffic","method":"post"},{"path":"/panel/api/inbounds/{id}/delAllClients","method":"post"},{"path":"/panel/api/inbounds/resetAllTraffics","method":"post"},{"path":"/panel/api/inbounds/import","method":"post"},{"path":"/panel/api/inbounds/pushClientTraffics","method":"post"},{"path":"/panel/api/inbounds/{id}/fallbacks","method":"get"},{"path":"/panel/api/inbounds/{id}/fallbacks","method":"post"}]} showTitle />
     </>
   );
 }

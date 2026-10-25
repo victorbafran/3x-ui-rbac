@@ -1117,9 +1117,8 @@ export function genAmneziaWGConfig(input: GenAmneziaWGLinkInput): string {
   }
   if (server.randomTrailers) txt += `RandomTrailers = on\n`;
   if (server.disableCookies) txt += `DisableCookies = on\n`;
-  // Peer field order follows wg-quick(8) and the panel's other two AmneziaWG
-  // emitters (amneziaWGConfigText in Go, buildAmneziaWGClientConfig); all three
-  // are independent implementations and must not drift apart.
+  // Peer field order follows wg-quick(8), as Go's amneziaWGConfigText and
+  // amneziaWGPanelConf do; the three are independent and must not drift apart.
   txt += `\n# ${remark}\n`;
   txt += `[Peer]\n`;
   txt += `PublicKey = ${server.publicKey ?? ''}\n`;
@@ -1132,52 +1131,6 @@ export function genAmneziaWGConfig(input: GenAmneziaWGLinkInput): string {
     txt += `\nPersistentKeepalive = ${client.keepAlive}`;
   }
   return txt;
-}
-
-export interface GenAmneziaWGFanoutInput {
-  inbound: Inbound;
-  remark?: string;
-  hostOverride?: string;
-  fallbackHostname: string;
-}
-
-function amneziaWGFanout(
-  input: GenAmneziaWGFanoutInput,
-  render: (input: GenAmneziaWGLinkInput) => string,
-): string[][] {
-  const { inbound, remark = '', hostOverride = '', fallbackHostname } = input;
-  if (inbound.protocol !== 'amneziawg') return [];
-  const endpoints = tunnelEndpoints(inbound, resolveAddr(inbound, hostOverride, fallbackHostname));
-  const settings = inbound.settings as AmneziawgInboundSettings;
-  const clients = settings.clients ?? [];
-  return clients.map((c, i) =>
-    endpoints.map((e) =>
-      render({
-        settings,
-        address: e.address,
-        port: e.port,
-        remark: tunnelPeerRemark(remark, e.remark, i, c),
-        peerIndex: i,
-      }),
-    ),
-  );
-}
-
-// Per-peer lists with one entry per advertised endpoint (Host), peer-major.
-export function genAmneziaWGPeerLinks(input: GenAmneziaWGFanoutInput): string[][] {
-  return amneziaWGFanout(input, genAmneziaWGLink);
-}
-
-export function genAmneziaWGPeerConfigs(input: GenAmneziaWGFanoutInput): string[][] {
-  return amneziaWGFanout(input, genAmneziaWGConfig);
-}
-
-export function genAmneziaWGLinks(input: GenAmneziaWGFanoutInput): string {
-  return genAmneziaWGPeerLinks(input).flat().join('\r\n');
-}
-
-export function genAmneziaWGConfigs(input: GenAmneziaWGFanoutInput): string {
-  return genAmneziaWGPeerConfigs(input).flat().join('\r\n');
 }
 
 export function wireguardConfigFromLink(link: string, fallbackRemark = ''): string {
@@ -1445,10 +1398,8 @@ function hasNoLinkFormat(inbound: Inbound): boolean {
   return inbound.streamSettings?.network === 'xdrive';
 }
 
-// Per-protocol dispatcher matching the legacy `genLink` switch. Returns
-// '' for protocols that don't have client-based share links (wireguard
-// goes through genWireguardLinks/Configs separately, http/mixed/tunnel
-// don't have share URLs).
+// Per-protocol dispatcher; '' for protocols without a per-client share link here
+// (wireguard and amneziawg have their own builders, http/mixed/tunnel have none).
 export function genLink(input: GenLinkInput): string {
   const {
     inbound,
@@ -1529,195 +1480,6 @@ export function genLink(input: GenLinkInput): string {
     default:
       return '';
   }
-}
-
-export interface GenAllLinksEntry {
-  remark: string;
-  link: string;
-}
-
-export interface GenAllLinksInput {
-  inbound: Inbound;
-  remark?: string;
-  client: ClientShape;
-  hostOverride?: string;
-  fallbackHostname: string;
-}
-
-// Fans out a single client's link per externalProxy entry, or just one link
-// when there are no external proxies. The panel copy/QR remark is the inbound
-// remark plus the externalProxy remark, dash-joined (the configurable
-// subscription remark model was removed; subscription output uses the template).
-export function genAllLinks(input: GenAllLinksInput): GenAllLinksEntry[] {
-  const { inbound, remark = '', client, hostOverride = '', fallbackHostname } = input;
-
-  const addr = resolveAddr(inbound, hostOverride, fallbackHostname);
-  const port = inbound.port;
-
-  const composeRemark = (proxyRemark: string): string =>
-    [remark, proxyRemark].filter((x) => x.length > 0).join('-');
-
-  const externals = inbound.streamSettings?.externalProxy;
-  if (!externals || externals.length === 0) {
-    const r = composeRemark('');
-    return [
-      {
-        remark: r,
-        link: genLink({ inbound, address: addr, port, forceTls: 'same', remark: r, client }),
-      },
-    ];
-  }
-  return externals.map((ep) => {
-    const r = composeRemark(ep.remark);
-    return {
-      remark: r,
-      link: genLink({
-        inbound,
-        address: ep.dest,
-        port: ep.port,
-        forceTls: ep.forceTls,
-        remark: r,
-        client,
-        externalProxy: ep,
-      }),
-    };
-  });
-}
-
-export interface GenInboundLinksInput {
-  inbound: Inbound;
-  remark?: string;
-  hostOverride?: string;
-  fallbackHostname: string;
-}
-
-// Top-level entrypoint that produces the full \r\n-joined block a user
-// pastes into a client. Iterates per-client for protocols with clients,
-// falls back to a single SS link for single-user 2022-blake3-chacha20,
-// and emits per-peer .conf blocks for wireguard and amneziawg. Returns '' for the
-// other clientless protocols (http, mixed, tunnel).
-export function genInboundLinks(input: GenInboundLinksInput): string {
-  const { inbound, remark = '', hostOverride = '', fallbackHostname } = input;
-  if (hasNoLinkFormat(inbound)) return '';
-  const addr = resolveAddr(inbound, hostOverride, fallbackHostname);
-  const clients = getInboundClients(inbound);
-  if (clients) {
-    const links: string[] = [];
-    for (const client of clients) {
-      const entries = genAllLinks({ inbound, remark, client, hostOverride, fallbackHostname });
-      for (const e of entries) links.push(e.link);
-    }
-    return links.join('\r\n');
-  }
-  if (inbound.protocol === 'shadowsocks') {
-    return genShadowsocksLink({
-      inbound,
-      address: addr,
-      port: inbound.port,
-      forceTls: 'same',
-      remark,
-    });
-  }
-  if (inbound.protocol === 'wireguard') {
-    return genWireguardConfigs({ inbound, remark, hostOverride, fallbackHostname });
-  }
-  if (inbound.protocol === 'amneziawg') {
-    return genAmneziaWGConfigs({ inbound, remark, hostOverride, fallbackHostname });
-  }
-  return '';
-}
-
-// Per-peer wireguard fanout. Each peer gets its own link (or .conf
-// block) with an index-suffixed remark, joined by \r\n. Matches the
-// legacy genWireguardLinks / genWireguardConfigs exactly.
-export interface GenWireguardFanoutInput {
-  inbound: Inbound;
-  remark?: string;
-  hostOverride?: string;
-  fallbackHostname: string;
-}
-
-// WireGuard is multi-client: each client is one accepted peer. The canonical
-// store is settings.clients; legacy single-config inbounds (pre-migration) are
-// still rendered from settings.peers. Both carry the privateKey/allowedIPs/
-// preSharedKey/keepAlive the link and .conf need, so they project to the same
-// peer shape and reuse genWireguardLink/genWireguardConfig unchanged.
-function wgRenderPeers(settings: WireguardInboundSettings): WireguardInboundPeer[] {
-  const clients = settings.clients ?? [];
-  if (clients.length > 0) {
-    return clients.map((c) => ({ ...c, publicKey: c.publicKey ?? '' }));
-  }
-  return settings.peers;
-}
-
-// Hosts reach wireguard/amneziawg as externalProxy entries (withHostEndpoints);
-// with none, every peer is advertised on the inbound's own address.
-function tunnelEndpoints(
-  inbound: Inbound,
-  addr: string,
-): Array<{ address: string; port: number; remark: string }> {
-  const externals = inbound.streamSettings?.externalProxy;
-  if (Array.isArray(externals) && externals.length > 0) {
-    return externals.map((ep) => ({ address: ep.dest, port: ep.port, remark: ep.remark ?? '' }));
-  }
-  return [{ address: addr, port: inbound.port, remark: '' }];
-}
-
-function tunnelPeerRemark(
-  remark: string,
-  endpointRemark: string,
-  index: number,
-  peer: unknown,
-): string {
-  const base = [remark, endpointRemark].filter((x) => x.length > 0).join('-');
-  return `${base}-${index + 1}${wgPeerCommentSuffix(peer)}`;
-}
-
-function wireguardFanout(
-  input: GenWireguardFanoutInput,
-  render: (input: GenWireguardLinkInput) => string,
-): string[][] {
-  const { inbound, remark = '', hostOverride = '', fallbackHostname } = input;
-  if (inbound.protocol !== 'wireguard') return [];
-  const endpoints = tunnelEndpoints(inbound, resolveAddr(inbound, hostOverride, fallbackHostname));
-  const baseSettings = inbound.settings as WireguardInboundSettings;
-  const peers = wgRenderPeers(baseSettings);
-  const settings: WireguardInboundSettings = { ...baseSettings, peers };
-  return peers.map((p, i) =>
-    endpoints.map((e) =>
-      render({
-        settings,
-        address: e.address,
-        port: e.port,
-        remark: tunnelPeerRemark(remark, e.remark, i, p),
-        peerIndex: i,
-      }),
-    ),
-  );
-}
-
-// Per-peer lists with one entry per advertised endpoint (Host), peer-major.
-export function genWireguardPeerLinks(input: GenWireguardFanoutInput): string[][] {
-  return wireguardFanout(input, genWireguardLink);
-}
-
-export function genWireguardPeerConfigs(input: GenWireguardFanoutInput): string[][] {
-  return wireguardFanout(input, genWireguardConfig);
-}
-
-export function genWireguardLinks(input: GenWireguardFanoutInput): string {
-  return genWireguardPeerLinks(input).flat().join('\r\n');
-}
-
-export function genWireguardConfigs(input: GenWireguardFanoutInput): string {
-  return genWireguardPeerConfigs(input).flat().join('\r\n');
-}
-
-// Peer comments (#5168) are panel-side annotations; when present they ride
-// along in the share remark so the device is identifiable in client apps.
-function wgPeerCommentSuffix(peer: unknown): string {
-  const comment = (peer as { comment?: unknown })?.comment;
-  return typeof comment === 'string' && comment.trim() !== '' ? ` (${comment.trim()})` : '';
 }
 
 // Only the post-quantum key payloads outgrow a QR; the REALITY ML-KEM hint and the

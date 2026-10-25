@@ -5,9 +5,8 @@ import {
   amneziawgConfigFromLink,
   genAmneziaWGConfig,
   genAmneziaWGLink,
-  genAllLinks,
   genHysteriaLink,
-  genInboundLinks,
+  genLink,
   genShadowsocksLink,
   genTrojanLink,
   genTuicLink,
@@ -143,9 +142,7 @@ describe('XDRIVE share links', () => {
     const client = (raw as { settings: { clients: Array<{ id: string; email: string }> } }).settings
       .clients[0];
 
-    const entries = genAllLinks({ inbound, client, fallbackHostname: 'panel.example.test' });
-
-    expect(entries.map((e) => e.link)).toEqual(['']);
+    expect(genLink({ inbound, address: 'panel.example.test', client })).toBe('');
   });
 });
 
@@ -905,30 +902,6 @@ describe('preferPublicHost (loopback fallback)', () => {
   });
 });
 
-describe('genInboundLinks orchestrator', () => {
-  // Every full-inbound fixture should produce the same \r\n-joined link
-  // block at this baseline.
-  const fixtures = Object.entries(fullFixtures)
-    .map(([path, raw]): [string, Record<string, unknown>] => [
-      fixtureName(path),
-      raw as Record<string, unknown>,
-    ])
-    .sort(([a], [b]) => a.localeCompare(b));
-
-  for (const [name, raw] of fixtures) {
-    it(`${name}: byte-stable`, () => {
-      const typed = InboundSchema.parse(raw);
-      const block = genInboundLinks({
-        inbound: typed,
-        remark: 'parity-test',
-        hostOverride: 'override.test',
-        fallbackHostname: 'fallback.test',
-      });
-      expect(block).toMatchSnapshot();
-    });
-  }
-});
-
 describe('genShadowsocksLink', () => {
   const fixtures = fixturesForProtocol('shadowsocks');
   expect(fixtures.length, 'need at least one shadowsocks full-inbound fixture').toBeGreaterThan(0);
@@ -1413,21 +1386,20 @@ describe('genTuicLink', () => {
       },
     });
 
-    const entries = genAllLinks({
+    const externalProxy = inbound.streamSettings!.externalProxy![0];
+    const link = genLink({
       inbound,
-      remark: 'TUIC-Node',
+      address: externalProxy.dest,
+      port: externalProxy.port,
+      remark: 'TUIC-Node-US',
       client: {
         uuid: '11111111-2222-3333-4444-555555555555',
         password: 'secretpassword',
         email: 'user@tuic',
       },
-      fallbackHostname: 'panel.example.com',
+      externalProxy,
     });
 
-    expect(entries).toHaveLength(1);
-    expect(entries[0].remark).toBe('TUIC-Node-US');
-
-    const link = entries[0].link;
     expect(link).toContain(
       'tuic://11111111-2222-3333-4444-555555555555:secretpassword@host-us.example.com:9443',
     );

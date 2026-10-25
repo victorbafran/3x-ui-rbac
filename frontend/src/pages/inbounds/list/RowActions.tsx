@@ -109,6 +109,7 @@ export function buildRowActionsMenu({
 }
 
 export const ROW_ACTION_PERMISSION: Record<string, string> = {
+  export: 'clients.viewLinks',
   resetTraffic: 'inbounds.resetTraffic',
   delete: 'inbounds.delete',
   delAllClients: 'clients.delete',

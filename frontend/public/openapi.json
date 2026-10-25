@@ -3408,6 +3408,36 @@
         ],
         "type": "object"
       },
+      "InboundClientLinks": {
+        "description": "InboundClientLinks is one client's share links and tunnel configs on one inbound.",
+        "properties": {
+          "configs": {
+            "items": {
+              "$ref": "#/components/schemas/TunnelConfig"
+            },
+            "type": "array"
+          },
+          "email": {
+            "example": "alice",
+            "type": "string"
+          },
+          "links": {
+            "example": [
+              "vless://uuid@host:443?security=reality#alice"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "configs",
+          "email",
+          "links"
+        ],
+        "type": "object"
+      },
       "InboundFallback": {
         "properties": {
           "alpn": {
@@ -4968,6 +4998,59 @@
         ],
         "type": "object"
       },
+      "TunnelConfig": {
+        "description": "TunnelConfig is one WireGuard .conf, AmneziaWG .conf or TUIC Clash YAML of a\nclient, for one address it dials; Family is \"v6\"/\"v4\" behind an IPv6 entry server.",
+        "properties": {
+          "address": {
+            "example": "[2001:db8::1]",
+            "type": "string"
+          },
+          "email": {
+            "example": "alice",
+            "type": "string"
+          },
+          "endpoint": {
+            "example": "[2001:db8::1]:51820",
+            "type": "string"
+          },
+          "family": {
+            "example": "v6",
+            "type": "string"
+          },
+          "inboundId": {
+            "example": 3,
+            "type": "integer"
+          },
+          "port": {
+            "example": 51820,
+            "type": "integer"
+          },
+          "protocol": {
+            "example": "wireguard",
+            "type": "string"
+          },
+          "remark": {
+            "example": "WG - alice · IPv6",
+            "type": "string"
+          },
+          "text": {
+            "example": "[Interface]\nPrivateKey = ...\n[Peer]\nEndpoint = [2001:db8::1]:51820",
+            "type": "string"
+          }
+        },
+        "required": [
+          "address",
+          "email",
+          "endpoint",
+          "family",
+          "inboundId",
+          "port",
+          "protocol",
+          "remark",
+          "text"
+        ],
+        "type": "object"
+      },
       "User": {
         "description": "User represents a user account in the 3x-ui panel.",
         "properties": {
@@ -5603,6 +5686,76 @@
                   "obj": [
                     "vless://uuid@host:443?security=reality&...#Germany-alice",
                     "vmess://eyJ2IjoyLC..."
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/inbounds/{id}/links": {
+      "get": {
+        "tags": [
+          "Inbounds"
+        ],
+        "summary": "Return one entry per client of the inbound, in settings order: its share links and, for WireGuard, AmneziaWG and TUIC, its full config files, all rendered by the subscription engine. Behind an IPv6 entry server each address comes as its IPv6 variant, or an IPv6 and an IPv4 pair whose remarks carry the configured family marker. A reseller sharing the inbound sees only their own clients, and needs the clients.viewLinks switch, as the client windows' links do. Used by the panel's inbound info window and its \"Export links\" action.",
+        "operationId": "get_panel_api_inbounds_id_links",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Inbound ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/InboundClientLinks"
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": [
+                    {
+                      "configs": [
+                        {
+                          "address": "[2001:db8::1]",
+                          "email": "alice",
+                          "endpoint": "[2001:db8::1]:51820",
+                          "family": "v6",
+                          "inboundId": 3,
+                          "port": 51820,
+                          "protocol": "wireguard",
+                          "remark": "WG - alice · IPv6",
+                          "text": "[Interface]\nPrivateKey = ...\n[Peer]\nEndpoint = [2001:db8::1]:51820"
+                        }
+                      ],
+                      "email": "alice",
+                      "links": [
+                        "vless://uuid@host:443?security=reality#alice"
+                      ]
+                    }
                   ]
                 }
               }
@@ -11168,6 +11321,68 @@
                   "obj": {
                     "encryptedLink": "happ://crypt5/example"
                   }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/clients/tunnelConfigs/{id}": {
+      "get": {
+        "tags": [
+          "Clients"
+        ],
+        "summary": "Return the WireGuard .conf, AmneziaWG .conf and TUIC Clash YAML files of one client across every inbound it is attached to, one per advertised address, rendered by the subscription engine. Behind an IPv6 entry server family is \"v6\" or \"v4\" and the remark carries the configured family marker; otherwise family is empty. endpoint is empty for the inbound's own address and address:port for a Host or an entry server; when two configs of one inbound dial the same address:port, as Hosts naming one entry server do, each gets the Host's remark in parentheses, then #1, #2 while still alike. Empty array when the client has no such inbound.",
+        "operationId": "get_panel_api_clients_tunnelConfigs_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Stable client record ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/TunnelConfig"
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": [
+                    {
+                      "address": "[2001:db8::1]",
+                      "email": "alice",
+                      "endpoint": "[2001:db8::1]:51820",
+                      "family": "v6",
+                      "inboundId": 3,
+                      "port": 51820,
+                      "protocol": "wireguard",
+                      "remark": "WG - alice · IPv6",
+                      "text": "[Interface]\nPrivateKey = ...\n[Peer]\nEndpoint = [2001:db8::1]:51820"
+                    }
+                  ]
                 }
               }
             }

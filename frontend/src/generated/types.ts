@@ -773,6 +773,12 @@ export interface InboundClientIps {
   ips: unknown;
 }
 
+export interface InboundClientLinks {
+  configs: TunnelConfig[];
+  email: string;
+  links: string[];
+}
+
 export interface InboundFallback {
   alpn: string;
   childId: number;
@@ -1125,6 +1131,18 @@ export interface TuicServerSettings {
   sni?: string;
   udp_relay_mode: string;
   zero_rtt_handshake: boolean;
+}
+
+export interface TunnelConfig {
+  address: string;
+  email: string;
+  endpoint: string;
+  family: string;
+  inboundId: number;
+  port: number;
+  protocol: string;
+  remark: string;
+  text: string;
 }
 
 export interface User {

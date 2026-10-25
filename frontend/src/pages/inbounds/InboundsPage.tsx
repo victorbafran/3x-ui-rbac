@@ -25,21 +25,13 @@ import {
 import { HttpUtil, SizeFormatter, RandomUtil } from '@/utils';
 import { buildClonePayload } from '@/lib/xray/inbound-clone';
 import { NODE_ELIGIBLE_PROTOCOLS } from '@/lib/xray/node-protocols';
-import {
-  genAmneziaWGLinks,
-  genInboundLinks,
-  genWireguardLinks,
-  preferPublicHost,
-} from '@/lib/xray/inbound-link';
-import { inboundFromDb } from '@/lib/xray/inbound-from-db';
-import { Protocols } from '@/schemas/primitives';
+import { fetchInboundClientLinks, inboundLinksExport } from '@/hooks/useInboundLinks';
 import { coerceInboundJsonField, type DBInbound } from '@/models/dbinbound';
 import { useTheme } from '@/hooks/useTheme';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { useNodesQuery } from '@/api/queries/useNodesQuery';
 import { useHostsQuery } from '@/api/queries/useHostsQuery';
-import { withHostEndpoints } from '@/lib/hosts/host-link';
 import AppSidebar from '@/layouts/AppSidebar';
 const TextModal = lazy(() => import('@/components/feedback/TextModal'));
 import type { TextModalTab } from '@/components/feedback/TextModal';
@@ -112,7 +104,7 @@ export default function InboundsPage() {
   }, [messageApi]);
 
   const { nodes: nodesList, fetched: nodesFetched } = useNodesQuery();
-  // MTProto share links are generated from this list, so an empty one must mean
+  // The rows' host remarks come from this list, so an empty one must mean
   // "no hosts" and not "not loaded yet" — the gate below waits for it.
   const {
     hosts,
@@ -195,19 +187,6 @@ export default function InboundsPage() {
   const [promptHandler, setPromptHandler] = useState<
     ((value: string) => Promise<boolean | void> | boolean | void) | null
   >(null);
-
-  const hostOverrideFor = useCallback(
-    (dbInbound: DBInbound | null) => {
-      if (!dbInbound || dbInbound.nodeId == null) return '';
-      return nodesById.get(dbInbound.nodeId)?.address || '';
-    },
-    [nodesById],
-  );
-
-  const infoNodeAddress = useMemo(
-    () => hostOverrideFor(infoDbInbound),
-    [infoDbInbound, hostOverrideFor],
-  );
 
   const openText = useCallback(
     (opts: {
@@ -332,50 +311,24 @@ export default function InboundsPage() {
   }, []);
 
   const exportInboundLinks = useCallback(
-    (dbInbound: DBInbound) => {
-      const projected = checkFallback(dbInbound);
-      const hostOverride = hostOverrideFor(dbInbound);
-      const fallbackHostname = preferPublicHost(window.location.hostname, subSettings.publicHost);
-      const genInput = {
-        inbound: withHostEndpoints(
-          inboundFromDb(projected),
-          dbInbound.id,
-          hosts,
-          hostOverride,
-          fallbackHostname,
-        ),
-        remark: projected.remark,
-        hostOverride,
-        fallbackHostname,
-      };
-      const content = genInboundLinks(genInput);
-      const tabs: TextModalTab[] | undefined = projected.isWireguard
-        ? [
-            { key: 'config', label: t('pages.clients.config'), content },
-            {
-              key: 'links',
-              label: t('pages.clients.tabLinks'),
-              content: genWireguardLinks(genInput),
-            },
-          ]
-        : projected.protocol === Protocols.AMNEZIAWG
-          ? [
-              { key: 'config', label: t('pages.clients.config'), content },
-              {
-                key: 'links',
-                label: t('pages.clients.tabLinks'),
-                content: genAmneziaWGLinks(genInput),
-              },
-            ]
-          : undefined;
+    async (dbInbound: DBInbound) => {
+      const entries = await fetchInboundClientLinks(dbInbound.id);
+      const { content, configs, links } = inboundLinksExport(dbInbound.protocol, entries);
+      const tabs: TextModalTab[] | undefined =
+        configs === undefined
+          ? undefined
+          : [
+              { key: 'config', label: t('pages.clients.config'), content: configs },
+              { key: 'links', label: t('pages.clients.tabLinks'), content: links ?? '' },
+            ];
       openText({
         title: t('pages.inbounds.exportLinksTitle'),
         content,
-        fileName: projected.remark || 'inbound',
+        fileName: dbInbound.remark || 'inbound',
         tabs,
       });
     },
-    [checkFallback, hostOverrideFor, hosts, subSettings.publicHost, openText, t],
+    [openText, t],
   );
 
   const exportInboundClipboard = useCallback(
@@ -633,7 +586,6 @@ export default function InboundsPage() {
       const hydratingKeys: RowAction[] = [
         'edit',
         'showInfo',
-        'export',
         'subs',
         'clipboard',
         'clone',
@@ -655,7 +607,7 @@ export default function InboundsPage() {
           setInfoOpen(true);
           break;
         case 'export':
-          exportInboundLinks(target);
+          void exportInboundLinks(target);
           break;
         case 'subs':
           exportInboundSubs(target);
@@ -833,9 +785,7 @@ export default function InboundsPage() {
             ipLimitEnable={ipLimitEnable}
             tgBotEnable={tgBotEnable}
             subSettings={subSettings}
-            hosts={hosts}
             lastOnlineMap={lastOnlineMap}
-            nodeAddress={infoNodeAddress}
           />
         </LazyMount>
         <LazyMount when={attachOpen}>

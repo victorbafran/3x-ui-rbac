@@ -696,15 +696,35 @@ func (s *SubService) getSubs(subId string) ([]string, []string, int64, xray.Clie
 // keep per-inbound tunnel identity from settings. Dedups by email (#5134).
 // Backs the panel's "Export all inbound links" and matches client/QR pages.
 func (s *SubService) inboundLinks(inbound *model.Inbound) []string {
+	r, ok := s.renderInbound(inbound)
+	if !ok {
+		return nil
+	}
+	var out []string
+	for _, client := range r.clients {
+		out = append(out, r.links(s, client)...)
+	}
+	return out
+}
+
+// inboundRendering is one inbound made ready for its clients' raw links: its
+// distinct clients, the inbound projected through a fallback master, its hosts and fronts.
+type inboundRendering struct {
+	inbound *model.Inbound
+	clients []model.Client
+	hostEps []map[string]any
+	units   []frontUnit
+}
+
+func (s *SubService) renderInbound(inbound *model.Inbound) (inboundRendering, bool) {
 	clients, err := s.clientsForLinkExport(inbound)
 	if err != nil {
-		return nil
+		return inboundRendering{}, false
 	}
 	s.primeLinkClients(inbound.Id, clients, true)
 	s.projectThroughFallbackMaster(inbound)
-	hostEps := s.hostEndpoints(inbound, "raw")
-	units := s.frontUnits(inbound, rawEndpoints(inbound, hostEps))
-	var out []string
+	r := inboundRendering{inbound: inbound, hostEps: s.hostEndpoints(inbound, "raw")}
+	r.units = s.frontUnits(inbound, rawEndpoints(inbound, r.hostEps))
 	seen := make(map[string]struct{}, len(clients))
 	for _, client := range clients {
 		key := strings.ToLower(client.Email)
@@ -712,9 +732,13 @@ func (s *SubService) inboundLinks(inbound *model.Inbound) []string {
 			continue
 		}
 		seen[key] = struct{}{}
-		out = append(out, splitLinkLines(s.clientLink(inbound, client, hostEps, units))...)
+		r.clients = append(r.clients, client)
 	}
-	return out
+	return r, true
+}
+
+func (r inboundRendering) links(s *SubService, client model.Client) []string {
+	return splitLinkLines(s.clientLink(r.inbound, client, r.hostEps, r.units))
 }
 
 // AggregateTrafficByEmails resolves traffic for every email in one
@@ -1185,10 +1209,8 @@ func amneziaWGConfigText(server *amneziawg.ServerSettings, client *model.Client,
 		b.WriteString("DisableCookies = on\n")
 	}
 
-	// Peer field order follows wg-quick(8) and the panel's other two AmneziaWG
-	// emitters (genAmneziaWGConfig, buildAmneziaWGClientConfig); all three are
-	// independent implementations, so any drift here is invisible until a user
-	// compares a subscription link against a downloaded .conf.
+	// Peer field order follows wg-quick(8), as amneziaWGPanelConf and the frontend's
+	// genAmneziaWGConfig do; drift shows only when a user compares a link with a .conf.
 	fmt.Fprintf(&b, "\n# %s\n", remark)
 	b.WriteString("[Peer]\n")
 	fmt.Fprintf(&b, "PublicKey = %s\n", server.PublicKey)

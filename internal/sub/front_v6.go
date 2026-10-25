@@ -21,6 +21,14 @@ const (
 	remarkSuffixV4 = " · IPv4"
 	// epRemarkSuffix rides on an endpoint map to endpointRemark; never emitted.
 	epRemarkSuffix = "remarkSuffix"
+	// epFamily rides the same way: "v6" or "v4" on a front's endpoint, for the panel.
+	epFamily = "ipFamily"
+)
+
+// Families of a front's two renderings, as the panel's configs carry them.
+const (
+	familyV6 = "v6"
+	familyV4 = "v4"
 )
 
 // familyMarks tell a "both" front's two configs apart by subRemarkIPFamily, the
@@ -81,6 +89,7 @@ func twinTLSName(addr, address4 string) string {
 type ipVariant struct {
 	address string // replaces what resolveInboundAddress returns; "" keeps it
 	suffix  string // appended to every remark genRemark builds
+	family  string // familyV6 or familyV4 for a front's rendering, "" for the plain one
 }
 
 // frontUnit is one rendering of an inbound: a front's IPv6 one, or the plain one.
@@ -179,12 +188,12 @@ func (s *SubService) frontUnits(inbound *model.Inbound, eps []map[string]any) []
 			return nil
 		}
 		address4 := front.ipv4Address(address)
-		v6 := frontUnit{inbound: withTLSName(inbound, front.tlsName6(inbound, address4)), variant: ipVariant{address: front.address6}}
+		v6 := frontUnit{inbound: withTLSName(inbound, front.tlsName6(inbound, address4)), variant: ipVariant{address: front.address6, family: familyV6}}
 		if !front.both {
 			return []frontUnit{v6}
 		}
 		v6.variant.suffix = mark6
-		v4 := frontUnit{inbound: inbound, variant: ipVariant{suffix: mark4}}
+		v4 := frontUnit{inbound: inbound, variant: ipVariant{suffix: mark4, family: familyV4}}
 		if address4 != address {
 			v4.variant.address = address4
 		}
@@ -246,6 +255,7 @@ func (s *SubService) frontUnits(inbound *model.Inbound, eps []map[string]any) []
 func frontEndpoint(ep map[string]any, address6, tlsName string) map[string]any {
 	v6 := maps.Clone(ep)
 	v6["dest"] = address6
+	v6[epFamily] = familyV6
 	// It dials one family; a host's "ipv4" would make mihomo refuse to dial it.
 	delete(v6, "mihomoIpVersion")
 	withForcedTLSName(v6, tlsNameOf(tlsName))
@@ -256,6 +266,7 @@ func frontEndpoint(ep map[string]any, address6, tlsName string) map[string]any {
 // A family pin set for the IPv6 ep named would make mihomo refuse dest4, so it goes.
 func ipv4Endpoint(ep map[string]any, dest4, tlsName string) map[string]any {
 	v4 := maps.Clone(ep)
+	v4[epFamily] = familyV4
 	if dest, _ := ep["dest"].(string); dest != dest4 {
 		v4["dest"] = dest4
 		delete(v4, "mihomoIpVersion")

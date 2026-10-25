@@ -3,9 +3,47 @@ import { render, fireEvent } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { ThemeProvider } from '@/hooks/useTheme';
+import { keys } from '@/api/queryKeys';
+import type { AdminMe } from '@/generated/zod';
+import { queryClient as appQueryClient } from '@/queryClient';
 
 export function makeTestQueryClient() {
   return new QueryClient({ defaultOptions: { queries: { retry: false } } });
+}
+
+// The app's own cache rules, under which a result stays fresh for a while.
+export function appCacheQueryClient() {
+  return new QueryClient({ defaultOptions: appQueryClient.getDefaultOptions() });
+}
+
+const RESELLER_PERMISSIONS = [
+  'sections.inbounds',
+  'sections.clients',
+  'clients.create',
+  'clients.edit',
+  'clients.resetTraffic',
+  'clients.viewLinks',
+];
+
+// Signed in as a reseller, with the switches named turned off by their super_admin.
+export function resellerQueryClient(...switchedOff: string[]) {
+  const queryClient = makeTestQueryClient();
+  const me: AdminMe = {
+    id: 2,
+    username: 'reseller',
+    role: 'reseller',
+    permissions: Object.fromEntries(
+      RESELLER_PERMISSIONS.map((key) => [key, !switchedOff.includes(key)]),
+    ),
+    clientCount: 0,
+    expireAt: 0,
+    trafficQuota: 0,
+    usedUp: 0,
+    usedDown: 0,
+    usersLimit: 0,
+  };
+  queryClient.setQueryData(keys.admins.me(), me);
+  return queryClient;
 }
 
 export function renderWithProviders(ui: ReactElement, options?: { queryClient?: QueryClient }) {

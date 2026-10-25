@@ -21,6 +21,17 @@ func refuseForeign(c *gin.Context) {
 	c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"success": false, "msg": foreignMsg})
 }
 
+// refuseWithout answers 403, and reports true, when a caller below super_admin lacks
+// perm: a second switch a route's one Rule cannot name besides its own.
+func refuseWithout(c *gin.Context, perm string) bool {
+	actor := authz.Actor(c)
+	if actor == nil || actor.Role == model.RoleSuperAdmin || authz.Effective(actor).Has(perm) {
+		return false
+	}
+	c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"success": false, "msg": "missing permission: " + perm})
+	return true
+}
+
 // denyForeign reports true, and has already answered, when the body names an
 // inbound or a client the caller may not touch.
 func (a *ClientController) denyForeign(c *gin.Context, inboundIds []int, emails []string) bool {

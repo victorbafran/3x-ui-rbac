@@ -862,6 +862,25 @@ export const EXAMPLES: Record<string, unknown> = {
     "id": 0,
     "ips": null
   },
+  "InboundClientLinks": {
+    "configs": [
+      {
+        "address": "[2001:db8::1]",
+        "email": "alice",
+        "endpoint": "[2001:db8::1]:51820",
+        "family": "v6",
+        "inboundId": 3,
+        "port": 51820,
+        "protocol": "wireguard",
+        "remark": "WG - alice · IPv6",
+        "text": "[Interface]\nPrivateKey = ...\n[Peer]\nEndpoint = [2001:db8::1]:51820"
+      }
+    ],
+    "email": "alice",
+    "links": [
+      "vless://uuid@host:443?security=reality#alice"
+    ]
+  },
   "InboundFallback": {
     "alpn": "",
     "childId": 0,
@@ -1222,6 +1241,17 @@ export const EXAMPLES: Record<string, unknown> = {
     "sni": "",
     "udp_relay_mode": "",
     "zero_rtt_handshake": false
+  },
+  "TunnelConfig": {
+    "address": "[2001:db8::1]",
+    "email": "alice",
+    "endpoint": "[2001:db8::1]:51820",
+    "family": "v6",
+    "inboundId": 3,
+    "port": 51820,
+    "protocol": "wireguard",
+    "remark": "WG - alice · IPv6",
+    "text": "[Interface]\nPrivateKey = ...\n[Peer]\nEndpoint = [2001:db8::1]:51820"
   },
   "User": {
     "disabledReason": "",

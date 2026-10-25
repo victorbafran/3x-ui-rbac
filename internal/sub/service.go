@@ -98,6 +98,8 @@ type SubService struct {
 	// variant is set only while one IPv6/IPv4 rendering of an inbound runs.
 	fronts6 []front6
 	variant ipVariant
+	// remarkIPFamily is subRemarkIPFamily: how a front's pair is told apart by name.
+	remarkIPFamily string
 }
 
 // NewSubService creates a new subscription service with the given configuration.
@@ -272,6 +274,9 @@ func (s *SubService) loadRemarkSettings() {
 	}
 	if enabled, err := s.settingService.GetSubShowIdentityOnAllLinks(); err == nil && enabled {
 		s.showIdentityOnAllLinks = enabled
+	}
+	if mode, err := s.settingService.GetSubRemarkIPFamily(); err == nil {
+		s.remarkIPFamily = mode
 	}
 	if enabled, err := s.settingService.GetSubInfoNodeEnable(); err == nil && enabled {
 		s.subInfoNodeEnable = enabled
@@ -612,9 +617,7 @@ func (s *SubService) getSubs(subId string) ([]string, []string, int64, xray.Clie
 			// blank entry. Its credentials are carried separately instead, for
 			// the page a person opens rather than the list an app parses.
 			if inbound.Protocol == model.Cisco {
-				if login, ok := s.ciscoLoginFor(inbound, client); ok {
-					s.ciscoLogins = append(s.ciscoLogins, login)
-				}
+				s.ciscoLogins = append(s.ciscoLogins, s.ciscoLoginsFor(inbound, client)...)
 				emails = append(emails, client.Email)
 				seenEmails[client.Email] = struct{}{}
 				continue
@@ -3215,23 +3218,35 @@ type CiscoLogin struct {
 	Port     int    `json:"port"`
 	Username string `json:"username"`
 	Password string `json:"password"`
+	// Label tells a front's IPv6 and IPv4 logins apart, as config names are; "" for one.
+	Label string `json:"label,omitempty"`
 }
 
-// ciscoLoginFor reads one cisco client's credentials. The username is not the
-// email: ocserv's password file is colon-separated, so the colon in a
-// reseller's "a<adminId>:" namespace is substituted on the way in, and showing
-// the email here would hand the customer a login the server refuses.
-func (s *SubService) ciscoLoginFor(inbound *model.Inbound, client model.Client) (CiscoLogin, bool) {
+// ciscoLoginsFor is one cisco client's login per address its front hands out, IPv6 first.
+// The username is ocserv's, not the email: its colon-separated file rewrites a reseller's colon.
+func (s *SubService) ciscoLoginsFor(inbound *model.Inbound, client model.Client) []CiscoLogin {
 	if client.Password == "" {
-		return CiscoLogin{}, false
+		return nil
 	}
-	return CiscoLogin{
+	login := CiscoLogin{
 		Email:    client.Email,
 		Server:   s.resolveInboundAddress(inbound),
 		Port:     inbound.Port,
 		Username: ocserv.LoginFor(client.Email),
 		Password: client.Password,
-	}, true
+	}
+	front := s.frontNamed(login.Server)
+	if front == nil {
+		return []CiscoLogin{login}
+	}
+	v6, v4 := login, login
+	v6.Server, v4.Server = front.address6, front.ipv4Address(login.Server)
+	if !front.both {
+		return []CiscoLogin{v6}
+	}
+	mark6, mark4 := familyMarks(s.remarkIPFamily)
+	v6.Label, v4.Label = familyLabel(mark6), familyLabel(mark4)
+	return []CiscoLogin{v6, v4}
 }
 
 // OpenVPNProfile is one .ovpn file a customer can download, with the name and
@@ -3278,7 +3293,7 @@ func (s *SubService) openvpnProfileFor(inbound *model.Inbound, client model.Clie
 	// One file either way: "both" is a second remote the client tries first.
 	if front := s.frontNamed(address); front != nil {
 		if front.both {
-			address6 = front.address6
+			address, address6 = front.ipv4Address(address), front.address6
 		} else {
 			address = front.address6
 		}

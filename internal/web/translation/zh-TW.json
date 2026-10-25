@@ -1632,6 +1632,11 @@
       "remarkTemplateDesc": "設定後，這將取代每個訂閱連結的備註模型——使用變數標記撰寫您自己的格式（使用按鈕來插入）。留空則使用上方的模型。",
       "subShowIdentityOnAllLinks": "在每個連結上顯示身分",
       "subShowIdentityOnAllLinksDesc": "啟用後，{{EMAIL}} 與 {{USERNAME}} 會保留在每條訂閱正文備註中。用量相關變數仍僅出現在第一條連結。",
+      "subRemarkIPFamily": "區分入口伺服器的兩份設定",
+      "subRemarkIPFamilyDesc": "設為「兩者」的入口伺服器會給每位客戶兩份同名設定，IPv6 在前。這裡選的內容會加在每個名稱後面，用來區分它們。只設 IPv6 的伺服器只給一份設定，不加任何內容。",
+      "subRemarkIPFamilyOff": "不加入",
+      "subRemarkIPFamilyExample": "客戶看到：",
+      "subRemarkIPFamilySample": "🇩🇪 德國",
       "validation": {
         "pathLeadingSlash": "路徑必須以 / 開頭"
       },
@@ -2655,6 +2660,7 @@
       "noPorts": "目前沒有要轉送的連接埠",
       "address6Reached": "面板已透過 IPv6 連到這台伺服器",
       "address6Failed": "面板無法連到這個 IPv6 位址：{reason}",
+      "address6Check": "請檢查這台伺服器的 IPv6 網域：{reason}",
       "familyV6": "客戶使用 IPv6",
       "familyBoth": "客戶使用 IPv6 和 IPv4",
       "summary": {
@@ -2705,11 +2711,13 @@
         "toolHint": "兩者都會轉送所有入站，TCP 和 UDP 都包括。Backhaul 用下一個連接埠上的第二條通道承載 UDP；BackPack 在同一條通道裡承載，之後還能把每位客戶的真實位址交給面板。新增後不能變更。",
         "udpLegHint": "Backhaul 還會在這台伺服器上用連接埠 {port} 承載 UDP 通道。請在它的防火牆上把兩個連接埠都打開。",
         "publicName": "公開名稱",
-        "publicNameHint": "客戶透過這台伺服器連線時輸入的名稱，指向它的位址。在伊朗境內，沒有名稱的 TLS 交握無法完成，所以 cisco 客戶需要它。入站表單隨後會把它作為分享位址推薦，讓連結指向這裡。",
+        "publicNameHint": "客戶透過這台伺服器連線時輸入的名稱，只用 A 記錄指向它的 IPv4 位址。在伊朗境內，沒有名稱的 TLS 交握無法完成，所以 cisco 客戶需要它。入站表單隨後會把它作為分享位址推薦，讓連結指向這裡。",
         "address6": "IPv6 位址",
         "address6Hint": "設定完成後會自動從伺服器上讀取，請留空。只有面板選錯位址時才需要手動填寫。",
+        "publicName6": "IPv6 網域",
+        "publicName6Hint": "選填。一個只有 AAAA 記錄、指向上方 IPv6 位址的名稱；IPv6 客戶拿到的是這個名稱而不是裸位址，所以更換 IPv6 只需改 DNS。請把它和公開名稱分開，公開名稱應只有 A 記錄。",
         "ipFamily": "客戶連線方式",
-        "ipFamilyHint": "在 MCI 這類會卡住陌生 IPv4 位址的網路上，IPv6 能通過。選「兩者」時，每位客戶會拿到這台伺服器的兩份設定，IPv6 在前；OpenVPN 設定檔先試 IPv6，再試 IPv4。cisco 仍走 IPv4，因為它的憑證是為名稱簽發的。",
+        "ipFamilyHint": "在 MCI 這類會卡住陌生 IPv4 位址的網路上，IPv6 能通過。選「兩者」時，每位客戶會拿到這台伺服器的兩份設定和兩個 cisco 登入，IPv6 在前；OpenVPN 設定檔先試 IPv6，再試 IPv4。",
         "ipFamilyBoth": "兩者",
         "ipFamilyNoAddress": "在面板取得這台伺服器的 IPv6 位址之前，客戶仍然使用 IPv4。"
       },

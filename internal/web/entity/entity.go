@@ -19,6 +19,14 @@ type Msg struct {
 	Obj     any    `json:"obj"`
 }
 
+// How a front's IPv6 and IPv4 configs are told apart in their names: " · IPv6"
+// and " · IPv4", " 1" and " 2" (the IPv6 one first), or not at all.
+const (
+	SubRemarkIPFamilyVersion = "version"
+	SubRemarkIPFamilyNumber  = "number"
+	SubRemarkIPFamilyOff     = "off"
+)
+
 type AllSetting struct {
 	WebListen             string `json:"webListen" form:"webListen"`
 	WebDomain             string `json:"webDomain" form:"webDomain"`
@@ -37,6 +45,7 @@ type AllSetting struct {
 	TrafficDiff                int    `json:"trafficDiff" form:"trafficDiff" validate:"gte=0,lte=100"`
 	RemarkTemplate             string `json:"remarkTemplate" form:"remarkTemplate"`
 	SubShowIdentityOnAllLinks  bool   `json:"subShowIdentityOnAllLinks" form:"subShowIdentityOnAllLinks"`
+	SubRemarkIPFamily          string `json:"subRemarkIPFamily" form:"subRemarkIPFamily"`
 	SubInfoNodeEnable          bool   `json:"subInfoNodeEnable" form:"subInfoNodeEnable"`
 	SubInfoLines               string `json:"subInfoLines" form:"subInfoLines"`
 	SubCalendarExpireInclusive bool   `json:"subCalendarExpireInclusive" form:"subCalendarExpireInclusive"`
@@ -375,6 +384,15 @@ func (s *AllSetting) CheckValid() error {
 	// entry silently leaves the address unprotected until a trusted network gets banned.
 	if err := CheckNetipAddrOrPrefixList(s.IpLimitAllowlist, "IP limit allowlist entry is not valid:"); err != nil {
 		return err
+	}
+
+	switch s.SubRemarkIPFamily {
+	case "":
+		s.SubRemarkIPFamily = SubRemarkIPFamilyVersion
+	case SubRemarkIPFamilyVersion, SubRemarkIPFamilyNumber, SubRemarkIPFamilyOff:
+	default:
+		return common.NewErrorf("subRemarkIPFamily is %s, %s or %s, not %q",
+			SubRemarkIPFamilyVersion, SubRemarkIPFamilyNumber, SubRemarkIPFamilyOff, s.SubRemarkIPFamily)
 	}
 
 	_, err := time.LoadLocation(s.TimeLocation)

@@ -3,7 +3,7 @@ import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-libra
 import { MemoryRouter } from 'react-router';
 
 import type { Relay } from '@/schemas/relay';
-import { renderWithProviders } from './test-utils';
+import { fieldLabels, renderWithProviders } from './test-utils';
 
 // The page carries the app sidebar, which needs a router and the settings
 // query; neither is what these tests are about.
@@ -45,6 +45,7 @@ const relays: Relay[] = [
     forwardedPorts: [],
     proxyPorts: [],
     publicName: '',
+    publicName6: '',
     address6: '',
     ipFamily: '',
     address6Error: '',
@@ -80,6 +81,7 @@ const relays: Relay[] = [
     forwardedPorts: [],
     proxyPorts: [],
     publicName: '',
+    publicName6: '',
     address6: '',
     ipFamily: '',
     address6Error: '',
@@ -441,6 +443,58 @@ describe('the exit servers page', () => {
     cleanup();
   });
 
+  // The IPv6 name turns a changed IPv6 into a DNS edit; an edit that dropped it
+  // would put every customer back on the bare literal.
+  it('keeps an entry server’s IPv6 domain through an edit', async () => {
+    rows = [{ ...front, address6: '2001:db8::5', ipFamily: 'both', publicName6: 'v6.example.ir' }];
+    updateMut.mutateAsync.mockClear();
+    renderWithProviders(
+      <MemoryRouter>
+        <RelaysPage />
+      </MemoryRouter>,
+    );
+    fireEvent.click(
+      document.querySelector('[aria-label="edit"]')?.closest('button') as HTMLElement,
+    );
+    await act(async () => {});
+    const name6 = document.querySelector('#publicName6') as HTMLInputElement;
+    expect(name6.value).toBe('v6.example.ir');
+    fireEvent.change(name6, { target: { value: 'v6b.example.ir' } });
+    await act(async () => {});
+    fireEvent.click(document.querySelector('.ant-modal-footer .ant-btn-primary') as HTMLElement);
+    await waitFor(() =>
+      expect(updateMut.mutateAsync).toHaveBeenCalledWith({
+        id: 3,
+        payload: expect.objectContaining({
+          publicName: 'tun.example.ir',
+          publicName6: 'v6b.example.ir',
+          address6: '2001:db8::5',
+        }),
+      }),
+    );
+    cleanup();
+  });
+
+  // The IPv6 name sits under the IPv6 address it points at, apart from the
+  // IPv4 name, and says it wants an AAAA record only.
+  it('asks for the IPv6 domain right after the IPv6 address, only for an entry server', async () => {
+    rows = relays;
+    renderWithProviders(
+      <MemoryRouter>
+        <RelaysPage />
+      </MemoryRouter>,
+    );
+    fireEvent.click(screen.getByText('Add a server'));
+    await act(async () => {});
+    expect(document.querySelector('#publicName6')).toBeNull();
+    fireEvent.click(screen.getByText('Entry for customers'));
+    await act(async () => {});
+    const labels = fieldLabels();
+    expect(labels[labels.indexOf('IPv6 address') + 1]).toBe('IPv6 domain');
+    expect(document.body.textContent).toContain('only an AAAA record');
+    cleanup();
+  });
+
   // Choosing IPv6 before the panel has the address changes nothing for
   // customers yet, and the form says so rather than letting it look done.
   it('says customers stay on IPv4 until the panel has the IPv6 address', async () => {
@@ -521,6 +575,81 @@ describe('the exit servers page', () => {
       'Until the panel has this server’s IPv6 address, customers keep getting IPv4.',
     );
     expect(row(6).textContent).not.toContain('Customers get');
+    cleanup();
+  });
+
+  // The row is where the operator checks which name IPv6 customers are handed.
+  it('shows an entry server’s IPv6 domain beside its IPv6 address', () => {
+    rows = [{ ...front, address6: '2001:db8::5', ipFamily: 'both', publicName6: 'v6.example.ir' }];
+    renderWithProviders(
+      <MemoryRouter>
+        <RelaysPage />
+      </MemoryRouter>,
+    );
+    const row = document.querySelector('tr[data-row-key="3"]') as HTMLElement;
+    expect(row.textContent).toContain('203.0.113.9 · tun.example.ir');
+    expect(row.textContent).toContain('IPv6 2001:db8::5 · v6.example.ir');
+    cleanup();
+  });
+
+  // The hint says to leave the IPv6 address blank for setup to read, so a saved
+  // domain must show before the address is known, or if reading it fails.
+  it('shows a saved IPv6 domain while the IPv6 address is still unknown', () => {
+    rows = [
+      { ...front, publicName6: 'v6.example.ir' },
+      { ...front, id: 4, name: 'iran-2', ipFamily: 'both', publicName6: 'v6b.example.ir' },
+    ];
+    renderWithProviders(
+      <MemoryRouter>
+        <RelaysPage />
+      </MemoryRouter>,
+    );
+    const row = (id: number) => document.querySelector(`tr[data-row-key="${id}"]`) as HTMLElement;
+    expect(row(3).textContent).toContain('IPv6 v6.example.ir');
+    expect(row(4).textContent).toContain('IPv6 v6b.example.ir');
+    expect(row(4).textContent).toContain(
+      'Until the panel has this server’s IPv6 address, customers keep getting IPv4.',
+    );
+    cleanup();
+  });
+
+  // A DNS record that does not fit is fixed at the DNS provider; labelled
+  // "could not reach", it sent the operator after an address that answers.
+  it('tells a problem with the IPv6 domain apart from an IPv6 the panel could not reach', () => {
+    rows = [
+      {
+        ...front,
+        address6: '2001:db8::5',
+        ipFamily: 'both',
+        publicName6: 'v6.example.ir',
+        address6Error: 'v6.example.ir also has an A record, so some clients will use IPv4',
+      },
+      {
+        ...front,
+        id: 4,
+        name: 'iran-2',
+        address6: '2001:db8::6',
+        ipFamily: 'both',
+        publicName6: 'v6.example.ir',
+        address6Error: 'dial tcp [2001:db8::6]:443: i/o timeout; v6.example.ir has no AAAA record',
+      },
+    ];
+    renderWithProviders(
+      <MemoryRouter>
+        <RelaysPage />
+      </MemoryRouter>,
+    );
+    const row = (id: number) => document.querySelector(`tr[data-row-key="${id}"]`) as HTMLElement;
+    expect(row(3).textContent).toContain(
+      'Check this server’s IPv6 domain: v6.example.ir also has an A record',
+    );
+    expect(row(3).textContent).not.toContain('could not reach');
+    expect(row(3).querySelector('[aria-label="warning"]')).not.toBeNull();
+    // The backend puts a failed dial first; that is still an address that did not answer.
+    expect(row(4).textContent).toContain(
+      'The panel could not reach this IPv6 address: dial tcp [2001:db8::6]:443',
+    );
+    expect(row(4).textContent).not.toContain('Check this server’s IPv6 domain');
     cleanup();
   });
 

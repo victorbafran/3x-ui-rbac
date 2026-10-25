@@ -1632,6 +1632,11 @@
       "remarkTemplateDesc": "Jika diatur, ini menggantikan model catatan untuk setiap tautan langganan — tulis format Anda sendiri dengan token variabel (gunakan tombol untuk menyisipkannya). Biarkan kosong untuk memakai model di atas.",
       "subShowIdentityOnAllLinks": "Tampilkan identitas di setiap tautan",
       "subShowIdentityOnAllLinksDesc": "Jika diaktifkan, {{EMAIL}} dan {{USERNAME}} tetap ada di catatan setiap tautan isi langganan. Token penggunaan tetap hanya di tautan pertama.",
+      "subRemarkIPFamily": "Bedakan dua konfigurasi server masuk",
+      "subRemarkIPFamilyDesc": "Server masuk yang diatur ke Keduanya memberi setiap pelanggan dua konfigurasi dengan nama yang sama, IPv6 lebih dulu. Inilah yang ditambahkan ke tiap nama untuk membedakannya. Server yang hanya IPv6 memberi satu konfigurasi tanpa tambahan.",
+      "subRemarkIPFamilyOff": "Tanpa tambahan",
+      "subRemarkIPFamilyExample": "Pelanggan melihat:",
+      "subRemarkIPFamilySample": "🇩🇪 Jerman",
       "validation": {
         "pathLeadingSlash": "Path harus diawali dengan /"
       },
@@ -2655,6 +2660,7 @@
       "noPorts": "Belum ada port untuk diteruskan",
       "address6Reached": "Panel berhasil menjangkau server ini lewat IPv6",
       "address6Failed": "Panel tidak dapat menjangkau alamat IPv6 ini: {reason}",
+      "address6Check": "Periksa domain IPv6 server ini: {reason}",
       "familyV6": "Pelanggan mendapat IPv6",
       "familyBoth": "Pelanggan mendapat IPv6 dan IPv4",
       "summary": {
@@ -2705,11 +2711,13 @@
         "toolHint": "Keduanya meneruskan semua inbound, TCP dan UDP. Backhaul membawa UDP lewat terowongan kedua di port berikutnya; BackPack membawanya di terowongan yang sama dan nanti bisa memberi panel alamat asli setiap pelanggan. Tidak bisa diubah setelah ditambahkan.",
         "udpLegHint": "Backhaul juga memakai port {port} di server ini untuk terowongan UDP. Buka keduanya di firewall-nya.",
         "publicName": "Nama publik",
-        "publicNameHint": "Nama yang diketik pelanggan untuk terhubung lewat server ini, diarahkan ke alamatnya. Jabat tangan TLS dari dalam Iran tidak selesai tanpa nama, jadi pelanggan cisco memerlukannya. Formulir inbound lalu menawarkannya sebagai alamat bagikan, agar tautan mengarah ke sini.",
+        "publicNameHint": "Nama yang diketik pelanggan untuk terhubung lewat server ini, diarahkan ke alamat IPv4-nya dengan record A saja. Jabat tangan TLS dari dalam Iran tidak selesai tanpa nama, jadi pelanggan cisco memerlukannya. Formulir inbound lalu menawarkannya sebagai alamat bagikan, agar tautan mengarah ke sini.",
         "address6": "Alamat IPv6",
         "address6Hint": "Ditemukan di server secara otomatis setelah penyiapan; biarkan kosong. Isi sendiri hanya jika panel memilih alamat yang salah.",
+        "publicName6": "Domain IPv6",
+        "publicName6Hint": "Opsional. Nama yang hanya punya record AAAA, diarahkan ke alamat IPv6 di atas; pelanggan IPv6 menerimanya sebagai ganti alamat mentah, jadi mengganti IPv6 cukup dengan mengubah DNS. Pisahkan dari nama publik, yang seharusnya hanya punya record A.",
         "ipFamily": "Pelanggan terhubung lewat",
-        "ipFamilyHint": "IPv6 lolos di jaringan yang menghambat alamat IPv4 tak dikenal, seperti MCI. Keduanya memberi setiap pelanggan dua konfigurasi untuk server ini, IPv6 lebih dulu; profil OpenVPN mencoba IPv6 lalu IPv4. Cisco tetap di IPv4: sertifikatnya untuk sebuah nama.",
+        "ipFamilyHint": "IPv6 lolos di jaringan yang menghambat alamat IPv4 tak dikenal, seperti MCI. Keduanya memberi setiap pelanggan dua konfigurasi dan dua login cisco untuk server ini, IPv6 lebih dulu; profil OpenVPN mencoba IPv6 lalu IPv4.",
         "ipFamilyBoth": "Keduanya",
         "ipFamilyNoAddress": "Selama panel belum punya alamat IPv6 server ini, pelanggan tetap mendapat IPv4."
       },

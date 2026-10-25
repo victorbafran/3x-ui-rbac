@@ -11,9 +11,11 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 	"github.com/mhsanaei/3x-ui/v3/internal/tuic"
+	"github.com/mhsanaei/3x-ui/v3/internal/util/certreload"
+	"github.com/mhsanaei/3x-ui/v3/internal/web/entity"
 )
 
-// Appended to the two configs a front set to "both" hands out per address.
+// Appended by default to the two configs a front set to "both" hands out per address.
 const (
 	remarkSuffixV6 = " · IPv6"
 	remarkSuffixV4 = " · IPv4"
@@ -21,11 +23,58 @@ const (
 	epRemarkSuffix = "remarkSuffix"
 )
 
+// familyMarks tell a "both" front's two configs apart by subRemarkIPFamily, the
+// IPv6 one's first; an unknown mode is the default, the family's name.
+func familyMarks(mode string) (mark6, mark4 string) {
+	switch mode {
+	case entity.SubRemarkIPFamilyNumber:
+		return " 1", " 2"
+	case entity.SubRemarkIPFamilyOff:
+		return "", ""
+	}
+	return remarkSuffixV6, remarkSuffixV4
+}
+
+// familyLabel is a mark standing on its own, as over a cisco login.
+func familyLabel(mark string) string {
+	return strings.TrimLeft(mark, " ·")
+}
+
 // front6 is an entry server whose customers are given its IPv6 address.
 type front6 struct {
-	names    []string // Address and PublicName, spelled by addressKey
-	address6 string   // bracketed, the shape a custom IPv6 share address has
+	names    []string // every spelling of the front, either family, by addressKey
+	names4   []string // Address and PublicName, by addressKey
+	address6 string   // what its IPv6 configs dial: PublicName6, else Address6 bracketed
+	name6    string   // PublicName6, a name whose only record is AAAA; "" for none
+	address4 string   // what an IPv4 twin dials instead of an IPv6: PublicName, else Address
 	both     bool
+}
+
+// ipv4Address is what addr's IPv4 twin dials: addr itself when it already is the
+// front's IPv4 name or address, else the front's IPv4 one.
+func (f *front6) ipv4Address(addr string) string {
+	if slices.Contains(f.names4, addressKey(addr)) {
+		return addr
+	}
+	return f.address4
+}
+
+// tlsName6 is the IPv6 configs' TLS name: the IPv6 name when the inbound's own
+// certificate covers it or address4 gives none, else address4's, as the twin's.
+func (f *front6) tlsName6(inbound *model.Inbound, address4 string) string {
+	if f.name6 != "" && (tlsNameOf(address4) == "" || certreload.Covers(ownCertFile(inbound), f.name6)) {
+		return f.name6
+	}
+	return address4
+}
+
+// twinTLSName is the name addr's IPv4 twin dialling address4 must write in: addr's
+// when address4 is a bare IP, which gives none; "" when address4 gives its own.
+func twinTLSName(addr, address4 string) string {
+	if tlsNameOf(address4) != "" {
+		return ""
+	}
+	return tlsNameOf(addr)
 }
 
 // ipVariant is how one rendering of an inbound differs from its plain one.
@@ -69,10 +118,20 @@ func frontFromRelay(r model.Relay) (front6, bool) {
 		return front6{}, false
 	}
 	f := front6{address6: "[" + ip.String() + "]", both: r.IPFamily == "both"}
+	if name6 := strings.TrimSuffix(strings.TrimSpace(r.PublicName6), "."); name6 != "" {
+		f.address6, f.name6 = name6, name6
+	}
+	if f.address4 = strings.TrimSpace(r.PublicName); f.address4 == "" {
+		f.address4 = strings.TrimSpace(r.Address)
+	}
 	for _, name := range []string{r.Address, r.PublicName} {
 		if key := addressKey(name); key != "" {
-			f.names = append(f.names, key)
+			f.names4 = append(f.names4, key)
 		}
+	}
+	f.names = append(slices.Clone(f.names4), ip.String())
+	if f.name6 != "" {
+		f.names = append(f.names, addressKey(f.name6))
 	}
 	return f, true
 }
@@ -107,23 +166,32 @@ func (s *SubService) frontUnits(inbound *model.Inbound, eps []map[string]any) []
 	if len(s.fronts6) == 0 {
 		return nil
 	}
-	// Cisco's certificate is for a name AnyConnect refuses as an IPv6 literal;
-	// OpenVPN gets its IPv6 as a second remote in openvpnProfileFor instead.
+	// No config of their own, but JSON makes a stray one a pair would double:
+	// ciscoLoginsFor and openvpnProfileFor follow the front instead.
 	if inbound.Protocol == model.Cisco || inbound.Protocol == model.OpenVPN {
 		return nil
 	}
+	mark6, mark4 := familyMarks(s.remarkIPFamily)
 	if len(eps) == 0 {
 		address := s.resolveInboundAddress(inbound)
 		front := s.frontNamed(address)
 		if front == nil {
 			return nil
 		}
-		v6 := frontUnit{inbound: withTLSName(inbound, address), variant: ipVariant{address: front.address6}}
+		address4 := front.ipv4Address(address)
+		v6 := frontUnit{inbound: withTLSName(inbound, front.tlsName6(inbound, address4)), variant: ipVariant{address: front.address6}}
 		if !front.both {
 			return []frontUnit{v6}
 		}
-		v6.variant.suffix = remarkSuffixV6
-		return []frontUnit{v6, {inbound: inbound, variant: ipVariant{suffix: remarkSuffixV4}}}
+		v6.variant.suffix = mark6
+		v4 := frontUnit{inbound: inbound, variant: ipVariant{suffix: mark4}}
+		if address4 != address {
+			v4.variant.address = address4
+		}
+		if name := twinTLSName(address, address4); name != "" {
+			v4.inbound = withTLSName(inbound, name)
+		}
+		return []frontUnit{v6, v4}
 	}
 
 	// Endpoints keep the operator's order, each IPv6 copy in its place and its
@@ -136,8 +204,9 @@ func (s *SubService) frontUnits(inbound *model.Inbound, eps []map[string]any) []
 		}
 		units = append(units, frontUnit{inbound: ib, eps: []map[string]any{ep}})
 	}
-	// One copy per spelling: each carries the TLS name its own address gave.
-	copies := map[string]*model.Inbound{}
+	// One copy per spelling and family: each carries the TLS name tlsName6 or
+	// twinTLSName gives its address.
+	copies, copies4 := map[string]*model.Inbound{}, map[string]*model.Inbound{}
 	for _, ep := range eps {
 		dest, _ := ep["dest"].(string)
 		front := s.frontNamed(dest)
@@ -145,17 +214,26 @@ func (s *SubService) frontUnits(inbound *model.Inbound, eps []map[string]any) []
 			add(inbound, ep)
 			continue
 		}
+		dest4 := front.ipv4Address(dest)
 		v6Inbound, seen := copies[dest]
 		if !seen {
-			v6Inbound = withTLSName(inbound, dest)
+			v6Inbound = withTLSName(inbound, front.tlsName6(inbound, dest4))
 			copies[dest] = v6Inbound
 		}
-		add(v6Inbound, frontEndpoint(ep, dest, front))
-		if front.both {
-			v4 := maps.Clone(ep)
-			v4[epRemarkSuffix] = remarkSuffixV4
-			add(inbound, v4)
+		v6 := frontEndpoint(ep, front.address6, front.tlsName6(inbound, dest4))
+		if !front.both {
+			add(v6Inbound, v6)
+			continue
 		}
+		add(v6Inbound, withMark(v6, mark6))
+		v4Inbound, name4 := inbound, twinTLSName(dest, dest4)
+		if name4 != "" {
+			if v4Inbound = copies4[dest]; v4Inbound == nil {
+				v4Inbound = withTLSName(inbound, name4)
+				copies4[dest] = v4Inbound
+			}
+		}
+		add(v4Inbound, withMark(ipv4Endpoint(ep, dest4, name4), mark4))
 	}
 	if len(copies) == 0 {
 		return nil
@@ -163,24 +241,46 @@ func (s *SubService) frontUnits(inbound *model.Inbound, eps []map[string]any) []
 	return units
 }
 
-// frontEndpoint is ep's IPv6 copy. An endpoint that forces TLS keeps the name
-// its address gave it, since an IPv6 literal gives none.
-func frontEndpoint(ep map[string]any, dest string, front *front6) map[string]any {
+// frontEndpoint is ep's IPv6 copy, dialling address6. An endpoint that forces TLS
+// sends tlsName's name, since an IPv6 literal gives none.
+func frontEndpoint(ep map[string]any, address6, tlsName string) map[string]any {
 	v6 := maps.Clone(ep)
-	v6["dest"] = front.address6
-	// A literal has one family; a host's "ipv4" would make mihomo refuse to dial it.
+	v6["dest"] = address6
+	// It dials one family; a host's "ipv4" would make mihomo refuse to dial it.
 	delete(v6, "mihomoIpVersion")
-	if front.both {
-		v6[epRemarkSuffix] = remarkSuffixV6
-	}
-	if forceTls, _ := ep["forceTls"].(string); forceTls == "tls" {
-		if _, has := externalProxySNI(ep); !has {
-			if name := tlsNameOf(dest); name != "" {
-				v6["sni"] = name
-			}
-		}
-	}
+	withForcedTLSName(v6, tlsNameOf(tlsName))
 	return v6
+}
+
+// ipv4Endpoint is ep's IPv4 twin, dialling dest4 and forcing twinTLSName's name.
+// A family pin set for the IPv6 ep named would make mihomo refuse dest4, so it goes.
+func ipv4Endpoint(ep map[string]any, dest4, tlsName string) map[string]any {
+	v4 := maps.Clone(ep)
+	if dest, _ := ep["dest"].(string); dest != dest4 {
+		v4["dest"] = dest4
+		delete(v4, "mihomoIpVersion")
+	}
+	withForcedTLSName(v4, tlsName)
+	return v4
+}
+
+// withForcedTLSName gives an endpoint forcing TLS name as its SNI, unless it
+// names one itself; the stream it forces TLS onto has no name to give.
+func withForcedTLSName(ep map[string]any, name string) {
+	if forceTls, _ := ep["forceTls"].(string); forceTls != "tls" || name == "" {
+		return
+	}
+	if _, has := externalProxySNI(ep); !has {
+		ep["sni"] = name
+	}
+}
+
+// withMark puts the mark endpointRemark appends on ep; "off" leaves the name alone.
+func withMark(ep map[string]any, mark string) map[string]any {
+	if mark != "" {
+		ep[epRemarkSuffix] = mark
+	}
+	return ep
 }
 
 // tlsNameOf is the SNI a client derives from addr: the host name, none for an IP.

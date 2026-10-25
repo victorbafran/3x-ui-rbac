@@ -1632,6 +1632,11 @@
       "remarkTemplateDesc": "Khi được đặt, mục này thay thế mô hình ghi chú cho mọi liên kết đăng ký — hãy viết định dạng riêng của bạn bằng các token biến (dùng nút để chèn chúng). Để trống để dùng mô hình ở trên.",
       "subShowIdentityOnAllLinks": "Hiện danh tính trên mọi liên kết",
       "subShowIdentityOnAllLinksDesc": "Khi bật, {{EMAIL}} và {{USERNAME}} vẫn có trong ghi chú mọi liên kết phần thân đăng ký. Token dung lượng vẫn chỉ ở liên kết đầu tiên.",
+      "subRemarkIPFamily": "Phân biệt hai cấu hình của máy chủ lối vào",
+      "subRemarkIPFamilyDesc": "Máy chủ lối vào đặt “Cả hai” cho mỗi khách hai cấu hình cùng một tên, IPv6 trước. Đây là phần được thêm vào mỗi tên để phân biệt chúng. Máy chủ chỉ đặt IPv6 cho một cấu hình, không thêm gì.",
+      "subRemarkIPFamilyOff": "Không thêm gì",
+      "subRemarkIPFamilyExample": "Khách sẽ thấy:",
+      "subRemarkIPFamilySample": "🇩🇪 Đức",
       "validation": {
         "pathLeadingSlash": "Đường dẫn phải bắt đầu bằng /"
       },
@@ -2655,6 +2660,7 @@
       "noPorts": "Chưa có cổng nào để chuyển tiếp",
       "address6Reached": "Bảng điều khiển đã tới được máy chủ này qua IPv6",
       "address6Failed": "Bảng điều khiển không tới được địa chỉ IPv6 này: {reason}",
+      "address6Check": "Hãy kiểm tra tên miền IPv6 của máy chủ này: {reason}",
       "familyV6": "Khách nhận IPv6",
       "familyBoth": "Khách nhận IPv6 và IPv4",
       "summary": {
@@ -2705,11 +2711,13 @@
         "toolHint": "Cả hai đều chuyển mọi inbound, cả TCP lẫn UDP. Backhaul chở UDP trên đường hầm thứ hai ở cổng kế tiếp; BackPack chở nó trên cùng đường hầm và sau này có thể đưa địa chỉ thật của từng khách cho bảng điều khiển. Không đổi được sau khi thêm.",
         "udpLegHint": "Backhaul cũng dùng cổng {port} trên máy chủ này cho đường hầm UDP. Hãy mở cả hai trên tường lửa của nó.",
         "publicName": "Tên công khai",
-        "publicNameHint": "Tên khách gõ vào để kết nối qua máy chủ này, trỏ tới địa chỉ của nó. Bắt tay TLS từ bên trong Iran không hoàn tất nếu thiếu tên, nên khách dùng cisco cần nó. Biểu mẫu inbound sau đó gợi ý nó làm địa chỉ chia sẻ để các liên kết trỏ về đây.",
+        "publicNameHint": "Tên khách gõ vào để kết nối qua máy chủ này, chỉ trỏ tới địa chỉ IPv4 của nó bằng bản ghi A. Bắt tay TLS từ bên trong Iran không hoàn tất nếu thiếu tên, nên khách dùng cisco cần nó. Biểu mẫu inbound sau đó gợi ý nó làm địa chỉ chia sẻ để các liên kết trỏ về đây.",
         "address6": "Địa chỉ IPv6",
         "address6Hint": "Được tự động tìm thấy trên máy chủ sau khi cài đặt; hãy để trống. Chỉ tự nhập khi bảng điều khiển chọn sai địa chỉ.",
+        "publicName6": "Tên miền IPv6",
+        "publicName6Hint": "Không bắt buộc. Một tên chỉ có bản ghi AAAA, trỏ tới địa chỉ IPv6 ở trên; khách dùng IPv6 nhận tên này thay cho địa chỉ trần, nên đổi IPv6 chỉ là sửa DNS. Hãy tách nó khỏi tên công khai, vốn chỉ nên có bản ghi A.",
         "ipFamily": "Khách kết nối qua",
-        "ipFamilyHint": "IPv6 đi qua được những mạng làm nghẽn địa chỉ IPv4 lạ, như MCI. “Cả hai” cho mỗi khách hai cấu hình cho máy chủ này, IPv6 trước; hồ sơ OpenVPN thử IPv6 rồi mới tới IPv4. Cisco vẫn dùng IPv4: chứng chỉ của nó cấp cho một tên.",
+        "ipFamilyHint": "IPv6 đi qua được những mạng làm nghẽn địa chỉ IPv4 lạ, như MCI. “Cả hai” cho mỗi khách hai cấu hình và hai đăng nhập cisco cho máy chủ này, IPv6 trước; hồ sơ OpenVPN thử IPv6 rồi mới tới IPv4.",
         "ipFamilyBoth": "Cả hai",
         "ipFamilyNoAddress": "Cho tới khi bảng điều khiển có địa chỉ IPv6 của máy chủ này, khách vẫn nhận IPv4."
       },

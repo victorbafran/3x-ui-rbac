@@ -10,6 +10,8 @@ export interface CiscoLogin {
   port?: number;
   username?: string;
   password?: string;
+  // Tells a front's IPv6 and IPv4 logins apart, as their config names are.
+  label?: string;
 }
 
 // Where a customer gets a client that speaks AnyConnect. The V2Ray-family
@@ -76,11 +78,18 @@ export default function SubCiscoCard({ logins }: { logins: CiscoLogin[] }) {
       </Space>
 
       {logins.map((login, idx) => (
-        <dl className="sub-cisco-rows" key={`${login.email ?? 'cisco'}-${idx}`}>
-          <Row label={t('subscription.ciscoServer')} value={serverValue(login)} onCopy={copy} />
-          <Row label={t('subscription.ciscoUsername')} value={login.username} onCopy={copy} />
-          <Row label={t('subscription.ciscoPassword')} value={login.password} onCopy={copy} />
-        </dl>
+        <div className="sub-cisco-login" key={`${login.email ?? 'cisco'}-${idx}`}>
+          {login.label ? (
+            <Typography.Text strong>
+              <bdi>{login.label}</bdi>
+            </Typography.Text>
+          ) : null}
+          <dl className="sub-cisco-rows">
+            <Row label={t('subscription.ciscoServer')} value={serverValue(login)} onCopy={copy} />
+            <Row label={t('subscription.ciscoUsername')} value={login.username} onCopy={copy} />
+            <Row label={t('subscription.ciscoPassword')} value={login.password} onCopy={copy} />
+          </dl>
+        </div>
       ))}
     </Card>
   );

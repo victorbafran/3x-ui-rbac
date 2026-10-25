@@ -167,9 +167,9 @@ func (s *SubClashService) getClash(subId string, host string, legacy bool) (stri
 		}},
 		"rules": []string{"MATCH,PROXY"},
 	}
-	// The original Clash core leaves ipv6 off unless the profile turns it on,
-	// and with it off it refuses to dial even a literal IPv6 server.
-	if slices.ContainsFunc(proxies, dialsIPv6Literal) {
+	// The original Clash core leaves ipv6 off unless the profile turns it on, and
+	// with it off dials no IPv6 server: neither a literal nor an AAAA-only name.
+	if slices.ContainsFunc(proxies, subReq.dialsIPv6) {
 		config["ipv6"] = true
 	}
 
@@ -337,10 +337,16 @@ func fallbackProxyName(proxy map[string]any, idx int) string {
 	return fmt.Sprintf("proxy-%d", idx+1)
 }
 
-func dialsIPv6Literal(proxy map[string]any) bool {
+// dialsIPv6 is a proxy that needs IPv6: it dials a literal, or a front's IPv6 name.
+func (s *SubService) dialsIPv6(proxy map[string]any) bool {
 	server, _ := proxy["server"].(string)
-	addr, err := netip.ParseAddr(strings.Trim(server, "[]"))
-	return err == nil && addr.Is6() && !addr.Is4In6()
+	if addr, err := netip.ParseAddr(strings.Trim(server, "[]")); err == nil {
+		return addr.Is6() && !addr.Is4In6()
+	}
+	key := addressKey(server)
+	return slices.ContainsFunc(s.fronts6, func(f front6) bool {
+		return f.name6 != "" && addressKey(f.name6) == key
+	})
 }
 
 // clientProxies is one client's proxies on an inbound, a front's IPv6 ones first.

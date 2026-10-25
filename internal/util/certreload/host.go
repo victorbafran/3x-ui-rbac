@@ -10,16 +10,8 @@ import (
 // Host is the name a certificate file was issued for that a client can dial:
 // the first domain with a dot and no wildcard, else the first public IP.
 func Host(certFile string) string {
-	raw, err := os.ReadFile(certFile)
-	if err != nil {
-		return ""
-	}
-	block, _ := pem.Decode(raw)
-	if block == nil {
-		return ""
-	}
-	leaf, err := x509.ParseCertificate(block.Bytes)
-	if err != nil {
+	leaf := readLeaf(certFile)
+	if leaf == nil {
 		return ""
 	}
 	for _, name := range leaf.DNSNames {
@@ -33,4 +25,30 @@ func Host(certFile string) string {
 		}
 	}
 	return ""
+}
+
+// Covers reports whether the certificate in certFile is valid for name, as a
+// client checking it would decide, wildcards included.
+func Covers(certFile, name string) bool {
+	leaf := readLeaf(certFile)
+	return leaf != nil && name != "" && leaf.VerifyHostname(name) == nil
+}
+
+func readLeaf(certFile string) *x509.Certificate {
+	if strings.TrimSpace(certFile) == "" {
+		return nil
+	}
+	raw, err := os.ReadFile(certFile)
+	if err != nil {
+		return nil
+	}
+	block, _ := pem.Decode(raw)
+	if block == nil {
+		return nil
+	}
+	leaf, err := x509.ParseCertificate(block.Bytes)
+	if err != nil {
+		return nil
+	}
+	return leaf
 }

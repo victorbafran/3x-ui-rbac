@@ -79,7 +79,8 @@ func TestAConfigWithNoAddressGoesToThePanel(t *testing.T) {
 func TestAnInboundWithItsOwnCertificateGoesToItsName(t *testing.T) {
 	initSubDB(t)
 	saveSetting(t, "webCertFile", panelCert(t, "ger.example.ir"))
-	own := panelCert(t, "212.example.ir")
+	// Forward slashes: a Windows path pasted into JSON would carry bare backslashes.
+	own := filepath.ToSlash(panelCert(t, "212.example.ir"))
 	tlsStream := `{"network":"tcp","security":"tls","tlsSettings":{"certificates":[{"certificateFile":"` + own + `"}]}}`
 	for _, tc := range []struct {
 		why  string

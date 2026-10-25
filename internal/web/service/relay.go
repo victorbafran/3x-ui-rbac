@@ -103,6 +103,9 @@ type RelayRequest struct {
 	// IPFamily is what its customers get: "" IPv4, "v6" or "both".
 	Address6 string `json:"address6"`
 	IPFamily string `json:"ipFamily"`
+	// PublicName6 is a name whose only record is AAAA to the front's IPv6,
+	// which its IPv6 configs then carry; PublicName stays the IPv4 one.
+	PublicName6 string `json:"publicName6"`
 }
 
 // List returns every relay with the state of its tunnel.
@@ -334,6 +337,7 @@ func editableFields(updated *model.Relay) map[string]any {
 		fields["transport"] = updated.Transport
 		fields["public_name"] = updated.PublicName
 		fields["address6"] = updated.Address6
+		fields["public_name6"] = updated.PublicName6
 		fields["ip_family"] = updated.IPFamily
 		fields["address6_error"] = updated.Address6Error
 	}
@@ -425,9 +429,7 @@ func (s *RelayService) fillFront(r *model.Relay, req RelayRequest, base *model.R
 	}
 	r.Tunnel = string(tool)
 
-	// The same rules as an inbound's share address, because that is where
-	// this name ends up: a host or an address, no scheme and no port.
-	name, err := normalizeInboundShareHost(strings.ToLower(strings.TrimSuffix(strings.TrimSpace(req.PublicName), ".")))
+	name, err := normalizeFrontName(req.PublicName)
 	if err != nil {
 		return fmt.Errorf("the public name %q is not a host name: %w", req.PublicName, err)
 	}
@@ -464,6 +466,12 @@ func (s *RelayService) fillFront(r *model.Relay, req RelayRequest, base *model.R
 		r.TunnelToken = base.TunnelToken
 	}
 	return nil
+}
+
+// normalizeFrontName holds a front's names to an inbound's share-address rules,
+// since that is where they end up: a host or an address, no scheme, no port.
+func normalizeFrontName(raw string) (string, error) {
+	return normalizeInboundShareHost(strings.ToLower(strings.TrimSuffix(strings.TrimSpace(raw), ".")))
 }
 
 // enrollAndProvision is the slow half, run behind the operator's save. Every

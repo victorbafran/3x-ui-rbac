@@ -1632,6 +1632,11 @@
       "remarkTemplateDesc": "Ayarlandığında, her abonelik bağlantısının açıklama modelinin yerini alır — değişken belirteçleriyle kendi formatınızı yazın (eklemek için düğmeyi kullanın). Yukarıdaki modeli kullanmak için boş bırakın.",
       "subShowIdentityOnAllLinks": "Kimliği her bağlantıda göster",
       "subShowIdentityOnAllLinksDesc": "Etkinleştirildiğinde {{EMAIL}} ve {{USERNAME}} abonelik gövdesindeki her bağlantı notunda kalır. Kullanım jetonları yine yalnızca ilk bağlantıda görünür.",
+      "subRemarkIPFamily": "Giriş sunucusunun iki yapılandırmasını ayırt et",
+      "subRemarkIPFamilyDesc": "“İkisi” olarak ayarlanmış bir giriş sunucusu her müşteriye aynı adla iki yapılandırma verir, önce IPv6. Bunları ayırt etmek için her ada eklenen budur. Yalnızca IPv6 olan bir sunucu tek yapılandırma verir, hiçbir şey eklenmez.",
+      "subRemarkIPFamilyOff": "Hiçbir şey eklenmez",
+      "subRemarkIPFamilyExample": "Müşteriler şunu görür:",
+      "subRemarkIPFamilySample": "🇩🇪 Almanya",
       "validation": {
         "pathLeadingSlash": "Yol / ile başlamalıdır"
       },
@@ -2655,6 +2660,7 @@
       "noPorts": "Henüz yönlendirilecek port yok",
       "address6Reached": "Panel bu sunucuya IPv6 üzerinden ulaştı",
       "address6Failed": "Panel bu IPv6 adresine ulaşamadı: {reason}",
+      "address6Check": "Bu sunucunun IPv6 alan adını kontrol edin: {reason}",
       "familyV6": "Müşteriler IPv6 alır",
       "familyBoth": "Müşteriler IPv6 ve IPv4 alır",
       "summary": {
@@ -2705,11 +2711,13 @@
         "toolHint": "İkisi de her gelen bağlantıyı TCP ve UDP olarak taşır. Backhaul UDP’yi bir sonraki porttaki ikinci bir tünelde taşır; BackPack aynı tünelde taşır ve ileride panele her müşterinin gerçek adresini iletebilir. Eklendikten sonra değişmez.",
         "udpLegHint": "Backhaul bu sunucuda UDP tüneli için {port} portunu da kullanır. Güvenlik duvarında ikisini de açın.",
         "publicName": "Genel ad",
-        "publicNameHint": "Müşterilerin bu sunucu üzerinden bağlanmak için yazdığı ad; bu sunucunun adresini gösterir. İran içinden bir TLS el sıkışması ad olmadan tamamlanmaz, bu yüzden cisco müşterilerinin buna ihtiyacı vardır. Gelen bağlantı formu bunu paylaşım adresi olarak önerir, böylece bağlantılar buraya işaret eder.",
+        "publicNameHint": "Müşterilerin bu sunucu üzerinden bağlanmak için yazdığı ad; yalnızca bir A kaydıyla bu sunucunun IPv4 adresini gösterir. İran içinden bir TLS el sıkışması ad olmadan tamamlanmaz, bu yüzden cisco müşterilerinin buna ihtiyacı vardır. Gelen bağlantı formu bunu paylaşım adresi olarak önerir, böylece bağlantılar buraya işaret eder.",
         "address6": "IPv6 adresi",
         "address6Hint": "Kurulumdan sonra sunucuda otomatik olarak bulunur; boş bırakın. Yalnızca panel yanlış adresi seçtiyse kendiniz yazın.",
+        "publicName6": "IPv6 alan adı",
+        "publicName6Hint": "İsteğe bağlı. Yukarıdaki IPv6 adresini gösteren, yalnızca AAAA kaydı olan bir ad; IPv6 müşterileri çıplak adres yerine bunu alır, böylece IPv6’yı değiştirmek bir DNS düzenlemesi olur. Yalnızca A kaydı olması gereken genel addan ayrı tutun.",
         "ipFamily": "Müşterilerin bağlandığı yol",
-        "ipFamilyHint": "IPv6, MCI gibi bilinmeyen IPv4 adreslerini tıkayan ağlardan geçer. “İkisi” her müşteriye bu sunucu için iki yapılandırma verir, önce IPv6; bir OpenVPN profili önce IPv6’yı, sonra IPv4’ü dener. Cisco IPv4’te kalır: sertifikası bir ad için düzenlenmiştir.",
+        "ipFamilyHint": "IPv6, MCI gibi bilinmeyen IPv4 adreslerini tıkayan ağlardan geçer. “İkisi” her müşteriye bu sunucu için iki yapılandırma ve iki cisco girişi verir, önce IPv6; bir OpenVPN profili önce IPv6’yı, sonra IPv4’ü dener.",
         "ipFamilyBoth": "İkisi",
         "ipFamilyNoAddress": "Panel bu sunucunun IPv6 adresini öğrenene kadar müşteriler IPv4 almaya devam eder."
       },

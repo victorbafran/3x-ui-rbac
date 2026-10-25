@@ -40,27 +40,60 @@ func TestAFrontsIPv6IsCheckedAndStoredBare(t *testing.T) {
 	}
 }
 
+// The IPv6 name lands in every IPv6 config, so it is held to what a phone can
+// resolve; an address typed here would hide that the field wants a name.
+func TestAFrontsIPv6NameIsANameInOneSpelling(t *testing.T) {
+	s := &RelayService{}
+	req := frontRequest("2001:db8::1", "both")
+	req.PublicName6 = " V6.Example.COM. "
+	r, err := s.rowFrom(req, nil)
+	if err != nil || r.PublicName6 != "v6.example.com" {
+		t.Errorf("stored the IPv6 name %q with error %v; want v6.example.com", r.PublicName6, err)
+	}
+	// Each refusal says where the typed value does belong: the IPv6 field takes no IPv4.
+	const (
+		isIPv6 = "is an address; the address goes in the IPv6 field, and here a name whose only record is AAAA to it"
+		isIPv4 = "is an IPv4 address; the front's IPv4 goes in its address or public name, and here a name whose only record is AAAA to its IPv6"
+	)
+	for bad, why := range map[string]string{
+		"2001:db8::1":            `the IPv6 name "2001:db8::1" ` + isIPv6,
+		"[2001:db8::1]":          `the IPv6 name "[2001:db8::1]" ` + isIPv6,
+		"198.51.100.5":           `the IPv6 name "198.51.100.5" ` + isIPv4,
+		"https://v6.example.com": "is not a host name",
+		"v6.example.com:443":     "is not a host name",
+	} {
+		req.PublicName6 = bad
+		if _, err := s.rowFrom(req, nil); err == nil || !strings.Contains(err.Error(), why) {
+			t.Errorf("IPv6 name %q got %v; want it refused as %q", bad, err, why)
+		}
+	}
+}
+
 // An exit carries no customer, so the fields are dropped rather than refused.
 func TestAnExitIgnoresTheIPv6Fields(t *testing.T) {
-	r, err := (&RelayService{}).rowFrom(RelayRequest{Name: "nl", Address: "198.51.100.1", Address6: "fd00::1", IPFamily: "dual"}, nil)
+	r, err := (&RelayService{}).rowFrom(RelayRequest{
+		Name: "nl", Address: "198.51.100.1", Address6: "fd00::1", PublicName6: "2001:db8::1", IPFamily: "dual",
+	}, nil)
 	if err != nil {
 		t.Fatalf("an exit was refused over fields it does not have: %v", err)
 	}
-	if r.Address6 != "" || r.IPFamily != "" || r.Address6Error != "" {
-		t.Errorf("an exit stored address6 %q family %q error %q", r.Address6, r.IPFamily, r.Address6Error)
+	if r.Address6 != "" || r.PublicName6 != "" || r.IPFamily != "" || r.Address6Error != "" {
+		t.Errorf("an exit stored address6 %q name %q family %q error %q", r.Address6, r.PublicName6, r.IPFamily, r.Address6Error)
 	}
-	for _, col := range []string{"address6", "ip_family", "address6_error"} {
+	for _, col := range []string{"address6", "public_name6", "ip_family", "address6_error"} {
 		if _, ok := editableFields(r)[col]; ok {
 			t.Errorf("an edit of an exit writes %s", col)
 		}
 	}
 }
 
-// An edit once dropped public_name; these are written, and the reach note
-// follows the address it was about.
+// An edit once dropped public_name; these are written, and the note follows
+// the address and the IPv6 name it was about.
 func TestAnEditWritesTheFrontsIPv6Choice(t *testing.T) {
 	s := &RelayService{}
-	base, err := s.rowFrom(frontRequest("2001:db8::1", ""), nil)
+	req := frontRequest("2001:db8::1", "")
+	req.PublicName6 = "v6.example.com"
+	base, err := s.rowFrom(req, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -68,33 +101,50 @@ func TestAnEditWritesTheFrontsIPv6Choice(t *testing.T) {
 		t.Errorf("a typed address that nothing has dialled carries %q; want %q", base.Address6Error, address6NotChecked)
 	}
 	// A verdict the panel reached: an edit that keeps the address must keep it too.
-	const lastVerdict = "no answer from [2001:db8::1]:443 within 5s"
+	const lastVerdict = "v6.example.com also has an A record, so some clients will use IPv4"
 	base.Address6Error = lastVerdict
 
 	for name, tc := range map[string]struct {
-		address6, family, wantErr string
+		address6, name6, family, wantErr string
 	}{
-		"same address, new family": {"2001:db8::1", "v6", lastVerdict},
-		"a new address":            {"2001:db8::2", "both", address6NotChecked},
-		"cleared":                  {"", "", ""},
+		"same address and name, new family": {"2001:db8::1", "v6.example.com", "v6", lastVerdict},
+		"same address, a new name":          {"2001:db8::1", "ipv6.example.com", "v6", address6NotChecked},
+		"same address, the name cleared":    {"2001:db8::1", "", "v6", address6NotChecked},
+		"a new address":                     {"2001:db8::2", "v6.example.com", "both", address6NotChecked},
+		"cleared":                           {"", "", "", ""},
 	} {
-		edited, err := s.rowFrom(frontRequest(tc.address6, tc.family), base)
+		req := frontRequest(tc.address6, tc.family)
+		req.PublicName6 = tc.name6
+		edited, err := s.rowFrom(req, base)
 		if err != nil {
 			t.Fatalf("%s: %v", name, err)
 		}
 		f := editableFields(edited)
-		if f["address6"] != tc.address6 || f["ip_family"] != tc.family || f["address6_error"] != tc.wantErr {
-			t.Errorf("%s: the edit writes address6 %v family %v error %v; want %q %q %q",
-				name, f["address6"], f["ip_family"], f["address6_error"], tc.address6, tc.family, tc.wantErr)
+		if f["address6"] != tc.address6 || f["public_name6"] != tc.name6 || f["ip_family"] != tc.family || f["address6_error"] != tc.wantErr {
+			t.Errorf("%s: the edit writes address6 %v name %v family %v error %v; want %q %q %q %q", name,
+				f["address6"], f["public_name6"], f["ip_family"], f["address6_error"], tc.address6, tc.name6, tc.family, tc.wantErr)
 		}
 	}
 }
 
+// fakeFrontIPv6 also refuses a name lookup: a front with no IPv6 name has
+// nothing to resolve, and fakeFrontName6 stands in when it has one.
 func fakeFrontIPv6(t *testing.T, discover func(context.Context, relay.Credentials) (string, error), reach func(context.Context, string, int) string) {
 	t.Helper()
-	savedDiscover, savedReach := discoverFrontIPv6, reachFrontIPv6
+	savedDiscover, savedReach, savedName6 := discoverFrontIPv6, reachFrontIPv6, checkFrontName6
 	discoverFrontIPv6, reachFrontIPv6 = discover, reach
-	t.Cleanup(func() { discoverFrontIPv6, reachFrontIPv6 = savedDiscover, savedReach })
+	checkFrontName6 = func(_ context.Context, name, _ string) string {
+		t.Errorf("looked up the IPv6 name %q", name)
+		return ""
+	}
+	t.Cleanup(func() { discoverFrontIPv6, reachFrontIPv6, checkFrontName6 = savedDiscover, savedReach, savedName6 })
+}
+
+func fakeFrontName6(t *testing.T, check func(ctx context.Context, name, address6 string) string) {
+	t.Helper()
+	saved := checkFrontName6
+	checkFrontName6 = check
+	t.Cleanup(func() { checkFrontName6 = saved })
 }
 
 func neverDiscover(t *testing.T) func(context.Context, relay.Credentials) (string, error) {
@@ -229,6 +279,75 @@ func TestAnAddressTypedDuringTheCheckIsKept(t *testing.T) {
 			t.Errorf("stored address6 %q error %q; want the typed 2001:db8::77 unchecked", got.Address6, got.Address6Error)
 		}
 	})
+}
+
+func nameTheFront(t *testing.T, name6 string) model.Relay {
+	t.Helper()
+	if err := database.GetDB().Model(&model.Relay{}).Where("name = ?", "us").Update("public_name6", name6).Error; err != nil {
+		t.Fatal(err)
+	}
+	return readRelay(t, "us")
+}
+
+const name6AlsoA = "v6.example.com also has an A record, so some clients will use IPv4"
+
+// A name with an A record, or no AAAA for the address, sends phones elsewhere;
+// the row says so beside the dial's verdict and the front stays ready.
+func TestTheIPv6NameIsResolvedAgainstTheAddressItServes(t *testing.T) {
+	t.Run("a typed address", func(t *testing.T) {
+		seedIPv6Front(t, model.RelayFront, "2001:db8::1", address6NotChecked)
+		front := nameTheFront(t, "v6.example.com")
+		const noAnswer = "no answer from [2001:db8::1]:443 within 5s"
+		fakeFrontIPv6(t, neverDiscover(t), func(context.Context, string, int) string { return noAnswer })
+		var asked string
+		fakeFrontName6(t, func(_ context.Context, name, address6 string) string {
+			asked = name + " for " + address6
+			return name6AlsoA
+		})
+		(&RelayService{}).refreshFrontIPv6(front)
+		got := readRelay(t, "us")
+		if asked != "v6.example.com for 2001:db8::1" {
+			t.Errorf("checked %q; want v6.example.com for 2001:db8::1", asked)
+		}
+		if got.Address6Error != noAnswer+"; "+name6AlsoA || got.Status != RelayReady || got.LastError != "" {
+			t.Errorf("stored error %q status %q last error %q; want both notes on a ready front", got.Address6Error, got.Status, got.LastError)
+		}
+	})
+	t.Run("an address read off the server", func(t *testing.T) {
+		seedIPv6Front(t, model.RelayFront, "", "")
+		front := nameTheFront(t, "v6.example.com")
+		fakeFrontIPv6(t,
+			func(context.Context, relay.Credentials) (string, error) { return "2a01:4f8:c17:1234::1", nil },
+			func(context.Context, string, int) string { return "" })
+		var asked string
+		fakeFrontName6(t, func(_ context.Context, _, address6 string) string { asked = address6; return "" })
+		(&RelayService{}).refreshFrontIPv6(front)
+		if asked != "2a01:4f8:c17:1234::1" {
+			t.Errorf("the name was checked against %q; want the address just read, 2a01:4f8:c17:1234::1", asked)
+		}
+		if got := readRelay(t, "us"); got.Address6Error != "" {
+			t.Errorf("a reached address with a fitting name stored %q", got.Address6Error)
+		}
+	})
+}
+
+// A name typed while the check runs is the operator's, so the verdict about
+// the one it replaced is dropped.
+func TestANameTypedDuringTheCheckIsKept(t *testing.T) {
+	seedIPv6Front(t, model.RelayFront, "2001:db8::1", address6NotChecked)
+	front := nameTheFront(t, "v6.example.com")
+	fakeFrontIPv6(t, neverDiscover(t), func(context.Context, string, int) string { return "" })
+	fakeFrontName6(t, func(context.Context, string, string) string {
+		if err := database.GetDB().Model(&model.Relay{}).Where("name = ?", "us").
+			Updates(map[string]any{"public_name6": "ipv6.example.com", "address6_error": address6NotChecked}).Error; err != nil {
+			t.Fatal(err)
+		}
+		return name6AlsoA
+	})
+	(&RelayService{}).refreshFrontIPv6(front)
+	if got := readRelay(t, "us"); got.PublicName6 != "ipv6.example.com" || got.Address6Error != address6NotChecked {
+		t.Errorf("stored name %q error %q; want the typed ipv6.example.com unchecked", got.PublicName6, got.Address6Error)
+	}
 }
 
 func fakeProbe(t *testing.T, budget time.Duration, reach func(context.Context, relay.Server) (relay.Reachability, error)) {

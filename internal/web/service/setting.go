@@ -82,6 +82,7 @@ var defaultValueMap = map[string]string{
 	"trafficDiff":                 "0",
 	"remarkTemplate":              DefaultRemarkTemplate,
 	"subShowIdentityOnAllLinks":   "false",
+	"subRemarkIPFamily":           entity.SubRemarkIPFamilyVersion,
 	"subInfoNodeEnable":           "false",
 	"subInfoLines":                "",
 	"subCalendarExpireInclusive":  "false",
@@ -343,6 +344,8 @@ func (s *SettingService) GetAllSetting() (*entity.AllSetting, error) {
 		allSetting.SubProfileMode = ""
 	}
 	allSetting.SubProfileMode = effectiveSubProfileMode(allSetting.SubProfileMode, allSetting.SubProfileUrl)
+	// The page shows the mode subscriptions use, never one its save would refuse.
+	allSetting.SubRemarkIPFamily = effectiveSubRemarkIPFamily(allSetting.SubRemarkIPFamily)
 	return allSetting, nil
 }
 
@@ -762,6 +765,22 @@ func (s *SettingService) GetRemarkTemplate() (string, error) {
 
 func (s *SettingService) GetSubShowIdentityOnAllLinks() (bool, error) {
 	return s.getBool("subShowIdentityOnAllLinks")
+}
+
+// GetSubRemarkIPFamily is how the two configs of a front set to both are told
+// apart; a stored value outside the three, say from a restore, reads as the default.
+func (s *SettingService) GetSubRemarkIPFamily() (string, error) {
+	value, err := s.getString("subRemarkIPFamily")
+	return effectiveSubRemarkIPFamily(value), err
+}
+
+// effectiveSubRemarkIPFamily is value when it is one of the three, else the default.
+func effectiveSubRemarkIPFamily(value string) string {
+	switch value {
+	case entity.SubRemarkIPFamilyNumber, entity.SubRemarkIPFamilyOff:
+		return value
+	}
+	return entity.SubRemarkIPFamilyVersion
 }
 
 func (s *SettingService) GetSubInfoNodeEnable() (bool, error) {

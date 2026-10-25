@@ -16,8 +16,8 @@ type Profile struct {
 	// Address is what the customer's client connects to: a hostname when the
 	// operator has one, the server's address otherwise.
 	Address string
-	// Address6 is a front's IPv6, written as a remote ahead of Address so the
-	// client tries it first and falls back; "" when there is none.
+	// Address6 is a front's IPv6 or its AAAA-only name, a remote ahead of Address
+	// so the client tries it first and falls back; "" when there is none.
 	Address6 string
 	// Label names the file for them, which is what their client shows in its
 	// list of connections.

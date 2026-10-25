@@ -1632,6 +1632,11 @@
       "remarkTemplateDesc": "Cuando se define, esto reemplaza el modelo de notas para cada enlace de suscripción — escribe tu propio formato con los tokens de variable (usa el botón para insertarlos). Déjalo vacío para usar el modelo anterior.",
       "subShowIdentityOnAllLinks": "Mostrar identidad en cada enlace",
       "subShowIdentityOnAllLinksDesc": "Si está activado, {{EMAIL}} y {{USERNAME}} permanecen en la nota de cada enlace del cuerpo de la suscripción. Los tokens de uso siguen solo en el primer enlace.",
+      "subRemarkIPFamily": "Distinguir las dos configuraciones de un servidor de entrada",
+      "subRemarkIPFamilyDesc": "Un servidor de entrada en «Ambas» da a cada cliente dos configuraciones con el mismo nombre, primero la IPv6. Esto es lo que se añade a cada nombre para distinguirlas. Un servidor solo en IPv6 da una configuración, sin añadir nada.",
+      "subRemarkIPFamilyOff": "Nada añadido",
+      "subRemarkIPFamilyExample": "Los clientes ven:",
+      "subRemarkIPFamilySample": "🇩🇪 Alemania",
       "validation": {
         "pathLeadingSlash": "La ruta debe comenzar con /"
       },
@@ -2655,6 +2660,7 @@
       "noPorts": "Aún no hay puertos que reenviar",
       "address6Reached": "El panel llegó a este servidor por IPv6",
       "address6Failed": "El panel no pudo llegar a esta dirección IPv6: {reason}",
+      "address6Check": "Revisa el dominio IPv6 de este servidor: {reason}",
       "familyV6": "Los clientes reciben IPv6",
       "familyBoth": "Los clientes reciben IPv6 e IPv4",
       "summary": {
@@ -2705,11 +2711,13 @@
         "toolHint": "Las dos llevan todos los inbounds, TCP y UDP. Backhaul lleva el UDP en un segundo túnel en el puerto siguiente; BackPack lo lleva en el mismo túnel y más adelante puede pasar al panel la dirección real de cada cliente. No se cambia después de añadirlo.",
         "udpLegHint": "Backhaul también usa el puerto {port} de este servidor para el túnel UDP. Abre los dos en su cortafuegos.",
         "publicName": "Nombre público",
-        "publicNameHint": "El nombre que escriben los clientes para conectarse a través de este servidor, apuntado a su dirección. Un saludo TLS desde Irán no se completa sin un nombre, así que los clientes cisco lo necesitan. El formulario del inbound lo ofrece luego como dirección de compartición, para que los enlaces apunten aquí.",
+        "publicNameHint": "El nombre que escriben los clientes para conectarse a través de este servidor, apuntado a su dirección IPv4 con solo un registro A. Un saludo TLS desde Irán no se completa sin un nombre, así que los clientes cisco lo necesitan. El formulario del inbound lo ofrece luego como dirección de compartición, para que los enlaces apunten aquí.",
         "address6": "Dirección IPv6",
         "address6Hint": "El panel la obtiene del servidor automáticamente tras la configuración; déjala en blanco. Escríbela solo si el panel eligió una dirección equivocada.",
+        "publicName6": "Dominio IPv6",
+        "publicName6Hint": "Opcional. Un nombre con solo un registro AAAA, apuntado a la dirección IPv6 de arriba; los clientes IPv6 lo reciben en lugar de la dirección desnuda, así que cambiar la IPv6 es un cambio de DNS. Mantenlo aparte del nombre público, que debe tener solo un registro A.",
         "ipFamily": "Los clientes se conectan por",
-        "ipFamilyHint": "IPv6 pasa por redes que frenan las direcciones IPv4 desconocidas, como MCI. «Ambas» da a cada cliente dos configuraciones para este servidor, primero IPv6; un perfil OpenVPN prueba IPv6 y luego IPv4. Cisco se queda en IPv4: su certificado es para un nombre.",
+        "ipFamilyHint": "IPv6 pasa por redes que frenan las direcciones IPv4 desconocidas, como MCI. «Ambas» da a cada cliente dos configuraciones y dos accesos cisco para este servidor, primero IPv6; un perfil OpenVPN prueba IPv6 y luego IPv4.",
         "ipFamilyBoth": "Ambas",
         "ipFamilyNoAddress": "Hasta que el panel tenga la dirección IPv6 de este servidor, los clientes siguen recibiendo IPv4."
       },

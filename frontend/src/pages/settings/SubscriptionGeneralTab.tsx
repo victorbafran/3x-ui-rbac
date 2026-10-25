@@ -1,4 +1,4 @@
-import { Alert, Button, Input, InputNumber, Select, Switch, Tabs } from 'antd';
+import { Alert, Button, Input, InputNumber, Select, Switch, Tabs, Typography } from 'antd';
 import {
   BranchesOutlined,
   CompassOutlined,
@@ -12,7 +12,8 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router';
 import { CertIssueControl, certNameFrom } from '@/components/CertIssueControl';
 import type { AllSetting } from '@/models/setting';
-import type { SubProfileMode } from '@/schemas/setting';
+import { remarkIPFamilyMarks } from '@/schemas/setting';
+import type { SubProfileMode, SubRemarkIPFamily } from '@/schemas/setting';
 import { onNumber } from '@/utils/onNumber';
 import { DefaultSettingTag, SettingListItem } from '@/components/ui';
 import { RemarkTemplateField } from '@/components/form';
@@ -186,6 +187,42 @@ export default function SubscriptionGeneralTab({
                 <Switch
                   checked={allSetting.subShowIdentityOnAllLinks}
                   onChange={(v) => updateSetting({ subShowIdentityOnAllLinks: v })}
+                />
+              </SettingListItem>
+              <SettingListItem
+                paddings="small"
+                title={t('pages.settings.subRemarkIPFamily')}
+                badge={
+                  <DefaultSettingTag
+                    settingKey="subRemarkIPFamily"
+                    value={allSetting.subRemarkIPFamily}
+                  />
+                }
+                description={
+                  <>
+                    {t('pages.settings.subRemarkIPFamilyDesc')}
+                    <div data-testid="ip-family-example" style={{ marginTop: 4 }}>
+                      {t('pages.settings.subRemarkIPFamilyExample')}{' '}
+                      {remarkIPFamilyMarks(allSetting.subRemarkIPFamily).map((mark, i) => (
+                        <Typography.Text code key={i} style={{ marginInlineEnd: 6 }}>
+                          <bdi>{`${t('pages.settings.subRemarkIPFamilySample')}${mark}`}</bdi>
+                        </Typography.Text>
+                      ))}
+                    </div>
+                  </>
+                }
+              >
+                <Select<SubRemarkIPFamily>
+                  id="sub-remark-ip-family"
+                  aria-label={t('pages.settings.subRemarkIPFamily')}
+                  value={allSetting.subRemarkIPFamily}
+                  style={{ width: '100%' }}
+                  onChange={(value) => updateSetting({ subRemarkIPFamily: value })}
+                  options={[
+                    { value: 'version', label: '· IPv6 / · IPv4' },
+                    { value: 'number', label: '1 / 2' },
+                    { value: 'off', label: t('pages.settings.subRemarkIPFamilyOff') },
+                  ]}
                 />
               </SettingListItem>
 

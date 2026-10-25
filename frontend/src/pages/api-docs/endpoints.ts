@@ -576,7 +576,17 @@ export const sections: readonly Section[] = [
         method: 'GET',
         path: '/panel/api/server/getDb',
         summary:
-          'Stream a full database backup as an attachment: the SQLite .db file on SQLite panels, or a pg_dump custom-format archive (.dump) on PostgreSQL panels. Use as a manual backup.',
+          'Stream a full database backup as an attachment: the SQLite .db file on SQLite panels, or a pg_dump custom-format archive (.dump) on PostgreSQL panels. Use as a manual backup. With full=1 it streams a .tar.gz holding the database and the files it relies on: issued certificates, relay SSH keys, OpenVPN and cisco keys, and the node-token key. That archive opens the servers it names; keep it private.',
+        params: [
+          {
+            name: 'full',
+            in: 'query',
+            type: 'string',
+            optional: true,
+            enum: ['1'],
+            desc: 'Set to 1 for the full backup with its files; leave it out for the database alone.',
+          },
+        ],
       },
       {
         method: 'GET',
@@ -809,7 +819,7 @@ export const sections: readonly Section[] = [
         method: 'POST',
         path: '/panel/api/server/importDB',
         summary:
-          'Restore the panel DB from an uploaded backup (multipart form, field name "db"). SQLite panels accept a SQLite database (.db) or a SQLite migration dump (.dump); PostgreSQL panels accept a pg_dump archive (.dump), a SQLite database (.db), or a SQLite migration dump. The panel restarts after restore. Destructive.',
+          'Restore the panel DB from an uploaded backup (multipart form, field name "db"). SQLite panels accept a SQLite database (.db) or a SQLite migration dump (.dump); PostgreSQL panels accept a pg_dump archive (.dump), a SQLite database (.db), or a SQLite migration dump. Both accept a full backup (.tar.gz from getDb?full=1): its files are put back first, each one it replaces kept in a pre-restore folder beside the database, and undone if the database does not import. The panel restarts after restore. Destructive.',
         params: [
           {
             name: 'db',

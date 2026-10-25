@@ -344,15 +344,26 @@ func (a *ServerController) getConfigJson(c *gin.Context) {
 	jsonObj(c, configJson, nil)
 }
 
-// getDb downloads the database file.
+// getDb downloads the database file, or with full=1 the database with every
+// file it relies on (certificates, relay keys, OpenVPN and cisco keys).
 func (a *ServerController) getDb(c *gin.Context) {
-	db, err := a.serverService.GetDb()
+	full := c.Query("full") == "1"
+	var db []byte
+	var err error
+	if full {
+		db, err = a.serverService.GetFullBackup()
+	} else {
+		db, err = a.serverService.GetDb()
+	}
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.index.getDatabaseError"), err)
 		return
 	}
 
 	filename := a.serverService.BackupFilename(c.Request.Host)
+	if full {
+		filename = a.serverService.FullBackupFilename(c.Request.Host)
+	}
 	if !filenameRegex.MatchString(filename) {
 		_ = c.AbortWithError(http.StatusBadRequest, fmt.Errorf("invalid filename"))
 		return
@@ -394,6 +405,10 @@ func (a *ServerController) importDB(c *gin.Context) {
 	// a new host. Send keepHostSettings=false to clone a machine wholesale.
 	keepHostSettings := c.Request.FormValue("keepHostSettings") != "false"
 	if err := a.serverService.ImportDB(file, keepHostSettings); err != nil {
+		// The new database is in place all the same; restart onto it and its keys.
+		if service.DatabaseReplaced(err) {
+			_ = a.panelService.RestartPanel(3 * time.Second)
+		}
 		jsonMsg(c, I18nWeb(c, "pages.index.importDatabaseError"), err)
 		return
 	}

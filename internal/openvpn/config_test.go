@@ -1,6 +1,8 @@
 package openvpn
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -203,6 +205,35 @@ func TestTheHelperAndItsArgumentsAreOneParameter(t *testing.T) {
 		rest := strings.TrimPrefix(line, "auth-user-pass-verify ")
 		if !strings.HasPrefix(rest, `"`) || !strings.HasSuffix(rest, `" via-file`) {
 			t.Errorf("inbound %d: openvpn would read this as more than two parameters and exit at startup: %s", id, line)
+		}
+	}
+}
+
+// A restore replaces the keys under a running server; the server has to be
+// restarted onto them, or every new profile carries a CA it does not serve.
+func TestRestoredKeysRestartTheServer(t *testing.T) {
+	runtimeDirOverride = t.TempDir()
+	t.Cleanup(func() { runtimeDirOverride = "" })
+	inst := Instance{Id: 3, Port: 1194}
+	for _, p := range []string{caCertPathForID(3), certPathForID(3), keyPathForID(3), tlsAuthPathForID(3)} {
+		if err := os.WriteFile(p, []byte("made here "+p), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	before := inst.structuralFingerprint()
+	if inst.structuralFingerprint() != before {
+		t.Fatal("the fingerprint moved with nothing changed")
+	}
+	for _, p := range []string{caCertPathForID(3), certPathForID(3), keyPathForID(3), tlsAuthPathForID(3)} {
+		saved, _ := os.ReadFile(p)
+		if err := os.WriteFile(p, []byte("restored"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		if inst.structuralFingerprint() == before {
+			t.Errorf("%s was replaced and the server would keep the old one", filepath.Base(p))
+		}
+		if err := os.WriteFile(p, saved, 0o600); err != nil {
+			t.Fatal(err)
 		}
 	}
 }

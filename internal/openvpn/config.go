@@ -170,8 +170,23 @@ func (inst Instance) structuralFingerprint() string {
 		// otherwise stay stale until an unrelated restart.
 		filestamp.Of(inst.CertFile),
 		filestamp.Of(inst.KeyFile),
+		inst.ownKeysStamp(),
 		strings.TrimSpace(inst.Exit),
 	}, "|")
+}
+
+// ownKeysStamp covers the keys the panel made for this inbound, which a
+// restore can replace under a running server.
+func (inst Instance) ownKeysStamp() string {
+	paths := []string{tlsAuthPathForID(inst.Id)}
+	if strings.TrimSpace(inst.CertFile) == "" || strings.TrimSpace(inst.KeyFile) == "" {
+		paths = append(paths, caCertPathForID(inst.Id), certPathForID(inst.Id), keyPathForID(inst.Id))
+	}
+	stamps := make([]string, len(paths))
+	for i, p := range paths {
+		stamps[i] = filestamp.Of(p)
+	}
+	return strings.Join(stamps, ",")
 }
 
 // renderConfig writes the whole server config for one instance.

@@ -167,6 +167,10 @@ func runWebServer() {
 		switch sig {
 		case syscall.SIGHUP:
 			logger.Info("Received SIGHUP signal. Restarting servers...")
+			// A full restore may have put back another node-token keyring.
+			if err := initNodeTokenCrypto(); err != nil {
+				logger.Warning("Kept the node-token keys loaded at start: ", err)
+			}
 
 			err := server.StopPanelOnly()
 			if err != nil {

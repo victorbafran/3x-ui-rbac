@@ -35,10 +35,9 @@ const (
 	RelayDisabled = "disabled"
 )
 
-// relayKeyDir is where the panel keeps the SSH keys it installed. /etc/x-ui is
-// one of the few paths the panel's own systemd unit may write to, and it is
-// the directory a backup already covers.
-func relayKeyDir() string { return "/etc/x-ui/relay-keys" }
+// relayKeyDir is where the panel keeps the SSH keys it installed, /etc/x-ui
+// being one of the few paths its own unit may write; a full backup carries it.
+var relayKeyDir = func() string { return "/etc/x-ui/relay-keys" }
 
 // provisionTimeout has to cover apt-get on a slow link from a server that may
 // still be booting.
@@ -846,7 +845,7 @@ func (s *RelayService) downOrphans() {
 			continue
 		}
 		logger.Warningf("relay %d no longer exists; taking down its leftover tunnel %s", id, relay.InterfaceName(id))
-		relay.DownOrphan(id, filepath.Join(relayKeyDir(), fmt.Sprintf("relay-%d", id)))
+		relay.DownOrphan(id)
 	}
 }
 

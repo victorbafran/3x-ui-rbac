@@ -63,6 +63,9 @@ type Result struct {
 	Reused bool `json:"reused"`
 }
 
+// Dir is where the panel keeps the certificates it issued, for a full backup.
+func Dir() string { return baseDir() }
+
 func baseDir() string {
 	if baseDirOverride != "" {
 		return baseDirOverride

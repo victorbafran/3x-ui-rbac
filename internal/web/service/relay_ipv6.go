@@ -71,7 +71,7 @@ func (s *RelayService) refreshFrontIPv6(r model.Relay) {
 			return
 		}
 		// Into a still-empty row only: an address typed meanwhile is the operator's.
-		res := database.GetDB().Model(&model.Relay{}).Where("id = ? AND address6 = ?", r.Id, "").
+		res := database.GetDB().Model(&model.Relay{}).Where("id = ?", r.Id).
 			Updates(map[string]any{"address6": found, "address6_error": address6NotChecked})
 		if res.Error != nil || res.RowsAffected == 0 {
 			return

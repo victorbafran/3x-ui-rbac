@@ -26,6 +26,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/openvpn"
 	"github.com/mhsanaei/3x-ui/v3/internal/relay"
 	"github.com/mhsanaei/3x-ui/v3/internal/tuic"
+	"github.com/mhsanaei/3x-ui/v3/internal/util/certreload"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/maskcompat"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/random"
@@ -38,6 +39,8 @@ var salamanderWarningSeen sync.Map
 
 // SubService provides business logic for generating subscription links and managing subscription data.
 type SubService struct {
+	// panelAddr is the panel's own name, read once per request.
+	panelAddr      string
 	address        string
 	remarkTemplate string
 	datepicker     string
@@ -89,6 +92,8 @@ type SubService struct {
 	// with the clients array left out; generators read only inbound-level
 	// fields (encryption, method, version, …) from it.
 	settingsByInbound map[int]map[string]any
+	// certHosts caches the name on each inbound's own certificate.
+	certHosts map[int]string
 }
 
 // NewSubService creates a new subscription service with the given configuration.
@@ -119,6 +124,8 @@ func (s *SubService) PrepareForRequest(host string) {
 		}
 	}
 	s.address = host
+	s.panelAddr = s.panelAddress()
+	s.certHosts = map[int]string{}
 	s.usageShown = map[string]bool{}
 	s.statsByEmail = map[string]xray.ClientTraffic{}
 	s.clientsByInbound = map[int]map[string]model.Client{}
@@ -283,6 +290,58 @@ func (s *SubService) configuredPublicHost() string {
 		return d
 	}
 	return ""
+}
+
+// panelAddress is where the admin reaches the panel: its web domain, else the
+// name on its certificate. A config with no address of its own goes there.
+func (s *SubService) panelAddress() string {
+	if d, err := s.settingService.GetWebDomain(); err == nil && d != "" {
+		return d
+	}
+	if f, err := s.settingService.GetCertFile(); err == nil && f != "" {
+		return certreload.Host(f)
+	}
+	return ""
+}
+
+// ownCertHost is the name on an inbound's own certificate. A TLS client checks
+// the name it dials against it, so that name beats the panel's.
+func (s *SubService) ownCertHost(inbound *model.Inbound) string {
+	if h, ok := s.certHosts[inbound.Id]; ok {
+		return h
+	}
+	h := ""
+	if f := ownCertFile(inbound); f != "" {
+		h = certreload.Host(f)
+	}
+	if s.certHosts != nil {
+		s.certHosts[inbound.Id] = h
+	}
+	return h
+}
+
+// ownCertFile is the certificate an inbound serves from a file: cisco's own
+// setting, or the first one of an xray TLS stream.
+func ownCertFile(inbound *model.Inbound) string {
+	if inbound.Protocol == model.Cisco {
+		var st struct {
+			CertFile string `json:"certFile"`
+		}
+		_ = json.Unmarshal([]byte(inbound.Settings), &st)
+		return strings.TrimSpace(st.CertFile)
+	}
+	var st struct {
+		Security    string `json:"security"`
+		TLSSettings struct {
+			Certificates []struct {
+				CertificateFile string `json:"certificateFile"`
+			} `json:"certificates"`
+		} `json:"tlsSettings"`
+	}
+	if json.Unmarshal([]byte(inbound.StreamSettings), &st) != nil || st.Security != "tls" || len(st.TLSSettings.Certificates) == 0 {
+		return ""
+	}
+	return strings.TrimSpace(st.TLSSettings.Certificates[0].CertificateFile)
 }
 
 func isRoutableHost(host string) bool {
@@ -1725,8 +1784,10 @@ func (s *SubService) loadNodes() {
 //   - "node" (default, and any unknown value): the node's address for
 //     node-managed inbounds, then a routable Listen — the pre-strategy order.
 //
-// Every chain ends at the admin's configured public host (Sub/Web domain) and
-// then the subscriber's request host (s.address). Preferring the configured
+// Every chain ends at the name on the inbound's own certificate, then the
+// panel's own address (its web domain, or the name on its certificate), then
+// the configured public host (Sub/Web domain), then the subscriber's request
+// host (s.address). Preferring the configured
 // host over the request host for this last resort keeps a wildcard local inbound
 // from advertising a bogus client IP that leaked into the request Host header
 // behind NAT/proxy/CDN (#5425). A loopback/wildcard bind or a unix-domain-socket
@@ -1755,6 +1816,12 @@ func (s *SubService) resolveInboundAddress(inbound *model.Inbound) string {
 		if c != "" {
 			return c
 		}
+	}
+	if h := s.ownCertHost(inbound); h != "" {
+		return h
+	}
+	if s.panelAddr != "" {
+		return s.panelAddr
 	}
 	if d := s.configuredPublicHost(); d != "" {
 		return d

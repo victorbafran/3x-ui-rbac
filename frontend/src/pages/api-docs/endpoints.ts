@@ -294,6 +294,15 @@ export const sections: readonly Section[] = [
       },
       {
         method: 'GET',
+        path: '/panel/api/inbounds/:id/links',
+        summary:
+          'Return one entry per client of the inbound, in settings order: its share links and, for WireGuard, AmneziaWG and TUIC, its full config files, all rendered by the subscription engine. Behind an IPv6 entry server each address comes as its IPv6 variant, or an IPv6 and an IPv4 pair whose remarks carry the configured family marker. A reseller sharing the inbound sees only their own clients, and needs the clients.viewLinks switch, as the client windows\' links do. Used by the panel\'s inbound info window and its "Export links" action.',
+        params: [{ name: 'id', in: 'path', type: 'number', desc: 'Inbound ID.' }],
+        responseSchema: 'InboundClientLinks',
+        responseSchemaArray: true,
+      },
+      {
+        method: 'GET',
         path: '/panel/api/inbounds/get/:id',
         summary: 'Fetch a single inbound by numeric ID.',
         params: [{ name: 'id', in: 'path', type: 'number', desc: 'Inbound ID.' }],
@@ -1658,6 +1667,15 @@ export const sections: readonly Section[] = [
           'Generate a fresh Happ crypt5 link locally from the current client subscription URL when Happ link generation is enabled. The panel applies a resource limit of 8192 UTF-8 bytes to the source URL; this is not a Happ client maximum. Longer sources return success: false with msg: happ_source_too_long and obj: null. The source URL is not sent to a generation provider, and the result is not stored or reused.',
         params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Stable client record ID.' }],
         responseSchema: 'HappLinkResult',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/clients/tunnelConfigs/:id',
+        summary:
+          'Return the WireGuard .conf, AmneziaWG .conf and TUIC Clash YAML files of one client across every inbound it is attached to, one per advertised address, rendered by the subscription engine. Behind an IPv6 entry server family is "v6" or "v4" and the remark carries the configured family marker; otherwise family is empty. endpoint is empty for the inbound\'s own address and address:port for a Host or an entry server; when two configs of one inbound dial the same address:port, as Hosts naming one entry server do, each gets the Host\'s remark in parentheses, then #1, #2 while still alike. Empty array when the client has no such inbound.',
+        params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Stable client record ID.' }],
+        responseSchema: 'TunnelConfig',
+        responseSchemaArray: true,
       },
       {
         method: 'GET',

@@ -52,6 +52,7 @@ var exactRules = map[string]Rule{
 	"GET /panel/api/inbounds/allLinks":      {Perm: SecInbounds, Scope: ScopeOwnedListing},
 	"GET /panel/api/inbounds/get/:id":       {Perm: SecInbounds, Scope: ScopeInbound, Param: "id"},
 	"GET /panel/api/inbounds/:id/fallbacks": {Perm: SecInbounds, Scope: ScopeInbound, Param: "id"},
+	"GET /panel/api/inbounds/:id/links":     {Perm: SecInbounds, Scope: ScopeInbound, Param: "id"},
 
 	"POST /panel/api/inbounds/add":               {Perm: InboundCreate},
 	"POST /panel/api/inbounds/import":            {Perm: InboundCreate},
@@ -98,6 +99,7 @@ var exactRules = map[string]Rule{
 	"GET /panel/api/clients/get/tgId/:tgId":    {Perm: SecClients, Scope: ScopeOwnedListing},
 	"GET /panel/api/clients/subLinks/:subId":   {Perm: ClientViewLinks, Scope: ScopeOwnedListing},
 	"POST /panel/api/clients/happLink/:id":     {Perm: ClientViewLinks, Scope: ScopeOwnedListing},
+	"GET /panel/api/clients/tunnelConfigs/:id": {Perm: ClientViewLinks, Scope: ScopeOwnedListing},
 	"POST /panel/api/clients/add":              {Perm: ClientCreate, Scope: ScopeOwnedListing},
 	"POST /panel/api/clients/bulkCreate":       {Perm: ClientCreate, Scope: ScopeOwnedListing},
 	"POST /panel/api/clients/import":           {Perm: ClientCreate, Scope: ScopeOwnedListing},

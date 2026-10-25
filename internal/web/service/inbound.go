@@ -393,7 +393,7 @@ func (s *InboundService) GetInboundOptions(userId int) ([]InboundOption, error) 
 	}
 	out := make([]InboundOption, 0, len(rows))
 	for _, r := range rows {
-		wgPublicKey, wgMtu, wgDns := inboundWireguardHints(r.Protocol, r.Settings)
+		wgPublicKey, wgMtu, wgDns := InboundWireguardHints(r.Protocol, r.Settings)
 		netHint, secHint := inboundStreamHints(r.Protocol, r.StreamSettings, r.Settings)
 		shareAddrStrategy := r.ShareAddrStrategy
 		if shareAddrStrategy == "node" {
@@ -464,7 +464,9 @@ func inboundStreamHints(protocol string, streamSettings string, settings string)
 	return netHint, secHint
 }
 
-func inboundWireguardHints(protocol string, settings string) (string, int, string) {
+// InboundWireguardHints is a WireGuard inbound's public key, MTU and DNS, the
+// server half of every client .conf the panel offers.
+func InboundWireguardHints(protocol string, settings string) (string, int, string) {
 	if protocol != string(model.WireGuard) || strings.TrimSpace(settings) == "" {
 		return "", 0, ""
 	}

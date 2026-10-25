@@ -3382,6 +3382,36 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "InboundClientLinks": {
+    "description": "InboundClientLinks is one client's share links and tunnel configs on one inbound.",
+    "properties": {
+      "configs": {
+        "items": {
+          "$ref": "#/components/schemas/TunnelConfig"
+        },
+        "type": "array"
+      },
+      "email": {
+        "example": "alice",
+        "type": "string"
+      },
+      "links": {
+        "example": [
+          "vless://uuid@host:443?security=reality#alice"
+        ],
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "configs",
+      "email",
+      "links"
+    ],
+    "type": "object"
+  },
   "InboundFallback": {
     "properties": {
       "alpn": {
@@ -4939,6 +4969,59 @@ export const SCHEMAS: Record<string, unknown> = {
       "private_key",
       "udp_relay_mode",
       "zero_rtt_handshake"
+    ],
+    "type": "object"
+  },
+  "TunnelConfig": {
+    "description": "TunnelConfig is one WireGuard .conf, AmneziaWG .conf or TUIC Clash YAML of a\nclient, for one address it dials; Family is \"v6\"/\"v4\" behind an IPv6 entry server.",
+    "properties": {
+      "address": {
+        "example": "[2001:db8::1]",
+        "type": "string"
+      },
+      "email": {
+        "example": "alice",
+        "type": "string"
+      },
+      "endpoint": {
+        "example": "[2001:db8::1]:51820",
+        "type": "string"
+      },
+      "family": {
+        "example": "v6",
+        "type": "string"
+      },
+      "inboundId": {
+        "example": 3,
+        "type": "integer"
+      },
+      "port": {
+        "example": 51820,
+        "type": "integer"
+      },
+      "protocol": {
+        "example": "wireguard",
+        "type": "string"
+      },
+      "remark": {
+        "example": "WG - alice · IPv6",
+        "type": "string"
+      },
+      "text": {
+        "example": "[Interface]\nPrivateKey = ...\n[Peer]\nEndpoint = [2001:db8::1]:51820",
+        "type": "string"
+      }
+    },
+    "required": [
+      "address",
+      "email",
+      "endpoint",
+      "family",
+      "inboundId",
+      "port",
+      "protocol",
+      "remark",
+      "text"
     ],
     "type": "object"
   },

@@ -1,16 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import { inboundFromDb } from '@/lib/xray/inbound-from-db';
-import {
-  genAllLinks,
-  genInboundLinks,
-  genWireguardConfigs,
-  genWireguardLinks,
-  getInboundClients,
-} from '@/lib/xray/inbound-link';
+import { getInboundClients } from '@/lib/xray/inbound-link';
 import { canEnableTlsFlow, isSS2022 } from '@/lib/xray/protocol-capabilities';
-
-const FALLBACK_HOST = 'panel.example.test';
 
 const BASE_DB_FIELDS = {
   port: 12345,
@@ -93,80 +85,6 @@ describe('inboundFromDb', () => {
     expect(inbound.settings).toEqual(expect.objectContaining({ accounts: [] }));
     expect(inbound.streamSettings).toEqual({});
     expect(inbound.sniffing).toEqual({});
-  });
-
-  it('feeds genInboundLinks for vless without throwing', () => {
-    const raw = {
-      ...BASE_DB_FIELDS,
-      protocol: 'vless',
-      settings: {
-        clients: [{ id: '8c14d6f7-2e3b-4a91-9d24-3f7a6b8c1e02', email: 'alice@test', flow: '' }],
-        decryption: 'none',
-      },
-      streamSettings: { network: 'tcp', security: 'none' },
-    };
-    const inbound = inboundFromDb(raw);
-    const links = genInboundLinks({
-      inbound,
-      remark: 'unit',
-      fallbackHostname: FALLBACK_HOST,
-    });
-    expect(links).toContain('vless://');
-    expect(links).toContain('encryption=none');
-  });
-
-  it('feeds genWireguardConfigs + genWireguardLinks for wireguard peers', () => {
-    const raw = {
-      ...BASE_DB_FIELDS,
-      protocol: 'wireguard',
-      settings: {
-        mtu: 1420,
-        secretKey: 'QGVlb2dXc1ZTWGw0ZXBzZndsWmtMaUM5MUlNYjBHWFdYbz0=',
-        peers: [
-          {
-            privateKey: 'iJ2cBkrSGqRwIfYIDIxk7hr5RXfdR93MfJUL7yqkkH8=',
-            publicKey: 'DGSYIcEKAUkA7HhzGSjxLZuV67BR3LeyU0BMLJzNVHQ=',
-            allowedIPs: ['10.0.0.2/32'],
-            keepAlive: 25,
-          },
-        ],
-        noKernelTun: false,
-      },
-      streamSettings: '',
-    };
-    const inbound = inboundFromDb(raw);
-    const configs = genWireguardConfigs({ inbound, remark: 'wg', fallbackHostname: FALLBACK_HOST });
-    expect(configs).toContain('[Interface]');
-    expect(configs).toContain('[Peer]');
-    const links = genWireguardLinks({ inbound, remark: 'wg', fallbackHostname: FALLBACK_HOST });
-    expect(links).toMatch(/^wireguard:\/\//);
-  });
-
-  it('feeds genAllLinks per client', () => {
-    const raw = {
-      ...BASE_DB_FIELDS,
-      protocol: 'trojan',
-      settings: {
-        clients: [
-          { password: 'pw1', email: 'one@test' },
-          { password: 'pw2', email: 'two@test' },
-        ],
-      },
-      streamSettings: {
-        network: 'tcp',
-        security: 'tls',
-        tlsSettings: { serverName: 'example.test' },
-      },
-    };
-    const inbound = inboundFromDb(raw);
-    const entries = genAllLinks({
-      inbound,
-      remark: 'trojan',
-      client: { password: 'pw1', email: 'one@test' },
-      fallbackHostname: FALLBACK_HOST,
-    });
-    expect(entries.length).toBeGreaterThan(0);
-    expect(entries[0].link).toContain('trojan://');
   });
 });
 

@@ -95,6 +95,8 @@ func run(root, outDir string) error {
 			StructAllow: setOf(
 				"InboundOption",
 				"HappLinkResult",
+				"TunnelConfig",
+				"InboundClientLinks",
 				"ClientSlim",
 				"ClientRenewalPreviewRequest",
 				"ClientRenewalPreview",

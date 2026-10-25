@@ -40,6 +40,7 @@ export const keys = {
     root: () => ['inbounds'] as const,
     slim: () => ['inbounds', 'slim'] as const,
     options: () => ['inbounds', 'options'] as const,
+    links: (inboundId: number) => ['inbounds', 'links', inboundId] as const,
   },
   clients: {
     root: () => ['clients'] as const,
@@ -50,6 +51,7 @@ export const keys = {
     activeInbounds: () => ['clients', 'activeInbounds'] as const,
     lastOnline: () => ['clients', 'lastOnline'] as const,
     groups: () => ['clients', 'groups'] as const,
+    tunnelConfigs: (clientId: number) => ['clients', 'tunnelConfigs', clientId] as const,
   },
   xray: {
     root: () => ['xray'] as const,

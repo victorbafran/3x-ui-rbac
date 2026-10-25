@@ -190,10 +190,8 @@ func TestGetInboundsBySubIdIncludesAmneziaWG(t *testing.T) {
 	}
 }
 
-// peerFieldOrder is wg-quick(8)'s own [Peer] order. The panel emits an
-// AmneziaWG .conf from three independent places -- this one, and the frontend's
-// genAmneziaWGConfig and buildAmneziaWGClientConfig -- and a user comparing a
-// subscription link against a downloaded .conf sees any drift immediately.
+// peerFieldOrder is wg-quick(8)'s own [Peer] order, which amneziaWGPanelConf and the
+// frontend's genAmneziaWGConfig emit too; a user comparing a link with a .conf sees drift.
 var peerFieldOrder = []string{"PublicKey", "PresharedKey", "AllowedIPs", "Endpoint", "PersistentKeepalive"}
 
 func peerFields(t *testing.T, conf string) []string {

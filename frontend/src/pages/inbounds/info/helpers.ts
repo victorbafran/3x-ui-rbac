@@ -154,7 +154,7 @@ export function downloadText(content: string, filename: string) {
   FileManager.downloadTextFile(content, filename);
 }
 
-// One file per advertised Host, so a peer behind two Hosts gets two names.
+// One file per address a peer dials, so two Hosts or a front's IPv6/IPv4 pair get two names.
 export function peerConfFileName(peerIndex: number, endpointIndex: number, endpointCount: number) {
   const suffix = endpointCount > 1 ? `-${endpointIndex + 1}` : '';
   return `peer-${peerIndex + 1}${suffix}.conf`;

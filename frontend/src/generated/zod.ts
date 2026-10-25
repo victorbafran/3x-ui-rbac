@@ -822,6 +822,13 @@ export const InboundClientIpsSchema = z.object({
 });
 export type InboundClientIps = z.infer<typeof InboundClientIpsSchema>;
 
+export const InboundClientLinksSchema = z.object({
+  configs: z.array(z.lazy(() => TunnelConfigSchema)),
+  email: z.string(),
+  links: z.array(z.string()),
+});
+export type InboundClientLinks = z.infer<typeof InboundClientLinksSchema>;
+
 export const InboundFallbackSchema = z.object({
   alpn: z.string(),
   childId: z.number().int(),
@@ -1200,6 +1207,19 @@ export const TuicServerSettingsSchema = z.object({
   zero_rtt_handshake: z.boolean(),
 });
 export type TuicServerSettings = z.infer<typeof TuicServerSettingsSchema>;
+
+export const TunnelConfigSchema = z.object({
+  address: z.string(),
+  email: z.string(),
+  endpoint: z.string(),
+  family: z.string(),
+  inboundId: z.number().int(),
+  port: z.number().int(),
+  protocol: z.string(),
+  remark: z.string(),
+  text: z.string(),
+});
+export type TunnelConfig = z.infer<typeof TunnelConfigSchema>;
 
 export const UserSchema = z.object({
   disabledReason: z.string(),

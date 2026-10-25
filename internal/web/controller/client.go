@@ -58,6 +58,7 @@ func (a *ClientController) initRouter(g *gin.RouterGroup) {
 	g.GET("/subLinks/:subId", a.getSubLinks)
 	g.GET("/links/:email", a.getClientLinks)
 	g.POST("/happLink/:id", a.generateHappLink)
+	g.GET("/tunnelConfigs/:id", a.getTunnelConfigs)
 
 	g.POST("/add", a.create)
 	g.POST("/renewalPreview", a.renewalPreview)
@@ -707,6 +708,25 @@ func (a *ClientController) getClientLinks(c *gin.Context) {
 		return
 	}
 	jsonObj(c, links, nil)
+}
+
+// getTunnelConfigs is a client's WireGuard, AmneziaWG and TUIC configs, rendered
+// by the subscription so an IPv6 entry server's variants appear in the panel too.
+func (a *ClientController) getTunnelConfigs(c *gin.Context) {
+	clientID, err := strconv.Atoi(c.Param("id"))
+	if err != nil || clientID < 1 {
+		jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.obtain"), errors.New("invalid client id"))
+		return
+	}
+	if a.denyForeignClientId(c, clientID) {
+		return
+	}
+	configs, err := a.inboundService.GetTunnelConfigs(resolveHost(c), clientID)
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.obtain"), err)
+		return
+	}
+	jsonObj(c, configs, nil)
 }
 
 func (a *ClientController) generateHappLink(c *gin.Context) {

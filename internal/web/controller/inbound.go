@@ -8,6 +8,7 @@ import (
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/wirecodec"
+	"github.com/mhsanaei/3x-ui/v3/internal/web/authz"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/middleware"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/session"
@@ -79,6 +80,7 @@ func (a *InboundController) initRouter(g *gin.RouterGroup) {
 	g.GET("/allLinks", a.getAllInboundLinks)
 	g.GET("/get/:id", a.getInbound)
 	g.GET("/:id/fallbacks", a.getFallbacks)
+	g.GET("/:id/links", a.getInboundClientLinks)
 
 	g.POST("/add", a.addInbound)
 	g.POST("/del/:id", a.delInbound)
@@ -128,6 +130,26 @@ func (a *InboundController) getAllInboundLinks(c *gin.Context) {
 		return
 	}
 	jsonObj(c, links, nil)
+}
+
+// getInboundClientLinks is each client's links and tunnel configs on one inbound,
+// from the subscription engine; a reseller sharing the inbound sees only their own.
+func (a *InboundController) getInboundClientLinks(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "get"), err)
+		return
+	}
+	// The client windows' links need clients.viewLinks; these carry the same keys.
+	if refuseWithout(c, authz.ClientViewLinks) {
+		return
+	}
+	entries, err := a.inboundService.GetInboundClientLinks(resolveHost(c), id, scopeFor(session.GetLoginUser(c)))
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.obtain"), err)
+		return
+	}
+	jsonObj(c, entries, nil)
 }
 
 // getInboundOptions returns a lightweight projection of the user's inbounds

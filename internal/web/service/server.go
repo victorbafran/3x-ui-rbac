@@ -1894,7 +1894,7 @@ func (s *ServerService) ImportDB(file multipart.File, keepHostSettings bool) err
 
 	xrayStopped = false
 	if err = s.RestartXrayService(); err != nil {
-		return common.NewErrorf("Imported DB but failed to start Xray: %v; the previous database was kept at %s", err, fallbackPath)
+		return dbReplaced{common.NewErrorf("Imported DB but failed to start Xray: %v; the previous database was kept at %s", err, fallbackPath)}
 	}
 
 	if _, err := os.Stat(fallbackPath); err == nil {
@@ -2120,7 +2120,11 @@ func (s *ServerService) restorePostgresDump(file multipart.File, keepHostSetting
 	runErr := cmd.Run()
 
 	if errInit := database.InitDB(config.GetDBPath()); errInit != nil {
-		return common.NewErrorf("Restore finished but reopening the database failed: %v", errInit)
+		err := common.NewErrorf("Restore finished but reopening the database failed: %v", errInit)
+		if runErr == nil {
+			return dbReplaced{err}
+		}
+		return err
 	}
 	restoreHostBoundSettings(keptSettings)
 
@@ -2132,7 +2136,7 @@ func (s *ServerService) restorePostgresDump(file multipart.File, keepHostSetting
 
 	xrayStopped = false
 	if err := s.RestartXrayService(); err != nil {
-		return common.NewErrorf("Restored DB but failed to start Xray: %v", err)
+		return dbReplaced{common.NewErrorf("Restored DB but failed to start Xray: %v", err)}
 	}
 	return nil
 }
@@ -2185,7 +2189,11 @@ func (s *ServerService) migrateSQLiteIntoPostgres(file multipart.File, isSQLDump
 	migrateErr := database.MigrateData(dbPath, config.GetDBDSN())
 
 	if errInit := database.InitDB(config.GetDBPath()); errInit != nil {
-		return common.NewErrorf("Restore finished but reopening the database failed: %v", errInit)
+		err := common.NewErrorf("Restore finished but reopening the database failed: %v", errInit)
+		if migrateErr == nil {
+			return dbReplaced{err}
+		}
+		return err
 	}
 	s.inboundService.MigrateDB()
 
@@ -2195,7 +2203,7 @@ func (s *ServerService) migrateSQLiteIntoPostgres(file multipart.File, isSQLDump
 
 	xrayStopped = false
 	if err := s.RestartXrayService(); err != nil {
-		return common.NewErrorf("Restored DB but failed to start Xray: %v", err)
+		return dbReplaced{common.NewErrorf("Restored DB but failed to start Xray: %v", err)}
 	}
 	return nil
 }

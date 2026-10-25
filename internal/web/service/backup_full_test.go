@@ -1,6 +1,8 @@
 package service
 
 import (
+	"errors"
+	"mime/multipart"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -162,5 +164,39 @@ func TestAFailedFullRestoreLeavesTheFilesAlone(t *testing.T) {
 	}
 	if got, _ := os.ReadFile(filepath.Join(here, "relay-keys", "relay-8")); string(got) != "this box's key" {
 		t.Errorf("the failed restore left relay-8 as %q", got)
+	}
+}
+
+// An import that fails once the new database is in place keeps the files that
+// came with it: undoing them would pair the new database with the old keys.
+func TestAFailureAfterTheSwapKeepsTheRestoredFiles(t *testing.T) {
+	setupFullBackup(t)
+	src := t.TempDir()
+	writeBoxFile(t, src, "relay-keys/relay-8", "the backup's key")
+	backupSets = boxAt(src)
+	s := &ServerService{}
+	archive, err := s.GetFullBackup()
+	if err != nil {
+		t.Fatal(err)
+	}
+	here := t.TempDir()
+	backupSets = boxAt(here)
+	saved := importStaged
+	t.Cleanup(func() { importStaged = saved })
+	for _, tc := range []struct {
+		err  error
+		want string
+	}{
+		{dbReplaced{errors.New("xray would not start")}, "the backup's key"},
+		{errors.New("not a database"), "this box's key"},
+	} {
+		writeBoxFile(t, here, "relay-keys/relay-8", "this box's key")
+		importStaged = func(*ServerService, multipart.File, bool) error { return tc.err }
+		if err := s.ImportDB(openUpload(t, archive), true); err == nil {
+			t.Fatalf("%v: the failed import reported success", tc.err)
+		}
+		if got, _ := os.ReadFile(filepath.Join(here, "relay-keys", "relay-8")); string(got) != tc.want {
+			t.Errorf("%v: relay-8 is %q, want %q", tc.err, got, tc.want)
+		}
 	}
 }

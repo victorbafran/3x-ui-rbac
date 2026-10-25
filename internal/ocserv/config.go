@@ -217,6 +217,7 @@ func (inst Instance) structuralFingerprint() string {
 		// stale until something else happened to restart it.
 		filestamp.Of(inst.CertFile),
 		filestamp.Of(inst.KeyFile),
+		inst.generatedPairStamp(),
 		strconv.Itoa(inst.udpPort()),
 		strconv.FormatBool(inst.DisableUDP),
 		strconv.FormatBool(inst.ProxyProtocol),
@@ -225,6 +226,15 @@ func (inst Instance) structuralFingerprint() string {
 		strconv.Itoa(inst.mobileDPD()),
 		inst.locationsFingerprint(),
 	}, "|")
+}
+
+// generatedPairStamp covers the pair made for an inbound without its own,
+// which a restore can replace under a running ocserv.
+func (inst Instance) generatedPairStamp() string {
+	if inst.CertFile != "" && inst.KeyFile != "" {
+		return ""
+	}
+	return filestamp.Of(certPathForID(inst.Id)) + "," + filestamp.Of(keyPathForID(inst.Id))
 }
 
 // locationsFingerprint covers the country list in the order it is rendered,

@@ -39,13 +39,13 @@ func newBox(t *testing.T) box {
 func (b box) sets() []Set {
 	notTemp := func(rel string) bool { return !strings.HasSuffix(rel, ".tmp") }
 	return []Set{
-		{Kind: "certs", Dir: func() string { return b.certs }, Keep: notTemp},
-		{Kind: "relay-keys", Dir: func() string { return b.relays }, Keep: notTemp, Flat: true, Private: true},
+		{Kind: "certs", Dir: func() string { return b.certs }, Keep: notTemp, DirMode: 0o700},
+		{Kind: "relay-keys", Dir: func() string { return b.relays }, Keep: notTemp, Flat: true, Private: true, DirMode: 0o700},
 		{Kind: "openvpn", Dir: func() string { return b.openvpn }, Keep: openvpnKeys.MatchString, Flat: true},
 		{Kind: "ocserv", Dir: func() string { return b.ocserv }, Keep: ocservKeys.MatchString, Flat: true},
 		{
 			Kind: "node-token", Dir: func() string { return b.token },
-			Keep: func(rel string) bool { return rel == "node_token_key.json" }, Flat: true, Private: true,
+			Keep: func(rel string) bool { return rel == "node_token_key.json" }, Flat: true, Private: true, DirMode: 0o700,
 		},
 	}
 }
@@ -82,6 +82,15 @@ func fill(t *testing.T, b box) {
 	put(t, filepath.Join(b.ocserv, "peruser-1", "ali"), "runtime", 0o600)
 	put(t, filepath.Join(b.token, "node_token_key.json"), `{"k":1}`, 0o600)
 	put(t, filepath.Join(b.token, "system_metrics.gob"), "history", 0o600)
+}
+
+// unpack reads an archive the way a restore does, the database landing on disk.
+func unpack(t *testing.T, data []byte) (Manifest, string, []File, error) {
+	t.Helper()
+	dbPath := filepath.Join(t.TempDir(), "x-ui.db.archive")
+	m, files, err := Read(bytes.NewReader(data), dbPath)
+	db, _ := os.ReadFile(dbPath)
+	return m, string(db), files, err
 }
 
 func names(files []File) []string {
@@ -141,11 +150,11 @@ func archive(t *testing.T, b box, db string) []byte {
 func TestARestoreOnAFreshBoxPutsEveryFileBack(t *testing.T) {
 	old, fresh := newBox(t), newBox(t)
 	fill(t, old)
-	m, db, files, err := Read(bytes.NewReader(archive(t, old, "the database")))
+	m, db, files, err := unpack(t, archive(t, old, "the database"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if string(db) != "the database" || m.Database != "x-ui.db" || m.Panel != "v3.10.2-rbac35" {
+	if db != "the database" || m.Database != "x-ui.db" || m.Panel != "v3.10.2-rbac35" {
 		t.Fatalf("read back db %q, manifest %+v", db, m)
 	}
 	if _, err := Restore(fresh.sets(), files, filepath.Join(t.TempDir(), "kept")); err != nil {
@@ -176,7 +185,7 @@ func TestARestoreKeepsWhatItReplacesAndCanBeUndone(t *testing.T) {
 	fill(t, old)
 	put(t, filepath.Join(here.relays, "relay-8"), "a newer key", 0o600)
 	put(t, filepath.Join(here.openvpn, "ca-3.pem"), "ovpn ca-3.pem", 0o600)
-	_, _, files, err := Read(bytes.NewReader(archive(t, old, "db")))
+	_, _, files, err := unpack(t, archive(t, old, "db"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -245,20 +254,64 @@ func craft(t *testing.T, manifest *Manifest, entries ...entry) []byte {
 // A crafted archive cannot write outside the folders a backup restores into,
 // smuggle in a link, or pass a changed file off as the one recorded.
 func TestAnArchiveCannotReachOutsideItsFolders(t *testing.T) {
-	good := &Manifest{Format: Format, Version: Version, Database: "x-ui.db"}
+	sum := digest([]byte("db"))
+	good := &Manifest{Format: Format, Version: Version, Database: "x-ui.db", DatabaseSHA256: sum}
+	db := entry{name: "x-ui.db", body: "db"}
+	if _, _, _, err := unpack(t, craft(t, good, db)); err != nil {
+		t.Fatalf("the well-formed archive the cases spoil was refused: %v", err)
+	}
 	cases := map[string][]byte{
-		"climbing entry":  craft(t, good, entry{name: "x-ui.db", body: "db"}, entry{name: "files/certs/../../evil", body: "x"}),
-		"absolute entry":  craft(t, good, entry{name: "x-ui.db", body: "db"}, entry{name: "/etc/passwd", body: "x"}),
-		"symlink entry":   craft(t, good, entry{name: "x-ui.db", body: "db"}, entry{name: "files/certs/link", kind: tar.TypeSymlink}),
-		"climbing record": craft(t, &Manifest{Format: Format, Version: Version, Database: "x-ui.db", Files: []File{{Kind: "certs", Path: "../evil", SHA256: digest([]byte("x"))}}}, entry{name: "x-ui.db", body: "db"}),
-		"changed file":    craft(t, &Manifest{Format: Format, Version: Version, Database: "x-ui.db", Files: []File{{Kind: "certs", Path: "a.pem", SHA256: digest([]byte("recorded"))}}}, entry{name: "x-ui.db", body: "db"}, entry{name: "files/certs/a.pem", body: "swapped"}),
-		"not a backup":    craft(t, nil, entry{name: "x-ui.db", body: "db"}),
-		"newer format":    craft(t, &Manifest{Format: Format, Version: Version + 1, Database: "x-ui.db"}, entry{name: "x-ui.db", body: "db"}),
-		"no database":     craft(t, good),
+		"climbing entry":   craft(t, good, db, entry{name: "files/certs/../../evil", body: "x"}),
+		"absolute entry":   craft(t, good, db, entry{name: "/etc/passwd", body: "x"}),
+		"symlink entry":    craft(t, good, db, entry{name: "files/certs/link", kind: tar.TypeSymlink}),
+		"stranger entry":   craft(t, good, db, entry{name: "x-ui.db.extra", body: "x"}),
+		"climbing record":  craft(t, &Manifest{Format: Format, Version: Version, Database: "x-ui.db", DatabaseSHA256: sum, Files: []File{{Kind: "certs", Path: "../evil", SHA256: digest([]byte("x"))}}}, db),
+		"changed file":     craft(t, &Manifest{Format: Format, Version: Version, Database: "x-ui.db", DatabaseSHA256: sum, Files: []File{{Kind: "certs", Path: "a.pem", SHA256: digest([]byte("recorded"))}}}, db, entry{name: "files/certs/a.pem", body: "swapped"}),
+		"changed database": craft(t, good, entry{name: "x-ui.db", body: "dX"}),
+		"not a backup":     craft(t, nil, db),
+		"manifest last":    craft(t, nil, db, entry{name: "manifest.json", body: `{"format":"x-ui-full-backup","version":1,"database":"x-ui.db"}`}),
+		"newer format":     craft(t, &Manifest{Format: Format, Version: Version + 1, Database: "x-ui.db", DatabaseSHA256: sum}, db),
+		"no database":      craft(t, good),
 	}
 	for name, data := range cases {
-		if _, _, _, err := Read(bytes.NewReader(data)); err == nil {
+		dbPath := filepath.Join(t.TempDir(), "x-ui.db.archive")
+		if _, _, err := Read(bytes.NewReader(data), dbPath); err == nil {
 			t.Errorf("%s: the archive was accepted", name)
+		}
+		if _, err := os.Stat(dbPath); err == nil {
+			t.Errorf("%s: a refused archive left its database behind", name)
+		}
+	}
+}
+
+// A backup damaged in transit, a byte flipped after the last file, is refused
+// by gzip's own checksum rather than restored.
+func TestADamagedArchiveIsRefused(t *testing.T) {
+	b := newBox(t)
+	fill(t, b)
+	data := archive(t, b, "the database")
+	data[len(data)-6] ^= 0xff
+	if _, _, _, err := unpack(t, data); err == nil {
+		t.Error("an archive with a broken checksum was accepted")
+	}
+}
+
+// Undo also takes away the folders the restore had to make.
+func TestUndoRemovesTheFoldersARestoreMade(t *testing.T) {
+	old, fresh := newBox(t), newBox(t)
+	fill(t, old)
+	_, _, files, err := unpack(t, archive(t, old, "db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	undo, err := Restore(fresh.sets(), files, filepath.Join(t.TempDir(), "kept"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	undo()
+	for _, dir := range []string{fresh.relays, fresh.openvpn, filepath.Join(fresh.certs, "tun.example.ir"), filepath.Dir(fresh.openvpn)} {
+		if _, err := os.Stat(dir); err == nil {
+			t.Errorf("undo left %s, which the restore had made", dir)
 		}
 	}
 }

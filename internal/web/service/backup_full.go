@@ -33,13 +33,13 @@ func notTemp(rel string) bool { return !strings.HasSuffix(rel, ".tmp") }
 var backupSets = func() []fullbackup.Set {
 	tokenKey := config.GetNodeTokenKeyFile()
 	return []fullbackup.Set{
-		{Kind: "certs", Dir: certissue.Dir, Keep: notTemp},
-		{Kind: "relay-keys", Dir: relayKeyDir, Keep: notTemp, Flat: true, Private: true},
+		{Kind: "certs", Dir: certissue.Dir, Keep: notTemp, DirMode: 0o700},
+		{Kind: "relay-keys", Dir: relayKeyDir, Keep: notTemp, Flat: true, Private: true, DirMode: 0o700},
 		{Kind: "openvpn", Dir: openvpn.Dir, Keep: openvpnKeyFile.MatchString, Flat: true},
 		{Kind: "ocserv", Dir: ocserv.Dir, Keep: ocservKeyFile.MatchString, Flat: true},
 		{
 			Kind: "node-token", Dir: func() string { return filepath.Dir(tokenKey) },
-			Keep: func(rel string) bool { return rel == filepath.Base(tokenKey) }, Flat: true, Private: true,
+			Keep: func(rel string) bool { return rel == filepath.Base(tokenKey) }, Flat: true, Private: true, DirMode: 0o700,
 		},
 	}
 }
@@ -82,21 +82,27 @@ func (s *ServerService) FullBackupFilename(requestHost string) string {
 	return strings.TrimSuffix(strings.TrimSuffix(name, ".db"), ".dump") + "-full.tar.gz"
 }
 
+// dbReplaced marks an import error raised once the new database is in place:
+// the files restored beside it belong to it and stay.
+type dbReplaced struct{ error }
+
+func (e dbReplaced) Unwrap() error { return e.error }
+
+// importStaged stands in for ImportDB when a test sets it, to fail after the swap.
+var importStaged func(*ServerService, multipart.File, bool) error
+
 // importFullBackup restores the files first, so no sidecar regenerates a key
 // before its backup lands, then the database; a failed import undoes the files.
 func (s *ServerService) importFullBackup(file multipart.File, keepHostSettings bool) error {
-	_, db, files, err := fullbackup.Read(file)
+	staged := config.GetDBPath() + ".archive"
+	_, files, err := fullbackup.Read(file, staged)
 	if err != nil {
 		return common.NewErrorf("Invalid full backup: %v", err)
 	}
-	if fullbackup.IsArchive(db) {
+	defer os.Remove(staged)
+	if head, err := readHead(staged); err != nil || fullbackup.IsArchive(head) {
 		return common.NewError("Invalid full backup: its database is itself an archive")
 	}
-	staged := config.GetDBPath() + ".archive"
-	if err := os.WriteFile(staged, db, 0o600); err != nil {
-		return common.NewErrorf("Error staging the backup's database: %v", err)
-	}
-	defer os.Remove(staged)
 
 	keepDir := filepath.Join(config.GetDBFolderPath(), "pre-restore-"+time.Now().Format("20060102-150405"))
 	undo, err := fullbackup.Restore(backupSets(), files, keepDir)
@@ -110,12 +116,32 @@ func (s *ServerService) importFullBackup(file multipart.File, keepHostSettings b
 		return common.NewErrorf("Error reading the backup's database: %v", err)
 	}
 	defer f.Close()
-	if err := s.ImportDB(f, keepHostSettings); err != nil {
-		undo()
+	run := importStaged
+	if run == nil {
+		run = (*ServerService).ImportDB
+	}
+	if err := run(s, f, keepHostSettings); err != nil {
+		if !errors.As(err, new(dbReplaced)) {
+			undo()
+		}
 		return err
 	}
 	if _, err := os.Stat(keepDir); err == nil {
 		logger.Infof("restore: the files it replaced are kept in %s", keepDir)
 	}
 	return nil
+}
+
+func readHead(path string) ([]byte, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	head := make([]byte, 2)
+	n, err := io.ReadFull(f, head)
+	if errors.Is(err, io.ErrUnexpectedEOF) || errors.Is(err, io.EOF) {
+		err = nil
+	}
+	return head[:n], err
 }

@@ -317,3 +317,29 @@ func TestEveryClientGetsAPrivateIPv6AddressSoNoneLeaks(t *testing.T) {
 		}
 	}
 }
+
+// A restore can replace the pair ocserv made for itself; it is read once at
+// start, so the change has to restart it.
+func TestARestoredGeneratedPairRestartsOcserv(t *testing.T) {
+	runtimeDirOverride = t.TempDir()
+	t.Cleanup(func() { runtimeDirOverride = "" })
+	inst := Instance{Id: 6, Port: 8443}
+	for _, p := range []string{certPathForID(6), keyPathForID(6)} {
+		if err := os.WriteFile(p, []byte("made here"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	before := inst.structuralFingerprint()
+	for _, p := range []string{certPathForID(6), keyPathForID(6)} {
+		saved, _ := os.ReadFile(p)
+		if err := os.WriteFile(p, []byte("restored"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		if inst.structuralFingerprint() == before {
+			t.Errorf("%s was replaced and ocserv would keep the old one", filepath.Base(p))
+		}
+		if err := os.WriteFile(p, saved, 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+}

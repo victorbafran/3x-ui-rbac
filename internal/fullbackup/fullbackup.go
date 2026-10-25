@@ -41,6 +41,8 @@ type Set struct {
 	Flat bool
 	// Private files are written 0600 whatever the archive says.
 	Private bool
+	// DirMode is what a folder made on restore gets; zero means 0755.
+	DirMode fs.FileMode
 }
 
 // File is one file in a full backup; its bytes travel beside the manifest.
@@ -60,7 +62,9 @@ type Manifest struct {
 	Created  time.Time `json:"created"`
 	Panel    string    `json:"panel"`
 	Database string    `json:"database"`
-	Files    []File    `json:"files"`
+	// DatabaseSHA256 lets Read refuse a database changed after the backup.
+	DatabaseSHA256 string `json:"databaseSha256"`
+	Files          []File `json:"files"`
 }
 
 func digest(b []byte) string {
@@ -128,7 +132,7 @@ func Write(w io.Writer, dbName string, db []byte, files []File, now time.Time, p
 	tw := tar.NewWriter(gz)
 	manifest, err := json.MarshalIndent(Manifest{
 		Format: Format, Version: Version, Created: now.UTC(),
-		Panel: panel, Database: dbName, Files: files,
+		Panel: panel, Database: dbName, DatabaseSHA256: digest(db), Files: files,
 	}, "", "  ")
 	if err != nil {
 		return err
@@ -167,72 +171,132 @@ func cleanRel(rel string) (string, error) {
 	return rel, nil
 }
 
-// Read reads a tar.gz from Write, checking every file
-// against the manifest; anything else in it is refused, not trusted.
-func Read(r io.Reader) (Manifest, []byte, []File, error) {
+// Read reads a tar.gz from Write, streaming its database to dbPath and checking
+// every entry against the manifest; anything else in it is refused, not trusted.
+func Read(r io.Reader, dbPath string) (Manifest, []File, error) {
+	m, files, err := read(r, dbPath)
+	if err != nil {
+		_ = os.Remove(dbPath)
+	}
+	return m, files, err
+}
+
+func read(r io.Reader, dbPath string) (Manifest, []File, error) {
 	var m Manifest
 	gz, err := gzip.NewReader(r)
 	if err != nil {
-		return m, nil, nil, fmt.Errorf("not a gzip archive: %w", err)
+		return m, nil, fmt.Errorf("not a gzip archive: %w", err)
 	}
+	gz.Multistream(false)
 	tr := tar.NewReader(gz)
 	bodies := map[string][]byte{}
+	dbSum := ""
 	for n := 0; ; n++ {
 		hdr, err := tr.Next()
 		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {
-			return m, nil, nil, fmt.Errorf("the archive is damaged: %w", err)
+			return m, nil, fmt.Errorf("the archive is damaged: %w", err)
 		}
 		if n >= maxEntries {
-			return m, nil, nil, errors.New("the archive holds more entries than a backup has")
+			return m, nil, errors.New("the archive holds more entries than a backup has")
 		}
 		if hdr.Typeflag != tar.TypeReg {
-			return m, nil, nil, fmt.Errorf("%q is not a plain file; a backup holds only plain files", hdr.Name)
+			return m, nil, fmt.Errorf("%q is not a plain file; a backup holds only plain files", hdr.Name)
 		}
 		if _, err := cleanRel(hdr.Name); err != nil {
-			return m, nil, nil, err
+			return m, nil, err
 		}
-		limit := int64(maxFileSize)
-		if !strings.HasPrefix(hdr.Name, "files/") && hdr.Name != "manifest.json" {
-			limit = maxDBSize
+		switch {
+		case n == 0:
+			if hdr.Name != "manifest.json" || hdr.Size > maxFileSize {
+				return m, nil, errors.New("this archive is not a full backup of this panel")
+			}
+			if m, err = readManifest(tr); err != nil {
+				return m, nil, err
+			}
+		case hdr.Name == m.Database && dbSum == "":
+			if hdr.Size > maxDBSize {
+				return m, nil, fmt.Errorf("the database is %d bytes, more than a backup holds", hdr.Size)
+			}
+			if dbSum, err = stream(tr, dbPath); err != nil {
+				return m, nil, fmt.Errorf("unpack the database: %w", err)
+			}
+		case strings.HasPrefix(hdr.Name, "files/"):
+			if hdr.Size > maxFileSize {
+				return m, nil, fmt.Errorf("%q is %d bytes, more than a backup holds", hdr.Name, hdr.Size)
+			}
+			body, err := io.ReadAll(io.LimitReader(tr, maxFileSize+1))
+			if err != nil {
+				return m, nil, fmt.Errorf("read %q: %w", hdr.Name, err)
+			}
+			bodies[hdr.Name] = body
+		default:
+			return m, nil, fmt.Errorf("%q is not part of a full backup", hdr.Name)
 		}
-		if hdr.Size > limit {
-			return m, nil, nil, fmt.Errorf("%q is %d bytes, more than a backup holds", hdr.Name, hdr.Size)
-		}
-		body, err := io.ReadAll(io.LimitReader(tr, limit+1))
-		if err != nil {
-			return m, nil, nil, fmt.Errorf("read %q: %w", hdr.Name, err)
-		}
-		bodies[hdr.Name] = body
 	}
-	if err := json.Unmarshal(bodies["manifest.json"], &m); err != nil || m.Format != Format {
-		return m, nil, nil, errors.New("this archive is not a full backup of this panel")
+	// The gzip checksum is only checked once the stream is read to its end.
+	if _, err := io.Copy(io.Discard, gz); err != nil {
+		return m, nil, fmt.Errorf("the archive is damaged: %w", err)
 	}
-	if m.Version > Version {
-		return m, nil, nil, fmt.Errorf("this backup was made by a newer panel (format %d); update this one first", m.Version)
+	if m.Format == "" {
+		return m, nil, errors.New("this archive is not a full backup of this panel")
 	}
-	if m.Database != "x-ui.db" && m.Database != "x-ui.dump" {
-		return m, nil, nil, fmt.Errorf("the backup names its database %q", m.Database)
+	if dbSum == "" {
+		return m, nil, errors.New("the backup holds no database")
 	}
-	db, ok := bodies[m.Database]
-	if !ok {
-		return m, nil, nil, errors.New("the backup holds no database")
+	if dbSum != m.DatabaseSHA256 {
+		return m, nil, errors.New("the database does not match the backup's record of it")
 	}
 	files := make([]File, 0, len(m.Files))
 	for _, f := range m.Files {
 		if _, err := cleanRel(f.Path); err != nil {
-			return m, nil, nil, err
+			return m, nil, err
 		}
 		body, ok := bodies[path.Join("files", f.Kind, f.Path)]
 		if !ok || digest(body) != f.SHA256 {
-			return m, nil, nil, fmt.Errorf("%s/%s is missing or does not match the backup's record of it", f.Kind, f.Path)
+			return m, nil, fmt.Errorf("%s/%s is missing or does not match the backup's record of it", f.Kind, f.Path)
 		}
 		f.data = body
 		files = append(files, f)
 	}
-	return m, db, files, nil
+	return m, files, nil
+}
+
+func readManifest(r io.Reader) (Manifest, error) {
+	var m Manifest
+	body, err := io.ReadAll(io.LimitReader(r, maxFileSize+1))
+	if err != nil {
+		return m, fmt.Errorf("read the manifest: %w", err)
+	}
+	if err := json.Unmarshal(body, &m); err != nil || m.Format != Format {
+		return Manifest{}, errors.New("this archive is not a full backup of this panel")
+	}
+	if m.Version > Version {
+		return Manifest{}, fmt.Errorf("this backup was made by a newer panel (format %d); update this one first", m.Version)
+	}
+	if m.Database != "x-ui.db" && m.Database != "x-ui.dump" {
+		return Manifest{}, fmt.Errorf("the backup names its database %q", m.Database)
+	}
+	return m, nil
+}
+
+// stream copies the database entry to path and returns its digest.
+func stream(r io.Reader, path string) (string, error) {
+	out, err := os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o600)
+	if err != nil {
+		return "", err
+	}
+	h := sha256.New()
+	n, err := io.Copy(io.MultiWriter(out, h), io.LimitReader(r, maxDBSize+1))
+	if cerr := out.Close(); err == nil {
+		err = cerr
+	}
+	if err == nil && n > maxDBSize {
+		err = errors.New("the database is larger than a backup holds")
+	}
+	return hex.EncodeToString(h.Sum(nil)), err
 }
 
 // Restore puts the files back where this box keeps them. A file it
@@ -256,6 +320,7 @@ func Restore(sets []Set, files []File, keepDir string) (func(), error) {
 			continue
 		}
 		target := filepath.Join(set.Dir(), filepath.FromSlash(f.Path))
+		var undoFile func()
 		old, err := os.ReadFile(target)
 		switch {
 		case err == nil && bytes.Equal(old, f.data):
@@ -268,9 +333,9 @@ func Restore(sets []Set, files []File, keepDir string) (func(), error) {
 			if err := os.WriteFile(kept, old, 0o600); err != nil {
 				return undo, err
 			}
-			undos = append(undos, func() { _ = writeAtomic(target, old, 0o600) })
+			undoFile = func() { _ = writeAtomic(target, old, 0o600) }
 		case errors.Is(err, fs.ErrNotExist):
-			undos = append(undos, func() { _ = os.Remove(target) })
+			undoFile = func() { _ = os.Remove(target) }
 		default:
 			return undo, err
 		}
@@ -278,14 +343,54 @@ func Restore(sets []Set, files []File, keepDir string) (func(), error) {
 		if set.Private || mode == 0 {
 			mode = 0o600
 		}
-		if err := os.MkdirAll(filepath.Dir(target), 0o700); err != nil {
+		dirMode := set.DirMode
+		if dirMode == 0 {
+			dirMode = 0o755
+		}
+		made, err := mkdirs(filepath.Dir(target), dirMode)
+		for _, d := range made {
+			undos = append(undos, func() { _ = os.Remove(d) })
+		}
+		if err != nil {
 			return undo, err
 		}
+		// After its folders, so undo takes the file away before them.
+		undos = append(undos, undoFile)
 		if err := writeAtomic(target, f.data, mode); err != nil {
 			return undo, fmt.Errorf("restore %s/%s: %w", f.Kind, f.Path, err)
 		}
 	}
 	return undo, nil
+}
+
+// mkdirs makes dir and every missing parent with mode exactly, whatever the
+// umask, and returns the folders it made, outermost first.
+func mkdirs(dir string, mode fs.FileMode) ([]string, error) {
+	var missing []string
+	for d := dir; ; d = filepath.Dir(d) {
+		_, err := os.Stat(d)
+		if err == nil {
+			break
+		}
+		if !errors.Is(err, fs.ErrNotExist) {
+			return nil, err
+		}
+		missing = append(missing, d)
+		if filepath.Dir(d) == d {
+			break
+		}
+	}
+	var made []string
+	for i := len(missing) - 1; i >= 0; i-- {
+		if err := os.Mkdir(missing[i], mode); err != nil {
+			return made, err
+		}
+		made = append(made, missing[i])
+		if err := os.Chmod(missing[i], mode); err != nil {
+			return made, err
+		}
+	}
+	return made, nil
 }
 
 // writeAtomic writes through a temporary file beside path, so a reader sees

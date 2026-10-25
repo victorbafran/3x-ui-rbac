@@ -103,6 +103,13 @@ func (m *Manager) ensureLocked(inst Instance) error {
 	if err := ensureRuntimeDir(); err != nil {
 		return err
 	}
+	// The keys first, so the fingerprint stamps the files the server reads.
+	if _, _, _, err := ensureKeypair(inst); err != nil {
+		return err
+	}
+	if _, err := ensureTLSCryptKey(inst.Id); err != nil {
+		return err
+	}
 
 	newStructFP := inst.structuralFingerprint()
 	newUsersFP := usersFingerprint(inst.Users)
@@ -130,17 +137,6 @@ func (m *Manager) ensureLocked(inst Instance) error {
 		}
 		delete(m.procs, inst.Id)
 	}
-
-	caFile, certFile, keyFile, err := ensureKeypair(inst)
-	if err != nil {
-		return err
-	}
-	if _, err := ensureTLSCryptKey(inst.Id); err != nil {
-		return err
-	}
-	_ = caFile
-	_ = certFile
-	_ = keyFile
 
 	drop := ResolveDropAccount()
 	if err := writeUsers(inst, drop); err != nil {

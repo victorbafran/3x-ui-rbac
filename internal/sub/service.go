@@ -1773,10 +1773,7 @@ func (s *SubService) resolveInboundAddress(inbound *model.Inbound) string {
 			return c
 		}
 	}
-	if s.panelAddr != "" {
-		return s.panelAddr
-	}
-	if d := s.configuredPublicHost(); d != "" {
+		if d := s.configuredPublicHost(); d != "" {
 		return d
 	}
 	return s.address

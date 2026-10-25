@@ -299,26 +299,36 @@ func seedSubMtprotoInbound(t *testing.T, subId, tag string, port int) {
 	}
 }
 
+// The JSON format once answered an mtproto-only subscription with a config of no
+// proxy, so a client detected as JSON connected directly instead of getting tg://.
 func TestAutoDetectFallsBackToRawWhenFormatHasNoContent(t *testing.T) {
 	seedSubDB(t)
 	seedSubMtprotoInbound(t, "s1", "tg", 4490)
 	gin.SetMode(gin.TestMode)
 
-	req := httptest.NewRequest(http.MethodGet, "http://sub.example.com/sub/s1", nil)
-	req.Header.Set("User-Agent", "Clash-Verge/v2.4.2")
-	resp := httptest.NewRecorder()
+	for _, userAgent := range []string{"Clash-Verge/v2.4.2", "v2rayNG/1.10.0"} {
+		t.Run(userAgent, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, "http://sub.example.com/sub/s1", nil)
+			req.Header.Set("User-Agent", userAgent)
+			resp := httptest.NewRecorder()
 
-	newSubscriptionTestRouter(subscriptionTestRouterConfig{clashAutoDetect: true, jsonAutoDetect: true}).ServeHTTP(resp, req)
+			newSubscriptionTestRouter(subscriptionTestRouterConfig{
+				clashAutoDetect:    true,
+				jsonAutoDetect:     true,
+				jsonUserAgentRegex: `(?i)^v2rayng/`,
+			}).ServeHTTP(resp, req)
 
-	if resp.Code != http.StatusOK {
-		t.Fatalf("status = %d, want 200; body=%s", resp.Code, resp.Body.String())
-	}
-	decoded, err := base64.StdEncoding.DecodeString(resp.Body.String())
-	if err != nil {
-		t.Fatalf("fallback response is not base64: %v", err)
-	}
-	if !strings.Contains(string(decoded), "tg://proxy") {
-		t.Fatalf("decoded fallback lacks the Telegram proxy link: %s", decoded)
+			if resp.Code != http.StatusOK {
+				t.Fatalf("status = %d, want 200; body=%s", resp.Code, resp.Body.String())
+			}
+			decoded, err := base64.StdEncoding.DecodeString(resp.Body.String())
+			if err != nil {
+				t.Fatalf("fallback response is not base64: %v\n%s", err, resp.Body.String())
+			}
+			if !strings.Contains(string(decoded), "tg://proxy") {
+				t.Fatalf("decoded fallback lacks the Telegram proxy link: %s", decoded)
+			}
+		})
 	}
 }
 

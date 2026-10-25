@@ -133,6 +133,8 @@ func (s *SubJsonService) GetJson(subId string, host string, alwaysReturnArray bo
 	var header string
 	var hasInactiveExternal bool
 	var hasEnabledClient bool
+	// Clients of an inbound JSON has no config for, such as cisco or openvpn.
+	var hasUncarriedClients bool
 
 	seenEmails := make(map[string]struct{})
 	entries := make([]subConfigEntry, 0, len(inbounds))
@@ -162,13 +164,15 @@ func (s *SubJsonService) GetJson(subId string, host string, alwaysReturnArray bo
 			seenEmails[client.Email] = struct{}{}
 			inboundConfigs = append(inboundConfigs, s.clientConfigs(subReq, inbound, client, host, units)...)
 		}
-		if len(inboundConfigs) > 0 {
-			entries = append(entries, subConfigEntry{
-				sortIndex: inbound.SubSortIndex,
-				id:        inbound.Id,
-				configs:   inboundConfigs,
-			})
+		if len(inboundConfigs) == 0 {
+			hasUncarriedClients = true
+			continue
 		}
+		entries = append(entries, subConfigEntry{
+			sortIndex: inbound.SubSortIndex,
+			id:        inbound.Id,
+			configs:   inboundConfigs,
+		})
 	}
 	entries = s.appendBalancerEntries(entries)
 
@@ -217,7 +221,7 @@ func (s *SubJsonService) GetJson(subId string, host string, alwaysReturnArray bo
 		}
 	}
 
-	if len(configArray) == 0 && !hasInactiveExternal {
+	if len(configArray) == 0 && !hasInactiveExternal && !hasUncarriedClients {
 		return "", "", nil
 	}
 
@@ -230,7 +234,13 @@ func (s *SubJsonService) GetJson(subId string, host string, alwaysReturnArray bo
 	traffic.Enable = hasEnabledClient
 	header = subReq.subscriptionUserinfo(traffic)
 
-	if mode, remark := subReq.resolveInfoNodeRemark(subId, emails, traffic, len(configArray) > 0); mode != infoNodeNone {
+	mode, remark := subReq.resolveInfoNodeRemark(subId, emails, traffic, len(configArray) > 0)
+	// Uncarried clients get only an expired or depleted notice here; with none to
+	// give, the empty answer sends an auto-detected app to raw, which lists them.
+	if len(configArray) == 0 && !hasInactiveExternal && mode == infoNodeNone {
+		return "", "", nil
+	}
+	if mode != infoNodeNone {
 		var dummies []json_util.RawMessage
 		for i, line := range strings.Split(remark, "\n") {
 			dummies = append(dummies, s.genDummySocksConfig(line, infoBasePort+i))
@@ -689,7 +699,9 @@ func (s *SubJsonService) getConfig(subReq *SubService, inbound *model.Inbound, c
 				continue
 			}
 			newOutbounds = append(newOutbounds, wgOutbound)
-		case "amneziawg", "tuic":
+		default:
+			// No Xray outbound speaks it (cisco, openvpn, mtproto, amneziawg, tuic): the
+			// template's outbounds alone would route the customer out directly.
 			continue
 		}
 

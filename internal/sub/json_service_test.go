@@ -548,19 +548,79 @@ func TestSubJsonServiceWireguardNoKey(t *testing.T) {
 	}
 }
 
-func TestSubJsonServiceSkipsAmneziaWG(t *testing.T) {
-	if got := NewSubJsonService("", "", "", "", nil).getConfig(&SubService{address: "sub.example.com"}, &model.Inbound{Listen: "203.0.113.8", Port: 51820, Protocol: model.AmneziaWG}, model.Client{}, "sub.example.com"); len(got) != 0 {
-		t.Fatalf("getConfig emitted %d unsupported AmneziaWG Xray config(s)", len(got))
+// A config with no proxy outbound routes through the template's "direct" one: a
+// customer who picks a cisco or openvpn entry is online, but not through the VPN.
+func TestSubJsonServiceEmitsOnlyConfigsLedByTheirProxy(t *testing.T) {
+	serverPriv, _ := mustWireguardKeypair(t)
+	clientPriv, _ := mustWireguardKeypair(t)
+	plain := `{"network":"tcp","security":"none"}`
+	tlsStream := `{"network":"tcp","security":"tls","tlsSettings":{"serverName":"vpn.example.test"}}`
+	// Every protocol the subscription query lets through, as the panel stores it.
+	cases := []struct {
+		name      string
+		protocol  model.Protocol
+		settings  string
+		stream    string
+		client    model.Client
+		wantProxy bool
+	}{
+		{"vmess", model.VMESS, `{}`, plain, model.Client{ID: "11111111-2222-4333-8444-555555555555"}, true},
+		{"vless", model.VLESS, `{"decryption":"none"}`, plain, model.Client{ID: "11111111-2222-4333-8444-555555555555"}, true},
+		{"trojan", model.Trojan, `{}`, tlsStream, model.Client{Password: "pw123456"}, true},
+		{"shadowsocks", model.Shadowsocks, `{"method":"aes-256-gcm"}`, plain, model.Client{Password: "pw123456"}, true},
+		{"hysteria", model.Hysteria, `{"version":2}`, `{"network":"hysteria","security":"tls","tlsSettings":{"alpn":["h3"]}}`, model.Client{Auth: "hyauth"}, true},
+		{"masque", model.MASQUE, `{}`, `{"network":"masque","security":"tls","masqueSettings":{"path":"/masque"}}`, model.Client{Password: "pw123456"}, true},
+		{"wireguard", model.WireGuard, `{"secretKey":"` + serverPriv + `"}`, `{}`, model.Client{PrivateKey: clientPriv}, true},
+		{"wireguard without a key", model.WireGuard, `{"secretKey":"` + serverPriv + `"}`, `{}`, model.Client{}, false},
+		{"cisco", model.Cisco, `{}`, `{}`, model.Client{Password: "pw123456"}, false},
+		{"openvpn", model.OpenVPN, `{"useTcp":false,"exit":""}`, `{}`, model.Client{Password: "pw123456"}, false},
+		{"mtproto", model.MTProto, `{"fakeTlsDomain":"www.cloudflare.com"}`, `{}`, model.Client{}, false},
+		{"amneziawg", model.AmneziaWG, `{}`, `{}`, model.Client{PrivateKey: clientPriv}, false},
+		{"tuic", model.TUIC, `{}`, `{}`, model.Client{ID: "11111111-2222-4333-8444-555555555555", Password: "pw123456"}, false},
 	}
-}
-
-func TestSubJsonServiceSkipsTUIC(t *testing.T) {
-	if got := NewSubJsonService("", "", "", "", nil).getConfig(
-		&SubService{address: "sub.example.com"},
-		&model.Inbound{Listen: "203.0.113.8", Port: 8443, Protocol: model.TUIC},
-		model.Client{},
-		"sub.example.com",
-	); len(got) != 0 {
-		t.Fatalf("getConfig emitted %d unsupported TUIC Xray config(s)", len(got))
+	svc := NewSubJsonService("", "", "", "", nil)
+	var defaults []any
+	for _, raw := range svc.defaultOutbounds {
+		var outbound any
+		if err := json.Unmarshal(raw, &outbound); err != nil {
+			t.Fatalf("default outbound: %v", err)
+		}
+		defaults = append(defaults, outbound)
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			inbound := &model.Inbound{
+				Listen: "203.0.113.9", Port: 443, Protocol: tc.protocol, Remark: string(tc.protocol),
+				Settings: tc.settings, StreamSettings: tc.stream,
+			}
+			client := tc.client
+			client.Email = "user"
+			configs := svc.getConfig(&SubService{address: "sub.example.com"}, inbound, client, "sub.example.com")
+			if !tc.wantProxy {
+				if len(configs) != 0 {
+					t.Fatalf("got %d config(s) with no %s proxy to put first; they connect the customer directly:\n%s", len(configs), tc.protocol, configs[0])
+				}
+				return
+			}
+			if len(configs) != 1 {
+				t.Fatalf("got %d configs, want the one %s config", len(configs), tc.protocol)
+			}
+			var doc struct {
+				Outbounds []map[string]any `json:"outbounds"`
+			}
+			if err := json.Unmarshal(configs[0], &doc); err != nil {
+				t.Fatalf("decode config: %v", err)
+			}
+			if len(doc.Outbounds) == 0 || doc.Outbounds[0]["tag"] != "proxy" || doc.Outbounds[0]["protocol"] != string(tc.protocol) {
+				t.Fatalf("outbounds = %v, want a %s proxy first", doc.Outbounds, tc.protocol)
+			}
+			rest := make([]any, 0, len(doc.Outbounds)-1)
+			for _, outbound := range doc.Outbounds[1:] {
+				rest = append(rest, outbound)
+			}
+			if !reflect.DeepEqual(rest, defaults) {
+				t.Fatalf("outbounds after the proxy = %v, want the template's %v", rest, defaults)
+			}
+		})
 	}
 }

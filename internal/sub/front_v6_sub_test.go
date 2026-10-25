@@ -257,8 +257,8 @@ func TestFrontBothThroughEverySubscriptionFormat(t *testing.T) {
 		}
 		var got []entry
 		for _, d := range docs {
-			if len(d.Outbounds) == 0 || d.Outbounds[0].Protocol == "freedom" {
-				continue
+			if len(d.Outbounds) == 0 {
+				t.Fatalf("json config %q has no outbounds", d.Remarks)
 			}
 			got = append(got, entry{d.Remarks, jsonOutboundAddress(d.Outbounds[0].Settings)})
 		}

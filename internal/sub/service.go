@@ -338,7 +338,7 @@ func ownCertFile(inbound *model.Inbound) string {
 			} `json:"certificates"`
 		} `json:"tlsSettings"`
 	}
-	if json.Unmarshal([]byte(inbound.StreamSettings), &st) != nil || st.Security != "tls" || len(st.TLSSettings.Certificates) == 0 {
+	if json.Unmarshal([]byte(inbound.StreamSettings), &st) != nil || len(st.TLSSettings.Certificates) == 0 {
 		return ""
 	}
 	return strings.TrimSpace(st.TLSSettings.Certificates[0].CertificateFile)

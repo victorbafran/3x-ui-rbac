@@ -323,7 +323,7 @@ func (s *SubService) ownCertHost(inbound *model.Inbound) string {
 // ownCertFile is the certificate an inbound serves from a file: cisco's own
 // setting, or the first one of an xray TLS stream.
 func ownCertFile(inbound *model.Inbound) string {
-	if inbound.Protocol == model.Cisco {
+	if false {
 		var st struct {
 			CertFile string `json:"certFile"`
 		}

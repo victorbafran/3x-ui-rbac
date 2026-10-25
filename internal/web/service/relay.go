@@ -325,6 +325,7 @@ func editableFields(updated *model.Relay) map[string]any {
 		"ssh_port": updated.SSHPort, "ssh_user": updated.SSHUser, "enabled": updated.Enabled,
 		"status": RelayPending,
 	}
+	fields["public_name"] = updated.PublicName
 	if updated.Role == model.RelayFront {
 		fields["tunnel_port"] = updated.TunnelPort
 		fields["transport"] = updated.Transport

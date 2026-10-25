@@ -16,17 +16,41 @@ import (
 
 func startLifecycleTestServer(t *testing.T, relayAddr, email string) (*Server, *clientquic.Conn, uuid.UUID, string) {
 	t.Helper()
+	return startLifecycleTestServerWith(t, relayAddr, email, lifecycleSetup{})
+}
+
+// lifecycleSetup adjusts a lifecycle test server: its instance before it is built,
+// the server before it starts, and the client's QUIC config (datagrams on if nil).
+type lifecycleSetup struct {
+	instance func(*Instance)
+	server   func(*Server)
+	client   *clientquic.Config
+}
+
+func startLifecycleTestServerWith(t *testing.T, relayAddr, email string, setup lifecycleSetup) (*Server, *clientquic.Conn, uuid.UUID, string) {
+	t.Helper()
 	cert, key := generateTestCert(t)
 	clientID := uuid.New()
 	password := "lifecycle-test-password"
-	server, err := NewServer(Instance{
+	inst := Instance{
 		Id: 99101, Tag: "lifecycle-test", Listen: "127.0.0.1", Port: 0,
 		Certificate: string(cert), PrivateKey: string(key), ALPN: []string{"h3"},
 		AuthenticationTimeout: 2, MaxIdleTime: 30,
 		Clients: []TuicClientSettings{{UUID: clientID.String(), Password: password, Email: email}},
-	}, &SocksRelay{Addr: relayAddr, Password: "lifecycle-socks-password"})
+	}
+	if setup.instance != nil {
+		setup.instance(&inst)
+	}
+	server, err := NewServer(inst, &SocksRelay{Addr: relayAddr, Password: "lifecycle-socks-password"})
 	if err != nil {
 		t.Fatalf("create TUIC server: %v", err)
+	}
+	if setup.server != nil {
+		setup.server(server)
+	}
+	clientConfig := setup.client
+	if clientConfig == nil {
+		clientConfig = &clientquic.Config{EnableDatagrams: true}
 	}
 	if err := server.Start(); err != nil {
 		t.Fatalf("start TUIC server: %v", err)
@@ -36,8 +60,7 @@ func startLifecycleTestServer(t *testing.T, relayAddr, email string) (*Server, *
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	client, err := clientquic.DialAddr(ctx, server.packetConn.LocalAddr().String(),
-		&tls.Config{InsecureSkipVerify: true, NextProtos: []string{"h3"}},
-		&clientquic.Config{EnableDatagrams: true})
+		&tls.Config{InsecureSkipVerify: true, NextProtos: []string{"h3"}}, clientConfig)
 	if err != nil {
 		t.Fatalf("dial TUIC server: %v", err)
 	}

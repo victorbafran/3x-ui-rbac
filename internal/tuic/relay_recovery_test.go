@@ -8,11 +8,13 @@ import (
 	"net"
 	"runtime"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 
+	serverquic "github.com/apernet/quic-go"
 	clientquic "github.com/quic-go/quic-go"
 )
 
@@ -195,6 +197,127 @@ func TestAudit3UDPAssociationMustRecoverAfterBridgeReadFailure(t *testing.T) {
 				t.Fatalf("retained association became receive blackhole after read failure: response %q err=%v; fresh association works; user up=%d down=%d", payload, oldErr, user.Traffic.BytesUp.Load(), user.Traffic.BytesDown.Load())
 			}
 		})
+	}
+}
+
+// audit3EchoSources echoes every datagram the bridge gets back to its sender, and
+// returns a wait for the next one's source: a new source is a new association.
+func audit3EchoSources(t *testing.T, u *net.UDPConn) func(what string) string {
+	sources := make(chan string, 8)
+	go func() {
+		buf := make([]byte, 64*1024)
+		for {
+			n, src, err := u.ReadFromUDP(buf)
+			if err != nil {
+				return
+			}
+			_, _ = u.WriteToUDP(buf[:n], src)
+			sources <- src.String()
+		}
+	}()
+	return func(what string) string {
+		t.Helper()
+		select {
+		case src := <-sources:
+			return src
+		case <-time.After(2 * time.Second):
+			t.Fatalf("the %s request never reached the UDP bridge", what)
+			return ""
+		}
+	}
+}
+
+// A client that stops a response stream mid-write loses that packet only; the
+// association, and the bridge socket it holds, carry the next one.
+func TestClientStoppingAResponseStreamKeepsTheUDPAssociation(t *testing.T) {
+	relayAddr, u, _ := audit3RestartableSOCKS(t)
+	nextSource := audit3EchoSources(t, u)
+	// quic-go's Write returns with at most a packet (~1.4 KB) still queued, so a
+	// 4 KB response under a 16-byte window is mid-write when STOP_SENDING lands.
+	const stalledResponse = 4096
+	s, c, id, _ := startLifecycleTestServerWith(t, relayAddr, "stopped-response@x", lifecycleSetup{
+		instance: func(inst *Instance) { inst.MaxUdpRelayPacketSize = stalledResponse },
+		client:   &clientquic.Config{EnableDatagrams: true, InitialStreamReceiveWindow: 16, MaxStreamReceiveWindow: 16},
+	})
+	authenticatedServerConnection(t, s, id)
+
+	audit3SendPacket(t, c, packetTransportStream, 42141, 1, strings.Repeat("x", stalledResponse))
+	firstSource := nextSource("full-size")
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	stopped, err := c.AcceptUniStream(ctx)
+	if err != nil {
+		t.Fatalf("the full-size response stream never opened: %v", err)
+	}
+	if _, command, err := ReadCommand(stopped); err != nil || command != CmdPacket {
+		t.Fatalf("full-size response command=%d err=%v", command, err)
+	}
+	stopped.CancelRead(0)
+
+	audit3SendPacket(t, c, packetTransportStream, 42141, 2, "after-stop")
+	_, payload, err := audit3ReceivePacket(c, packetTransportStream, 2*time.Second)
+	if err != nil || string(payload) != "after-stop" {
+		t.Fatalf("the response after a stopped stream was lost: %q err=%v", payload, err)
+	}
+	if secondSource := nextSource("after-stop"); secondSource != firstSource {
+		t.Fatalf("stopping one response stream rebuilt the association: bridge saw %s, then %s", firstSource, secondSource)
+	}
+}
+
+// A client may stop a response stream once it has read it, before the server has
+// closed it (the order CI met); a packet split over streams must still arrive whole.
+func TestClientStoppingAReadFragmentStillGetsTheRestOfThePacket(t *testing.T) {
+	relayAddr, u, _ := audit3RestartableSOCKS(t)
+	nextSource := audit3EchoSources(t, u)
+	var held, stopLanded atomic.Bool
+	s, c, id, _ := startLifecycleTestServerWith(t, relayAddr, "stopped-fragment@x", lifecycleSetup{
+		instance: func(inst *Instance) { inst.MaxUdpRelayPacketSize = 2 * maxStreamFragmentSize },
+		// The first fragment's stream stays unclosed until the client's STOP_SENDING lands.
+		server: func(s *Server) {
+			s.afterStreamFragmentWrite = func(stream *serverquic.SendStream) {
+				if held.Swap(true) {
+					return
+				}
+				select {
+				case <-stream.Context().Done():
+					stopLanded.Store(true)
+				case <-time.After(2 * time.Second):
+				}
+			}
+		},
+	})
+	authenticatedServerConnection(t, s, id)
+
+	payload := strings.Repeat("y", maxStreamFragmentSize) + "tail"
+	audit3SendPacket(t, c, packetTransportStream, 42151, 1, payload)
+	nextSource("two-fragment")
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	var got []byte
+	for frag := range 2 {
+		stream, err := c.AcceptUniStream(ctx)
+		if err != nil {
+			t.Fatalf("fragment %d of 2 never arrived: %v", frag, err)
+		}
+		if _, command, err := ReadCommand(stream); err != nil || command != CmdPacket {
+			t.Fatalf("fragment %d command=%d err=%v", frag, command, err)
+		}
+		h, err := ReadPacketHeader(stream)
+		if err != nil || h.FragTotal != 2 || int(h.FragID) != frag {
+			t.Fatalf("fragment %d header %+v err=%v", frag, h, err)
+		}
+		p, err := readPacketPayload(stream, h)
+		if err != nil {
+			t.Fatalf("fragment %d payload: %v", frag, err)
+		}
+		got = append(got, p...)
+		stream.CancelRead(0)
+	}
+	if !stopLanded.Load() {
+		t.Fatal("the client's stop reached the first stream only after its close; the order under test never happened")
+	}
+	if string(got) != payload {
+		t.Fatalf("reassembled %d bytes, want the %d sent", len(got), len(payload))
 	}
 }
 

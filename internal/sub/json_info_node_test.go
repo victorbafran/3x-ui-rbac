@@ -245,3 +245,65 @@ func TestSubJson_InfoNode_StatusActive(t *testing.T) {
 		t.Fatalf("expected 'user1@test.com|✅ active' in JSON remarks, got:\n%s", out)
 	}
 }
+
+// seedInfoNodeClient seeds one protocol inbound holding one client of subId,
+// with that client's traffic row.
+func seedInfoNodeClient(t *testing.T, protocol model.Protocol, subId, email string, traffic xray.ClientTraffic) {
+	t.Helper()
+	db := database.GetDB()
+	ib := &model.Inbound{
+		Id: 1, UserId: 1, Remark: string(protocol) + "-inbound", Enable: true, Port: 4443, Protocol: protocol,
+		Settings:       fmt.Sprintf(`{"clients":[{"email":%q,"subId":%q,"enable":true,"password":"pw123456"}]}`, email, subId),
+		StreamSettings: `{}`,
+	}
+	if err := db.Create(ib).Error; err != nil {
+		t.Fatal(err)
+	}
+	rec := &model.ClientRecord{Id: 1, Email: email, SubID: subId, Password: "pw123456", Enable: true, ExpiryTime: traffic.ExpiryTime}
+	if err := db.Create(rec).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Create(&model.ClientInbound{InboundId: 1, ClientId: 1}).Error; err != nil {
+		t.Fatal(err)
+	}
+	traffic.InboundId, traffic.Email, traffic.Enable = 1, email, true
+	if err := db.Create(&traffic).Error; err != nil {
+		t.Fatal(err)
+	}
+}
+
+// Cisco and OpenVPN have no JSON config, so a JSON subscription of only them lists
+// nothing; the expired or depleted notice, and the usage header, must still reach the app.
+func TestSubJson_InfoNode_ReachesClientsJSONCannotCarry(t *testing.T) {
+	expired := time.Now().Add(-24 * time.Hour).UnixMilli()
+	for _, tc := range []struct {
+		name       string
+		protocol   model.Protocol
+		traffic    xray.ClientTraffic
+		notice     string
+		headerPart string
+	}{
+		{"expired cisco", model.Cisco, xray.ClientTraffic{ExpiryTime: expired}, "Expired", fmt.Sprintf("expire=%d", expired/1000)},
+		{"depleted openvpn", model.OpenVPN, xray.ClientTraffic{Up: 3 << 30, Down: 2 << 30, Total: 5 << 30}, "Traffic Depleted", "total=5368709120"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			setupInfoNodeTestDB(t)
+			seedInfoNodeClient(t, tc.protocol, "sub-only", "only@test.com", tc.traffic)
+			sub := NewSubService("{{INBOUND}}")
+			sub.subInfoNodeEnable = true
+			sub.subExpiredTemplate = service.DefaultSubExpiredTemplate
+			sub.subTrafficDepletedTemplate = service.DefaultSubTrafficDepletedTemplate
+
+			out, header, err := NewSubJsonService("", "", "", "", sub).GetJson("sub-only", "sub.example.com", false)
+			if err != nil {
+				t.Fatalf("GetJson: %v", err)
+			}
+			if !strings.Contains(out, tc.notice) || !strings.Contains(out, "only@test.com") || !strings.Contains(out, `"socks"`) {
+				t.Fatalf("got:\n%s\nwant the %q notice for only@test.com", out, tc.notice)
+			}
+			if !strings.Contains(header, tc.headerPart) {
+				t.Fatalf("header = %q, want it to carry %q", header, tc.headerPart)
+			}
+		})
+	}
+}

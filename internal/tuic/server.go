@@ -55,6 +55,10 @@ type Server struct {
 
 	closed  atomic.Bool
 	running atomic.Bool
+
+	// afterStreamFragmentWrite runs between a stream fragment's write and close;
+	// nil outside tests, which hold it there until the client stops the stream.
+	afterStreamFragmentWrite func(*quic.SendStream)
 }
 
 // NewServer creates a new TUIC v5 Server instance.
@@ -898,10 +902,13 @@ func (s *Server) relayUDPResponses(
 
 		nextPktID++
 		if err := s.sendUDPPacketFragments(ctx, conn, assocID, nextPktID, srcAddr, respPayload, sess.responseTransport); err != nil {
-			if ctx.Err() == nil {
-				s.logLimited(tuicLogWarn, "udp-response", 30*time.Second, "UDP relay response failed: %v", err)
+			if ctx.Err() != nil {
+				return
 			}
-			return
+			// One undeliverable response, such as a stream the client stopped, loses
+			// that packet only; ending here would rebuild the association on a new socket.
+			s.logLimited(tuicLogWarn, "udp-response", 30*time.Second, "UDP relay response failed: %v", err)
+			continue
 		}
 		associations.touch(assocID, association, time.Now())
 	}
@@ -951,9 +958,12 @@ func (s *Server) sendUDPPacketFragments(
 				stream.CancelWrite(0)
 				return err
 			}
-			if err := stream.Close(); err != nil {
-				return err
+			if s.afterStreamFragmentWrite != nil {
+				s.afterStreamFragmentWrite(stream)
 			}
+			// Close fails only when the client already stopped this stream. The fragment
+			// was fully queued, and a client may stop a stream right after reading it.
+			_ = stream.Close()
 			continue
 		}
 		if err := conn.SendDatagram(frame.Bytes()); err != nil {

@@ -310,22 +310,27 @@ func (s *RelayService) Update(id int, req RelayRequest) error {
 	if err := s.refuseASecondFront(updated); err != nil {
 		return err
 	}
+	if err := database.GetDB().Model(&existing).Updates(editableFields(updated)).Error; err != nil {
+		return err
+	}
+	go s.enrollAndProvision(id, req.Password, req.PrivateKey)
+	return nil
+}
+
+// editableFields is what an edit writes. A front may have its listening port,
+// transport or public name changed; the token is kept as it was.
+func editableFields(updated *model.Relay) map[string]any {
 	fields := map[string]any{
 		"name": updated.Name, "label": updated.Label, "address": updated.Address,
 		"ssh_port": updated.SSHPort, "ssh_user": updated.SSHUser, "enabled": updated.Enabled,
 		"status": RelayPending,
 	}
-	// A front may have its listening port or transport changed; the token is
-	// kept as it was.
 	if updated.Role == model.RelayFront {
 		fields["tunnel_port"] = updated.TunnelPort
 		fields["transport"] = updated.Transport
+		fields["public_name"] = updated.PublicName
 	}
-	if err := database.GetDB().Model(&existing).Updates(fields).Error; err != nil {
-		return err
-	}
-	go s.enrollAndProvision(id, req.Password, req.PrivateKey)
-	return nil
+	return fields
 }
 
 // rowFrom validates what the operator typed. The name reaches a VPN server's

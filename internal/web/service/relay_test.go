@@ -78,6 +78,30 @@ func TestAnEditKeepsWhatTheOperatorDidNotChange(t *testing.T) {
 	}
 }
 
+// An edited public name was dropped: the edit wrote every other field but
+// that one, so the inbound form went on offering the old name.
+func TestAnEditedPublicNameIsSaved(t *testing.T) {
+	s := &RelayService{}
+	base, err := s.rowFrom(RelayRequest{Name: "fr", Address: "198.51.100.5", Role: "front", PublicName: "old.example.ir"}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	edited, err := s.rowFrom(RelayRequest{Name: "fr", Address: "198.51.100.5", Role: "front", PublicName: "New.Example.ir."}, base)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := editableFields(edited)["public_name"]; got != "new.example.ir" {
+		t.Errorf("the edit writes public_name %v, want new.example.ir", got)
+	}
+	exit, err := s.rowFrom(RelayRequest{Name: "nl", Address: "198.51.100.1"}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := editableFields(exit)["public_name"]; ok {
+		t.Error("an exit, which has no public name, had one written")
+	}
+}
+
 // The stored tunnel key must come back exactly, or the tunnel it belongs to
 // never handshakes again and the country goes quiet with nothing to explain it.
 func TestTheStoredTunnelKeyRoundTrips(t *testing.T) {

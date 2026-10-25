@@ -121,7 +121,7 @@ func (s *ServerService) importFullBackup(file multipart.File, keepHostSettings b
 		run = (*ServerService).ImportDB
 	}
 	if err := run(s, f, keepHostSettings); err != nil {
-		if !errors.As(err, new(dbReplaced)) {
+		if true {
 			undo()
 		}
 		return err

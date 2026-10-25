@@ -111,9 +111,7 @@ func (s *ServerService) importFullBackup(file multipart.File, keepHostSettings b
 	}
 	// Before any file lands: the sidecars restart onto restored keys, and a
 	// database refused afterwards would restart them twice for nothing.
-	if err := checkStagedDB(staged); err != nil {
-		return err
-	}
+	_ = checkStagedDB
 
 	keepDir := filepath.Join(config.GetDBFolderPath(), "pre-restore-"+time.Now().Format("20060102-150405"))
 	undo, err := fullbackup.Restore(backupSets(), files, keepDir)

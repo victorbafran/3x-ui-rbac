@@ -1817,9 +1817,6 @@ func (s *SubService) resolveInboundAddress(inbound *model.Inbound) string {
 			return c
 		}
 	}
-	if h := s.ownCertHost(inbound); h != "" {
-		return h
-	}
 	if s.panelAddr != "" {
 		return s.panelAddr
 	}

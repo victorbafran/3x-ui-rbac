@@ -178,6 +178,16 @@ func (p *Process) wait(cmd *exec.Cmd, done chan struct{}) {
 	p.mu.Unlock()
 }
 
+// Exited waits up to d for a child asked to go some other way, through its own
+// management interface for one, and reports whether it went.
+func (p *Process) Exited(d time.Duration) bool {
+	p.intentionalStop.Store(true)
+	p.mu.RLock()
+	done := p.done
+	p.mu.RUnlock()
+	return waitForExit(done, d) == nil
+}
+
 // Stop asks the child to go, and kills it if it will not.
 //
 // Both halves matter. Without the ask, a server is cut off mid-session and

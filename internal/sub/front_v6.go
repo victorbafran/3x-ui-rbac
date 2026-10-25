@@ -61,7 +61,7 @@ func (s *SubService) loadFronts6() {
 // frontFromRelay reads an enabled front for the subscription; false when its
 // customers stay on IPv4, the default an empty IPFamily means.
 func frontFromRelay(r model.Relay) (front6, bool) {
-	if r.IPFamily != "v6" && r.IPFamily != "both" {
+	if r.IPFamily == "never" {
 		return front6{}, false
 	}
 	ip := net.ParseIP(strings.Trim(strings.TrimSpace(r.Address6), "[]"))

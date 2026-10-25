@@ -3278,7 +3278,7 @@ func (s *SubService) openvpnProfileFor(inbound *model.Inbound, client model.Clie
 	// One file either way: "both" is a second remote the client tries first.
 	if front := s.frontNamed(address); front != nil {
 		if front.both {
-			address6 = front.address6
+			address6 = ""
 		} else {
 			address = front.address6
 		}

@@ -99,6 +99,10 @@ type RelayRequest struct {
 	// PublicName is the name customers type to reach a front, offered to the
 	// inbound form as the address its links should carry.
 	PublicName string `json:"publicName"`
+	// Address6 is a front's public IPv6, blank to have it read off the server;
+	// IPFamily is what its customers get: "" IPv4, "v6" or "both".
+	Address6 string `json:"address6"`
+	IPFamily string `json:"ipFamily"`
 }
 
 // List returns every relay with the state of its tunnel.
@@ -329,6 +333,9 @@ func editableFields(updated *model.Relay) map[string]any {
 		fields["tunnel_port"] = updated.TunnelPort
 		fields["transport"] = updated.Transport
 		fields["public_name"] = updated.PublicName
+		fields["address6"] = updated.Address6
+		fields["ip_family"] = updated.IPFamily
+		fields["address6_error"] = updated.Address6Error
 	}
 	return fields
 }
@@ -426,6 +433,10 @@ func (s *RelayService) fillFront(r *model.Relay, req RelayRequest, base *model.R
 	}
 	r.PublicName = name
 
+	if err := fillFrontIPv6(r, req, base); err != nil {
+		return err
+	}
+
 	port := req.TunnelPort
 	if port <= 0 {
 		port = 3080
@@ -462,6 +473,14 @@ func (s *RelayService) enrollAndProvision(id int, password, privateKey string) {
 	if _, busy := relayRunning.LoadOrStore(id, true); busy {
 		return
 	}
+	var readyFront *model.Relay
+	// Deferred before the flag's release so it runs after it: an edit saved while
+	// the front's IPv6 is checked must still get a provisioning of its own.
+	defer func() {
+		if readyFront != nil {
+			s.refreshFrontIPv6(*readyFront)
+		}
+	}()
 	defer relayRunning.Delete(id)
 
 	ctx, cancel := context.WithTimeout(context.Background(), provisionTimeout)
@@ -493,7 +512,9 @@ func (s *RelayService) enrollAndProvision(id int, password, privateKey string) {
 	// two share nothing past enrollment. Branch here, after the one SSH key is
 	// installed, since getting onto the machine is the same for both.
 	if r.Role == model.RelayFront {
-		s.provisionFront(ctx, &r)
+		if s.provisionFront(ctx, &r) {
+			readyFront = &r
+		}
 		return
 	}
 
@@ -546,29 +567,29 @@ func (s *RelayService) enrollAndProvision(id int, password, privateKey string) {
 // panel's own end, and records where the machine turned out to be. It mirrors
 // the exit path above: every outcome is written back, because a status stuck
 // at "working" for ever is the one failure nobody can act on.
-func (s *RelayService) provisionFront(ctx context.Context, r *model.Relay) {
+func (s *RelayService) provisionFront(ctx context.Context, r *model.Relay) (ready bool) {
 	token, err := decryptRelaySecret(r.Id, r.TunnelToken)
 	if err != nil {
 		s.mark(r.Id, RelayError, "the tunnel token is unreadable; add the front again: "+err.Error())
-		return
+		return false
 	}
 	pair, err := s.frontPair(r, token)
 	if err != nil {
 		s.mark(r.Id, RelayError, err.Error())
-		return
+		return false
 	}
 
 	creds, err := frontCreds(*r)
 	if err != nil {
 		s.mark(r.Id, RelayError, err.Error())
-		return
+		return false
 	}
 
 	// The front machine first: it must be listening before the panel dials.
 	if err := tunnel.Provision(ctx, tunnel.Front{Pair: pair, Credentials: creds}); err != nil {
 		s.mark(r.Id, RelayError, err.Error())
 		logger.Warningf("front %s: %v", r.Name, err)
-		return
+		return false
 	}
 
 	// Then the panel's end. A front that is listening but that the panel
@@ -579,7 +600,7 @@ func (s *RelayService) provisionFront(ctx context.Context, r *model.Relay) {
 		if err := tunnel.GetManager().Ensure(leg); err != nil {
 			s.mark(r.Id, RelayError, "the front is up but the panel could not dial it: "+err.Error())
 			logger.Warningf("front %s: %v", r.Name, err)
-			return
+			return false
 		}
 	}
 	tunnel.GetManager().Retain(r.Id, legs)
@@ -607,6 +628,7 @@ func (s *RelayService) provisionFront(ctx context.Context, r *model.Relay) {
 		logger.Warningf("front %s: could not record the tunnel: %v", r.Name, err)
 	}
 	logger.Infof("front %s is ready; customers reach the panel at %s", r.Name, r.Address)
+	return true
 }
 
 // frontCreds builds the SSH credentials for a front from its stored key,
@@ -782,12 +804,24 @@ func (s *RelayService) Probe(id int) (relay.Reachability, error) {
 	if err := database.GetDB().First(&r, id).Error; err != nil {
 		return relay.Reachability{}, err
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), relayProbeTimeout)
 	defer cancel()
-	return relay.Reach(ctx, relay.Server{
+	reach, err := probeRelay(ctx, relay.Server{
 		Id: r.Id, Name: r.Name, Address: r.Address, Port: r.SSHPort, User: r.SSHUser, KeyPath: r.KeyPath,
 	})
+	// How a front set up before IPv6 was offered learns it without a re-save; a
+	// front whose SSH just failed is not dialled into twice, but a known IPv6 is.
+	if r.Role == model.RelayFront && (err == nil || r.Address6 != "") {
+		s.refreshFrontIPv6(r)
+	}
+	return reach, err
 }
+
+// Variables so a test can stand in for the relay's SSH and spend its budget.
+var (
+	probeRelay        = relay.Reach
+	relayProbeTimeout = 3 * time.Minute
+)
 
 // Reconcile brings every enabled relay's tunnel back. A WireGuard interface
 // does not survive a reboot, and a country whose tunnel is missing after the

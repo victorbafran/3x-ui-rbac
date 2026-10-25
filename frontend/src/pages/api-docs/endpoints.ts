@@ -1683,7 +1683,7 @@ export const sections: readonly Section[] = [
         method: 'GET',
         path: '/panel/api/relays/list',
         summary:
-          'Every server with the live state of its tunnel. An exit carries which cisco inbounds already offer it as a country; an entry server carries the customer ports it forwards and, when the panel is not dialling it, what its client last said.',
+          'Every server with the live state of its tunnel. An exit carries which cisco inbounds already offer it as a country; an entry server carries the customer ports it forwards and, when the panel is not dialling it, what its client last said. An entry server also carries address6 (its public IPv6, read off the server during setup unless typed), ipFamily (what its customers are handed: "" IPv4, "v6" or "both") and address6Error (while address6 is empty, why the panel could not read the server’s IPv6; once it is set, why the panel could not reach address6 on one of the ports the front forwards; empty once it could, and "not checked yet" until it has tried).',
       },
       {
         method: 'GET',
@@ -1701,14 +1701,15 @@ export const sections: readonly Section[] = [
         method: 'POST',
         path: '/panel/api/relays/add',
         summary:
-          'Enroll a server. The password or key is used once to install a key of the panel\u2019s own, proven to work, and then discarded; it is never stored. Returns at once while the setup runs behind it, so poll the list for the status. An entry server takes role "front", a tool ("backhaul", the default, or "backpack"), an optional publicName (the name customers type, which the inbound form then offers as the share address), a tunnelPort (3080 when omitted) and a transport (tcp when omitted). Either tool carries every inbound, TCP and UDP: Backhaul on a second UDP tunnel at tunnelPort + 1, BackPack on the one tunnel. An inbound that takes the customer’s real address from a PROXY v2 header (cisco’s proxyProtocol, or Xray’s acceptProxyProtocol) rides a second BackPack tunnel at tunnelPort + 1 that sends the header; a Backhaul front does not carry it. The role and the tool cannot be changed afterwards. One machine is one entry server: an address that is, or resolves to, an existing entry server’s is refused, because each one opens every inbound’s port.',
-        body: '{\n  "name": "iran-front",\n  "label": "Iran",\n  "address": "203.0.113.9",\n  "sshPort": 22,\n  "sshUser": "root",\n  "password": "...",\n  "role": "front",\n  "publicName": "tun.example.com",\n  "tool": "backhaul",\n  "tunnelPort": 3080,\n  "transport": "tcp"\n}',
+          'Enroll a server. The password or key is used once to install a key of the panel\u2019s own, proven to work, and then discarded; it is never stored. Returns at once while the setup runs behind it, so poll the list for the status. An entry server takes role "front", a tool ("backhaul", the default, or "backpack"), an optional publicName (the name customers type, which the inbound form then offers as the share address), a tunnelPort (3080 when omitted) and a transport (tcp when omitted). It also takes an optional address6, its public IPv6 (a native global unicast address in 2000::/3, not 6to4 or Teredo, brackets stripped; left empty, the panel reads it off the server during setup, taking only an address on the interface that carries the server’s IPv4, so a VPN’s such as WARP is never handed out), and an ipFamily: "" (the default) hands customers IPv4 as before, "v6" hands them the IPv6 address instead, and "both" gives each customer two configs for the front, IPv6 first and then IPv4, and one OpenVPN profile that tries IPv6 before IPv4. Cisco keeps the IPv4 address in every mode, because its certificate is for a name. Any other ipFamily, or an address6 that is not a public IPv6, is refused; an exit ignores both. Either tool carries every inbound, TCP and UDP: Backhaul on a second UDP tunnel at tunnelPort + 1, BackPack on the one tunnel. An inbound that takes the customer’s real address from a PROXY v2 header (cisco’s proxyProtocol, or Xray’s acceptProxyProtocol) rides a second BackPack tunnel at tunnelPort + 1 that sends the header; a Backhaul front does not carry it. The role and the tool cannot be changed afterwards. One machine is one entry server: an address that is, or resolves to, an existing entry server’s is refused, because each one opens every inbound’s port.',
+        body: '{\n  "name": "iran-front",\n  "label": "Iran",\n  "address": "203.0.113.9",\n  "sshPort": 22,\n  "sshUser": "root",\n  "password": "...",\n  "role": "front",\n  "publicName": "tun.example.com",\n  "tool": "backhaul",\n  "tunnelPort": 3080,\n  "transport": "tcp",\n  "address6": "2001:db8::9",\n  "ipFamily": "both"\n}',
       },
       {
         method: 'POST',
         path: '/panel/api/relays/update/:id',
         summary:
-          'Change a server and rebuild its tunnel. New credentials re-enroll it; without them the stored key is kept.',
+          'Change a server and rebuild its tunnel. New credentials re-enroll it; without them the stored key is kept. An entry server’s publicName, tunnelPort, transport, address6 and ipFamily are written as sent, validated as on add; an address6 sent empty is read off the server again during the rebuild.',
+        body: '{\n  "name": "iran-front",\n  "label": "Iran",\n  "address": "203.0.113.9",\n  "sshPort": 22,\n  "sshUser": "root",\n  "role": "front",\n  "publicName": "tun.example.com",\n  "tunnelPort": 3080,\n  "transport": "tcp",\n  "address6": "",\n  "ipFamily": "v6"\n}',
       },
       {
         method: 'POST',
@@ -1726,7 +1727,7 @@ export const sections: readonly Section[] = [
         method: 'POST',
         path: '/panel/api/relays/probe/:id',
         summary:
-          'Ask the server what the internet gives it: where the address is, and which of the services customers ask for will answer it.',
+          'Ask the server what the internet gives it: where the address is, and which of the services customers ask for will answer it. For an entry server it also reads the server’s IPv6 when address6 is empty and the probe got onto the server, then dials address6 from the panel and records the outcome in address6Error; a known address6 is dialled even when SSH failed.',
       },
     ],
   },

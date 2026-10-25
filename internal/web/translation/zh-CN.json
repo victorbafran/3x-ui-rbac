@@ -2653,6 +2653,10 @@
       "realIpPorts": "真实 IP：{ports}",
       "realIpNeedsBackpack": "未转发：{ports}。客户真实 IP 需要 BackPack 入口服务器。",
       "noPorts": "暂时没有要转发的端口",
+      "address6Reached": "面板已通过 IPv6 连到这台服务器",
+      "address6Failed": "面板无法连到这个 IPv6 地址：{reason}",
+      "familyV6": "客户使用 IPv6",
+      "familyBoth": "客户使用 IPv6 和 IPv4",
       "summary": {
         "total": "服务器",
         "ready": "正常",
@@ -2701,7 +2705,13 @@
         "toolHint": "两者都会转发所有入站，TCP 和 UDP 都包括。Backhaul 用下一个端口上的第二条隧道承载 UDP；BackPack 在同一条隧道里承载，之后还能把每位客户的真实地址交给面板。添加后不能更改。",
         "udpLegHint": "Backhaul 还会在这台服务器上用端口 {port} 承载 UDP 隧道。请在它的防火墙上把两个端口都打开。",
         "publicName": "公开名称",
-        "publicNameHint": "客户通过这台服务器连接时输入的名称，指向它的地址。在伊朗境内，没有名称的 TLS 握手无法完成，所以 cisco 客户需要它。入站表单随后会把它作为分享地址推荐，让链接指向这里。"
+        "publicNameHint": "客户通过这台服务器连接时输入的名称，指向它的地址。在伊朗境内，没有名称的 TLS 握手无法完成，所以 cisco 客户需要它。入站表单随后会把它作为分享地址推荐，让链接指向这里。",
+        "address6": "IPv6 地址",
+        "address6Hint": "设置完成后会自动从服务器上读取，请留空。只有面板选错了地址时才需要手动填写。",
+        "ipFamily": "客户连接方式",
+        "ipFamilyHint": "在 MCI 这类会卡住陌生 IPv4 地址的网络上，IPv6 能通过。选“两者”时，每位客户会拿到这台服务器的两份配置，IPv6 在前；OpenVPN 配置文件先试 IPv6，再试 IPv4。cisco 仍走 IPv4，因为它的证书是为名称签发的。",
+        "ipFamilyBoth": "两者",
+        "ipFamilyNoAddress": "在面板拿到这台服务器的 IPv6 地址之前，客户仍然使用 IPv4。"
       },
       "reach": {
         "address": "地址",

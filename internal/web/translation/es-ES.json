@@ -2653,6 +2653,10 @@
       "realIpPorts": "IP real: {ports}",
       "realIpNeedsBackpack": "No se reenvía: {ports}. La IP real del cliente necesita un servidor de entrada BackPack.",
       "noPorts": "Aún no hay puertos que reenviar",
+      "address6Reached": "El panel llegó a este servidor por IPv6",
+      "address6Failed": "El panel no pudo llegar a esta dirección IPv6: {reason}",
+      "familyV6": "Los clientes reciben IPv6",
+      "familyBoth": "Los clientes reciben IPv6 e IPv4",
       "summary": {
         "total": "Servidores",
         "ready": "Funcionando",
@@ -2701,7 +2705,13 @@
         "toolHint": "Las dos llevan todos los inbounds, TCP y UDP. Backhaul lleva el UDP en un segundo túnel en el puerto siguiente; BackPack lo lleva en el mismo túnel y más adelante puede pasar al panel la dirección real de cada cliente. No se cambia después de añadirlo.",
         "udpLegHint": "Backhaul también usa el puerto {port} de este servidor para el túnel UDP. Abre los dos en su cortafuegos.",
         "publicName": "Nombre público",
-        "publicNameHint": "El nombre que escriben los clientes para conectarse a través de este servidor, apuntado a su dirección. Un saludo TLS desde Irán no se completa sin un nombre, así que los clientes cisco lo necesitan. El formulario del inbound lo ofrece luego como dirección de compartición, para que los enlaces apunten aquí."
+        "publicNameHint": "El nombre que escriben los clientes para conectarse a través de este servidor, apuntado a su dirección. Un saludo TLS desde Irán no se completa sin un nombre, así que los clientes cisco lo necesitan. El formulario del inbound lo ofrece luego como dirección de compartición, para que los enlaces apunten aquí.",
+        "address6": "Dirección IPv6",
+        "address6Hint": "El panel la obtiene del servidor automáticamente tras la configuración; déjala en blanco. Escríbela solo si el panel eligió una dirección equivocada.",
+        "ipFamily": "Los clientes se conectan por",
+        "ipFamilyHint": "IPv6 pasa por redes que frenan las direcciones IPv4 desconocidas, como MCI. «Ambas» da a cada cliente dos configuraciones para este servidor, primero IPv6; un perfil OpenVPN prueba IPv6 y luego IPv4. Cisco se queda en IPv4: su certificado es para un nombre.",
+        "ipFamilyBoth": "Ambas",
+        "ipFamilyNoAddress": "Hasta que el panel tenga la dirección IPv6 de este servidor, los clientes siguen recibiendo IPv4."
       },
       "reach": {
         "address": "Dirección",

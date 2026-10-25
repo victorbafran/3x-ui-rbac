@@ -94,6 +94,10 @@ type SubService struct {
 	settingsByInbound map[int]map[string]any
 	// certHosts caches the name on each inbound's own certificate.
 	certHosts map[int]string
+	// fronts6 are the entry servers that give customers IPv6, loaded per request;
+	// variant is set only while one IPv6/IPv4 rendering of an inbound runs.
+	fronts6 []front6
+	variant ipVariant
 }
 
 // NewSubService creates a new subscription service with the given configuration.
@@ -132,6 +136,7 @@ func (s *SubService) PrepareForRequest(host string) {
 	s.fullyPrimedInbounds = map[int]bool{}
 	s.settingsByInbound = map[int]map[string]any{}
 	s.loadNodes()
+	s.loadFronts6()
 	s.loadRemarkSettings()
 	s.subCalendarExpireInclusive, _ = s.settingService.GetSubCalendarExpireInclusive()
 	s.calendarExpireLocation = nil
@@ -597,6 +602,7 @@ func (s *SubService) getSubs(subId string) ([]string, []string, int64, xray.Clie
 		// Host overrides apply AFTER fallback projection so a host's
 		// address/TLS wins over the projected master stream.
 		hostEps := s.hostEndpoints(inbound, "raw")
+		units := s.frontUnits(inbound, rawEndpoints(inbound, hostEps))
 		for _, client := range clients {
 			if client.Enable {
 				hasEnabledClient = true
@@ -623,13 +629,7 @@ func (s *SubService) getSubs(subId string) ([]string, []string, int64, xray.Clie
 				seenEmails[client.Email] = struct{}{}
 				continue
 			}
-			var link string
-			if len(hostEps) > 0 {
-				link = s.linkFromHosts(inbound, client, hostEps)
-			} else {
-				link = s.GetLink(inbound, client.Email)
-			}
-			result = append(result, link)
+			result = append(result, s.clientLink(inbound, client, hostEps, units))
 			emails = append(emails, client.Email)
 			seenEmails[client.Email] = struct{}{}
 		}
@@ -700,6 +700,7 @@ func (s *SubService) inboundLinks(inbound *model.Inbound) []string {
 	s.primeLinkClients(inbound.Id, clients, true)
 	s.projectThroughFallbackMaster(inbound)
 	hostEps := s.hostEndpoints(inbound, "raw")
+	units := s.frontUnits(inbound, rawEndpoints(inbound, hostEps))
 	var out []string
 	seen := make(map[string]struct{}, len(clients))
 	for _, client := range clients {
@@ -708,13 +709,7 @@ func (s *SubService) inboundLinks(inbound *model.Inbound) []string {
 			continue
 		}
 		seen[key] = struct{}{}
-		var link string
-		if len(hostEps) > 0 {
-			link = s.linkFromHosts(inbound, client, hostEps)
-		} else {
-			link = s.GetLink(inbound, client.Email)
-		}
-		out = append(out, splitLinkLines(link)...)
+		out = append(out, splitLinkLines(s.clientLink(inbound, client, hostEps, units))...)
 	}
 	return out
 }
@@ -1252,7 +1247,8 @@ func (s *SubService) genMtprotoLink(inbound *model.Inbound, email string) string
 	links := make([]string, 0, len(endpoints))
 	for _, endpoint := range endpoints {
 		links = append(links, buildLinkWithParams("tg://proxy", map[string]string{
-			"server": endpoint.Address,
+			// A query value is no URI authority: Telegram reads an IPv6 literal bare.
+			"server": strings.Trim(endpoint.Address, "[]"),
 			"port":   fmt.Sprintf("%d", endpoint.Port),
 			"secret": resolved.Secret,
 		}, ""))
@@ -1794,6 +1790,9 @@ func (s *SubService) loadNodes() {
 // listen is a server-side detail and is never advertised; External Proxy still
 // overrides everything upstream of this call.
 func (s *SubService) resolveInboundAddress(inbound *model.Inbound) string {
+	if s.variant.address != "" {
+		return s.variant.address
+	}
 	var nodeAddr string
 	if inbound.NodeID != nil && s.nodesByID != nil {
 		if n, ok := s.nodesByID[*inbound.NodeID]; ok {
@@ -2556,9 +2555,9 @@ func cloneStringMap(source map[string]string) map[string]string {
 // remark, extra and email joined by "-".
 func (s *SubService) genRemark(inbound *model.Inbound, email string, extra string, transport string) string {
 	if s.remarkTemplate != "" {
-		return s.genTemplatedRemark(inbound, s.lookupClient(inbound, email), extra, transport)
+		return withRemarkSuffix(s.genTemplatedRemark(inbound, s.lookupClient(inbound, email), extra, transport), s.variant.suffix)
 	}
-	return fallbackRemark(inbound.Remark, extra, email)
+	return withRemarkSuffix(fallbackRemark(inbound.Remark, extra, email), s.variant.suffix)
 }
 
 func fallbackRemark(parts ...string) string {
@@ -3254,6 +3253,7 @@ type OpenVPNProfile struct {
 	// What rendering the file needs, which the page never sees.
 	InboundId int    `json:"-"`
 	Address   string `json:"-"`
+	Address6  string `json:"-"`
 	Port      int    `json:"-"`
 	UseTCP    bool   `json:"-"`
 }
@@ -3274,6 +3274,15 @@ func (s *SubService) openvpnProfileFor(inbound *model.Inbound, client model.Clie
 	}
 	// The app lists a profile by its file name, so the country goes in there too.
 	label = withCountry(label, openvpnCountry(inbound))
+	address, address6 := s.resolveInboundAddress(inbound), ""
+	// One file either way: "both" is a second remote the client tries first.
+	if front := s.frontNamed(address); front != nil {
+		if front.both {
+			address6 = front.address6
+		} else {
+			address = front.address6
+		}
+	}
 	return OpenVPNProfile{
 		Email:     client.Email,
 		Label:     label,
@@ -3281,7 +3290,8 @@ func (s *SubService) openvpnProfileFor(inbound *model.Inbound, client model.Clie
 		Username:  ocserv.LoginFor(client.Email),
 		Password:  client.Password,
 		InboundId: inbound.Id,
-		Address:   s.resolveInboundAddress(inbound),
+		Address:   address,
+		Address6:  address6,
 		Port:      inbound.Port,
 		UseTCP:    openvpn.UsesTCP(inbound),
 	}, true

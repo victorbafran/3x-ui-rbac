@@ -152,6 +152,7 @@ func (s *SubJsonService) GetJson(subId string, host string, alwaysReturnArray bo
 		if hostEps := subReq.hostEndpoints(inbound, "json"); len(hostEps) > 0 {
 			injectExternalProxy(inbound, hostEps)
 		}
+		units := subReq.frontUnits(inbound, streamEndpoints(inbound))
 
 		var inboundConfigs []json_util.RawMessage
 		for _, client := range clients {
@@ -159,7 +160,7 @@ func (s *SubJsonService) GetJson(subId string, host string, alwaysReturnArray bo
 				hasEnabledClient = true
 			}
 			seenEmails[client.Email] = struct{}{}
-			inboundConfigs = append(inboundConfigs, s.getConfig(subReq, inbound, client, host)...)
+			inboundConfigs = append(inboundConfigs, s.clientConfigs(subReq, inbound, client, host, units)...)
 		}
 		if len(inboundConfigs) > 0 {
 			entries = append(entries, subConfigEntry{
@@ -567,6 +568,16 @@ func (s *SubJsonService) buildBalancerConfig(balancer *model.SubBalancer, entrie
 
 	config, _ := json.MarshalIndent(newConfigJson, "", "  ")
 	return config
+}
+
+// clientConfigs is one client's configs on an inbound, a front's IPv6 ones first.
+func (s *SubJsonService) clientConfigs(subReq *SubService, inbound *model.Inbound, client model.Client, host string, units []frontUnit) []json_util.RawMessage {
+	if units == nil {
+		return s.getConfig(subReq, inbound, client, host)
+	}
+	return renderUnits(subReq, units, func(ib *model.Inbound) []json_util.RawMessage {
+		return s.getConfig(subReq, ib, client, host)
+	})
 }
 
 func (s *SubJsonService) getConfig(subReq *SubService, inbound *model.Inbound, client model.Client, host string) []json_util.RawMessage {

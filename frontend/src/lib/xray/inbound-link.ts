@@ -879,7 +879,8 @@ export function genMtprotoLink(input: GenMtprotoLinkInput): string {
   if (inbound.protocol !== 'mtproto') return '';
   if (clientSecret.length === 0) return '';
   const url = new URL('tg://proxy');
-  url.searchParams.set('server', address);
+  // A query value is no URI authority: Telegram reads an IPv6 literal bare.
+  url.searchParams.set('server', address.replace(/^\[(.*)\]$/, '$1'));
   url.searchParams.set('port', String(port));
   url.searchParams.set('secret', clientSecret);
   return url.toString();

@@ -1,7 +1,9 @@
 package openvpn
 
 import (
+	"fmt"
 	"os"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -87,6 +89,78 @@ func TestTheProfileSaysWhereToConnect(t *testing.T) {
 	out := profileFor(t, Instance{Id: 1, Port: 1195}, Profile{Address: "vpn.example.com"})
 	if !strings.Contains(out, "remote vpn.example.com 1195") {
 		t.Fatalf("the profile does not say where to connect:\n%s", out)
+	}
+}
+
+// remoteLines is every remote line of a profile, in the order the client tries them.
+func remoteLines(out string) []string {
+	var remotes []string
+	for line := range strings.SplitSeq(out, "\n") {
+		if strings.HasPrefix(line, "remote ") {
+			remotes = append(remotes, line)
+		}
+	}
+	return remotes
+}
+
+// OpenVPN reads an IPv6 remote bare; "[2001:db8::1]" is a host name to it, one
+// that never resolves, so the bracketed share-address spelling must not reach the file.
+func TestAnIPv6RemoteIsWrittenBare(t *testing.T) {
+	out := profileFor(t, Instance{Id: 1, Port: 1194}, Profile{Address: "[2001:db8::1]"})
+	got := remoteLines(out)
+	if len(got) != 1 || got[0] != "remote 2001:db8::1 1194" {
+		t.Fatalf("remotes = %q, want the bare IPv6 literal", got)
+	}
+}
+
+// A front handing out both families gives one file that tries IPv6 first and
+// falls back to the IPv4 address, on a protocol that allows either family.
+func TestAFrontsIPv6IsTriedBeforeItsIPv4(t *testing.T) {
+	for _, tc := range []struct {
+		name  string
+		inst  Instance
+		proto string
+	}{
+		{"udp", Instance{Id: 1, Port: 1194}, "proto udp\n"},
+		{"tcp", Instance{Id: 2, Port: 443, UseTCP: true}, "proto tcp-client\n"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			out := profileFor(t, tc.inst, Profile{Address: "tun.example.com", Address6: "[2001:db8::1]"})
+			want := []string{
+				fmt.Sprintf("remote 2001:db8::1 %d", tc.inst.Port),
+				fmt.Sprintf("remote tun.example.com %d", tc.inst.Port),
+			}
+			if got := remoteLines(out); !slices.Equal(got, want) {
+				t.Fatalf("remotes = %q, want %q", got, want)
+			}
+			if !strings.Contains(out, tc.proto) {
+				t.Fatalf("the protocol line is not the dual-stack %q:\n%s", tc.proto, out)
+			}
+		})
+	}
+}
+
+// OpenVPN 2 waits two minutes on a dead remote before the next, on every connect;
+// a file with one remote has nothing to fall back to, so it stays as it was.
+func TestADeadIPv6FallsThroughQuickly(t *testing.T) {
+	timeouts := []string{"server-poll-timeout 10\n", "connect-timeout 10\n"}
+	for _, tc := range []struct {
+		name    string
+		profile Profile
+		want    bool
+	}{
+		{"both families", Profile{Address: "tun.example.com", Address6: "[2001:db8::1]"}, true},
+		{"IPv4 only", Profile{Address: "tun.example.com"}, false},
+		{"IPv6 only", Profile{Address: "[2001:db8::1]"}, false},
+	} {
+		for _, inst := range []Instance{{Id: 1, Port: 1194}, {Id: 2, Port: 443, UseTCP: true}} {
+			out := profileFor(t, inst, tc.profile)
+			for _, line := range timeouts {
+				if got := strings.Contains(out, line); got != tc.want {
+					t.Errorf("%s, tcp=%v: %q present = %v, want %v:\n%s", tc.name, inst.UseTCP, strings.TrimSpace(line), got, tc.want, out)
+				}
+			}
+		}
 	}
 }
 

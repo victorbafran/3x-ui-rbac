@@ -2653,6 +2653,10 @@
       "realIpPorts": "Real client IP: {ports}",
       "realIpNeedsBackpack": "Not carried: {ports}. Real client IP needs a BackPack entry server.",
       "noPorts": "No ports to forward yet",
+      "address6Reached": "The panel reached this server over IPv6",
+      "address6Failed": "The panel could not reach this IPv6 address: {reason}",
+      "familyV6": "Customers get IPv6",
+      "familyBoth": "Customers get IPv6 and IPv4",
       "summary": {
         "total": "Servers",
         "ready": "Working",
@@ -2701,7 +2705,13 @@
         "toolHint": "Both carry every inbound, TCP and UDP. Backhaul carries UDP on a second tunnel one port up; BackPack carries it on the same tunnel and can later hand the panel each customer’s real address. Fixed once the server is added.",
         "udpLegHint": "Backhaul also uses port {port} on this server, for the UDP tunnel. Open both on its firewall.",
         "publicName": "Public name",
-        "publicNameHint": "The name customers type to connect through this server, pointed at its address. A TLS handshake from inside Iran does not complete without a name, so cisco customers need one. The inbound form then offers it as the share address, so links point here."
+        "publicNameHint": "The name customers type to connect through this server, pointed at its address. A TLS handshake from inside Iran does not complete without a name, so cisco customers need one. The inbound form then offers it as the share address, so links point here.",
+        "address6": "IPv6 address",
+        "address6Hint": "Found on the server automatically after setup; leave it blank. Type one only if the panel picked the wrong address.",
+        "ipFamily": "Customers connect over",
+        "ipFamilyHint": "IPv6 gets through networks that stall unknown IPv4 addresses, such as MCI. Both gives each customer two configs for this server, IPv6 first; an OpenVPN profile tries IPv6, then IPv4. Cisco stays on IPv4: its certificate is for a name.",
+        "ipFamilyBoth": "Both",
+        "ipFamilyNoAddress": "Until the panel has this server’s IPv6 address, customers keep getting IPv4."
       },
       "reach": {
         "address": "Address",

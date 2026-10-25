@@ -46,4 +46,20 @@ describe('mtproto multi-client link fan-out', () => {
     expect(links[0]).not.toContain('#');
     expect(links[1]).not.toContain('#');
   });
+
+  // Telegram resolves a bracketed server as a host name and never connects; the
+  // subscription (genMtprotoLink in internal/sub) writes the literal bare as well.
+  it('writes an IPv6 share address into server without brackets', () => {
+    const inbound = InboundSchema.parse({
+      ...mtprotoInbound(),
+      shareAddrStrategy: 'custom',
+      shareAddr: '[2001:db8::5]',
+    });
+    const out = genInboundLinks({ inbound, remark: 'mt-mc', fallbackHostname: 'mt.example.test' });
+    const servers = out
+      .split('\r\n')
+      .filter(Boolean)
+      .map((link) => new URL(link).searchParams.get('server'));
+    expect(servers).toEqual(['2001:db8::5', '2001:db8::5']);
+  });
 });

@@ -7,6 +7,17 @@ const absolutePath = z.string().regex(/^\//, 'pages.settings.validation.pathLead
 export const SubProfileModeSchema = z.enum(['none', 'builtin', 'custom']);
 export type SubProfileMode = z.infer<typeof SubProfileModeSchema>;
 
+// How the IPv6 and IPv4 configs of a front set to "both" differ in name.
+export const SubRemarkIPFamilySchema = z.enum(['version', 'number', 'off']);
+export type SubRemarkIPFamily = z.infer<typeof SubRemarkIPFamilySchema>;
+
+// What familyMarks in internal/sub/front_v6.go appends to each of the pair, IPv6 first.
+export function remarkIPFamilyMarks(mode: SubRemarkIPFamily): [string, string] {
+  if (mode === 'number') return [' 1', ' 2'];
+  if (mode === 'off') return ['', ''];
+  return [' · IPv6', ' · IPv4'];
+}
+
 export const AllSettingSchema = z
   .object({
     webListen: z.string().optional(),
@@ -25,6 +36,7 @@ export const AllSettingSchema = z
     trafficDiff: nonNegativeInt.max(100).optional(),
     remarkTemplate: z.string().optional(),
     subShowIdentityOnAllLinks: z.boolean().optional(),
+    subRemarkIPFamily: SubRemarkIPFamilySchema.optional(),
     subInfoNodeEnable: z.boolean().optional(),
     subCalendarExpireInclusive: z.boolean().optional(),
     subExpiredTemplate: z.string().optional(),

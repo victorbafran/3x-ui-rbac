@@ -643,6 +643,9 @@
           "subProfileUrl": {
             "type": "string"
           },
+          "subRemarkIPFamily": {
+            "type": "string"
+          },
           "subRoutingRules": {
             "type": "string"
           },
@@ -896,6 +899,7 @@
           "subPort",
           "subProfileMode",
           "subProfileUrl",
+          "subRemarkIPFamily",
           "subRoutingRules",
           "subShowIdentityOnAllLinks",
           "subSupportUrl",
@@ -1423,6 +1427,9 @@
           "subProfileUrl": {
             "type": "string"
           },
+          "subRemarkIPFamily": {
+            "type": "string"
+          },
           "subRoutingRules": {
             "type": "string"
           },
@@ -1684,6 +1691,7 @@
           "subPort",
           "subProfileMode",
           "subProfileUrl",
+          "subRemarkIPFamily",
           "subRoutingRules",
           "subShowIdentityOnAllLinks",
           "subSupportUrl",
@@ -11219,7 +11227,7 @@
         "tags": [
           "Exit and entry servers"
         ],
-        "summary": "Every server with the live state of its tunnel. An exit carries which cisco inbounds already offer it as a country; an entry server carries the customer ports it forwards and, when the panel is not dialling it, what its client last said. An entry server also carries address6 (its public IPv6, read off the server during setup unless typed), ipFamily (what its customers are handed: \"\" IPv4, \"v6\" or \"both\") and address6Error (while address6 is empty, why the panel could not read the server’s IPv6; once it is set, why the panel could not reach address6 on one of the ports the front forwards; empty once it could, and \"not checked yet\" until it has tried).",
+        "summary": "Every server with the live state of its tunnel. An exit carries which cisco inbounds already offer it as a country; an entry server carries the customer ports it forwards and, when the panel is not dialling it, what its client last said. An entry server also carries address6 (its public IPv6, read off the server during setup unless typed), publicName6 (the name with only an AAAA record to address6 that its IPv6 configs carry; empty hands out the bracketed address6), ipFamily (what its customers are handed: \"\" IPv4, \"v6\" or \"both\") and address6Error (while address6 is empty, why the panel could not read the server’s IPv6; once it is set, the problems found, joined with \"; \": first, when there is one, why the panel could not reach address6 on one of the ports the front forwards, then each finding of the DNS check of publicName6, every one naming it: no AAAA record for address6, an A record beside it, or a lookup that failed; empty once all is fine, and \"not checked yet\" until it has tried).",
         "operationId": "get_panel_api_relays_list",
         "responses": {
           "200": {
@@ -11279,7 +11287,7 @@
         "tags": [
           "Exit and entry servers"
         ],
-        "summary": "The enabled entry servers, as the inbound form offers them for the share address: id, name, label, address, publicName and whether the tunnel is ready. An inbound whose share address is a front’s public name hands that name to its customers in every share link, cisco login and OpenVPN profile.",
+        "summary": "The enabled entry servers, as the inbound form offers them for the share address: id, name, label, address, publicName and whether the tunnel is ready. An inbound whose share address is a front’s public name hands that name to its customers in every share link, cisco login and OpenVPN profile while the front’s ipFamily is \"\". A front set to \"v6\" hands them publicName6, or the bracketed address6, in their place; one set to \"both\" hands out that first and the public name second, and its OpenVPN profile tries the IPv6 remote first, as the add endpoint describes.",
         "operationId": "get_panel_api_relays_fronts",
         "responses": {
           "200": {
@@ -11309,7 +11317,7 @@
         "tags": [
           "Exit and entry servers"
         ],
-        "summary": "Enroll a server. The password or key is used once to install a key of the panel’s own, proven to work, and then discarded; it is never stored. Returns at once while the setup runs behind it, so poll the list for the status. An entry server takes role \"front\", a tool (\"backhaul\", the default, or \"backpack\"), an optional publicName (the name customers type, which the inbound form then offers as the share address), a tunnelPort (3080 when omitted) and a transport (tcp when omitted). It also takes an optional address6, its public IPv6 (a native global unicast address in 2000::/3, not 6to4 or Teredo, brackets stripped; left empty, the panel reads it off the server during setup, taking only an address on the interface that carries the server’s IPv4, so a VPN’s such as WARP is never handed out), and an ipFamily: \"\" (the default) hands customers IPv4 as before, \"v6\" hands them the IPv6 address instead, and \"both\" gives each customer two configs for the front, IPv6 first and then IPv4, and one OpenVPN profile that tries IPv6 before IPv4. Cisco keeps the IPv4 address in every mode, because its certificate is for a name. Any other ipFamily, or an address6 that is not a public IPv6, is refused; an exit ignores both. Either tool carries every inbound, TCP and UDP: Backhaul on a second UDP tunnel at tunnelPort + 1, BackPack on the one tunnel. An inbound that takes the customer’s real address from a PROXY v2 header (cisco’s proxyProtocol, or Xray’s acceptProxyProtocol) rides a second BackPack tunnel at tunnelPort + 1 that sends the header; a Backhaul front does not carry it. The role and the tool cannot be changed afterwards. One machine is one entry server: an address that is, or resolves to, an existing entry server’s is refused, because each one opens every inbound’s port.",
+        "summary": "Enroll a server. The password or key is used once to install a key of the panel’s own, proven to work, and then discarded; it is never stored. Returns at once while the setup runs behind it, so poll the list for the status. An entry server takes role \"front\", a tool (\"backhaul\", the default, or \"backpack\"), an optional publicName (the IPv4 name customers type, which should have only an A record; the inbound form then offers it as the share address), a tunnelPort (3080 when omitted) and a transport (tcp when omitted). It also takes an optional address6, its public IPv6 (a native global unicast address in 2000::/3, not 6to4 or Teredo, brackets stripped; left empty, the panel reads it off the server during setup, taking only an address on the interface that carries the server’s IPv4, so a VPN’s such as WARP is never handed out), an optional publicName6 (a host name, not an IP, lower-cased with any trailing dot dropped, whose only record is AAAA to address6: IPv6 configs, cisco logins and the OpenVPN profile’s IPv6 remote carry it instead of the literal, so a new IPv6 is a DNS edit; a record that does not fit is noted in address6Error, never refused), and an ipFamily: \"\" (the default) hands customers IPv4 as before, \"v6\" hands them the IPv6 address instead, and \"both\" gives each customer two configs for the front, IPv6 first and then IPv4, told apart in their names as the subRemarkIPFamily setting says (\"version\", the default: \" · IPv6\" and \" · IPv4\"; \"number\": \" 1\" and \" 2\"; \"off\": nothing), two cisco logins in the same order, and one OpenVPN profile that tries IPv6 before IPv4. An inbound belongs to a front when its share address is the front’s address, publicName, address6 (bracketed or bare) or publicName6; one whose share address is IPv6 gets its IPv4 configs on publicName, or address when there is none, while one already on address or publicName keeps it; an IPv4 config sent from publicName6 to the bare address keeps publicName6 as its TLS name. Any other ipFamily, an address6 that is not a public IPv6, or a publicName6 that is not a host name, is refused; an exit ignores all three. Either tool carries every inbound, TCP and UDP: Backhaul on a second UDP tunnel at tunnelPort + 1, BackPack on the one tunnel. An inbound that takes the customer’s real address from a PROXY v2 header (cisco’s proxyProtocol, or Xray’s acceptProxyProtocol) rides a second BackPack tunnel at tunnelPort + 1 that sends the header; a Backhaul front does not carry it. The role and the tool cannot be changed afterwards. One machine is one entry server: an address that is, or resolves to, an existing entry server’s is refused, because each one opens every inbound’s port.",
         "operationId": "post_panel_api_relays_add",
         "requestBody": {
           "required": true,
@@ -11331,6 +11339,7 @@
                 "tunnelPort": 3080,
                 "transport": "tcp",
                 "address6": "2001:db8::9",
+                "publicName6": "v6.example.com",
                 "ipFamily": "both"
               }
             }
@@ -11364,7 +11373,7 @@
         "tags": [
           "Exit and entry servers"
         ],
-        "summary": "Change a server and rebuild its tunnel. New credentials re-enroll it; without them the stored key is kept. An entry server’s publicName, tunnelPort, transport, address6 and ipFamily are written as sent, validated as on add; an address6 sent empty is read off the server again during the rebuild.",
+        "summary": "Change a server and rebuild its tunnel. New credentials re-enroll it; without them the stored key is kept. An entry server’s publicName, publicName6, tunnelPort, transport, address6 and ipFamily are written as sent, validated as on add; an address6 sent empty is read off the server again during the rebuild.",
         "operationId": "post_panel_api_relays_update_id",
         "parameters": [
           {
@@ -11395,6 +11404,7 @@
                 "tunnelPort": 3080,
                 "transport": "tcp",
                 "address6": "",
+                "publicName6": "v6.example.com",
                 "ipFamily": "v6"
               }
             }
@@ -11510,7 +11520,7 @@
         "tags": [
           "Exit and entry servers"
         ],
-        "summary": "Ask the server what the internet gives it: where the address is, and which of the services customers ask for will answer it. For an entry server it also reads the server’s IPv6 when address6 is empty and the probe got onto the server, then dials address6 from the panel and records the outcome in address6Error; a known address6 is dialled even when SSH failed.",
+        "summary": "Ask the server what the internet gives it: where the address is, and which of the services customers ask for will answer it. For an entry server it also reads the server’s IPv6 when address6 is empty and the probe got onto the server, then dials address6 from the panel, checks publicName6’s DNS records when it is set, and records the outcome in address6Error; a known address6 is dialled even when SSH failed.",
         "operationId": "post_panel_api_relays_probe_id",
         "parameters": [
           {

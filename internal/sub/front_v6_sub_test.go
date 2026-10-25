@@ -82,6 +82,18 @@ func seedFront(t *testing.T, name, family string) {
 	}
 }
 
+// setRemarkIPFamily stores subRemarkIPFamily, replacing an earlier value.
+func setRemarkIPFamily(t *testing.T, mode string) {
+	t.Helper()
+	db := database.GetDB()
+	if err := db.Where("key = ?", "subRemarkIPFamily").Delete(&model.Setting{}).Error; err != nil {
+		t.Fatalf("clear subRemarkIPFamily: %v", err)
+	}
+	if err := db.Create(&model.Setting{Key: "subRemarkIPFamily", Value: mode}).Error; err != nil {
+		t.Fatalf("save subRemarkIPFamily: %v", err)
+	}
+}
+
 // frontSubOutput is everything one subscription renders, in every format.
 type frontSubOutput struct {
 	raw      []string
@@ -119,9 +131,12 @@ func TestFrontEmptyIPFamilyChangesNothing(t *testing.T) {
 	}
 
 	seedFront(t, "front-ipv4", "")
-	after := renderFrontSub(t)
-	if !reflect.DeepEqual(after, before) {
-		t.Fatalf("an IPv4 front changed the subscription\nbefore: %+v\n after: %+v", before, after)
+	// The marker setting names a pair only a front asking for IPv6 makes.
+	for _, mode := range []string{"version", "number", "off"} {
+		setRemarkIPFamily(t, mode)
+		if after := renderFrontSub(t); !reflect.DeepEqual(after, before) {
+			t.Fatalf("an IPv4 front changed the subscription with subRemarkIPFamily %q\nbefore: %+v\n after: %+v", mode, before, after)
+		}
 	}
 
 	seedFront(t, "front-both", "both")
@@ -193,7 +208,7 @@ func TestLoadFronts6TakesOnlyEnabledFrontsAskingForIPv6(t *testing.T) {
 }
 
 // One customer behind a "both" front: every format gives each config's IPv6
-// copy first and the IPv4 one after, cisco keeps the name, OpenVPN gets two remotes.
+// copy first and the IPv4 one after, cisco a login for each, OpenVPN two remotes.
 func TestFrontBothThroughEverySubscriptionFormat(t *testing.T) {
 	inbounds := seedFrontCustomer(t)
 	seedFront(t, "front-both", "both")
@@ -283,8 +298,9 @@ func TestFrontBothThroughEverySubscriptionFormat(t *testing.T) {
 	})
 
 	t.Run("cisco and openvpn", func(t *testing.T) {
-		if len(out.cisco) != 1 || out.cisco[0].Server != testFrontName {
-			t.Fatalf("cisco logins = %+v, want the front's name", out.cisco)
+		if len(out.cisco) != 2 || out.cisco[0].Server != v6 || out.cisco[0].Label != "IPv6" ||
+			out.cisco[1].Server != testFrontName || out.cisco[1].Label != "IPv4" {
+			t.Fatalf("cisco logins = %+v, want %s labelled IPv6, then %s labelled IPv4", out.cisco, v6, testFrontName)
 		}
 		if len(out.profiles) != 1 || out.profiles[0].Address != testFrontName || out.profiles[0].Address6 != v6 {
 			t.Fatalf("openvpn profiles = %+v, want %s tried before %s", out.profiles, v6, testFrontName)
@@ -301,6 +317,29 @@ func TestFrontBothThroughEverySubscriptionFormat(t *testing.T) {
 			t.Fatalf("panel links = %q, want the IPv6 one then the IPv4 one", links)
 		}
 	})
+}
+
+// The panel's subRemarkIPFamily reaches what a customer's app shows: numbered
+// configs, and cisco logins labelled the same way.
+func TestFrontMarksSettingReachesTheSubscription(t *testing.T) {
+	seedFrontCustomer(t)
+	seedFront(t, "front-both", "both")
+	setRemarkIPFamily(t, "number")
+	out := renderFrontSub(t)
+
+	var got []string
+	for _, link := range splitLinkLines(strings.Join(out.raw, "\n")) {
+		if !strings.HasPrefix(link, "vmess://") {
+			got = append(got, mustParseLink(t, link).Fragment)
+		}
+	}
+	want := []string{"vless-A-user 1", "vless-A-user 2", "vless-CDN-user", "trojan-user 1", "trojan-user 2", "hy-user 1", "hy-user 2", "wg-user 1", "wg-user 2"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("raw remarks\n got: %q\nwant: %q", got, want)
+	}
+	if len(out.cisco) != 2 || out.cisco[0].Label != "1" || out.cisco[1].Label != "2" {
+		t.Fatalf("cisco logins = %+v, want labelled 1 then 2", out.cisco)
+	}
 }
 
 // hostOnly drops the port from a host:port, keeping an IPv6 in its brackets.

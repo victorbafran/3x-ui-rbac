@@ -66,6 +66,9 @@ export const RelaySchema = z.object({
   address6: z.string().default(''),
   ipFamily: z.enum(IP_FAMILIES).catch(''),
   address6Error: z.string().default(''),
+  // A name with only an AAAA record to address6, handed to IPv6 customers in
+  // its place; publicName stays the IPv4 one, with only an A record.
+  publicName6: z.string().default(''),
   // A front's own: what its client last said when it is not running, and the
   // customer ports it carries right now.
   tunnelDetail: z.string().default(''),
@@ -190,5 +193,6 @@ export interface RelayFormValues {
   publicName?: string;
   // Blank lets the panel read the front's IPv6 off the server during setup.
   address6?: string;
+  publicName6?: string;
   ipFamily?: IPFamily;
 }

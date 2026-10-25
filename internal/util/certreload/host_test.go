@@ -78,3 +78,26 @@ func TestNoCertificateMeansNoHost(t *testing.T) {
 		}
 	}
 }
+
+// A config's TLS name must be one its server's certificate answers for, or
+// the client refuses the handshake.
+func TestCoversIsWhatAClientWouldAccept(t *testing.T) {
+	cert := certFor(t, []string{"tun.example.ir", "*.v6.example.ir"})
+	for _, tc := range []struct {
+		name string
+		want bool
+	}{
+		{"tun.example.ir", true},
+		{"a.v6.example.ir", true},
+		{"v6.example.ir", false},
+		{"other.example.ir", false},
+		{"", false},
+	} {
+		if got := Covers(cert, tc.name); got != tc.want {
+			t.Errorf("Covers(%q) = %v, want %v", tc.name, got, tc.want)
+		}
+	}
+	if Covers(filepath.Join(t.TempDir(), "missing.pem"), "tun.example.ir") || Covers("", "tun.example.ir") {
+		t.Error("no certificate was taken to cover a name")
+	}
+}

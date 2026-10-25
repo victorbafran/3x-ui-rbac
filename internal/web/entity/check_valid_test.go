@@ -103,3 +103,20 @@ func TestCheckValidSchedules(t *testing.T) {
 		}
 	}
 }
+
+// A typo stored as a fourth value would name every front's pair by a rule
+// nobody chose; a client that omits the field gets the default stored, not "".
+func TestCheckValidSubRemarkIPFamily(t *testing.T) {
+	for in, want := range map[string]string{"": "version", "version": "version", "number": "number", "off": "off"} {
+		s := &AllSetting{WebPort: 2053, SubPort: 2096, SubRemarkIPFamily: in}
+		if err := s.CheckValid(); err != nil || s.SubRemarkIPFamily != want {
+			t.Errorf("subRemarkIPFamily=%q: stored %q with error %v; want %q", in, s.SubRemarkIPFamily, err, want)
+		}
+	}
+	for _, bad := range []string{"Number", " off", "ipv6"} {
+		s := &AllSetting{WebPort: 2053, SubPort: 2096, SubRemarkIPFamily: bad}
+		if err := s.CheckValid(); err == nil || !strings.Contains(err.Error(), "subRemarkIPFamily") {
+			t.Errorf("subRemarkIPFamily=%q: want an error naming subRemarkIPFamily, got %v", bad, err)
+		}
+	}
+}

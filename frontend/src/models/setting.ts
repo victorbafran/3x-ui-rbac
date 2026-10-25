@@ -1,5 +1,5 @@
 import { ObjectUtil } from '@/utils';
-import type { SubProfileMode } from '@/schemas/setting';
+import type { SubProfileMode, SubRemarkIPFamily } from '@/schemas/setting';
 
 export class AllSetting {
   webListen = '';
@@ -19,6 +19,7 @@ export class AllSetting {
   trafficDiff = 0;
   remarkTemplate = '{{INBOUND}}-{{EMAIL}}|📊{{TRAFFIC_LEFT}}|⏳{{DAYS_LEFT}}D';
   subShowIdentityOnAllLinks = false;
+  subRemarkIPFamily: SubRemarkIPFamily = 'version';
   subInfoNodeEnable = false;
   subInfoLines = '';
   subCalendarExpireInclusive = false;

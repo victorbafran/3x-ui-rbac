@@ -103,7 +103,13 @@ function familyLabel(family: IPFamily, t: TFunction): string {
 // is when the panel dials the address; before that nothing has been checked.
 function frontAddress6(r: Relay, t: TFunction) {
   if (!r.address6) {
-    if (!r.ipFamily) return null;
+    // A domain saved before setup has read the address shows on its own.
+    const name6 = r.publicName6 ? (
+      <span>
+        IPv6 <bdi>{r.publicName6}</bdi>
+      </span>
+    ) : null;
+    if (!r.ipFamily) return name6;
     const notice = (
       <Typography.Text
         type="warning"
@@ -112,14 +118,31 @@ function frontAddress6(r: Relay, t: TFunction) {
         {t('pages.relays.fields.ipFamilyNoAddress')}
       </Typography.Text>
     );
-    return r.address6Error ? <Tooltip title={r.address6Error}>{notice}</Tooltip> : notice;
+    return (
+      <>
+        {name6}
+        {r.address6Error ? <Tooltip title={r.address6Error}>{notice}</Tooltip> : notice}
+      </>
+    );
   }
   const checked = r.address6Error !== ADDRESS6_NOT_CHECKED;
   const reason = checked ? r.address6Error : '';
+  // The backend joins a failed dial, then the IPv6 domain's DNS check, with "; ";
+  // only the DNS check names the domain, so a reason led by it is a DNS fix.
+  const reasonKey =
+    r.publicName6 && reason.split('; ')[0].includes(r.publicName6)
+      ? 'pages.relays.address6Check'
+      : 'pages.relays.address6Failed';
   return (
     <>
       <span>
-        IPv6 <bdi>{r.address6}</bdi>{' '}
+        IPv6 <bdi>{r.address6}</bdi>
+        {r.publicName6 ? (
+          <>
+            {' · '}
+            <bdi>{r.publicName6}</bdi>
+          </>
+        ) : null}{' '}
         {reason ? (
           <WarningOutlined style={{ color: 'var(--ant-color-warning)' }} />
         ) : checked && r.status === 'ready' ? (
@@ -136,7 +159,7 @@ function frontAddress6(r: Relay, t: TFunction) {
       {reason ? (
         <Tooltip title={reason}>
           <Typography.Text type="warning" style={{ fontSize: 12, cursor: 'help' }}>
-            {t('pages.relays.address6Failed', {
+            {t(reasonKey, {
               reason: reason.length > 48 ? `${reason.slice(0, 48)}…` : reason,
             })}
           </Typography.Text>
@@ -221,6 +244,7 @@ export default function RelaysPage() {
         role: r.role,
         publicName: r.publicName,
         address6: r.address6,
+        publicName6: r.publicName6,
         ipFamily: r.ipFamily,
         tunnelPort: r.tunnelPort || DEFAULT_TUNNEL_PORT,
         transport: r.transport || 'tcp',
@@ -577,6 +601,15 @@ export default function RelaysPage() {
               extra={t('pages.relays.fields.address6Hint')}
             >
               <Input placeholder="2001:db8::1" dir="ltr" />
+            </Form.Item>
+          ) : null}
+          {isFront ? (
+            <Form.Item
+              name="publicName6"
+              label={t('pages.relays.fields.publicName6')}
+              extra={t('pages.relays.fields.publicName6Hint')}
+            >
+              <Input placeholder="v6.example.com" dir="ltr" />
             </Form.Item>
           ) : null}
           {isFront ? (

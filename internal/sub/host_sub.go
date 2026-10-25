@@ -329,22 +329,19 @@ func (s *SubService) renderHostRemark(inbound *model.Inbound, client model.Clien
 	ep["remarkFinal"] = true
 }
 
-// endpointRemark returns the remark to stamp on an endpoint's link/proxy/config
-// entry. A host endpoint whose template was pre-expanded by renderHostRemark
-// carries remarkFinal and is used verbatim; every other entry flows through the
-// standard genRemark composition unchanged.
+// endpointRemark names an endpoint's entry: a host's remark renderHostRemark expanded, else
+// genRemark's; an endpoint of a front's IPv6/IPv4 pair appends its epRemarkSuffix to either.
 func (s *SubService) endpointRemark(inbound *model.Inbound, email string, ep map[string]any, transport string) string {
-	if ep != nil {
-		if final, _ := ep["remarkFinal"].(bool); final {
-			r, _ := ep["remark"].(string)
-			return r
-		}
+	if ep == nil {
+		return s.genRemark(inbound, email, "", transport)
 	}
-	var extra string
-	if ep != nil {
-		extra, _ = ep["remark"].(string)
+	suffix, _ := ep[epRemarkSuffix].(string)
+	if final, _ := ep["remarkFinal"].(bool); final {
+		r, _ := ep["remark"].(string)
+		return withRemarkSuffix(r, suffix)
 	}
-	return s.genRemark(inbound, email, extra, transport)
+	extra, _ := ep["remark"].(string)
+	return withRemarkSuffix(s.genRemark(inbound, email, extra, transport), suffix)
 }
 
 // applyEndpointHostPath overrides the transport host header / path for a host

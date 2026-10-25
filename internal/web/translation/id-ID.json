@@ -2653,6 +2653,10 @@
       "realIpPorts": "IP asli: {ports}",
       "realIpNeedsBackpack": "Tidak diteruskan: {ports}. IP asli pelanggan butuh server masuk BackPack.",
       "noPorts": "Belum ada port untuk diteruskan",
+      "address6Reached": "Panel berhasil menjangkau server ini lewat IPv6",
+      "address6Failed": "Panel tidak dapat menjangkau alamat IPv6 ini: {reason}",
+      "familyV6": "Pelanggan mendapat IPv6",
+      "familyBoth": "Pelanggan mendapat IPv6 dan IPv4",
       "summary": {
         "total": "Server",
         "ready": "Bekerja",
@@ -2701,7 +2705,13 @@
         "toolHint": "Keduanya meneruskan semua inbound, TCP dan UDP. Backhaul membawa UDP lewat terowongan kedua di port berikutnya; BackPack membawanya di terowongan yang sama dan nanti bisa memberi panel alamat asli setiap pelanggan. Tidak bisa diubah setelah ditambahkan.",
         "udpLegHint": "Backhaul juga memakai port {port} di server ini untuk terowongan UDP. Buka keduanya di firewall-nya.",
         "publicName": "Nama publik",
-        "publicNameHint": "Nama yang diketik pelanggan untuk terhubung lewat server ini, diarahkan ke alamatnya. Jabat tangan TLS dari dalam Iran tidak selesai tanpa nama, jadi pelanggan cisco memerlukannya. Formulir inbound lalu menawarkannya sebagai alamat bagikan, agar tautan mengarah ke sini."
+        "publicNameHint": "Nama yang diketik pelanggan untuk terhubung lewat server ini, diarahkan ke alamatnya. Jabat tangan TLS dari dalam Iran tidak selesai tanpa nama, jadi pelanggan cisco memerlukannya. Formulir inbound lalu menawarkannya sebagai alamat bagikan, agar tautan mengarah ke sini.",
+        "address6": "Alamat IPv6",
+        "address6Hint": "Ditemukan di server secara otomatis setelah penyiapan; biarkan kosong. Isi sendiri hanya jika panel memilih alamat yang salah.",
+        "ipFamily": "Pelanggan terhubung lewat",
+        "ipFamilyHint": "IPv6 lolos di jaringan yang menghambat alamat IPv4 tak dikenal, seperti MCI. Keduanya memberi setiap pelanggan dua konfigurasi untuk server ini, IPv6 lebih dulu; profil OpenVPN mencoba IPv6 lalu IPv4. Cisco tetap di IPv4: sertifikatnya untuk sebuah nama.",
+        "ipFamilyBoth": "Keduanya",
+        "ipFamilyNoAddress": "Selama panel belum punya alamat IPv6 server ini, pelanggan tetap mendapat IPv4."
       },
       "reach": {
         "address": "Alamat",

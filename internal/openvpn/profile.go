@@ -16,6 +16,9 @@ type Profile struct {
 	// Address is what the customer's client connects to: a hostname when the
 	// operator has one, the server's address otherwise.
 	Address string
+	// Address6 is a front's IPv6, written as a remote ahead of Address so the
+	// client tries it first and falls back; "" when there is none.
+	Address6 string
 	// Label names the file for them, which is what their client shows in its
 	// list of connections.
 	Label string
@@ -36,7 +39,7 @@ func Render(inst Instance, p Profile) (string, error) {
 		return "", fmt.Errorf("the shared key for inbound %d is missing; the inbound has not started yet: %w", inst.Id, err)
 	}
 
-	address := strings.TrimSpace(p.Address)
+	address := remoteHost(p.Address)
 	if address == "" {
 		return "", fmt.Errorf("no address for the customer to connect to")
 	}
@@ -50,7 +53,18 @@ func Render(inst Instance, p Profile) (string, error) {
 	w("client")
 	w("dev tun")
 	w("proto %s", clientProto(inst))
+	address6 := remoteHost(p.Address6)
+	fallsBack := address6 != "" && address6 != address
+	if fallsBack {
+		w("remote %s %d", address6, inst.Port)
+	}
 	w("remote %s %d", address, inst.Port)
+	if fallsBack {
+		// A dead IPv6 path must not cost two minutes: OpenVPN 2 and 3 read the
+		// first line, OpenVPN for Android only the second (an alias in OpenVPN 2.4+).
+		w("server-poll-timeout 10")
+		w("connect-timeout 10")
+	}
 	// A name that moves, or a server that is restarting, should be waited for
 	// rather than treated as a dead profile.
 	w("resolv-retry infinite")
@@ -94,6 +108,12 @@ func Render(inst Instance, p Profile) (string, error) {
 	b.WriteString(ensureTrailingNewline(string(key)))
 	w("</tls-crypt>")
 	return b.String(), nil
+}
+
+// remoteHost is an address as a remote line takes it: OpenVPN reads an IPv6
+// literal bare, and "[2001:db8::1]" is a host name it fails to resolve.
+func remoteHost(addr string) string {
+	return strings.Trim(strings.TrimSpace(addr), "[]")
 }
 
 // clientProto is the client's spelling. The server says tcp-server; a client

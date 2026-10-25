@@ -2653,6 +2653,10 @@
       "realIpPorts": "Gerçek IP: {ports}",
       "realIpNeedsBackpack": "Yönlendirilmiyor: {ports}. Müşterinin gerçek IP'si için BackPack giriş sunucusu gerekir.",
       "noPorts": "Henüz yönlendirilecek port yok",
+      "address6Reached": "Panel bu sunucuya IPv6 üzerinden ulaştı",
+      "address6Failed": "Panel bu IPv6 adresine ulaşamadı: {reason}",
+      "familyV6": "Müşteriler IPv6 alır",
+      "familyBoth": "Müşteriler IPv6 ve IPv4 alır",
       "summary": {
         "total": "Sunucular",
         "ready": "Çalışıyor",
@@ -2701,7 +2705,13 @@
         "toolHint": "İkisi de her gelen bağlantıyı TCP ve UDP olarak taşır. Backhaul UDP’yi bir sonraki porttaki ikinci bir tünelde taşır; BackPack aynı tünelde taşır ve ileride panele her müşterinin gerçek adresini iletebilir. Eklendikten sonra değişmez.",
         "udpLegHint": "Backhaul bu sunucuda UDP tüneli için {port} portunu da kullanır. Güvenlik duvarında ikisini de açın.",
         "publicName": "Genel ad",
-        "publicNameHint": "Müşterilerin bu sunucu üzerinden bağlanmak için yazdığı ad; bu sunucunun adresini gösterir. İran içinden bir TLS el sıkışması ad olmadan tamamlanmaz, bu yüzden cisco müşterilerinin buna ihtiyacı vardır. Gelen bağlantı formu bunu paylaşım adresi olarak önerir, böylece bağlantılar buraya işaret eder."
+        "publicNameHint": "Müşterilerin bu sunucu üzerinden bağlanmak için yazdığı ad; bu sunucunun adresini gösterir. İran içinden bir TLS el sıkışması ad olmadan tamamlanmaz, bu yüzden cisco müşterilerinin buna ihtiyacı vardır. Gelen bağlantı formu bunu paylaşım adresi olarak önerir, böylece bağlantılar buraya işaret eder.",
+        "address6": "IPv6 adresi",
+        "address6Hint": "Kurulumdan sonra sunucuda otomatik olarak bulunur; boş bırakın. Yalnızca panel yanlış adresi seçtiyse kendiniz yazın.",
+        "ipFamily": "Müşterilerin bağlandığı yol",
+        "ipFamilyHint": "IPv6, MCI gibi bilinmeyen IPv4 adreslerini tıkayan ağlardan geçer. “İkisi” her müşteriye bu sunucu için iki yapılandırma verir, önce IPv6; bir OpenVPN profili önce IPv6’yı, sonra IPv4’ü dener. Cisco IPv4’te kalır: sertifikası bir ad için düzenlenmiştir.",
+        "ipFamilyBoth": "İkisi",
+        "ipFamilyNoAddress": "Panel bu sunucunun IPv6 adresini öğrenene kadar müşteriler IPv4 almaya devam eder."
       },
       "reach": {
         "address": "Adres",

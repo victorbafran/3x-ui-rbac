@@ -72,6 +72,13 @@ type Relay struct {
 	// does not complete without a name, so a cisco customer behind a front
 	// needs one; the address alone is not enough.
 	PublicName string `json:"publicName" gorm:"column:public_name;not null;default:''" example:"tun.example.com"`
+	// Address6 is the front's public IPv6, bare; read off the server unless typed.
+	Address6 string `json:"address6" gorm:"column:address6;not null;default:''" example:"2001:db8::1"`
+	// IPFamily is what customers are given: "" IPv4 as before, "v6", or "both".
+	IPFamily string `json:"ipFamily" gorm:"column:ip_family;not null;default:''" example:"both"`
+	// Address6Error is why the panel could not read the server's IPv6 (Address6
+	// still "") or reach Address6; "" once it could.
+	Address6Error string `json:"address6Error" gorm:"column:address6_error;not null;default:''"`
 	// TunnelToken authenticates the two ends to each other. Encrypted at rest
 	// the same way the exit's tunnel key is, and never returned to the panel
 	// UI: a tunnel whose token leaks is one anybody who finds the port can

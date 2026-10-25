@@ -2653,6 +2653,10 @@
       "realIpPorts": "IP thật: {ports}",
       "realIpNeedsBackpack": "Không chuyển tiếp: {ports}. IP thật của khách cần máy chủ vào BackPack.",
       "noPorts": "Chưa có cổng nào để chuyển tiếp",
+      "address6Reached": "Bảng điều khiển đã tới được máy chủ này qua IPv6",
+      "address6Failed": "Bảng điều khiển không tới được địa chỉ IPv6 này: {reason}",
+      "familyV6": "Khách nhận IPv6",
+      "familyBoth": "Khách nhận IPv6 và IPv4",
       "summary": {
         "total": "Máy chủ",
         "ready": "Đang chạy",
@@ -2701,7 +2705,13 @@
         "toolHint": "Cả hai đều chuyển mọi inbound, cả TCP lẫn UDP. Backhaul chở UDP trên đường hầm thứ hai ở cổng kế tiếp; BackPack chở nó trên cùng đường hầm và sau này có thể đưa địa chỉ thật của từng khách cho bảng điều khiển. Không đổi được sau khi thêm.",
         "udpLegHint": "Backhaul cũng dùng cổng {port} trên máy chủ này cho đường hầm UDP. Hãy mở cả hai trên tường lửa của nó.",
         "publicName": "Tên công khai",
-        "publicNameHint": "Tên khách gõ vào để kết nối qua máy chủ này, trỏ tới địa chỉ của nó. Bắt tay TLS từ bên trong Iran không hoàn tất nếu thiếu tên, nên khách dùng cisco cần nó. Biểu mẫu inbound sau đó gợi ý nó làm địa chỉ chia sẻ để các liên kết trỏ về đây."
+        "publicNameHint": "Tên khách gõ vào để kết nối qua máy chủ này, trỏ tới địa chỉ của nó. Bắt tay TLS từ bên trong Iran không hoàn tất nếu thiếu tên, nên khách dùng cisco cần nó. Biểu mẫu inbound sau đó gợi ý nó làm địa chỉ chia sẻ để các liên kết trỏ về đây.",
+        "address6": "Địa chỉ IPv6",
+        "address6Hint": "Được tự động tìm thấy trên máy chủ sau khi cài đặt; hãy để trống. Chỉ tự nhập khi bảng điều khiển chọn sai địa chỉ.",
+        "ipFamily": "Khách kết nối qua",
+        "ipFamilyHint": "IPv6 đi qua được những mạng làm nghẽn địa chỉ IPv4 lạ, như MCI. “Cả hai” cho mỗi khách hai cấu hình cho máy chủ này, IPv6 trước; hồ sơ OpenVPN thử IPv6 rồi mới tới IPv4. Cisco vẫn dùng IPv4: chứng chỉ của nó cấp cho một tên.",
+        "ipFamilyBoth": "Cả hai",
+        "ipFamilyNoAddress": "Cho tới khi bảng điều khiển có địa chỉ IPv6 của máy chủ này, khách vẫn nhận IPv4."
       },
       "reach": {
         "address": "Địa chỉ",

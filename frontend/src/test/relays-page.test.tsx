@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 
 import type { Relay } from '@/schemas/relay';
@@ -45,6 +45,9 @@ const relays: Relay[] = [
     forwardedPorts: [],
     proxyPorts: [],
     publicName: '',
+    address6: '',
+    ipFamily: '',
+    address6Error: '',
   },
   {
     id: 2,
@@ -77,6 +80,9 @@ const relays: Relay[] = [
     forwardedPorts: [],
     proxyPorts: [],
     publicName: '',
+    address6: '',
+    ipFamily: '',
+    address6Error: '',
   },
 ];
 
@@ -106,6 +112,7 @@ const front: Relay = {
 };
 
 const removeMut = { mutateAsync: vi.fn(async () => ({ success: true })), isPending: false };
+const updateMut = { mutateAsync: vi.fn(async () => ({ success: true })), isPending: false };
 
 vi.mock('@/api/queries/useRelaysQuery', () => ({
   useRelaysQuery: () => ({
@@ -121,7 +128,7 @@ vi.mock('@/api/queries/useRelaysQuery', () => ({
 vi.mock('@/api/queries/useRelayMutations', () => ({
   useRelayMutations: () => ({
     createMut: { mutateAsync: vi.fn(), isPending: false },
-    updateMut: { mutateAsync: vi.fn(), isPending: false },
+    updateMut,
     removeMut,
     setEnableMut: { mutate: vi.fn(), isPending: false },
     probeMut: { mutateAsync: vi.fn(), isPending: false },
@@ -376,6 +383,7 @@ describe('the exit servers page', () => {
     fireEvent.click(screen.getByText('Add a server'));
     await act(async () => {});
     expect(document.body.textContent).not.toContain('Tunnel port');
+    expect(document.body.textContent).not.toContain('IPv6 address');
     fireEvent.click(screen.getByText('Entry for customers'));
     await act(async () => {});
     expect(document.body.textContent).toContain('Tunnel port');
@@ -383,4 +391,179 @@ describe('the exit servers page', () => {
     expect(document.body.textContent).toContain('Customers connect to this server’s address');
     cleanup();
   });
+
+  // A new entry server hands customers IPv4 as every front did before, and the
+  // operator is told the IPv6 address is found on its own, not to go and look.
+  it('starts a new entry server on IPv4 and leaves its IPv6 address to the panel', async () => {
+    rows = relays;
+    renderWithProviders(
+      <MemoryRouter>
+        <RelaysPage />
+      </MemoryRouter>,
+    );
+    fireEvent.click(screen.getByText('Add a server'));
+    await act(async () => {});
+    fireEvent.click(screen.getByText('Entry for customers'));
+    await act(async () => {});
+    expect(document.body.textContent).toContain('Customers connect over');
+    expect(document.body.textContent).toContain('Found on the server automatically after setup');
+    expect(familyRadio('').checked).toBe(true);
+    expect(familyRadio('v6').checked).toBe(false);
+    expect((document.querySelector('#address6') as HTMLInputElement).value).toBe('');
+    cleanup();
+  });
+
+  // The public name was once dropped by an edit; the IPv6 address and the
+  // family have to come back into the form and go out again with the change.
+  it('keeps an entry server’s IPv6 address and family through an edit', async () => {
+    rows = [{ ...front, address6: '2001:db8::5', ipFamily: 'both' }];
+    updateMut.mutateAsync.mockClear();
+    renderWithProviders(
+      <MemoryRouter>
+        <RelaysPage />
+      </MemoryRouter>,
+    );
+    fireEvent.click(
+      document.querySelector('[aria-label="edit"]')?.closest('button') as HTMLElement,
+    );
+    await act(async () => {});
+    expect((document.querySelector('#address6') as HTMLInputElement).value).toBe('2001:db8::5');
+    expect(familyRadio('both').checked).toBe(true);
+    fireEvent.click(familyRadio('v6'));
+    await act(async () => {});
+    fireEvent.click(document.querySelector('.ant-modal-footer .ant-btn-primary') as HTMLElement);
+    await waitFor(() =>
+      expect(updateMut.mutateAsync).toHaveBeenCalledWith({
+        id: 3,
+        payload: expect.objectContaining({ address6: '2001:db8::5', ipFamily: 'v6' }),
+      }),
+    );
+    cleanup();
+  });
+
+  // Choosing IPv6 before the panel has the address changes nothing for
+  // customers yet, and the form says so rather than letting it look done.
+  it('says customers stay on IPv4 until the panel has the IPv6 address', async () => {
+    rows = [front];
+    renderWithProviders(
+      <MemoryRouter>
+        <RelaysPage />
+      </MemoryRouter>,
+    );
+    fireEvent.click(
+      document.querySelector('[aria-label="edit"]')?.closest('button') as HTMLElement,
+    );
+    await act(async () => {});
+    const notice = 'Until the panel has this server’s IPv6 address, customers keep getting IPv4.';
+    expect(document.body.textContent).not.toContain(notice);
+    fireEvent.click(familyRadio('both'));
+    await act(async () => {});
+    expect(document.body.textContent).toContain(notice);
+    fireEvent.change(document.querySelector('#address6') as HTMLInputElement, {
+      target: { value: '2001:db8::5' },
+    });
+    await act(async () => {});
+    expect(document.body.textContent).not.toContain(notice);
+    cleanup();
+  });
+
+  // The row is where the operator learns whether the IPv6 address customers
+  // are handed is one the panel could reach, and what customers get.
+  it('shows each entry server’s IPv6 address and whether the panel reached it', () => {
+    rows = [
+      { ...front, address6: '2001:db8::5', ipFamily: 'both' },
+      {
+        ...front,
+        id: 4,
+        name: 'iran-2',
+        label: 'Iran 2',
+        address6: '2001:db8::6',
+        ipFamily: 'v6',
+        address6Error: 'dial tcp [2001:db8::6]:443: i/o timeout',
+      },
+      {
+        ...front,
+        id: 5,
+        name: 'iran-3',
+        label: 'Iran 3',
+        status: 'working',
+        address6: '2001:db8::7',
+      },
+      { ...front, id: 6, name: 'iran-4', label: 'Iran 4', ipFamily: 'v6' },
+    ];
+    renderWithProviders(
+      <MemoryRouter>
+        <RelaysPage />
+      </MemoryRouter>,
+    );
+    const row = (id: number) => document.querySelector(`tr[data-row-key="${id}"]`) as HTMLElement;
+    const reachedMark = (id: number) => row(id).querySelector('[aria-label="check-circle"]');
+
+    expect(row(3).textContent).toContain('IPv6 2001:db8::5');
+    expect(reachedMark(3)).not.toBeNull();
+    expect(row(3).textContent).toContain('Customers get IPv6 and IPv4');
+
+    expect(row(4).textContent).toContain(
+      'The panel could not reach this IPv6 address: dial tcp [2001:db8::6]:443: i/o timeout',
+    );
+    expect(reachedMark(4)).toBeNull();
+    expect(row(4).querySelector('[aria-label="warning"]')).not.toBeNull();
+    expect(row(4).textContent).toContain('Customers get IPv6');
+    expect(row(4).textContent).not.toContain('Customers get IPv6 and IPv4');
+
+    // Not checked yet while it is still being set up, so no mark either way.
+    expect(row(5).textContent).toContain('IPv6 2001:db8::7');
+    expect(reachedMark(5)).toBeNull();
+    expect(row(5).querySelector('[aria-label="warning"]')).toBeNull();
+    expect(row(5).textContent).not.toContain('Customers get');
+
+    expect(row(6).textContent).toContain(
+      'Until the panel has this server’s IPv6 address, customers keep getting IPv4.',
+    );
+    expect(row(6).textContent).not.toContain('Customers get');
+    cleanup();
+  });
+
+  // The backend writes "not checked yet" until its dial ends; read as a failure,
+  // every typed address showed "could not reach" before the panel had even tried.
+  it('marks an IPv6 address the panel has not dialled yet neither reached nor failed', () => {
+    rows = [
+      { ...front, address6: '2001:db8::8', ipFamily: 'v6', address6Error: 'not checked yet' },
+    ];
+    renderWithProviders(
+      <MemoryRouter>
+        <RelaysPage />
+      </MemoryRouter>,
+    );
+    const row = document.querySelector('tr[data-row-key="3"]') as HTMLElement;
+    expect(row.textContent).toContain('IPv6 2001:db8::8');
+    expect(row.textContent).not.toContain('The panel could not reach this IPv6 address');
+    expect(row.querySelector('[aria-label="warning"]')).toBeNull();
+    expect(row.querySelector('[aria-label="check-circle"]')).toBeNull();
+    cleanup();
+  });
+
+  // When the panel found no IPv6 on the server it says why; the row is the only
+  // place that reason can reach the operator who picked IPv6.
+  it('tells why an entry server set to IPv6 still has no IPv6 address', async () => {
+    rows = [{ ...front, ipFamily: 'v6', address6Error: 'the server has no public IPv6 address' }];
+    renderWithProviders(
+      <MemoryRouter>
+        <RelaysPage />
+      </MemoryRouter>,
+    );
+    const row = document.querySelector('tr[data-row-key="3"]') as HTMLElement;
+    const notice = within(row).getByText(
+      'Until the panel has this server’s IPv6 address, customers keep getting IPv4.',
+    );
+    fireEvent.mouseEnter(notice);
+    await waitFor(() =>
+      expect(document.body.textContent).toContain('the server has no public IPv6 address'),
+    );
+    cleanup();
+  });
 });
+
+function familyRadio(value: string): HTMLInputElement {
+  return document.querySelector(`input[type="radio"][value="${value}"]`) as HTMLInputElement;
+}

@@ -5,6 +5,15 @@ import { z } from 'zod';
 // else — no panel, no xray, no account — so what comes back here is the row
 // plus whatever the tunnel is currently doing.
 
+// What a front hands its customers: "" IPv4 as before, "v6", or "both", which
+// gives each customer an IPv6 config first and the IPv4 one after it.
+export const IP_FAMILIES = ['', 'v6', 'both'] as const;
+export type IPFamily = (typeof IP_FAMILIES)[number];
+
+// address6Error until the panel has dialled the address (address6NotChecked in
+// internal/web/service/relay_ipv6.go): no verdict yet, neither reached nor failed.
+export const ADDRESS6_NOT_CHECKED = 'not checked yet';
+
 export const RelaySchema = z.object({
   id: z.number(),
   name: z.string(),
@@ -52,6 +61,11 @@ export const RelaySchema = z.object({
   // inside Iran does not complete without a name, so it is the address an
   // inbound behind the front should hand out, not the bare IP.
   publicName: z.string().default(''),
+  // A front's public IPv6, read off the server unless typed, and why the panel
+  // could not read it (address6 still "") or reach it; "" once it could.
+  address6: z.string().default(''),
+  ipFamily: z.enum(IP_FAMILIES).catch(''),
+  address6Error: z.string().default(''),
   // A front's own: what its client last said when it is not running, and the
   // customer ports it carries right now.
   tunnelDetail: z.string().default(''),
@@ -174,4 +188,7 @@ export interface RelayFormValues {
   transport?: string;
   tool?: TunnelTool;
   publicName?: string;
+  // Blank lets the panel read the front's IPv6 off the server during setup.
+  address6?: string;
+  ipFamily?: IPFamily;
 }

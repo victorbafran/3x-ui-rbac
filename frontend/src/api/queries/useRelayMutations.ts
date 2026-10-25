@@ -42,14 +42,15 @@ export function useRelayMutations() {
     },
   });
 
-  // Asks the relay itself what the internet gives it. Nothing is invalidated:
-  // this changes no state, it only reports what that address can reach.
+  // Asks the relay itself what the internet gives it. On a front it also reads
+  // and dials the IPv6, even when the rest fails, so the list is refetched either way.
   const probeMut = useMutation<Reachability | null, Error, number>({
     mutationFn: async (id: number) => {
       const msg = await HttpUtil.post(`/panel/api/relays/probe/${id}`);
       if (!msg?.success) throw new Error(msg?.msg || 'probe failed');
       return ReachabilityMsgSchema.parse(msg).obj;
     },
+    onSettled: invalidate,
   });
 
   return { createMut, updateMut, removeMut, setEnableMut, probeMut };

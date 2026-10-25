@@ -513,7 +513,7 @@ func (a *SUBController) subOpenVPN(c *gin.Context) {
 		}
 		body, err := openvpn.Render(
 			openvpn.Instance{Id: p.InboundId, Port: p.Port, UseTCP: p.UseTCP},
-			openvpn.Profile{Address: p.Address, Label: p.Label},
+			openvpn.Profile{Address: p.Address, Address6: p.Address6, Label: p.Label},
 		)
 		if err != nil {
 			// The inbound has not started yet, so its authority does not

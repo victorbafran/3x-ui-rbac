@@ -14,11 +14,17 @@ _openapi:
     - ./public/openapi.json
   toc:
     - depth: 2
-      title: Every server with the live state of its tunnel. An exit carries which
+      title: 'Every server with the live state of its tunnel. An exit carries which
         cisco inbounds already offer it as a country; an entry server carries
         the customer ports it forwards and, when the panel is not dialling it,
-        what its client last said.
-      url: '#every-server-with-the-live-state-of-its-tunnel-an-exit-carries-which-cisco-inbounds-already-offer-it-as-a-country-an-entry-server-carries-the-customer-ports-it-forwards-and-when-the-panel-is-not-dialling-it-what-its-client-last-said'
+        what its client last said. An entry server also carries address6 (its
+        public IPv6, read off the server during setup unless typed), ipFamily
+        (what its customers are handed: "" IPv4, "v6" or "both") and
+        address6Error (while address6 is empty, why the panel could not read the
+        server’s IPv6; once it is set, why the panel could not reach address6 on
+        one of the ports the front forwards; empty once it could, and "not
+        checked yet" until it has tried).'
+      url: '#every-server-with-the-live-state-of-its-tunnel-an-exit-carries-which-cisco-inbounds-already-offer-it-as-a-country-an-entry-server-carries-the-customer-ports-it-forwards-and-when-the-panel-is-not-dialling-it-what-its-client-last-said-an-entry-server-also-carries-address6-its-public-ipv6-read-off-the-server-during-setup-unless-typed-ipfamily-what-its-customers-are-handed--ipv4-v6-or-both-and-address6error-while-address6-is-empty-why-the-panel-could-not-read-the-servers-ipv6-once-it-is-set-why-the-panel-could-not-reach-address6-on-one-of-the-ports-the-front-forwards-empty-once-it-could-and-not-checked-yet-until-it-has-tried'
     - depth: 2
       title: 'The smaller list a cisco inbound form needs: the interface to store and
         a name the operator recognises. Exit servers only; an entry server has
@@ -38,21 +44,34 @@ _openapi:
         status. An entry server takes role "front", a tool ("backhaul", the
         default, or "backpack"), an optional publicName (the name customers
         type, which the inbound form then offers as the share address), a
-        tunnelPort (3080 when omitted) and a transport (tcp when omitted).
-        Either tool carries every inbound, TCP and UDP: Backhaul on a second UDP
-        tunnel at tunnelPort + 1, BackPack on the one tunnel. An inbound that
-        takes the customer’s real address from a PROXY v2 header (cisco’s
-        proxyProtocol, or Xray’s acceptProxyProtocol) rides a second BackPack
-        tunnel at tunnelPort + 1 that sends the header; a Backhaul front does
-        not carry it. The role and the tool cannot be changed afterwards. One
-        machine is one entry server: an address that is, or resolves to, an
-        existing entry server’s is refused, because each one opens every
-        inbound’s port.'
-      url: '#enroll-a-server-the-password-or-key-is-used-once-to-install-a-key-of-the-panels-own-proven-to-work-and-then-discarded-it-is-never-stored-returns-at-once-while-the-setup-runs-behind-it-so-poll-the-list-for-the-status-an-entry-server-takes-role-front-a-tool-backhaul-the-default-or-backpack-an-optional-publicname-the-name-customers-type-which-the-inbound-form-then-offers-as-the-share-address-a-tunnelport-3080-when-omitted-and-a-transport-tcp-when-omitted-either-tool-carries-every-inbound-tcp-and-udp-backhaul-on-a-second-udp-tunnel-at-tunnelport--1-backpack-on-the-one-tunnel-an-inbound-that-takes-the-customers-real-address-from-a-proxy-v2-header-ciscos-proxyprotocol-or-xrays-acceptproxyprotocol-rides-a-second-backpack-tunnel-at-tunnelport--1-that-sends-the-header-a-backhaul-front-does-not-carry-it-the-role-and-the-tool-cannot-be-changed-afterwards-one-machine-is-one-entry-server-an-address-that-is-or-resolves-to-an-existing-entry-servers-is-refused-because-each-one-opens-every-inbounds-port'
+        tunnelPort (3080 when omitted) and a transport (tcp when omitted). It
+        also takes an optional address6, its public IPv6 (a native global
+        unicast address in 2000::/3, not 6to4 or Teredo, brackets stripped; left
+        empty, the panel reads it off the server during setup, taking only an
+        address on the interface that carries the server’s IPv4, so a VPN’s such
+        as WARP is never handed out), and an ipFamily: "" (the default) hands
+        customers IPv4 as before, "v6" hands them the IPv6 address instead, and
+        "both" gives each customer two configs for the front, IPv6 first and
+        then IPv4, and one OpenVPN profile that tries IPv6 before IPv4. Cisco
+        keeps the IPv4 address in every mode, because its certificate is for a
+        name. Any other ipFamily, or an address6 that is not a public IPv6, is
+        refused; an exit ignores both. Either tool carries every inbound, TCP
+        and UDP: Backhaul on a second UDP tunnel at tunnelPort + 1, BackPack on
+        the one tunnel. An inbound that takes the customer’s real address from a
+        PROXY v2 header (cisco’s proxyProtocol, or Xray’s acceptProxyProtocol)
+        rides a second BackPack tunnel at tunnelPort + 1 that sends the header;
+        a Backhaul front does not carry it. The role and the tool cannot be
+        changed afterwards. One machine is one entry server: an address that is,
+        or resolves to, an existing entry server’s is refused, because each one
+        opens every inbound’s port.'
+      url: '#enroll-a-server-the-password-or-key-is-used-once-to-install-a-key-of-the-panels-own-proven-to-work-and-then-discarded-it-is-never-stored-returns-at-once-while-the-setup-runs-behind-it-so-poll-the-list-for-the-status-an-entry-server-takes-role-front-a-tool-backhaul-the-default-or-backpack-an-optional-publicname-the-name-customers-type-which-the-inbound-form-then-offers-as-the-share-address-a-tunnelport-3080-when-omitted-and-a-transport-tcp-when-omitted-it-also-takes-an-optional-address6-its-public-ipv6-a-native-global-unicast-address-in-20003-not-6to4-or-teredo-brackets-stripped-left-empty-the-panel-reads-it-off-the-server-during-setup-taking-only-an-address-on-the-interface-that-carries-the-servers-ipv4-so-a-vpns-such-as-warp-is-never-handed-out-and-an-ipfamily--the-default-hands-customers-ipv4-as-before-v6-hands-them-the-ipv6-address-instead-and-both-gives-each-customer-two-configs-for-the-front-ipv6-first-and-then-ipv4-and-one-openvpn-profile-that-tries-ipv6-before-ipv4-cisco-keeps-the-ipv4-address-in-every-mode-because-its-certificate-is-for-a-name-any-other-ipfamily-or-an-address6-that-is-not-a-public-ipv6-is-refused-an-exit-ignores-both-either-tool-carries-every-inbound-tcp-and-udp-backhaul-on-a-second-udp-tunnel-at-tunnelport--1-backpack-on-the-one-tunnel-an-inbound-that-takes-the-customers-real-address-from-a-proxy-v2-header-ciscos-proxyprotocol-or-xrays-acceptproxyprotocol-rides-a-second-backpack-tunnel-at-tunnelport--1-that-sends-the-header-a-backhaul-front-does-not-carry-it-the-role-and-the-tool-cannot-be-changed-afterwards-one-machine-is-one-entry-server-an-address-that-is-or-resolves-to-an-existing-entry-servers-is-refused-because-each-one-opens-every-inbounds-port'
     - depth: 2
       title: Change a server and rebuild its tunnel. New credentials re-enroll it;
-        without them the stored key is kept.
-      url: '#change-a-server-and-rebuild-its-tunnel-new-credentials-re-enroll-it-without-them-the-stored-key-is-kept'
+        without them the stored key is kept. An entry server’s publicName,
+        tunnelPort, transport, address6 and ipFamily are written as sent,
+        validated as on add; an address6 sent empty is read off the server again
+        during the rebuild.
+      url: '#change-a-server-and-rebuild-its-tunnel-new-credentials-re-enroll-it-without-them-the-stored-key-is-kept-an-entry-servers-publicname-tunnelport-transport-address6-and-ipfamily-are-written-as-sent-validated-as-on-add-an-address6-sent-empty-is-read-off-the-server-again-during-the-rebuild'
     - depth: 2
       title: Remove a server and take the panel’s footprint off it. Refused while a
         cisco inbound still offers it as a country.
@@ -63,15 +82,25 @@ _openapi:
       url: '#switch-a-country-off-or-back-on-a-disabled-server-keeps-its-key-so-turning-it-on-again-asks-for-no-password'
     - depth: 2
       title: 'Ask the server what the internet gives it: where the address is, and
-        which of the services customers ask for will answer it.'
-      url: '#ask-the-server-what-the-internet-gives-it-where-the-address-is-and-which-of-the-services-customers-ask-for-will-answer-it'
+        which of the services customers ask for will answer it. For an entry
+        server it also reads the server’s IPv6 when address6 is empty and the
+        probe got onto the server, then dials address6 from the panel and
+        records the outcome in address6Error; a known address6 is dialled even
+        when SSH failed.'
+      url: '#ask-the-server-what-the-internet-gives-it-where-the-address-is-and-which-of-the-services-customers-ask-for-will-answer-it-for-an-entry-server-it-also-reads-the-servers-ipv6-when-address6-is-empty-and-the-probe-got-onto-the-server-then-dials-address6-from-the-panel-and-records-the-outcome-in-address6error-a-known-address6-is-dialled-even-when-ssh-failed'
   structuredData:
     headings:
-      - content: Every server with the live state of its tunnel. An exit carries which
+      - content: 'Every server with the live state of its tunnel. An exit carries which
           cisco inbounds already offer it as a country; an entry server carries
           the customer ports it forwards and, when the panel is not dialling it,
-          what its client last said.
-        id: every-server-with-the-live-state-of-its-tunnel-an-exit-carries-which-cisco-inbounds-already-offer-it-as-a-country-an-entry-server-carries-the-customer-ports-it-forwards-and-when-the-panel-is-not-dialling-it-what-its-client-last-said
+          what its client last said. An entry server also carries address6 (its
+          public IPv6, read off the server during setup unless typed), ipFamily
+          (what its customers are handed: "" IPv4, "v6" or "both") and
+          address6Error (while address6 is empty, why the panel could not read
+          the server’s IPv6; once it is set, why the panel could not reach
+          address6 on one of the ports the front forwards; empty once it could,
+          and "not checked yet" until it has tried).'
+        id: every-server-with-the-live-state-of-its-tunnel-an-exit-carries-which-cisco-inbounds-already-offer-it-as-a-country-an-entry-server-carries-the-customer-ports-it-forwards-and-when-the-panel-is-not-dialling-it-what-its-client-last-said-an-entry-server-also-carries-address6-its-public-ipv6-read-off-the-server-during-setup-unless-typed-ipfamily-what-its-customers-are-handed--ipv4-v6-or-both-and-address6error-while-address6-is-empty-why-the-panel-could-not-read-the-servers-ipv6-once-it-is-set-why-the-panel-could-not-reach-address6-on-one-of-the-ports-the-front-forwards-empty-once-it-could-and-not-checked-yet-until-it-has-tried
       - content: 'The smaller list a cisco inbound form needs: the interface to store
           and a name the operator recognises. Exit servers only; an entry server
           has no interface to leave through.'
@@ -89,8 +118,19 @@ _openapi:
           ("backhaul", the default, or "backpack"), an optional publicName (the
           name customers type, which the inbound form then offers as the share
           address), a tunnelPort (3080 when omitted) and a transport (tcp when
-          omitted). Either tool carries every inbound, TCP and UDP: Backhaul on
-          a second UDP tunnel at tunnelPort + 1, BackPack on the one tunnel. An
+          omitted). It also takes an optional address6, its public IPv6 (a
+          native global unicast address in 2000::/3, not 6to4 or Teredo,
+          brackets stripped; left empty, the panel reads it off the server
+          during setup, taking only an address on the interface that carries the
+          server’s IPv4, so a VPN’s such as WARP is never handed out), and an
+          ipFamily: "" (the default) hands customers IPv4 as before, "v6" hands
+          them the IPv6 address instead, and "both" gives each customer two
+          configs for the front, IPv6 first and then IPv4, and one OpenVPN
+          profile that tries IPv6 before IPv4. Cisco keeps the IPv4 address in
+          every mode, because its certificate is for a name. Any other ipFamily,
+          or an address6 that is not a public IPv6, is refused; an exit ignores
+          both. Either tool carries every inbound, TCP and UDP: Backhaul on a
+          second UDP tunnel at tunnelPort + 1, BackPack on the one tunnel. An
           inbound that takes the customer’s real address from a PROXY v2 header
           (cisco’s proxyProtocol, or Xray’s acceptProxyProtocol) rides a second
           BackPack tunnel at tunnelPort + 1 that sends the header; a Backhaul
@@ -98,10 +138,13 @@ _openapi:
           afterwards. One machine is one entry server: an address that is, or
           resolves to, an existing entry server’s is refused, because each one
           opens every inbound’s port.'
-        id: enroll-a-server-the-password-or-key-is-used-once-to-install-a-key-of-the-panels-own-proven-to-work-and-then-discarded-it-is-never-stored-returns-at-once-while-the-setup-runs-behind-it-so-poll-the-list-for-the-status-an-entry-server-takes-role-front-a-tool-backhaul-the-default-or-backpack-an-optional-publicname-the-name-customers-type-which-the-inbound-form-then-offers-as-the-share-address-a-tunnelport-3080-when-omitted-and-a-transport-tcp-when-omitted-either-tool-carries-every-inbound-tcp-and-udp-backhaul-on-a-second-udp-tunnel-at-tunnelport--1-backpack-on-the-one-tunnel-an-inbound-that-takes-the-customers-real-address-from-a-proxy-v2-header-ciscos-proxyprotocol-or-xrays-acceptproxyprotocol-rides-a-second-backpack-tunnel-at-tunnelport--1-that-sends-the-header-a-backhaul-front-does-not-carry-it-the-role-and-the-tool-cannot-be-changed-afterwards-one-machine-is-one-entry-server-an-address-that-is-or-resolves-to-an-existing-entry-servers-is-refused-because-each-one-opens-every-inbounds-port
+        id: enroll-a-server-the-password-or-key-is-used-once-to-install-a-key-of-the-panels-own-proven-to-work-and-then-discarded-it-is-never-stored-returns-at-once-while-the-setup-runs-behind-it-so-poll-the-list-for-the-status-an-entry-server-takes-role-front-a-tool-backhaul-the-default-or-backpack-an-optional-publicname-the-name-customers-type-which-the-inbound-form-then-offers-as-the-share-address-a-tunnelport-3080-when-omitted-and-a-transport-tcp-when-omitted-it-also-takes-an-optional-address6-its-public-ipv6-a-native-global-unicast-address-in-20003-not-6to4-or-teredo-brackets-stripped-left-empty-the-panel-reads-it-off-the-server-during-setup-taking-only-an-address-on-the-interface-that-carries-the-servers-ipv4-so-a-vpns-such-as-warp-is-never-handed-out-and-an-ipfamily--the-default-hands-customers-ipv4-as-before-v6-hands-them-the-ipv6-address-instead-and-both-gives-each-customer-two-configs-for-the-front-ipv6-first-and-then-ipv4-and-one-openvpn-profile-that-tries-ipv6-before-ipv4-cisco-keeps-the-ipv4-address-in-every-mode-because-its-certificate-is-for-a-name-any-other-ipfamily-or-an-address6-that-is-not-a-public-ipv6-is-refused-an-exit-ignores-both-either-tool-carries-every-inbound-tcp-and-udp-backhaul-on-a-second-udp-tunnel-at-tunnelport--1-backpack-on-the-one-tunnel-an-inbound-that-takes-the-customers-real-address-from-a-proxy-v2-header-ciscos-proxyprotocol-or-xrays-acceptproxyprotocol-rides-a-second-backpack-tunnel-at-tunnelport--1-that-sends-the-header-a-backhaul-front-does-not-carry-it-the-role-and-the-tool-cannot-be-changed-afterwards-one-machine-is-one-entry-server-an-address-that-is-or-resolves-to-an-existing-entry-servers-is-refused-because-each-one-opens-every-inbounds-port
       - content: Change a server and rebuild its tunnel. New credentials re-enroll it;
-          without them the stored key is kept.
-        id: change-a-server-and-rebuild-its-tunnel-new-credentials-re-enroll-it-without-them-the-stored-key-is-kept
+          without them the stored key is kept. An entry server’s publicName,
+          tunnelPort, transport, address6 and ipFamily are written as sent,
+          validated as on add; an address6 sent empty is read off the server
+          again during the rebuild.
+        id: change-a-server-and-rebuild-its-tunnel-new-credentials-re-enroll-it-without-them-the-stored-key-is-kept-an-entry-servers-publicname-tunnelport-transport-address6-and-ipfamily-are-written-as-sent-validated-as-on-add-an-address6-sent-empty-is-read-off-the-server-again-during-the-rebuild
       - content: Remove a server and take the panel’s footprint off it. Refused while a
           cisco inbound still offers it as a country.
         id: remove-a-server-and-take-the-panels-footprint-off-it-refused-while-a-cisco-inbound-still-offers-it-as-a-country
@@ -109,8 +152,12 @@ _openapi:
           turning it on again asks for no password.
         id: switch-a-country-off-or-back-on-a-disabled-server-keeps-its-key-so-turning-it-on-again-asks-for-no-password
       - content: 'Ask the server what the internet gives it: where the address is, and
-          which of the services customers ask for will answer it.'
-        id: ask-the-server-what-the-internet-gives-it-where-the-address-is-and-which-of-the-services-customers-ask-for-will-answer-it
+          which of the services customers ask for will answer it. For an entry
+          server it also reads the server’s IPv6 when address6 is empty and the
+          probe got onto the server, then dials address6 from the panel and
+          records the outcome in address6Error; a known address6 is dialled even
+          when SSH failed.'
+        id: ask-the-server-what-the-internet-gives-it-where-the-address-is-and-which-of-the-services-customers-ask-for-will-answer-it-for-an-entry-server-it-also-reads-the-servers-ipv6-when-address6-is-empty-and-the-probe-got-onto-the-server-then-dials-address6-from-the-panel-and-records-the-outcome-in-address6error-a-known-address6-is-dialled-even-when-ssh-failed
     contents: []
 ---
 

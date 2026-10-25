@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import {
   Alert,
   Button,
@@ -33,6 +34,7 @@ import {
   GlobalOutlined,
   PlusOutlined,
   ThunderboltOutlined,
+  WarningOutlined,
 } from '@ant-design/icons';
 
 import { useTheme } from '@/hooks/useTheme';
@@ -42,13 +44,15 @@ import { setMessageInstance } from '@/utils/messageBus';
 import { useRelaysQuery } from '@/api/queries/useRelaysQuery';
 import { useRelayMutations } from '@/api/queries/useRelayMutations';
 import {
+  ADDRESS6_NOT_CHECKED,
   DEFAULT_TUNNEL_PORT,
+  IP_FAMILIES,
   TUNNEL_TOOLS,
   TUNNEL_TRANSPORTS,
   toolOf,
   udpLegPort,
 } from '@/schemas/relay';
-import type { Reachability, Relay, RelayFormValues } from '@/schemas/relay';
+import type { IPFamily, Reachability, Relay, RelayFormValues } from '@/schemas/relay';
 
 // A relay is a plain server the panel reaches over SSH once. An exit sits in
 // another country: WireGuard and one forwarding rule go on it, and a cisco
@@ -90,6 +94,58 @@ function frontTunnelText(r: Relay): string {
   return main;
 }
 
+function familyLabel(family: IPFamily, t: TFunction): string {
+  if (family === 'both') return t('pages.relays.fields.ipFamilyBoth');
+  return family === 'v6' ? 'IPv6' : 'IPv4';
+}
+
+// A front's IPv6 as customers are handed it. The mark waits for setup, which
+// is when the panel dials the address; before that nothing has been checked.
+function frontAddress6(r: Relay, t: TFunction) {
+  if (!r.address6) {
+    if (!r.ipFamily) return null;
+    const notice = (
+      <Typography.Text
+        type="warning"
+        style={{ fontSize: 12, cursor: r.address6Error ? 'help' : undefined }}
+      >
+        {t('pages.relays.fields.ipFamilyNoAddress')}
+      </Typography.Text>
+    );
+    return r.address6Error ? <Tooltip title={r.address6Error}>{notice}</Tooltip> : notice;
+  }
+  const checked = r.address6Error !== ADDRESS6_NOT_CHECKED;
+  const reason = checked ? r.address6Error : '';
+  return (
+    <>
+      <span>
+        IPv6 <bdi>{r.address6}</bdi>{' '}
+        {reason ? (
+          <WarningOutlined style={{ color: 'var(--ant-color-warning)' }} />
+        ) : checked && r.status === 'ready' ? (
+          <Tooltip title={t('pages.relays.address6Reached')}>
+            <CheckCircleOutlined style={{ color: 'var(--ant-color-success)' }} />
+          </Tooltip>
+        ) : null}
+        {r.ipFamily ? (
+          <Tag style={{ marginInlineStart: 6 }}>
+            {r.ipFamily === 'both' ? t('pages.relays.familyBoth') : t('pages.relays.familyV6')}
+          </Tag>
+        ) : null}
+      </span>
+      {reason ? (
+        <Tooltip title={reason}>
+          <Typography.Text type="warning" style={{ fontSize: 12, cursor: 'help' }}>
+            {t('pages.relays.address6Failed', {
+              reason: reason.length > 48 ? `${reason.slice(0, 48)}…` : reason,
+            })}
+          </Typography.Text>
+        </Tooltip>
+      ) : null}
+    </>
+  );
+}
+
 function bytes(n: number): string {
   if (!n) return '0';
   const units = ['B', 'KB', 'MB', 'GB', 'TB'];
@@ -125,6 +181,8 @@ export default function RelaysPage() {
   const transport = Form.useWatch('transport', form) ?? 'tcp';
   const tunnelPort = Form.useWatch('tunnelPort', form) ?? DEFAULT_TUNNEL_PORT;
   const udpPort = udpLegPort(tool, transport, tunnelPort);
+  const ipFamily = Form.useWatch('ipFamily', form) ?? '';
+  const address6 = Form.useWatch('address6', form) ?? '';
 
   const summary = useMemo(
     () => ({
@@ -145,6 +203,7 @@ export default function RelaysPage() {
       tunnelPort: DEFAULT_TUNNEL_PORT,
       transport: 'tcp',
       tool: 'backhaul',
+      ipFamily: '',
     } as RelayFormValues);
     setFormOpen(true);
   }, [form]);
@@ -161,6 +220,8 @@ export default function RelaysPage() {
         sshUser: r.sshUser,
         role: r.role,
         publicName: r.publicName,
+        address6: r.address6,
+        ipFamily: r.ipFamily,
         tunnelPort: r.tunnelPort || DEFAULT_TUNNEL_PORT,
         transport: r.transport || 'tcp',
         tool: toolOf(r.tunnel),
@@ -231,6 +292,7 @@ export default function RelaysPage() {
             {r.address}
             {r.role === 'front' && r.publicName ? ` · ${r.publicName}` : ''}
           </span>
+          {r.role === 'front' ? frontAddress6(r, t) : null}
           <span style={{ opacity: 0.6, fontSize: 12 }}>
             {r.sshUser}@{r.sshPort} · {r.role === 'front' ? frontTunnelText(r) : r.interface}
           </span>
@@ -506,6 +568,35 @@ export default function RelaysPage() {
               tooltip={t('pages.relays.fields.publicNameHint')}
             >
               <Input placeholder="tun.example.com" />
+            </Form.Item>
+          ) : null}
+          {isFront ? (
+            <Form.Item
+              name="address6"
+              label={t('pages.relays.fields.address6')}
+              extra={t('pages.relays.fields.address6Hint')}
+            >
+              <Input placeholder="2001:db8::1" dir="ltr" />
+            </Form.Item>
+          ) : null}
+          {isFront ? (
+            <Form.Item
+              name="ipFamily"
+              label={t('pages.relays.fields.ipFamily')}
+              tooltip={t('pages.relays.fields.ipFamilyHint')}
+              extra={
+                ipFamily && !address6.trim()
+                  ? t('pages.relays.fields.ipFamilyNoAddress')
+                  : undefined
+              }
+            >
+              <Radio.Group>
+                {IP_FAMILIES.map((v) => (
+                  <Radio.Button key={v} value={v}>
+                    {familyLabel(v, t)}
+                  </Radio.Button>
+                ))}
+              </Radio.Group>
             </Form.Item>
           ) : null}
           {isFront ? (

@@ -74,12 +74,13 @@ func (s *SubClashService) getClash(subId string, host string, legacy bool) (stri
 		if hostEps := subReq.hostEndpoints(inbound, "clash"); len(hostEps) > 0 {
 			injectExternalProxy(inbound, hostEps)
 		}
+		units := subReq.frontUnits(inbound, streamEndpoints(inbound))
 		for _, client := range clients {
 			if client.Enable {
 				hasEnabledClient = true
 			}
 			seenEmails[client.Email] = struct{}{}
-			proxies = append(proxies, s.getProxies(subReq, inbound, client, host)...)
+			proxies = append(proxies, s.clientProxies(subReq, inbound, client, host, units)...)
 		}
 	}
 	for _, ext := range externalLinks {
@@ -165,6 +166,11 @@ func (s *SubClashService) getClash(subId string, host string, legacy bool) (stri
 			"proxies": proxyNames,
 		}},
 		"rules": []string{"MATCH,PROXY"},
+	}
+	// The original Clash core leaves ipv6 off unless the profile turns it on,
+	// and with it off it refuses to dial even a literal IPv6 server.
+	if slices.ContainsFunc(proxies, dialsIPv6Literal) {
+		config["ipv6"] = true
 	}
 
 	// Custom Clash routing can inject Mihomo-only groups, rules, providers or a
@@ -329,6 +335,22 @@ func fallbackProxyName(proxy map[string]any, idx int) string {
 		return fmt.Sprintf("%s-%s-%v", typ, server, proxy["port"])
 	}
 	return fmt.Sprintf("proxy-%d", idx+1)
+}
+
+func dialsIPv6Literal(proxy map[string]any) bool {
+	server, _ := proxy["server"].(string)
+	addr, err := netip.ParseAddr(strings.Trim(server, "[]"))
+	return err == nil && addr.Is6() && !addr.Is4In6()
+}
+
+// clientProxies is one client's proxies on an inbound, a front's IPv6 ones first.
+func (s *SubClashService) clientProxies(subReq *SubService, inbound *model.Inbound, client model.Client, host string, units []frontUnit) []map[string]any {
+	if units == nil {
+		return s.getProxies(subReq, inbound, client, host)
+	}
+	return renderUnits(subReq, units, func(ib *model.Inbound) []map[string]any {
+		return s.getProxies(subReq, ib, client, host)
+	})
 }
 
 func (s *SubClashService) getProxies(subReq *SubService, inbound *model.Inbound, client model.Client, host string) []map[string]any {

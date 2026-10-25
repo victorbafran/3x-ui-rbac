@@ -165,6 +165,10 @@ func TestAFailedFullRestoreLeavesTheFilesAlone(t *testing.T) {
 	if got, _ := os.ReadFile(filepath.Join(here, "relay-keys", "relay-8")); string(got) != "this box's key" {
 		t.Errorf("the failed restore left relay-8 as %q", got)
 	}
+	// Refused before any file landed, so nothing was set aside either.
+	if kept, _ := filepath.Glob(filepath.Join(os.Getenv("XUI_DB_FOLDER"), "pre-restore-*")); len(kept) != 0 {
+		t.Errorf("files were restored before the database was checked: %v", kept)
+	}
 }
 
 // An import that fails once the new database is in place keeps the files that

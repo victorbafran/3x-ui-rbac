@@ -3,9 +3,11 @@ package service
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
 	"mime/multipart"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -88,6 +90,10 @@ type dbReplaced struct{ error }
 
 func (e dbReplaced) Unwrap() error { return e.error }
 
+// DatabaseReplaced reports an import error raised once the new database was
+// in place, after which the panel still has to restart onto it.
+func DatabaseReplaced(err error) bool { return errors.As(err, new(dbReplaced)) }
+
 // importStaged stands in for ImportDB when a test sets it, to fail after the swap.
 var importStaged func(*ServerService, multipart.File, bool) error
 
@@ -102,6 +108,11 @@ func (s *ServerService) importFullBackup(file multipart.File, keepHostSettings b
 	defer os.Remove(staged)
 	if head, err := readHead(staged); err != nil || fullbackup.IsArchive(head) {
 		return common.NewError("Invalid full backup: its database is itself an archive")
+	}
+	// Before any file lands: the sidecars restart onto restored keys, and a
+	// database refused afterwards would restart them twice for nothing.
+	if err := checkStagedDB(staged); err != nil {
+		return err
 	}
 
 	keepDir := filepath.Join(config.GetDBFolderPath(), "pre-restore-"+time.Now().Format("20060102-150405"))
@@ -121,8 +132,15 @@ func (s *ServerService) importFullBackup(file multipart.File, keepHostSettings b
 		run = (*ServerService).ImportDB
 	}
 	if err := run(s, f, keepHostSettings); err != nil {
-		if !errors.As(err, new(dbReplaced)) {
-			undo()
+		if DatabaseReplaced(err) {
+			logger.Warningf("restore: the new database is in place; the files it replaced are kept in %s", keepDir)
+			return dbReplaced{fmt.Errorf("%w; the files it replaced are kept in %s", err, keepDir)}
+		}
+		undo()
+		// The import may have restarted xray while the backup's certificates
+		// were on disk; start it again on the files just put back.
+		if errR := s.RestartXrayService(); errR != nil {
+			logger.Warningf("restore: xray did not restart after the undo: %v", errR)
 		}
 		return err
 	}
@@ -130,6 +148,37 @@ func (s *ServerService) importFullBackup(file multipart.File, keepHostSettings b
 		logger.Infof("restore: the files it replaced are kept in %s", keepDir)
 	}
 	return nil
+}
+
+// checkStagedDB refuses, as ImportDB would, a database this panel cannot take.
+func checkStagedDB(path string) error {
+	f, err := os.Open(path)
+	if err != nil {
+		return common.NewErrorf("Error reading the backup's database: %v", err)
+	}
+	defer f.Close()
+	kind, err := sniffUploadKind(f)
+	if err != nil {
+		return common.NewErrorf("Error reading the backup's database: %v", err)
+	}
+	switch {
+	case kind == importKindPgDump && database.IsPostgres():
+		bin, err := exec.LookPath("pg_restore")
+		if err != nil {
+			return common.NewError("pg_restore not found on the server; install the postgresql-client package to restore a PostgreSQL database")
+		}
+		return checkPgRestoreCanRead(bin, path)
+	case kind == importKindPgDump:
+		return common.NewError("This file is a PostgreSQL backup; it can only be restored on a panel running PostgreSQL")
+	case kind == importKindSQLiteDB:
+		if err := database.ValidateSQLiteDB(path); err != nil {
+			return common.NewErrorf("Invalid or corrupt db file: %v", err)
+		}
+		return nil
+	case kind == importKindSQLiteDump:
+		return nil
+	}
+	return common.NewError("Invalid full backup: its database is neither SQLite nor a PostgreSQL dump")
 }
 
 func readHead(path string) ([]byte, error) {

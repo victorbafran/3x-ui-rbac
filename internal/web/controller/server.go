@@ -405,6 +405,10 @@ func (a *ServerController) importDB(c *gin.Context) {
 	// a new host. Send keepHostSettings=false to clone a machine wholesale.
 	keepHostSettings := c.Request.FormValue("keepHostSettings") != "false"
 	if err := a.serverService.ImportDB(file, keepHostSettings); err != nil {
+		// The new database is in place all the same; restart onto it and its keys.
+		if service.DatabaseReplaced(err) {
+			_ = a.panelService.RestartPanel(3 * time.Second)
+		}
 		jsonMsg(c, I18nWeb(c, "pages.index.importDatabaseError"), err)
 		return
 	}

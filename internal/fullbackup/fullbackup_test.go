@@ -221,6 +221,13 @@ type entry struct {
 
 func craft(t *testing.T, manifest *Manifest, entries ...entry) []byte {
 	t.Helper()
+	return craftWithTrailer(t, 0, manifest, entries...)
+}
+
+// craftWithTrailer writes trailer zero bytes after the tar's end, inside the
+// gzip stream, where a reader that stops at the tar would never look.
+func craftWithTrailer(t *testing.T, trailer int, manifest *Manifest, entries ...entry) []byte {
+	t.Helper()
 	var buf bytes.Buffer
 	gz := gzip.NewWriter(&buf)
 	tw := tar.NewWriter(gz)
@@ -247,6 +254,11 @@ func craft(t *testing.T, manifest *Manifest, entries ...entry) []byte {
 		}
 	}
 	_ = tw.Close()
+	if trailer > 0 {
+		if _, err := gz.Write(make([]byte, trailer)); err != nil {
+			t.Fatal(err)
+		}
+	}
 	_ = gz.Close()
 	return buf.Bytes()
 }
@@ -261,17 +273,21 @@ func TestAnArchiveCannotReachOutsideItsFolders(t *testing.T) {
 		t.Fatalf("the well-formed archive the cases spoil was refused: %v", err)
 	}
 	cases := map[string][]byte{
-		"climbing entry":   craft(t, good, db, entry{name: "files/certs/../../evil", body: "x"}),
-		"absolute entry":   craft(t, good, db, entry{name: "/etc/passwd", body: "x"}),
-		"symlink entry":    craft(t, good, db, entry{name: "files/certs/link", kind: tar.TypeSymlink}),
-		"stranger entry":   craft(t, good, db, entry{name: "x-ui.db.extra", body: "x"}),
-		"climbing record":  craft(t, &Manifest{Format: Format, Version: Version, Database: "x-ui.db", DatabaseSHA256: sum, Files: []File{{Kind: "certs", Path: "../evil", SHA256: digest([]byte("x"))}}}, db),
-		"changed file":     craft(t, &Manifest{Format: Format, Version: Version, Database: "x-ui.db", DatabaseSHA256: sum, Files: []File{{Kind: "certs", Path: "a.pem", SHA256: digest([]byte("recorded"))}}}, db, entry{name: "files/certs/a.pem", body: "swapped"}),
-		"changed database": craft(t, good, entry{name: "x-ui.db", body: "dX"}),
-		"not a backup":     craft(t, nil, db),
-		"manifest last":    craft(t, nil, db, entry{name: "manifest.json", body: `{"format":"x-ui-full-backup","version":1,"database":"x-ui.db"}`}),
-		"newer format":     craft(t, &Manifest{Format: Format, Version: Version + 1, Database: "x-ui.db", DatabaseSHA256: sum}, db),
-		"no database":      craft(t, good),
+		"climbing entry":    craft(t, good, db, entry{name: "files/certs/../../evil", body: "x"}),
+		"absolute entry":    craft(t, good, db, entry{name: "/etc/passwd", body: "x"}),
+		"symlink entry":     craft(t, good, db, entry{name: "files/certs/link", kind: tar.TypeSymlink}),
+		"stranger entry":    craft(t, good, db, entry{name: "x-ui.db.extra", body: "x"}),
+		"climbing record":   craft(t, &Manifest{Format: Format, Version: Version, Database: "x-ui.db", DatabaseSHA256: sum, Files: []File{{Kind: "certs", Path: "../evil", SHA256: digest([]byte("x"))}}}, db),
+		"changed file":      craft(t, &Manifest{Format: Format, Version: Version, Database: "x-ui.db", DatabaseSHA256: sum, Files: []File{{Kind: "certs", Path: "a.pem", Size: 7, SHA256: digest([]byte("recorded"))}}}, db, entry{name: "files/certs/a.pem", body: "swapped"}),
+		"unlisted file":     craft(t, good, db, entry{name: "files/certs/a.pem", body: ""}),
+		"size that lies":    craft(t, &Manifest{Format: Format, Version: Version, Database: "x-ui.db", DatabaseSHA256: sum, Files: []File{{Kind: "certs", Path: "a.pem", Size: 3, SHA256: digest([]byte("abcd"))}}}, db, entry{name: "files/certs/a.pem", body: "abcd"}),
+		"the folder itself": craft(t, &Manifest{Format: Format, Version: Version, Database: "x-ui.db", DatabaseSHA256: sum, Files: []File{{Kind: "relay-keys", Path: ".", Size: 1, SHA256: digest([]byte("x"))}}}, db, entry{name: "files/relay-keys", body: "x"}),
+		"data after end":    craftWithTrailer(t, maxTrailer+1, good, db),
+		"changed database":  craft(t, good, entry{name: "x-ui.db", body: "dX"}),
+		"not a backup":      craft(t, nil, db),
+		"manifest last":     craft(t, nil, db, entry{name: "manifest.json", body: `{"format":"x-ui-full-backup","version":1,"database":"x-ui.db"}`}),
+		"newer format":      craft(t, &Manifest{Format: Format, Version: Version + 1, Database: "x-ui.db", DatabaseSHA256: sum}, db),
+		"no database":       craft(t, good),
 	}
 	for name, data := range cases {
 		dbPath := filepath.Join(t.TempDir(), "x-ui.db.archive")
@@ -281,6 +297,34 @@ func TestAnArchiveCannotReachOutsideItsFolders(t *testing.T) {
 		if _, err := os.Stat(dbPath); err == nil {
 			t.Errorf("%s: a refused archive left its database behind", name)
 		}
+	}
+}
+
+// Files are held in memory until the restore, so their total is capped.
+func TestABackupTooBigToHoldIsRefused(t *testing.T) {
+	saved := maxFilesTotal
+	maxFilesTotal = 6
+	t.Cleanup(func() { maxFilesTotal = saved })
+	files := []File{
+		{Kind: "certs", Path: "a.pem", Size: 4, SHA256: digest([]byte("aaaa"))},
+		{Kind: "certs", Path: "b.pem", Size: 4, SHA256: digest([]byte("bbbb"))},
+	}
+	m := &Manifest{Format: Format, Version: Version, Database: "x-ui.db", DatabaseSHA256: digest([]byte("db")), Files: files}
+	data := craft(t, m, entry{name: "x-ui.db", body: "db"}, entry{name: "files/certs/a.pem", body: "aaaa"}, entry{name: "files/certs/b.pem", body: "bbbb"})
+	if _, _, _, err := unpack(t, data); err == nil {
+		t.Error("files over the cap were taken into memory")
+	}
+	maxFilesTotal = 8
+	if _, _, _, err := unpack(t, data); err != nil {
+		t.Errorf("files at the cap were refused: %v", err)
+	}
+}
+
+// A little padding after the tar, as some tools write, is not a damaged archive.
+func TestPaddingAfterTheTarIsAccepted(t *testing.T) {
+	good := &Manifest{Format: Format, Version: Version, Database: "x-ui.db", DatabaseSHA256: digest([]byte("db"))}
+	if _, _, _, err := unpack(t, craftWithTrailer(t, 10240, good, entry{name: "x-ui.db", body: "db"})); err != nil {
+		t.Errorf("an archive padded to a tar record was refused: %v", err)
 	}
 }
 

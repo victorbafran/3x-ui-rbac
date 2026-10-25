@@ -29,7 +29,12 @@ const (
 	maxEntries  = 10000
 	maxFileSize = 32 << 20
 	maxDBSize   = 2 << 30
+	// maxTrailer is what may follow the tar's end before the gzip checksum.
+	maxTrailer = 1 << 20
 )
+
+// maxFilesTotal caps what a restore holds in memory; a variable for tests.
+var maxFilesTotal int64 = 256 << 20
 
 // Set is one folder a full backup carries, under its kind's name.
 type Set struct {
@@ -164,7 +169,7 @@ func Write(w io.Writer, dbName string, db []byte, files []File, now time.Time, p
 
 // cleanRel refuses a path that is absolute or climbs out of its folder.
 func cleanRel(rel string) (string, error) {
-	if rel == "" || strings.HasPrefix(rel, "/") || strings.Contains(rel, "\\") ||
+	if rel == "" || rel == "." || strings.HasPrefix(rel, "/") || strings.Contains(rel, "\\") ||
 		path.Clean(rel) != rel || rel == ".." || strings.HasPrefix(rel, "../") {
 		return "", fmt.Errorf("%q is not a path inside the backup's folders", rel)
 	}
@@ -190,6 +195,7 @@ func read(r io.Reader, dbPath string) (Manifest, []File, error) {
 	gz.Multistream(false)
 	tr := tar.NewReader(gz)
 	bodies := map[string][]byte{}
+	var want map[string]int64
 	dbSum := ""
 	for n := 0; ; n++ {
 		hdr, err := tr.Next()
@@ -216,6 +222,9 @@ func read(r io.Reader, dbPath string) (Manifest, []File, error) {
 			if m, err = readManifest(tr); err != nil {
 				return m, nil, err
 			}
+			if want, err = recorded(m); err != nil {
+				return m, nil, err
+			}
 		case hdr.Name == m.Database && dbSum == "":
 			if hdr.Size > maxDBSize {
 				return m, nil, fmt.Errorf("the database is %d bytes, more than a backup holds", hdr.Size)
@@ -224,10 +233,11 @@ func read(r io.Reader, dbPath string) (Manifest, []File, error) {
 				return m, nil, fmt.Errorf("unpack the database: %w", err)
 			}
 		case strings.HasPrefix(hdr.Name, "files/"):
-			if hdr.Size > maxFileSize {
-				return m, nil, fmt.Errorf("%q is %d bytes, more than a backup holds", hdr.Name, hdr.Size)
+			size, listed := want[hdr.Name]
+			if _, seen := bodies[hdr.Name]; !listed || seen || hdr.Size != size {
+				return m, nil, fmt.Errorf("%q is not in the backup's record of its files", hdr.Name)
 			}
-			body, err := io.ReadAll(io.LimitReader(tr, maxFileSize+1))
+			body, err := io.ReadAll(io.LimitReader(tr, size+1))
 			if err != nil {
 				return m, nil, fmt.Errorf("read %q: %w", hdr.Name, err)
 			}
@@ -237,8 +247,10 @@ func read(r io.Reader, dbPath string) (Manifest, []File, error) {
 		}
 	}
 	// The gzip checksum is only checked once the stream is read to its end.
-	if _, err := io.Copy(io.Discard, gz); err != nil {
+	if n, err := io.Copy(io.Discard, io.LimitReader(gz, maxTrailer+1)); err != nil {
 		return m, nil, fmt.Errorf("the archive is damaged: %w", err)
+	} else if n > maxTrailer {
+		return m, nil, errors.New("the archive carries data after its end")
 	}
 	if m.Format == "" {
 		return m, nil, errors.New("this archive is not a full backup of this panel")
@@ -280,6 +292,27 @@ func readManifest(r io.Reader) (Manifest, error) {
 		return Manifest{}, fmt.Errorf("the backup names its database %q", m.Database)
 	}
 	return m, nil
+}
+
+// recorded is every file entry the manifest lists, with its size; nothing
+// else is read, and the total is capped before any of it is.
+func recorded(m Manifest) (map[string]int64, error) {
+	want := make(map[string]int64, len(m.Files))
+	var total int64
+	for _, f := range m.Files {
+		if _, err := cleanRel(f.Path); err != nil {
+			return nil, err
+		}
+		if f.Size < 0 || f.Size > maxFileSize {
+			return nil, fmt.Errorf("%s/%s is %d bytes, more than a backup holds", f.Kind, f.Path, f.Size)
+		}
+		total += f.Size
+		want[path.Join("files", f.Kind, f.Path)] = f.Size
+	}
+	if total > maxFilesTotal {
+		return nil, fmt.Errorf("the backup's files come to %d bytes, more than a restore holds", total)
+	}
+	return want, nil
 }
 
 // stream copies the database entry to path and returns its digest.

@@ -328,7 +328,6 @@ func editableFields(updated *model.Relay) map[string]any {
 	if updated.Role == model.RelayFront {
 		fields["tunnel_port"] = updated.TunnelPort
 		fields["transport"] = updated.Transport
-		fields["public_name"] = updated.PublicName
 	}
 	return fields
 }

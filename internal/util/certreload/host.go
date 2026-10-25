@@ -8,7 +8,7 @@ import (
 )
 
 // Host is the name a certificate file was issued for that a client can dial:
-// the first plain domain, else the first public IP, else "".
+// the first domain with a dot and no wildcard, else the first public IP.
 func Host(certFile string) string {
 	raw, err := os.ReadFile(certFile)
 	if err != nil {
@@ -23,7 +23,7 @@ func Host(certFile string) string {
 		return ""
 	}
 	for _, name := range leaf.DNSNames {
-		if !strings.Contains(name, "*") && !strings.EqualFold(name, "localhost") {
+		if !strings.Contains(name, "*") && strings.Contains(name, ".") {
 			return name
 		}
 	}

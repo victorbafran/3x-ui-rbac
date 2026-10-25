@@ -73,3 +73,28 @@ func TestAConfigWithNoAddressGoesToThePanel(t *testing.T) {
 		t.Errorf("the panel's domain setting lost to its certificate: %q", got)
 	}
 }
+
+// A TLS client checks the name it dials against the certificate, so an
+// inbound with a certificate of its own goes to the name on it.
+func TestAnInboundWithItsOwnCertificateGoesToItsName(t *testing.T) {
+	initSubDB(t)
+	saveSetting(t, "webCertFile", panelCert(t, "ger.example.ir"))
+	own := panelCert(t, "212.example.ir")
+	tlsStream := `{"network":"tcp","security":"tls","tlsSettings":{"certificates":[{"certificateFile":"` + own + `"}]}}`
+	for _, tc := range []struct {
+		why  string
+		ib   *model.Inbound
+		want string
+	}{
+		{"cisco with its own certificate", &model.Inbound{Id: 6, Protocol: model.Cisco, Settings: `{"certFile":"` + own + `"}`}, "212.example.ir"},
+		{"cisco with a generated one", &model.Inbound{Id: 1, Protocol: model.Cisco, Settings: `{}`}, "ger.example.ir"},
+		{"xray over TLS", &model.Inbound{Id: 8, Protocol: model.VLESS, Settings: `{}`, StreamSettings: tlsStream}, "212.example.ir"},
+		{"xray moved off TLS", &model.Inbound{Id: 2, Protocol: model.VLESS, Settings: `{}`, StreamSettings: strings.Replace(tlsStream, `"tls"`, `"reality"`, 1)}, "ger.example.ir"},
+		{"an address of its own still wins", &model.Inbound{Id: 9, Protocol: model.Cisco, Settings: `{"certFile":"` + own + `"}`, ShareAddrStrategy: "custom", ShareAddr: "212.74.39.76"}, "212.74.39.76"},
+	} {
+		s := (&SubService{}).ForRequest("sub.example.ir")
+		if got := s.resolveInboundAddress(tc.ib); got != tc.want {
+			t.Errorf("%s: address %q, want %q", tc.why, got, tc.want)
+		}
+	}
+}

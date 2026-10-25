@@ -55,6 +55,7 @@ func TestTheHostIsTheNameTheCertificateWasIssuedFor(t *testing.T) {
 		{"the first of several", []string{"ger.example.ir", "sub.example.ir"}, nil, "ger.example.ir"},
 		{"a wildcard cannot be dialled", []string{"*.example.ir", "ger.example.ir"}, nil, "ger.example.ir"},
 		{"localhost is no address", []string{"localhost", "ger.example.ir"}, nil, "ger.example.ir"},
+		{"nor is a bare label", []string{"in-8443-tcp", "ger.example.ir"}, nil, "ger.example.ir"},
 		{"a domain before an IP", []string{"ger.example.ir"}, []string{"212.95.35.41"}, "ger.example.ir"},
 		{"an IP certificate", nil, []string{"127.0.0.1", "10.0.0.2", "212.95.35.41"}, "212.95.35.41"},
 		{"nothing a client can reach", []string{"*.example.ir"}, []string{"127.0.0.1"}, ""},

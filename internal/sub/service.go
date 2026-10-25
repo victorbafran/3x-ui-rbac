@@ -92,6 +92,8 @@ type SubService struct {
 	// with the clients array left out; generators read only inbound-level
 	// fields (encryption, method, version, …) from it.
 	settingsByInbound map[int]map[string]any
+	// certHosts caches the name on each inbound's own certificate.
+	certHosts map[int]string
 }
 
 // NewSubService creates a new subscription service with the given configuration.
@@ -123,6 +125,7 @@ func (s *SubService) PrepareForRequest(host string) {
 	}
 	s.address = host
 	s.panelAddr = s.panelAddress()
+	s.certHosts = map[int]string{}
 	s.usageShown = map[string]bool{}
 	s.statsByEmail = map[string]xray.ClientTraffic{}
 	s.clientsByInbound = map[int]map[string]model.Client{}
@@ -299,6 +302,46 @@ func (s *SubService) panelAddress() string {
 		return certreload.Host(f)
 	}
 	return ""
+}
+
+// ownCertHost is the name on an inbound's own certificate. A TLS client checks
+// the name it dials against it, so that name beats the panel's.
+func (s *SubService) ownCertHost(inbound *model.Inbound) string {
+	if h, ok := s.certHosts[inbound.Id]; ok {
+		return h
+	}
+	h := ""
+	if f := ownCertFile(inbound); f != "" {
+		h = certreload.Host(f)
+	}
+	if s.certHosts != nil {
+		s.certHosts[inbound.Id] = h
+	}
+	return h
+}
+
+// ownCertFile is the certificate an inbound serves from a file: cisco's own
+// setting, or the first one of an xray TLS stream.
+func ownCertFile(inbound *model.Inbound) string {
+	if inbound.Protocol == model.Cisco {
+		var st struct {
+			CertFile string `json:"certFile"`
+		}
+		_ = json.Unmarshal([]byte(inbound.Settings), &st)
+		return strings.TrimSpace(st.CertFile)
+	}
+	var st struct {
+		Security    string `json:"security"`
+		TLSSettings struct {
+			Certificates []struct {
+				CertificateFile string `json:"certificateFile"`
+			} `json:"certificates"`
+		} `json:"tlsSettings"`
+	}
+	if json.Unmarshal([]byte(inbound.StreamSettings), &st) != nil || st.Security != "tls" || len(st.TLSSettings.Certificates) == 0 {
+		return ""
+	}
+	return strings.TrimSpace(st.TLSSettings.Certificates[0].CertificateFile)
 }
 
 func isRoutableHost(host string) bool {
@@ -1741,9 +1784,10 @@ func (s *SubService) loadNodes() {
 //   - "node" (default, and any unknown value): the node's address for
 //     node-managed inbounds, then a routable Listen — the pre-strategy order.
 //
-// Every chain ends at the panel's own address (its web domain, or the name on
-// its certificate), then the configured public host (Sub/Web domain), then the
-// subscriber's request host (s.address). Preferring the configured
+// Every chain ends at the name on the inbound's own certificate, then the
+// panel's own address (its web domain, or the name on its certificate), then
+// the configured public host (Sub/Web domain), then the subscriber's request
+// host (s.address). Preferring the configured
 // host over the request host for this last resort keeps a wildcard local inbound
 // from advertising a bogus client IP that leaked into the request Host header
 // behind NAT/proxy/CDN (#5425). A loopback/wildcard bind or a unix-domain-socket
@@ -1772,6 +1816,9 @@ func (s *SubService) resolveInboundAddress(inbound *model.Inbound) string {
 		if c != "" {
 			return c
 		}
+	}
+	if h := s.ownCertHost(inbound); h != "" {
+		return h
 	}
 	if s.panelAddr != "" {
 		return s.panelAddr

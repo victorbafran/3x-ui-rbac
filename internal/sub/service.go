@@ -1810,7 +1810,7 @@ func (s *SubService) resolveInboundAddress(inbound *model.Inbound) string {
 	case "listen":
 		candidates = []string{listenAddr, nodeAddr}
 	case "custom":
-		candidates = []string{strings.TrimSpace(inbound.ShareAddr), nodeAddr, listenAddr}
+		candidates = []string{s.ownCertHost(inbound), strings.TrimSpace(inbound.ShareAddr), nodeAddr, listenAddr}
 	}
 	for _, c := range candidates {
 		if c != "" {

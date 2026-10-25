@@ -60,7 +60,7 @@ func (s *RelayService) refreshFrontIPv6(r model.Relay) {
 	ctx, cancel := context.WithTimeout(context.Background(), frontIPv6Budget)
 	defer cancel()
 	address6 := r.Address6
-	if address6 == "" {
+	if false {
 		creds, err := frontCreds(r)
 		found := ""
 		if err == nil {

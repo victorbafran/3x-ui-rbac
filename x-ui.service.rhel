@@ -72,6 +72,7 @@ UMask=0077
 RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
 # NET_ADMIN for ip(8)/tproxy, NET_BIND_SERVICE for ports below 1024, NET_RAW
 # for raw sockets and SO_BINDTODEVICE.
+# KILL stops an openvpn that dropped to nobody and no longer answers its socket.
 #
 # DAC_OVERRIDE has to stay. The panel runs as root, but a bounding set is
 # subtracted from root's own privileges too: without it root can only read a
@@ -83,7 +84,7 @@ RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
 # reads worked before the sandbox because the panel is root.
 # DAC_READ_SEARCH is deliberately absent: directory search is already covered by
 # DAC_OVERRIDE, so it would only widen the set without adding anything.
-CapabilityBoundingSet=CAP_DAC_OVERRIDE CAP_NET_ADMIN CAP_NET_BIND_SERVICE CAP_NET_RAW
+CapabilityBoundingSet=CAP_DAC_OVERRIDE CAP_KILL CAP_NET_ADMIN CAP_NET_BIND_SERVICE CAP_NET_RAW
 SystemCallArchitectures=native
 # No seccomp whitelist here on purpose. @system-service needs systemd >= 239
 # (other @-named groups exist since 231), and older systemd does not ignore an

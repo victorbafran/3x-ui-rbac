@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 	"github.com/mhsanaei/3x-ui/v3/internal/sidecar"
@@ -124,7 +125,7 @@ func (m *Manager) ensureLocked(inst Instance) error {
 	if had {
 		logger.Infof("openvpn: restarting inbound %d (was running: %v, settings changed: %v)",
 			inst.Id, running, cur.structuralFP != newStructFP)
-		if err := cur.proc.Stop(); err != nil && running {
+		if err := stopServer(inst.Id, cur.proc); err != nil && running {
 			logger.Warningf("openvpn: inbound %d did not stop: %v", inst.Id, err)
 		}
 		delete(m.procs, inst.Id)
@@ -154,10 +155,9 @@ func (m *Manager) ensureLocked(inst Instance) error {
 	if err := writeFile(configPathForID(inst.Id), []byte(cfg), 0o644); err != nil {
 		return fmt.Errorf("write the config: %w", err)
 	}
-	// A server the manager lost holds the tun device, and every start fails busy.
-	stopStrays(configPathForID(inst.Id))
-	// A socket left by a killed process blocks the new bind.
-	_ = os.Remove(managementSocketForID(inst.Id))
+	if err := clearForStart(inst.Id); err != nil {
+		return err
+	}
 
 	table := routeTableFor(inst.Id)
 	ensureExit(inst.CIDR(), inst.Exit, table)
@@ -280,7 +280,7 @@ func (m *Manager) removeLocked(id int) {
 	if !ok {
 		return
 	}
-	_ = cur.proc.Stop()
+	_ = stopServer(id, cur.proc)
 	delete(m.procs, id)
 	removeExit(cur.cidr, cur.table)
 	removeNAT(cur.cidr)
@@ -428,4 +428,35 @@ func (m *Manager) ActiveTags() []string {
 		out = append(out, cur.tag)
 	}
 	return out
+}
+
+// askToExit is AskToExit; a variable so a test can stand in for openvpn.
+var askToExit = AskToExit
+
+// stopGrace is how long a server asked to exit gets: explicit-exit-notify
+// holds it a moment to tell its clients.
+var stopGrace = 10 * time.Second
+
+// stopServer ends an inbound's openvpn. It runs as nobody, and a panel unit
+// without CAP_KILL cannot signal it, so its management socket is asked first.
+func stopServer(id int, proc *sidecar.Process) error {
+	if proc == nil || !proc.IsRunning() {
+		return nil
+	}
+	if askToExit(id) == nil && proc.Exited(stopGrace) {
+		return nil
+	}
+	return proc.Stop()
+}
+
+// clearForStart frees the tun device and the socket for a new server. A lost
+// server that will not stop keeps both and serves on, instead of a new one
+// failing busy every ten seconds with its socket deleted out from under it.
+func clearForStart(id int) error {
+	if left := stopStrays(id); left > 0 {
+		return fmt.Errorf("an earlier openvpn for inbound %d is still running and will not stop", id)
+	}
+	// A socket left by a killed process blocks the new bind.
+	_ = os.Remove(managementSocketForID(id))
+	return nil
 }

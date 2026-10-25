@@ -173,6 +173,19 @@ func Disconnect(id int, clientID string) error {
 	return nil
 }
 
+// AskToExit tells an inbound's openvpn to shut down through its management
+// socket, which needs no CAP_KILL to reach a process that dropped to nobody.
+func AskToExit(id int) error {
+	out, err := command(managementSocketForID(id), "signal SIGTERM")
+	if err != nil {
+		return err
+	}
+	if strings.Contains(out, "ERROR:") {
+		return fmt.Errorf("openvpn refused to exit: %s", firstLine(out))
+	}
+	return nil
+}
+
 func firstLine(s string) string {
 	if i := strings.IndexByte(s, '\n'); i >= 0 {
 		return strings.TrimSpace(s[:i])

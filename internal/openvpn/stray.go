@@ -54,24 +54,49 @@ func strays(config string) []int {
 	return pids
 }
 
-// stopStrays ends every server of config the manager lost, as Stop would: ask,
-// then kill, and wait until the tun device is free again.
-func stopStrays(config string) {
-	if runtime.GOOS != "linux" {
-		return
+// signalPid is how a stray is signalled; a variable so a test can refuse it,
+// as the kernel does a panel without CAP_KILL once openvpn dropped to nobody.
+var signalPid = func(pid int, sig syscall.Signal) error {
+	p, err := os.FindProcess(pid)
+	if err != nil {
+		return err
 	}
-	for _, pid := range strays(config) {
+	return p.Signal(sig)
+}
+
+// stopStrays ends every server of an inbound the manager lost and returns how
+// many are left: its own management socket first, then a signal.
+func stopStrays(id int) int {
+	if runtime.GOOS != "linux" {
+		return 0
+	}
+	config := configPathForID(id)
+	pids := strays(config)
+	if len(pids) == 0 {
+		return 0
+	}
+	for _, pid := range pids {
 		logger.Warningf("openvpn: pid %d was serving %s without the panel holding it; stopping it so the inbound can start", pid, config)
-		p, err := os.FindProcess(pid)
-		if err != nil {
+	}
+	if askToExit(id) == nil {
+		for _, pid := range pids {
+			waitGone(pid, stopGrace)
+		}
+	}
+	left := 0
+	for _, pid := range pids {
+		if gone(pid) {
 			continue
 		}
-		_ = p.Signal(syscall.SIGTERM)
+		_ = signalPid(pid, syscall.SIGTERM)
 		if !waitGone(pid, 5*time.Second) {
-			_ = p.Kill()
-			waitGone(pid, 2*time.Second)
+			_ = signalPid(pid, syscall.SIGKILL)
+			if !waitGone(pid, 2*time.Second) {
+				left++
+			}
 		}
 	}
+	return left
 }
 
 // gone is true once a process has exited; a zombie has, it is only unreaped.

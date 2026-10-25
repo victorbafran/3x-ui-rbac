@@ -111,12 +111,16 @@ func TestALostServerIsStoppedSoTheInboundCanStart(t *testing.T) {
 	if err := os.Symlink(os.Args[0], link); err != nil {
 		t.Fatal(err)
 	}
-	own := filepath.Join(dir, "openvpn-3.conf")
-	lost := startStandIn(t, link, own)
-	other := startStandIn(t, link, filepath.Join(dir, "openvpn-4.conf"))
+	saved := runtimeDirOverride
+	runtimeDirOverride = dir
+	t.Cleanup(func() { runtimeDirOverride = saved })
+	lost := startStandIn(t, link, configPathForID(3))
+	other := startStandIn(t, link, configPathForID(4))
 	time.Sleep(300 * time.Millisecond)
 
-	stopStrays(own)
+	if left := stopStrays(3); left != 0 {
+		t.Errorf("%d lost servers left running", left)
+	}
 
 	exited := make(chan struct{})
 	go func() { _ = lost.Wait(); close(exited) }()

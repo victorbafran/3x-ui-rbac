@@ -292,9 +292,6 @@ func (s *SubService) configuredPublicHost() string {
 // panelAddress is where the admin reaches the panel: its web domain, else the
 // name on its certificate. A config with no address of its own goes there.
 func (s *SubService) panelAddress() string {
-	if d, err := s.settingService.GetWebDomain(); err == nil && d != "" {
-		return d
-	}
 	if f, err := s.settingService.GetCertFile(); err == nil && f != "" {
 		return certreload.Host(f)
 	}

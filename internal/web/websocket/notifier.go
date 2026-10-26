@@ -38,34 +38,30 @@ func BroadcastStatus(status any) {
 	}
 }
 
-// BroadcastTraffic broadcasts traffic statistics update to all connected clients.
-func BroadcastTraffic(traffic any) {
+// BroadcastTraffic pushes traffic counters and online lists, then the tick's client
+// stats unless stats is nil. A scoped viewer gets its share; one lookup serves both.
+func BroadcastTraffic(traffic, stats OwnedPayload) {
 	if hub := GetHub(); hub != nil {
-		hub.Broadcast(MessageTypeTraffic, traffic)
+		hub.BroadcastOwned(
+			OwnedMessage{Type: MessageTypeTraffic, Payload: traffic},
+			OwnedMessage{Type: MessageTypeClientStats, Payload: stats},
+		)
 	}
 }
 
-// BroadcastClientStats broadcasts absolute per-client traffic counters. Small
-// installs send the complete row set each cycle (payload key snapshot=true);
-// above the traffic job's snapshot threshold only the rows active in the
-// latest collection window are sent (snapshot=false), which keeps the payload
-// under the hub's cap at any client count.
-func BroadcastClientStats(stats any) {
-	if hub := GetHub(); hub != nil {
-		hub.Broadcast(MessageTypeClientStats, stats)
-	}
-}
-
+// BroadcastNodes pushes the node list, addresses and cert pins included, to
+// unscoped panels only: REST answers a reseller's node list with nothing.
 func BroadcastNodes(nodes any) {
 	if hub := GetHub(); hub != nil {
-		hub.Broadcast(MessageTypeNodes, nodes)
+		hub.BroadcastUnscoped(MessageTypeNodes, nodes)
 	}
 }
 
-// BroadcastOutbounds broadcasts outbounds list update to all connected clients.
+// BroadcastOutbounds pushes the outbound list to unscoped panels only: REST
+// refuses a reseller every outbound and its traffic.
 func BroadcastOutbounds(outbounds any) {
 	if hub := GetHub(); hub != nil {
-		hub.Broadcast(MessageTypeOutbounds, outbounds)
+		hub.BroadcastUnscoped(MessageTypeOutbounds, outbounds)
 	}
 }
 

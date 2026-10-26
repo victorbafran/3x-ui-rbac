@@ -194,16 +194,16 @@ func (j *XrayTrafficJob) Run() {
 	if onlineClients == nil {
 		onlineClients = []string{}
 	}
-	websocket.BroadcastTraffic(map[string]any{
+	traffic := trafficPush{
 		"traffics":       traffics,
 		"clientTraffics": movedTraffics,
 		"onlineClients":  onlineClients,
 		"onlineByGuid":   j.inboundService.GetOnlineClientsByGuid(),
 		"activeInbounds": j.inboundService.GetActiveInboundsByGuid(),
 		"lastOnlineMap":  lastOnlineMap,
-	})
+	}
 
-	clientStatsPayload := map[string]any{"snapshot": snapshot}
+	clientStatsPayload := clientStatsPush{"snapshot": snapshot}
 	if len(stats) > 0 {
 		clientStatsPayload["clients"] = stats
 	}
@@ -212,9 +212,11 @@ func (j *XrayTrafficJob) Run() {
 	} else if len(inboundSummary) > 0 {
 		clientStatsPayload["inbounds"] = inboundSummary
 	}
+	var statsPush websocket.OwnedPayload
 	if len(clientStatsPayload) > 1 {
-		websocket.BroadcastClientStats(clientStatsPayload)
+		statsPush = clientStatsPayload
 	}
+	websocket.BroadcastTraffic(traffic, statsPush)
 
 	if updatedOutbounds, err := j.outboundService.GetOutboundsTraffic(); err == nil && updatedOutbounds != nil {
 		websocket.BroadcastOutbounds(updatedOutbounds)

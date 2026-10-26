@@ -5,7 +5,13 @@ import "gorm.io/gorm"
 // OwnedInboundCond is the one rule for "this admin may touch this inbound":
 // they created it, or a super_admin assigned it to them. Bind ownerId twice.
 func OwnedInboundCond(alias string) string {
-	return "(" + alias + ".user_id = ? OR " + alias + ".id IN (SELECT inbound_id FROM admin_inbounds WHERE admin_id = ?))"
+	return OwnedInboundByCond(alias, "?")
+}
+
+// OwnedInboundByCond is OwnedInboundCond with the admin read from ownerColumn, so
+// one query can answer it for many admins at once.
+func OwnedInboundByCond(alias, ownerColumn string) string {
+	return "(" + alias + ".user_id = " + ownerColumn + " OR " + alias + ".id IN (SELECT inbound_id FROM admin_inbounds WHERE admin_id = " + ownerColumn + "))"
 }
 
 // OwnedInbounds scopes an inbounds query to one admin. ownerId <= 0 is the

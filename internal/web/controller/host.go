@@ -10,9 +10,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// HostController scopes every route to the caller's rows: a reseller reads and
+// writes only the host rows on inbounds they own (service/host_owner_scope.go).
 type HostController struct {
-	hostService service.HostService
-	xrayService service.XrayService
+	hostService   service.HostService
+	clientService service.ClientService
+	xrayService   service.XrayService
 }
 
 // reloadIfExit asks Xray to reload when an edit touched a host that leaves
@@ -68,7 +71,7 @@ func (a *HostController) raw(c *gin.Context) {
 
 func (a *HostController) get(c *gin.Context) {
 	groupId := c.Param("groupId")
-	h, err := a.hostService.GetHostGroup(groupId)
+	h, err := a.hostService.GetHostGroupForOwner(groupId, ownerScopeOf(c))
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.hosts.toasts.obtain"), err)
 		return
@@ -82,7 +85,7 @@ func (a *HostController) byInbound(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "get"), err)
 		return
 	}
-	hosts, err := a.hostService.GetHostsByInbound(inboundId)
+	hosts, err := a.hostService.GetHostsByInboundForOwner(inboundId, ownerScopeOf(c))
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.hosts.toasts.list"), err)
 		return
@@ -91,7 +94,7 @@ func (a *HostController) byInbound(c *gin.Context) {
 }
 
 func (a *HostController) tags(c *gin.Context) {
-	tags, err := a.hostService.GetAllTags()
+	tags, err := a.hostService.GetAllTagsForOwner(ownerScopeOf(c))
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.hosts.toasts.list"), err)
 		return
@@ -104,7 +107,10 @@ func (a *HostController) add(c *gin.Context) {
 	if !ok {
 		return
 	}
-	created, err := a.hostService.AddHostGroup(req)
+	if denyForeignTargets(c, &a.clientService, req.InboundIds, nil) {
+		return
+	}
+	created, err := a.hostService.AddHostGroupForOwner(req, ownerScopeOf(c))
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.hosts.toasts.add"), err)
 		return
@@ -119,8 +125,11 @@ func (a *HostController) update(c *gin.Context) {
 	if !ok {
 		return
 	}
+	if denyForeignTargets(c, &a.clientService, req.InboundIds, nil) {
+		return
+	}
 	hadExit := a.hostService.HostsUseExit(groupId)
-	updated, err := a.hostService.UpdateHostGroup(groupId, req)
+	updated, err := a.hostService.UpdateHostGroupForOwner(groupId, req, ownerScopeOf(c))
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.hosts.toasts.update"), err)
 		return
@@ -132,7 +141,7 @@ func (a *HostController) update(c *gin.Context) {
 func (a *HostController) del(c *gin.Context) {
 	groupId := c.Param("groupId")
 	hadExit := a.hostService.HostsUseExit(groupId)
-	if err := a.hostService.DeleteHostGroup(groupId); err != nil {
+	if err := a.hostService.DeleteHostGroupForOwner(groupId, ownerScopeOf(c)); err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.hosts.toasts.delete"), err)
 		return
 	}
@@ -149,7 +158,7 @@ func (a *HostController) setEnable(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "pages.hosts.toasts.update"), err)
 		return
 	}
-	if err := a.hostService.SetHostGroupEnable(groupId, body.Enable); err != nil {
+	if err := a.hostService.SetHostGroupEnableForOwner(groupId, body.Enable, ownerScopeOf(c)); err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.hosts.toasts.update"), err)
 		return
 	}
@@ -181,7 +190,7 @@ func (a *HostController) bulkSetEnable(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "pages.hosts.toasts.update"), err)
 		return
 	}
-	if err := a.hostService.SetHostsGroupEnable(req.Ids, req.Enable); err != nil {
+	if err := a.hostService.SetHostsGroupEnableForOwner(req.Ids, req.Enable, ownerScopeOf(c)); err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.hosts.toasts.update"), err)
 		return
 	}
@@ -198,7 +207,7 @@ func (a *HostController) bulkDel(c *gin.Context) {
 		return
 	}
 	hadExit := a.hostService.HostsUseExit(req.Ids...)
-	if err := a.hostService.DeleteHostsGroup(req.Ids); err != nil {
+	if err := a.hostService.DeleteHostsGroupForOwner(req.Ids, ownerScopeOf(c)); err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.hosts.toasts.delete"), err)
 		return
 	}

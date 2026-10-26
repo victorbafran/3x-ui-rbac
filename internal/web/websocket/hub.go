@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
@@ -46,11 +47,18 @@ type clientOp struct {
 	c    *Client
 }
 
-// NewClient builds a Client ready for hub registration.
+// NewClient builds a Client with no viewer: it is never shown client data.
 func NewClient(id string) *Client {
+	return NewViewerClient(id, Viewer{})
+}
+
+// NewViewerClient builds a Client for a connection the upgrade authenticated
+// as viewer.
+func NewViewerClient(id string, viewer Viewer) *Client {
 	return &Client{
-		ID:   id,
-		Send: make(chan []byte, clientSendQueue),
+		ID:     id,
+		Send:   make(chan []byte, clientSendQueue),
+		viewer: viewer,
 	}
 }
 
@@ -65,17 +73,19 @@ type Message struct {
 type Client struct {
 	ID        string
 	Send      chan []byte
+	viewer    Viewer
 	closeOnce sync.Once
 }
 
 // Hub fan-outs messages to all connected clients.
 type Hub struct {
 	clients   map[*Client]struct{}
-	broadcast chan []byte
+	broadcast chan outgoing
 	ops       chan clientOp
 	mu        sync.RWMutex
 	ctx       context.Context
 	cancel    context.CancelFunc
+	access    atomic.Pointer[AccessResolver]
 
 	throttleMu    sync.Mutex
 	lastBroadcast map[MessageType]time.Time
@@ -86,7 +96,7 @@ func NewHub() *Hub {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &Hub{
 		clients:       make(map[*Client]struct{}),
-		broadcast:     make(chan []byte, hubBroadcastQueue),
+		broadcast:     make(chan outgoing, hubBroadcastQueue),
 		ops:           make(chan clientOp, hubOpsQueue),
 		ctx:           ctx,
 		cancel:        cancel,
@@ -206,8 +216,8 @@ func (h *Hub) removeClient(c *Client) {
 // route slow-client unregistrations through the unregister channel: under
 // burst load (panel restart, network blip) that channel can fill up while the
 // hub itself is the consumer, causing a self-deadlock.
-func (h *Hub) fanout(msg []byte) {
-	if msg == nil {
+func (h *Hub) fanout(msg outgoing) {
+	if msg.all == nil && msg.perViewer == nil {
 		return
 	}
 	h.mu.RLock()
@@ -223,7 +233,11 @@ func (h *Hub) fanout(msg []byte) {
 
 	var dead []*Client
 	for _, c := range targets {
-		if !trySend(c, msg) {
+		data := msg.bytesFor(c.viewer)
+		if data == nil {
+			continue
+		}
+		if !trySend(c, data) {
 			dead = append(dead, c)
 		}
 	}
@@ -273,26 +287,39 @@ func (h *Hub) Broadcast(messageType MessageType, payload any) {
 	if h.shouldThrottle(messageType) {
 		return
 	}
+	if data := render(messageType, payload, time.Now().UnixMilli()); data != nil {
+		h.enqueue(outgoing{all: data})
+	}
+}
+
+// render serializes one message, or the invalidate signal when it would exceed
+// maxMessageSize. It returns nil when serialization fails.
+func render(messageType MessageType, payload any, now int64) []byte {
 	data, err := json.Marshal(Message{
 		Type:    messageType,
 		Payload: payload,
-		Time:    time.Now().UnixMilli(),
+		Time:    now,
 	})
 	if err != nil {
 		logger.Error("WebSocket marshal failed:", err)
-		return
+		return nil
 	}
 	if len(data) > maxMessageSize {
 		logger.Debugf("WebSocket payload %d bytes exceeds limit, sending invalidate for %s", len(data), messageType)
-		h.broadcastInvalidate(messageType)
-		return
+		return renderInvalidate(messageType)
 	}
-	h.enqueue(data)
+	return data
 }
 
 // broadcastInvalidate queues a lightweight signal telling clients to re-fetch
 // the named data type via REST.
 func (h *Hub) broadcastInvalidate(originalType MessageType) {
+	if data := renderInvalidate(originalType); data != nil {
+		h.enqueue(outgoing{all: data})
+	}
+}
+
+func renderInvalidate(originalType MessageType) []byte {
 	data, err := json.Marshal(Message{
 		Type:    MessageTypeInvalidate,
 		Payload: map[string]string{"type": string(originalType)},
@@ -300,16 +327,16 @@ func (h *Hub) broadcastInvalidate(originalType MessageType) {
 	})
 	if err != nil {
 		logger.Error("WebSocket invalidate marshal failed:", err)
-		return
+		return nil
 	}
-	h.enqueue(data)
+	return data
 }
 
-// enqueue submits raw bytes to the broadcast channel. Dropped on backpressure
+// enqueue submits a message to the broadcast channel. Dropped on backpressure
 // (channel full for >100ms) or shutdown.
-func (h *Hub) enqueue(data []byte) {
+func (h *Hub) enqueue(msg outgoing) {
 	select {
-	case h.broadcast <- data:
+	case h.broadcast <- msg:
 	case <-time.After(enqueueTimeout):
 		logger.Warning("WebSocket broadcast channel full, dropping message")
 	case <-h.ctx.Done():

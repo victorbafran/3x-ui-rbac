@@ -266,6 +266,12 @@ func (s *HostService) GetHostGroup(groupId string) (*entity.HostGroup, error) {
 }
 
 func (s *HostService) AddHostGroup(req *entity.HostGroup) ([]*model.Host, error) {
+	return addHostGroup(req, 0)
+}
+
+// addHostGroup creates the group's rows. An owner above 0 may name only a new
+// group or one they already have a row in (see claimableHostGroup).
+func addHostGroup(req *entity.HostGroup, ownerId int) ([]*model.Host, error) {
 	groupId := req.GroupId
 	if groupId == "" {
 		groupId = random.NumLower(16)
@@ -277,6 +283,11 @@ func (s *HostService) AddHostGroup(req *entity.HostGroup) ([]*model.Host, error)
 	err := database.GetDB().Transaction(func(tx *gorm.DB) error {
 		if err := validateInboundsExist(tx, req.InboundIds); err != nil {
 			return err
+		}
+		if ownerId > 0 && req.GroupId != "" {
+			if err := claimableHostGroup(tx, req.GroupId, ownerId); err != nil {
+				return err
+			}
 		}
 		if err := settleHostExit(tx, groupId, req); err != nil {
 			return err
@@ -294,13 +305,23 @@ func (s *HostService) AddHostGroup(req *entity.HostGroup) ([]*model.Host, error)
 }
 
 func (s *HostService) UpdateHostGroup(groupId string, req *entity.HostGroup) ([]*model.Host, error) {
+	return updateHostGroup(groupId, req, 0)
+}
+
+// updateHostGroup re-plans the group's rows from req. An owner above 0 re-plans only
+// the rows on their inbounds, under a group of their own if it spans others' inbounds.
+func updateHostGroup(groupId string, req *entity.HostGroup, ownerId int) ([]*model.Host, error) {
 	if err := validateFinalMaskJSONSalamander(req.FinalMask); err != nil {
 		return nil, err
 	}
 	var desired []*model.Host
 	err := database.GetDB().Transaction(func(tx *gorm.DB) error {
 		var existing []*model.Host
-		if err := tx.Where("group_id = ?", groupId).Order("id asc").Find(&existing).Error; err != nil {
+		rows := tx.Where("hosts.group_id = ?", groupId)
+		if ownerId > 0 {
+			rows = ownedHostRows(rows, ownerId)
+		}
+		if err := rows.Order("hosts.id asc").Find(&existing).Error; err != nil {
 			return err
 		}
 		if len(existing) == 0 {
@@ -314,7 +335,21 @@ func (s *HostService) UpdateHostGroup(groupId string, req *entity.HostGroup) ([]
 		if err := settleHostExit(tx, groupId, req); err != nil {
 			return err
 		}
-		desired = buildHostRows(groupId, req)
+		plannedId := groupId
+		if ownerId > 0 {
+			ids := make([]int, len(existing))
+			for i, h := range existing {
+				ids[i] = h.Id
+			}
+			fresh, err := splitHostGroups(tx, map[string][]int{groupId: ids})
+			if err != nil {
+				return err
+			}
+			if id, ok := fresh[groupId]; ok {
+				plannedId = id
+			}
+		}
+		desired = buildHostRows(plannedId, req)
 		// Exact (inbound, address, port) matches reuse ids so edits keep bindings; a second pass pairs
 		// same-inbound leftovers with edits, and rows still unclaimed are deleted.
 		type hostKey struct {
@@ -470,6 +505,10 @@ func (s *HostService) GetAllTags() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
+	return distinctHostTags(hosts), nil
+}
+
+func distinctHostTags(hosts []*model.Host) []string {
 	set := make(map[string]struct{})
 	for _, h := range hosts {
 		for _, tag := range h.Tags {
@@ -483,7 +522,7 @@ func (s *HostService) GetAllTags() ([]string, error) {
 		out = append(out, tag)
 	}
 	sort.Strings(out)
-	return out, nil
+	return out
 }
 
 func parseHostAndPort(hostStr string, defaultPort int) (string, int) {

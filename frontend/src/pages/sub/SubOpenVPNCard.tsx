@@ -28,19 +28,19 @@ export interface OpenVPNProfile {
 const CLIENT_APPS = [
   {
     key: 'openvpn-android',
-    icon: <AndroidOutlined />,
+    icon: <AndroidOutlined aria-hidden />,
     labelKey: 'subscription.openvpnAppAndroid',
     url: 'https://play.google.com/store/apps/details?id=net.openvpn.openvpn',
   },
   {
     key: 'openvpn-ios',
-    icon: <AppleOutlined />,
+    icon: <AppleOutlined aria-hidden />,
     labelKey: 'subscription.openvpnAppIos',
     url: 'https://apps.apple.com/app/id590379981',
   },
   {
     key: 'openvpn-desktop',
-    icon: <DesktopOutlined />,
+    icon: <DesktopOutlined aria-hidden />,
     labelKey: 'subscription.openvpnAppDesktop',
     url: 'https://openvpn.net/client/',
   },
@@ -117,7 +117,7 @@ export default function SubOpenVPNCard({ profiles }: { profiles: OpenVPNProfile[
               <Button
                 size="small"
                 type="primary"
-                icon={<DownloadOutlined />}
+                icon={<DownloadOutlined aria-hidden />}
                 loading={busy === profile.url}
                 disabled={!profile.url}
                 onClick={() => void download(profile)}
@@ -154,7 +154,7 @@ function Row({
             <Button
               size="small"
               type="text"
-              icon={<CopyOutlined />}
+              icon={<CopyOutlined aria-hidden />}
               aria-label={t('copy')}
               onClick={() => onCopy(value)}
             />

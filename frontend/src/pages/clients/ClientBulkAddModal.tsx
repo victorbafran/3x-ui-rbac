@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   AutoComplete,
@@ -89,6 +89,7 @@ export default function ClientBulkAddModal({
   const { t } = useTranslation();
   const { can } = useMeQuery();
   const canPickInbounds = can('sections.inbounds');
+  const uid = useId();
   const [messageApi, messageContextHolder] = message.useMessage();
   const { bulkCreate } = useClients({ list: false });
 
@@ -263,13 +264,18 @@ export default function ClientBulkAddModal({
         <FormProvider {...methods}>
           <Form colon={false} labelCol={{ sm: { span: 8 } }} wrapperCol={{ sm: { span: 14 } }}>
             {canPickInbounds && (
-              <Form.Item label={t('pages.clients.attachedInbounds')} required>
+              <Form.Item
+                label={t('pages.clients.attachedInbounds')}
+                required
+                htmlFor={`${uid}-inbounds`}
+              >
                 <SelectAllClearButtons
                   options={inboundOptions}
                   value={inboundIds}
                   onChange={(v) => methods.setValue('inboundIds', v)}
                 />
                 <Select
+                  id={`${uid}-inbounds`}
                   mode="multiple"
                   value={inboundIds}
                   onChange={(v) => methods.setValue('inboundIds', v)}
@@ -333,16 +339,17 @@ export default function ClientBulkAddModal({
               </FormField>
             )}
 
-            <Form.Item label={t('pages.clients.subId')}>
+            <Form.Item label={t('pages.clients.subId')} htmlFor={`${uid}-sub-id`}>
               <Space.Compact style={{ display: 'flex' }}>
                 <Input
+                  id={`${uid}-sub-id`}
                   value={subId}
                   onChange={(e) => methods.setValue('subId', e.target.value)}
                   style={{ flex: 1 }}
                 />
                 <Button
                   aria-label={t('regenerate')}
-                  icon={<ReloadOutlined />}
+                  icon={<ReloadOutlined aria-hidden />}
                   onClick={() => methods.setValue('subId', RandomUtil.randomLowerAndNum(16))}
                 />
               </Space.Compact>
@@ -386,10 +393,11 @@ export default function ClientBulkAddModal({
               </FormField>
             )}
 
-            <Form.Item label={t('pages.clients.limitIp')}>
+            <Form.Item label={t('pages.clients.limitIp')} htmlFor={`${uid}-limit-ip`}>
               <Tooltip title={limitIpNotice || undefined}>
                 <span style={{ display: 'inline-flex' }}>
                   <InputNumber
+                    id={`${uid}-limit-ip`}
                     value={limitIp}
                     min={0}
                     disabled={limitIpDisabled}
@@ -409,8 +417,9 @@ export default function ClientBulkAddModal({
               <InputNumber min={can('clients.unlimitedData') ? 0 : 1} step={1} />
             </FormField>
 
-            <Form.Item label={t('pages.clients.delayedStart')}>
+            <Form.Item label={t('pages.clients.delayedStart')} htmlFor={`${uid}-delayed-start`}>
               <Switch
+                id={`${uid}-delayed-start`}
                 checked={delayedStart}
                 onClick={() => {
                   setDelayedStart(!delayedStart);
@@ -420,16 +429,18 @@ export default function ClientBulkAddModal({
             </Form.Item>
 
             {delayedStart ? (
-              <Form.Item label={t('pages.clients.expireDays')}>
+              <Form.Item label={t('pages.clients.expireDays')} htmlFor={`${uid}-expire-days`}>
                 <InputNumber
+                  id={`${uid}-expire-days`}
                   value={delayedExpireDays}
                   min={0}
                   onChange={(v) => methods.setValue('expiryTime', -86400000 * (Number(v) || 0))}
                 />
               </Form.Item>
             ) : (
-              <Form.Item label={t('pages.inbounds.expireDate')}>
+              <Form.Item label={t('pages.inbounds.expireDate')} htmlFor={`${uid}-expiry`}>
                 <DateTimePicker
+                  id={`${uid}-expiry`}
                   value={expiryDate}
                   onChange={(next) => methods.setValue('expiryTime', next ? next.valueOf() : 0)}
                 />

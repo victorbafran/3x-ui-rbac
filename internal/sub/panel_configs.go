@@ -273,11 +273,11 @@ func tunnelAddress(c model.Client, fallback string) string {
 	return fallback
 }
 
-// confText joins a config's lines; "" when one holds a line break, which would add
-// a line of its own to the file a customer imports: a rogue PostUp, a YAML key.
+// confText joins a config's lines; "" when one holds a control character, as upstream's
+// joinConfLines refuses: a break adds a line of its own, a rogue PostUp or a YAML key.
 func confText(lines []string) string {
 	for _, line := range lines {
-		if strings.ContainsAny(line, "\r\n") {
+		if amneziawg.ValidateConfigValue("config line", line) != nil {
 			return ""
 		}
 	}
@@ -351,7 +351,7 @@ func amneziaWGPanelConf(server *amneziawg.ServerSettings, c model.Client, endpoi
 	if server.DisableCookies {
 		lines = append(lines, "DisableCookies = on")
 	}
-	return confText(append(lines, peerLines(server.PublicKey, c, endpoint, remark)...))
+	return confText(append(lines, awgPeerLines(server.PublicKey, c, endpoint, remark)...))
 }
 
 // peerLines closes a .conf in wg-quick(8)'s peer order, the remark as a comment above it.
@@ -369,6 +369,18 @@ func peerLines(publicKey string, c model.Client, endpoint, remark string) []stri
 		lines = append(lines, "PersistentKeepalive = "+strconv.Itoa(ka))
 	}
 	return lines
+}
+
+// awgPeerLines is peerLines for AmneziaWG, whose keepalive may be a "min-max" range
+// (#6881), written as the subscription's vpn:// link writes it; WireGuard has none.
+func awgPeerLines(publicKey string, c model.Client, endpoint, remark string) []string {
+	ranged := c.KeepAlive != nil && strings.Contains(c.KeepAliveText(), "-") && c.KeepAlive.Validate(true) == nil
+	if !ranged {
+		return peerLines(publicKey, c, endpoint, remark)
+	}
+	scalar := c
+	scalar.KeepAlive = nil
+	return append(peerLines(publicKey, scalar, endpoint, remark), "PersistentKeepalive = "+c.KeepAliveText())
 }
 
 // tuicPanelYAML is the TUIC Clash YAML the panel offers, as the clients page built it,

@@ -130,9 +130,9 @@ export default function AdminsPage() {
         key: 'enabled',
         render: (enabled: boolean, admin: AdminView) =>
           enabled ? (
-            <Tag color="success" icon={<CheckCircleOutlined />} />
+            <Tag color="success" icon={<CheckCircleOutlined aria-label={t('enabled')} />} />
           ) : (
-            <Tag color="error" icon={<StopOutlined />}>
+            <Tag color="error" icon={<StopOutlined aria-label={t('disabled')} />}>
               {admin.disabledReason ? t('pages.admins.reasons.' + admin.disabledReason) : null}
             </Tag>
           ),
@@ -182,16 +182,28 @@ export default function AdminsPage() {
         key: 'actions',
         render: (_: unknown, admin: AdminView) => (
           <Space size="small">
-            <Button size="small" icon={<EditOutlined />} onClick={() => onEdit(admin)} />
             <Button
               size="small"
-              icon={<KeyOutlined />}
+              icon={<EditOutlined aria-hidden />}
+              aria-label={t('edit')}
+              onClick={() => onEdit(admin)}
+            />
+            <Button
+              size="small"
+              icon={<KeyOutlined aria-hidden />}
+              aria-label={t('pages.admins.resetPassword')}
               onClick={() => {
                 setResetValue('');
                 setResetTarget(admin);
               }}
             />
-            <Button size="small" danger icon={<DeleteOutlined />} onClick={() => onDelete(admin)} />
+            <Button
+              size="small"
+              danger
+              icon={<DeleteOutlined aria-hidden />}
+              aria-label={t('delete')}
+              onClick={() => onDelete(admin)}
+            />
           </Space>
         ),
       },
@@ -245,14 +257,14 @@ export default function AdminsPage() {
                   <Space size="small" wrap>
                     <Input
                       allowClear
-                      prefix={<SearchOutlined />}
+                      prefix={<SearchOutlined aria-hidden />}
                       placeholder={t('search')}
                       aria-label={t('search')}
                       value={query}
                       onChange={(e) => setQuery(e.target.value)}
                       style={{ width: isMobile ? 160 : 240 }}
                     />
-                    <Button type="primary" icon={<PlusOutlined />} onClick={onAdd}>
+                    <Button type="primary" icon={<PlusOutlined aria-hidden />} onClick={onAdd}>
                       {t('pages.admins.addAdmin')}
                     </Button>
                   </Space>
@@ -296,6 +308,7 @@ export default function AdminsPage() {
       >
         <Input.Password
           autoComplete="new-password"
+          aria-label={t('pages.admins.newPassword')}
           placeholder={t('pages.admins.newPassword')}
           value={resetValue}
           onChange={(e) => setResetValue(e.target.value)}

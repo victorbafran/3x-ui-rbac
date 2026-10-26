@@ -119,7 +119,7 @@ func TestTunnelConfigsKeepTheClientsPageText(t *testing.T) {
 	// The shared columns hold another tunnel's address; each inbound keeps its own.
 	seedPanelClient(t, &model.ClientRecord{
 		Email: "alice", Comment: "desk pc", PrivateKey: "aliceWgPrivateKeyAAAAAAAAAAAAAAAAAAAAAAAAA=",
-		AllowedIPs: "10.0.0.2/32", PreSharedKey: "alicePresharedKeyAAAAAAAAAAAAAAAAAAAAAAAAA=", KeepAlive: 25,
+		AllowedIPs: "10.0.0.2/32", PreSharedKey: "alicePresharedKeyAAAAAAAAAAAAAAAAAAAAAAAAA=", KeepAlive: "25",
 	}, wgMain)
 	seedPanelClient(t, &model.ClientRecord{
 		Email: "bob", PrivateKey: "bobWgPrivateKeyAAAAAAAAAAAAAAAAAAAAAAAAAAA=", AllowedIPs: "10.0.0.3/32",
@@ -571,6 +571,24 @@ func TestAmneziaWGPanelConfRefusesAnInjectedLine(t *testing.T) {
 	seedPanelClient(t, &model.ClientRecord{Email: "peer-1", Comment: injected, PrivateKey: "clientPrivKey=="}, ib)
 	if configs := NewLinkProvider().TunnelConfigsForClient("panel.example.com", reloaded(t, ib), "peer-1"); len(configs) != 0 {
 		t.Fatalf("an injected comment still gave configs: %+v", configs)
+	}
+}
+
+// AmneziaWG writes a keepalive range as the vpn:// link does (#6881); WireGuard has
+// no ranges, and a control character other than a break refuses either config.
+func TestPanelConfsKeepaliveRangeAndControlCharacters(t *testing.T) {
+	server := &amneziawg.ServerSettings{PublicKey: "serverPubKey==", Jc: 4, Jmin: 40, Jmax: 100, S1: 30, S2: 90}
+	ranged := model.KeepAliveValue("25-35")
+	client := model.Client{Email: "peer-1", PrivateKey: "clientPrivKey==", AllowedIPs: []string{"10.8.1.2/32"}, KeepAlive: &ranged}
+	if conf := amneziaWGPanelConf(server, client, "awg.example.test:51820", "awg"); !strings.HasSuffix(conf, "\nPersistentKeepalive = 25-35") {
+		t.Fatalf("AmneziaWG lost its keepalive range:\n%s", conf)
+	}
+	if conf := wireguardPanelConf(client, "serverPubKey==", 0, "", "wg.example.test:51820", "wg"); conf == "" || strings.Contains(conf, "PersistentKeepalive") {
+		t.Fatalf("WireGuard wrote a keepalive range:\n%s", conf)
+	}
+	client.KeepAlive = nil
+	if conf := amneziaWGPanelConf(server, client, "awg.example.test:51820", "awg\tPostUp"); conf != "" {
+		t.Fatalf("rendered a remark holding a tab:\n%s", conf)
 	}
 }
 

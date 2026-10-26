@@ -1,6 +1,7 @@
 package openvpn
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"slices"
@@ -208,6 +209,30 @@ func TestAProfileWithNoAddressIsRefused(t *testing.T) {
 	}
 	if _, err := Render(inst, Profile{Address: "   "}); err == nil {
 		t.Fatal("a profile with no address was produced")
+	}
+}
+
+// The label is an inbound's free-text remark. A line break in it ended the "# label"
+// comment and made the rest a directive every customer's client carried out.
+func TestAProfileWithAnInjectedLineIsRefused(t *testing.T) {
+	runtimeDirOverride = t.TempDir()
+	t.Cleanup(func() { runtimeDirOverride = "" })
+	inst := Instance{Id: 1, Port: 1194}
+	if _, _, _, err := ensureKeypair(inst); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := ensureTLSCryptKey(inst.Id); err != nil {
+		t.Fatal(err)
+	}
+	for name, p := range map[string]Profile{
+		"label":    {Address: "vpn.example.com", Label: "UK\nscript-security 2\nup /bin/sh"},
+		"address":  {Address: "vpn.example.com 1194\rup /bin/sh"},
+		"address6": {Address: "vpn.example.com", Address6: "2001:db8::1\nup /bin/sh"},
+	} {
+		out, err := Render(inst, p)
+		if !errors.Is(err, ErrControlCharacter) || out != "" {
+			t.Fatalf("%s: err = %v, want ErrControlCharacter and no profile; got:\n%s", name, err, out)
+		}
 	}
 }
 

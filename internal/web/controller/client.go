@@ -13,6 +13,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/web/websocket"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 func notifyClientsChanged() {
@@ -50,9 +51,11 @@ func NewClientController(g *gin.RouterGroup) *ClientController {
 }
 
 func (a *ClientController) initRouter(g *gin.RouterGroup) {
+	g.Use(a.refuseForeignEmailParam)
 	g.GET("/list", a.list)
 	g.GET("/list/paged", a.listPaged)
 	g.GET("/get/:email", a.get)
+	g.GET("/get/subId/:subId", a.getBySubId)
 	g.GET("/get/tgId/:tgId", a.getByTgId)
 	g.GET("/traffic/:email", a.getTrafficByEmail)
 	g.GET("/subLinks/:subId", a.getSubLinks)
@@ -174,6 +177,27 @@ func (a *ClientController) get(c *gin.Context) {
 	jsonObj(c, payload, nil)
 }
 
+func (a *ClientController) getBySubId(c *gin.Context) {
+	records, err := a.clientService.GetRecordsBySubID(c.Param("subId"))
+	if err == nil && len(records) == 0 {
+		err = gorm.ErrRecordNotFound
+	}
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.obtain"), err)
+		return
+	}
+	results := make([]gin.H, 0, len(records))
+	for _, rec := range records {
+		payload, err := a.buildClientPayload(rec)
+		if err != nil {
+			jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.obtain"), err)
+			return
+		}
+		results = append(results, payload)
+	}
+	jsonObj(c, results, nil)
+}
+
 func (a *ClientController) getByTgId(c *gin.Context) {
 	tgIdStr := c.Param("tgId")
 	tgId, err := strconv.ParseInt(tgIdStr, 10, 64)
@@ -187,7 +211,11 @@ func (a *ClientController) getByTgId(c *gin.Context) {
 		return
 	}
 	results := make([]gin.H, 0, len(records))
+	owned := a.ownedEmailFilter(c)
 	for _, rec := range records {
+		if owned != nil && !owned[rec.Email] {
+			continue
+		}
 		payload, err := a.buildClientPayload(rec)
 		if err != nil {
 			jsonMsg(c, I18nWeb(c, "get"), err)
@@ -226,7 +254,7 @@ func (a *ClientController) create(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
 	}
-	a.stampOwner(c, payload.Client.Email)
+	stampOwner(c, payload.Client.Email)
 	jsonMsgObj(c, I18nWeb(c, "pages.inbounds.toasts.inboundClientAddSuccess"), pendingNodeObj(a.inboundService.AnyNodePending(payload.InboundIds)), nil)
 }
 
@@ -495,7 +523,7 @@ func (a *ClientController) bulkCreate(c *gin.Context) {
 		return
 	}
 	result, needRestart, err := a.clientService.BulkCreate(&a.inboundService, payloads)
-	a.stampOwner(c, emailsOf(payloads)...)
+	stampOwner(c, emailsOf(payloads)...)
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
@@ -556,7 +584,7 @@ func (a *ClientController) importClients(c *gin.Context) {
 		return
 	}
 	result, needRestart, err := a.clientService.ImportClients(&a.inboundService, items)
-	a.stampOwner(c, emailsOf(items)...)
+	stampOwner(c, emailsOf(items)...)
 	// Flagged before the error check: a failed traffic restore still leaves the
 	// clients created before it committed, and those need the restart and refresh.
 	if needRestart {

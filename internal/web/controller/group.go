@@ -47,6 +47,15 @@ func (a *GroupController) emails(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
 	}
+	// A group name is panel-wide; the clients in it are each their own admin's.
+	if ownerId := ownerScopeOf(c); ownerId != 0 {
+		owned, err := a.clientService.OwnedEmailSet(ownerId)
+		if err != nil {
+			jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
+			return
+		}
+		emails = keepEmails(emails, owned)
+	}
 	jsonObj(c, emails, nil)
 }
 
@@ -142,6 +151,9 @@ func (a *GroupController) bulkAdd(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), common.NewError("group name is required"))
 		return
 	}
+	if denyForeignTargets(c, &a.clientService, nil, req.Emails) {
+		return
+	}
 	affected, err := a.clientService.AddToGroup(req.Emails, req.Group)
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
@@ -159,6 +171,9 @@ func (a *GroupController) bulkRemove(c *gin.Context) {
 	var req bulkRemoveFromGroupRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
+		return
+	}
+	if denyForeignTargets(c, &a.clientService, nil, req.Emails) {
 		return
 	}
 	affected, err := a.clientService.RemoveFromGroup(req.Emails)

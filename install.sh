@@ -17,11 +17,11 @@ xui_service="${XUI_SERVICE:=/etc/systemd/system}"
 # Releases, the raw x-ui.sh / x-ui.rc helper and the systemd units are all
 # fetched from it, so a fork only has to publish release assets under the same
 # names the workflow already produces.
-xui_repo="${XUI_REPO:=MHSanaei/3x-ui}"
+xui_repo="${XUI_REPO:=victorbafran/3x-ui-rbac}"
 # Which branch the helper scripts (x-ui.sh, update.sh) are fetched from when
 # they are not taken from a release tag. A fork whose default branch is not
 # "main" sets XUI_BRANCH alongside XUI_REPO.
-xui_branch="${XUI_BRANCH:=main}"
+xui_branch="${XUI_BRANCH:=rbac}"
 
 # check root
 [[ $EUID -ne 0 ]] && echo -e "${red}Fatal error: ${plain} Please run this script with root privilege \n " && exit 1
@@ -191,11 +191,11 @@ install_ocserv() {
 # installed from, in the same env file the systemd unit already reads.
 #
 # Without it the installed x-ui helper and update.sh fall back to their
-# compiled-in default — upstream — so "update" from the terminal menu would
-# quietly replace a fork with the original panel, taking every feature the
-# fork exists for with it. Nothing is written for a plain upstream install.
+# compiled-in default — this fork — so a panel installed from another
+# repository would be moved onto this one by its next update. Nothing is
+# written for an install from the default repository and branch.
 _persist_repo_choice() {
-    [[ "${xui_repo}" == "MHSanaei/3x-ui" && "${xui_branch}" == "main" ]] && return 0
+    [[ "${xui_repo}" == "victorbafran/3x-ui-rbac" && "${xui_branch}" == "rbac" ]] && return 0
     local env_file
     case "${release}" in
         ubuntu | debian | armbian) env_file="/etc/default/x-ui" ;;

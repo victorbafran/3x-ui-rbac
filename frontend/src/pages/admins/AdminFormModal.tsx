@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useId, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Button,
@@ -13,9 +13,12 @@ import {
   Typography,
 } from 'antd';
 import dayjs from 'dayjs';
-import { Controller, FormProvider, useWatch } from 'react-hook-form';
+import { Controller, FormProvider, useForm, useWatch } from 'react-hook-form';
+import type { Resolver } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import type { z } from 'zod';
 
-import { FormField, useZodForm } from '@/components/form/rhf';
+import { FormField } from '@/components/form/rhf';
 import type { InboundOption } from '@/schemas/client';
 import {
   AdminFormSchema,
@@ -83,7 +86,12 @@ export default function AdminFormModal({
   onOpenChange,
 }: AdminFormModalProps) {
   const { t } = useTranslation();
-  const form = useZodForm<AdminFormValues>(AdminFormSchema, {
+  const uid = useId();
+  // The schema's input leaves defaulted fields optional; the form always holds them filled.
+  const form = useForm<AdminFormValues>({
+    resolver: zodResolver(
+      AdminFormSchema as z.ZodType<AdminFormValues, AdminFormValues>,
+    ) as Resolver<AdminFormValues>,
     defaultValues: defaultsFor(admin, catalog),
   });
   const { control, handleSubmit, reset, setValue, setError } = form;
@@ -147,12 +155,13 @@ export default function AdminFormModal({
             </FormField>
           )}
 
-          <Form.Item label={t('pages.admins.fields.role')}>
+          <Form.Item label={t('pages.admins.fields.role')} htmlFor={`${uid}-role`}>
             <Controller
               control={control}
               name="role"
               render={({ field }) => (
                 <Select
+                  id={`${uid}-role`}
                   value={field.value}
                   onChange={(value: AdminRole) => {
                     field.onChange(value);
@@ -164,11 +173,13 @@ export default function AdminFormModal({
             />
           </Form.Item>
 
-          <Form.Item label={t('pages.admins.fields.enabled')}>
+          <Form.Item label={t('pages.admins.fields.enabled')} htmlFor={`${uid}-enabled`}>
             <Controller
               control={control}
               name="enabled"
-              render={({ field }) => <Switch checked={field.value} onChange={field.onChange} />}
+              render={({ field }) => (
+                <Switch id={`${uid}-enabled`} checked={field.value} onChange={field.onChange} />
+              )}
             />
           </Form.Item>
 
@@ -179,12 +190,13 @@ export default function AdminFormModal({
             <InputNumber min={0} step={1} precision={0} style={{ width: '100%' }} />
           </FormField>
 
-          <Form.Item label={t('pages.admins.fields.expireAt')}>
+          <Form.Item label={t('pages.admins.fields.expireAt')} htmlFor={`${uid}-expire-at`}>
             <Controller
               control={control}
               name="expireAt"
               render={({ field }) => (
                 <DatePicker
+                  id={`${uid}-expire-at`}
                   style={{ width: '100%' }}
                   showTime
                   value={field.value ? dayjs(field.value) : null}
@@ -195,12 +207,13 @@ export default function AdminFormModal({
             />
           </Form.Item>
 
-          <Form.Item label={t('pages.admins.fields.inbounds')}>
+          <Form.Item label={t('pages.admins.fields.inbounds')} htmlFor={`${uid}-inbounds`}>
             <Controller
               control={control}
               name="inboundIds"
               render={({ field }) => (
                 <Select
+                  id={`${uid}-inbounds`}
                   mode="multiple"
                   value={field.value}
                   onChange={field.onChange}

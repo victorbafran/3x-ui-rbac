@@ -35,16 +35,20 @@ func refuseWithout(c *gin.Context, perm string) bool {
 // denyForeign reports true, and has already answered, when the body names an
 // inbound or a client the caller may not touch.
 func (a *ClientController) denyForeign(c *gin.Context, inboundIds []int, emails []string) bool {
+	return denyForeignTargets(c, &a.clientService, inboundIds, emails)
+}
+
+func denyForeignTargets(c *gin.Context, clients *service.ClientService, inboundIds []int, emails []string) bool {
 	ownerId := ownerScopeOf(c)
 	if ownerId == 0 {
 		return false
 	}
-	foreignIds, err := a.clientService.ForeignInbounds(ownerId, inboundIds)
+	foreignIds, err := clients.ForeignInbounds(ownerId, inboundIds)
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return true
 	}
-	foreignEmails, err := a.clientService.ForeignEmails(ownerId, emails)
+	foreignEmails, err := clients.ForeignEmails(ownerId, emails)
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return true
@@ -54,6 +58,16 @@ func (a *ClientController) denyForeign(c *gin.Context, inboundIds []int, emails 
 		return true
 	}
 	return false
+}
+
+// refuseForeignEmailParam guards every /:email route. authz admits any client on
+// an inbound the caller shares, so the client's own owner is checked here.
+func (a *ClientController) refuseForeignEmailParam(c *gin.Context) {
+	if email := c.Param("email"); email != "" && a.denyForeign(c, nil, []string{email}) {
+		c.Abort()
+		return
+	}
+	c.Next()
 }
 
 func (a *ClientController) denyForeignSubId(c *gin.Context, subId string) bool {

@@ -1,6 +1,7 @@
 package openvpn
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -24,12 +25,23 @@ type Profile struct {
 	Label string
 }
 
+// ErrControlCharacter refuses a profile value with a line break or other control
+// character in it, as the .conf builders do: a break starts a directive of its own.
+var ErrControlCharacter = errors.New("holds a control character")
+
+func isControlCharacter(r rune) bool { return r < 0x20 || r == 0x7f }
+
 // Render writes the profile for an instance.
 //
 // The client half of the leak protection lives here as well as in the pushed
 // options. Pushing is a request the client may ignore; these are in the
 // customer's own file and apply even to a client that ignores what is pushed.
 func Render(inst Instance, p Profile) (string, error) {
+	for field, v := range map[string]string{"label": p.Label, "address": p.Address, "IPv6 address": p.Address6} {
+		if strings.ContainsFunc(v, isControlCharacter) {
+			return "", fmt.Errorf("the profile's %s: %w", field, ErrControlCharacter)
+		}
+	}
 	ca, err := os.ReadFile(caCertPathForID(inst.Id))
 	if err != nil {
 		return "", fmt.Errorf("the certificate authority for inbound %d is missing; the inbound has not started yet: %w", inst.Id, err)

@@ -1,5 +1,5 @@
 import { ObjectUtil } from '@/utils';
-import type { SubProfileMode, SubRemarkIPFamily } from '@/schemas/setting';
+import type { SubHostSortMode, SubProfileMode, SubRemarkIPFamily } from '@/schemas/setting';
 
 export class AllSetting {
   webListen = '';
@@ -22,6 +22,7 @@ export class AllSetting {
   subRemarkIPFamily: SubRemarkIPFamily = 'version';
   subInfoNodeEnable = false;
   subInfoLines = '';
+  subHostSortMode: SubHostSortMode = 'inbound-first';
   subCalendarExpireInclusive = false;
   subExpiredTemplate = '⛔ {{EMAIL}} | Expired: {{EXPIRE_DATE}}';
   subTrafficDepletedTemplate =
@@ -76,6 +77,7 @@ export class AllSetting {
   subClashURI = '';
   subClashEnableRouting = false;
   subClashRules = '';
+  subClashRemoteDNS = false;
   subJsonMux = '';
   subJsonRules = '';
   subJsonRoutingRules = '';
@@ -175,6 +177,7 @@ export class AllSetting {
   smtpCpu = 80;
   smtpMemory = 80;
   outboundDownThreshold = 3;
+  nodeDownThreshold = 1;
   hasTgBotToken = false;
   hasTwoFactorToken = false;
   hasLdapPassword = false;
@@ -217,6 +220,10 @@ export class AllSetting {
     this.outboundDownThreshold = Number.isFinite(threshold)
       ? Math.min(100, Math.max(1, threshold))
       : 3;
+    const nodeThreshold = Math.round(Number(this.nodeDownThreshold));
+    this.nodeDownThreshold = Number.isFinite(nodeThreshold)
+      ? Math.min(100, Math.max(1, nodeThreshold))
+      : 1;
   }
 
   equals(other: AllSetting): boolean {

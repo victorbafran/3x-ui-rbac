@@ -1,6 +1,8 @@
 package service
 
 import (
+	"sync"
+
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
 )
@@ -35,35 +37,50 @@ type SubLinkProvider interface {
 	InboundClientLinks(host string, inbound *model.Inbound, emails []string) []InboundClientLinks
 }
 
-var registeredSubLinkProvider SubLinkProvider
+var (
+	subLinkProviderMu         sync.RWMutex
+	registeredSubLinkProvider SubLinkProvider
+)
 
 func RegisterSubLinkProvider(p SubLinkProvider) {
+	subLinkProviderMu.Lock()
+	defer subLinkProviderMu.Unlock()
 	registeredSubLinkProvider = p
 }
 
+// subLinkProvider guards the registry: startup writes it while link requests read it.
+func subLinkProvider() SubLinkProvider {
+	subLinkProviderMu.RLock()
+	defer subLinkProviderMu.RUnlock()
+	return registeredSubLinkProvider
+}
+
 func (s *InboundService) GetSubLinks(host, subId string) ([]string, error) {
-	if registeredSubLinkProvider == nil {
+	provider := subLinkProvider()
+	if provider == nil {
 		return nil, common.NewError("sub link provider not registered")
 	}
-	return registeredSubLinkProvider.SubLinksForSubId(host, subId)
+	return provider.SubLinksForSubId(host, subId)
 }
 
 func (s *InboundService) GetAllInboundLinks(host string, userId int) ([]string, error) {
-	if registeredSubLinkProvider == nil {
+	provider := subLinkProvider()
+	if provider == nil {
 		return nil, common.NewError("sub link provider not registered")
 	}
 	inbounds, err := s.GetInbounds(userId)
 	if err != nil {
 		return nil, err
 	}
-	return registeredSubLinkProvider.LinksForInbounds(host, inbounds), nil
+	return provider.LinksForInbounds(host, inbounds), nil
 }
 
 func (s *InboundService) GetAllClientLinks(host string, email string) ([]string, error) {
 	if email == "" {
 		return nil, common.NewError("client email is required")
 	}
-	if registeredSubLinkProvider == nil {
+	provider := subLinkProvider()
+	if provider == nil {
 		return nil, common.NewError("sub link provider not registered")
 	}
 	rec, err := s.clientService.GetRecordByEmail(nil, email)
@@ -80,7 +97,7 @@ func (s *InboundService) GetAllClientLinks(host string, email string) ([]string,
 		if getErr != nil {
 			return nil, getErr
 		}
-		links = append(links, registeredSubLinkProvider.LinksForClient(host, inbound, email)...)
+		links = append(links, provider.LinksForClient(host, inbound, email)...)
 	}
 	return links, nil
 }
@@ -88,7 +105,8 @@ func (s *InboundService) GetAllClientLinks(host string, email string) ([]string,
 // GetTunnelConfigs is every WireGuard, AmneziaWG and TUIC config of one client
 // record across the inbounds it is attached to; other protocols give none.
 func (s *InboundService) GetTunnelConfigs(host string, clientId int) ([]TunnelConfig, error) {
-	if registeredSubLinkProvider == nil {
+	provider := subLinkProvider()
+	if provider == nil {
 		return nil, common.NewError("sub link provider not registered")
 	}
 	rec, err := s.clientService.GetByID(clientId)
@@ -108,5 +126,5 @@ func (s *InboundService) GetTunnelConfigs(host string, clientId int) ([]TunnelCo
 		inbounds = append(inbounds, inbound)
 	}
 	configs := []TunnelConfig{}
-	return append(configs, registeredSubLinkProvider.TunnelConfigsForClient(host, inbounds, rec.Email)...), nil
+	return append(configs, provider.TunnelConfigsForClient(host, inbounds, rec.Email)...), nil
 }

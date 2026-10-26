@@ -1,20 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useId } from 'react';
 import { useTranslation } from 'react-i18next';
-import { QuestionCircleOutlined } from '@ant-design/icons';
+
 import dayjs from 'dayjs';
-import {
-  Alert,
-  Form,
-  Input,
-  InputNumber,
-  Modal,
-  Radio,
-  Select,
-  Switch,
-  Tabs,
-  Tooltip,
-  message,
-} from 'antd';
+import { Alert, Form, Input, InputNumber, Modal, Radio, Select, Switch, Tabs, message } from 'antd';
 import { Controller, FormProvider, useForm, useWatch } from 'react-hook-form';
 
 import { HttpUtil, NumberFormatter, RandomUtil, SizeFormatter, Wireguard } from '@/utils';
@@ -101,16 +89,6 @@ import SniffingTab from './SniffingTab';
 
 import type { DBInbound } from '@/models/dbinbound';
 import type { NodeRecord } from '@/api/queries/useNodesQuery';
-
-/* Render a field label with a hover tooltip icon instead of an `extra` help line below. */
-const labelWithHint = (label: string, hint: string) => (
-  <span>
-    {label}
-    <Tooltip title={hint}>
-      <QuestionCircleOutlined style={{ marginInlineStart: 4, color: 'rgba(128,128,128,0.65)' }} />
-    </Tooltip>
-  </span>
-);
 
 const PROTOCOL_OPTIONS = Object.values(Protocols).map((p) => ({ value: p, label: p }));
 const SHARE_ADDR_STRATEGIES = ['node', 'listen', 'custom'] as const;
@@ -243,6 +221,7 @@ export default function InboundFormModal({
   availableNodesFetched = true,
 }: InboundFormModalProps) {
   const { t } = useTranslation();
+  const uid = useId();
   const [messageApi, messageContextHolder] = message.useMessage();
   const [modal, modalContextHolder] = Modal.useModal();
   const methods = useForm<InboundFormValues>({ defaultValues: buildAddModeValues() });
@@ -673,7 +652,8 @@ export default function InboundFormModal({
 
       <FormField
         name="listen"
-        label={labelWithHint(t('pages.inbounds.address'), t('pages.inbounds.form.listenHelp'))}
+        label={t('pages.inbounds.address')}
+        tooltip={t('pages.inbounds.form.listenHelp')}
       >
         <Input placeholder={t('pages.inbounds.monitorDesc')} />
       </FormField>
@@ -682,10 +662,8 @@ export default function InboundFormModal({
         <>
           <FormField
             name="shareAddrStrategy"
-            label={labelWithHint(
-              t('pages.inbounds.form.shareAddrStrategy'),
-              t('pages.inbounds.form.shareAddrStrategyHelp'),
-            )}
+            label={t('pages.inbounds.form.shareAddrStrategy')}
+            tooltip={t('pages.inbounds.form.shareAddrStrategyHelp')}
           >
             <Select
               options={SHARE_ADDR_STRATEGIES.filter(
@@ -700,10 +678,8 @@ export default function InboundFormModal({
           {shareAddrStrategy === 'custom' && (
             <FormField
               name="shareAddr"
-              label={labelWithHint(
-                t('pages.inbounds.form.shareAddr'),
-                t('pages.inbounds.form.shareAddrHelp'),
-              )}
+              label={t('pages.inbounds.form.shareAddr')}
+              tooltip={t('pages.inbounds.form.shareAddrHelp')}
               rules={{
                 validate: (value) =>
                   isValidShareAddrInput(String(value ?? '')) ||
@@ -718,10 +694,8 @@ export default function InboundFormModal({
 
       <FormField
         name="subSortIndex"
-        label={labelWithHint(
-          t('pages.inbounds.form.subSortIndex'),
-          t('pages.inbounds.form.subSortIndexHelp'),
-        )}
+        label={t('pages.inbounds.form.subSortIndex')}
+        tooltip={t('pages.inbounds.form.subSortIndexHelp')}
       >
         <InputNumber />
       </FormField>
@@ -729,10 +703,8 @@ export default function InboundFormModal({
       <FormField
         name="excludeFromSub"
         valueProp="checked"
-        label={labelWithHint(
-          t('pages.inbounds.form.excludeFromSub'),
-          t('pages.inbounds.form.excludeFromSubHelp'),
-        )}
+        label={t('pages.inbounds.form.excludeFromSub')}
+        tooltip={t('pages.inbounds.form.excludeFromSubHelp')}
       >
         <Switch />
       </FormField>
@@ -741,10 +713,8 @@ export default function InboundFormModal({
         <FormField
           name="disableFlow"
           valueProp="checked"
-          label={labelWithHint(
-            t('pages.inbounds.form.disableFlow'),
-            t('pages.inbounds.form.disableFlowHelp'),
-          )}
+          label={t('pages.inbounds.form.disableFlow')}
+          tooltip={t('pages.inbounds.form.disableFlowHelp')}
         >
           <Switch />
         </FormField>
@@ -759,13 +729,13 @@ export default function InboundFormModal({
       </FormField>
 
       <Form.Item
-        label={
-          <Tooltip title={t('pages.inbounds.meansNoLimit')}>
-            {t('pages.inbounds.totalFlow')}
-          </Tooltip>
-        }
+        htmlFor={`${uid}-totalFlow`}
+        label={t('pages.inbounds.totalFlow')}
+        tooltip={t('pages.inbounds.meansNoLimit')}
       >
         <InputNumber
+          id={`${uid}-totalFlow`}
+          aria-describedby={`${uid}-totalFlow-hint`}
           value={wTotal ? Math.round((wTotal / SizeFormatter.ONE_GB) * 100) / 100 : 0}
           min={0}
           step={1}
@@ -774,6 +744,9 @@ export default function InboundFormModal({
             setV('total', bytes);
           }}
         />
+        <span id={`${uid}-totalFlow-hint`} hidden>
+          {t('pages.inbounds.meansNoLimit')}
+        </span>
       </Form.Item>
 
       <FormField name="trafficReset" label={t('pages.inbounds.periodicTrafficResetTitle')}>
@@ -796,16 +769,19 @@ export default function InboundFormModal({
       )}
 
       <Form.Item
-        label={
-          <Tooltip title={t('pages.inbounds.leaveBlankToNeverExpire')}>
-            {t('pages.inbounds.expireDate')}
-          </Tooltip>
-        }
+        htmlFor={`${uid}-expiryTime`}
+        label={t('pages.inbounds.expireDate')}
+        tooltip={t('pages.inbounds.leaveBlankToNeverExpire')}
       >
         <DateTimePicker
+          id={`${uid}-expiryTime`}
+          aria-describedby={`${uid}-expiryTime-hint`}
           value={wExpiry > 0 ? dayjs(wExpiry) : null}
           onChange={(d) => setV('expiryTime', d ? d.valueOf() : 0)}
         />
+        <span id={`${uid}-expiryTime-hint`} hidden>
+          {t('pages.inbounds.leaveBlankToNeverExpire')}
+        </span>
       </Form.Item>
     </>
   );
@@ -943,8 +919,9 @@ export default function InboundFormModal({
   const streamTab = (
     <>
       {hasSelectableTransport && (
-        <Form.Item label={t('transmission')}>
+        <Form.Item htmlFor={`${uid}-network`} label={t('transmission')}>
           <Select
+            id={`${uid}-network`}
             style={{ width: '75%' }}
             value={network}
             onChange={onNetworkChange}
@@ -955,7 +932,7 @@ export default function InboundFormModal({
               { value: 'grpc', label: 'gRPC' },
               { value: 'httpupgrade', label: 'HTTPUpgrade' },
               { value: 'xhttp', label: 'XHTTP' },
-              { value: 'xdrive', label: 'XDRIVE' },
+              ...(protocol === Protocols.VLESS ? [{ value: 'xdrive', label: 'XDRIVE' }] : []),
             ]}
           />
         </Form.Item>

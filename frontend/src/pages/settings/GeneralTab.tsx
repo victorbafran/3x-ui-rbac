@@ -181,7 +181,11 @@ export default function GeneralTab({ allSetting, updateSetting }: GeneralTabProp
       items={[
         {
           key: '1',
-          label: catTabLabel(<SettingOutlined />, t('pages.settings.panelSettings'), isMobile),
+          label: catTabLabel(
+            <SettingOutlined aria-hidden />,
+            t('pages.settings.panelSettings'),
+            isMobile,
+          ),
           children: (
             <>
               <SettingListItem
@@ -350,7 +354,11 @@ export default function GeneralTab({ allSetting, updateSetting }: GeneralTabProp
         },
         {
           key: '2',
-          label: catTabLabel(<BellOutlined />, t('pages.settings.notifications'), isMobile),
+          label: catTabLabel(
+            <BellOutlined aria-hidden />,
+            t('pages.settings.notifications'),
+            isMobile,
+          ),
           children: (
             <>
               <SettingListItem
@@ -387,7 +395,11 @@ export default function GeneralTab({ allSetting, updateSetting }: GeneralTabProp
         },
         {
           key: '3',
-          label: catTabLabel(<SafetyCertificateOutlined />, t('pages.settings.certs'), isMobile),
+          label: catTabLabel(
+            <SafetyCertificateOutlined aria-hidden />,
+            t('pages.settings.certs'),
+            isMobile,
+          ),
           children: (
             <>
               <SettingListItem
@@ -437,7 +449,11 @@ export default function GeneralTab({ allSetting, updateSetting }: GeneralTabProp
         },
         {
           key: '4',
-          label: catTabLabel(<GlobalOutlined />, t('pages.settings.externalTraffic'), isMobile),
+          label: catTabLabel(
+            <GlobalOutlined aria-hidden />,
+            t('pages.settings.externalTraffic'),
+            isMobile,
+          ),
           children: (
             <>
               <SettingListItem
@@ -466,7 +482,11 @@ export default function GeneralTab({ allSetting, updateSetting }: GeneralTabProp
         },
         {
           key: '5',
-          label: catTabLabel(<ClockCircleOutlined />, t('pages.settings.dateAndTime'), isMobile),
+          label: catTabLabel(
+            <ClockCircleOutlined aria-hidden />,
+            t('pages.settings.dateAndTime'),
+            isMobile,
+          ),
           children: (
             <>
               <SettingListItem
@@ -499,7 +519,7 @@ export default function GeneralTab({ allSetting, updateSetting }: GeneralTabProp
         },
         {
           key: '6',
-          label: catTabLabel(<ApartmentOutlined />, 'LDAP', isMobile),
+          label: catTabLabel(<ApartmentOutlined aria-hidden />, 'LDAP', isMobile),
           children: (
             <>
               <SettingListItem paddings="small" title={t('pages.settings.ldap.enable')}>

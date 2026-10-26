@@ -46,7 +46,7 @@ func (a *ClientController) applyOwnerPrefix(c *gin.Context, payloads []service.C
 // already have an owner are left alone, so this can never take a client from
 // another admin. A client whose stamp fails stays unowned: the super_admin
 // sees it and nobody else does, which is the safe way to fail.
-func (a *ClientController) stampOwner(c *gin.Context, emails ...string) {
+func stampOwner(c *gin.Context, emails ...string) {
 	ownerId := ownerScopeOf(c)
 	if ownerId == 0 || len(emails) == 0 {
 		return

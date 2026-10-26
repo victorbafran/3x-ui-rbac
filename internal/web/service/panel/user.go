@@ -36,6 +36,19 @@ func (s *UserService) GetFirstUser() (*model.User, error) {
 	return user, nil
 }
 
+// HasDefaultCredential reports that nobody has chosen the login yet: a database
+// holds no user before the first start, and an older one may still hold admin/admin.
+func (s *UserService) HasDefaultCredential() (bool, error) {
+	user, err := s.GetFirstUser()
+	if database.IsNotFound(err) {
+		return true, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return user.Username == "admin" && crypto.CheckPasswordHash(user.Password, "admin"), nil
+}
+
 func (s *UserService) CheckUser(username string, password string, twoFactorCode string) (*model.User, error) {
 	db := database.GetDB()
 
@@ -157,8 +170,12 @@ func (s *UserService) UpdateFirstUser(username string, password string) error {
 	user := &model.User{}
 	err := db.Model(model.User{}).First(user).Error
 	if database.IsNotFound(err) {
+		// install.sh lands here on a fresh database, after the super-admin backfill
+		// has run with no users, so the role column alone would make this readonly.
 		user.Username = username
 		user.Password = hashedPassword
+		user.Role = model.RoleSuperAdmin
+		user.Enabled = true
 		return db.Model(model.User{}).Create(user).Error
 	} else if err != nil {
 		return err

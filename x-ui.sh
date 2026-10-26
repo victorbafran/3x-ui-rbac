@@ -15,8 +15,8 @@ for _xui_env in /etc/default/x-ui /etc/conf.d/x-ui /etc/sysconfig/x-ui; do
         break
     fi
 done
-xui_repo="${XUI_REPO:=MHSanaei/3x-ui}"
-xui_branch="${XUI_BRANCH:=main}"
+xui_repo="${XUI_REPO:=victorbafran/3x-ui-rbac}"
+xui_branch="${XUI_BRANCH:=rbac}"
 
 red='\033[0;31m'
 green='\033[0;32m'
@@ -117,7 +117,7 @@ iplimit_log_path="${log_folder}/3xipl.log"
 iplimit_banned_log_path="${log_folder}/3xipl-banned.log"
 
 confirm() {
-    if [[ $# > 1 ]]; then
+    if [[ $# -gt 1 ]]; then
         echo && read -rp "$1 [Default $2]: " temp
         if [[ "${temp}" == "" ]]; then
             temp=$2
@@ -3657,7 +3657,7 @@ show_menu() {
     esac
 }
 
-if [[ $# > 0 ]]; then
+if [[ $# -gt 0 ]]; then
     case $1 in
         "start")
             check_install 0 && start 0

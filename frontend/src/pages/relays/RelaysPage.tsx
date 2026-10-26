@@ -144,10 +144,13 @@ function frontAddress6(r: Relay, t: TFunction) {
           </>
         ) : null}{' '}
         {reason ? (
-          <WarningOutlined style={{ color: 'var(--ant-color-warning)' }} />
+          <WarningOutlined aria-hidden style={{ color: 'var(--ant-color-warning)' }} />
         ) : checked && r.status === 'ready' ? (
           <Tooltip title={t('pages.relays.address6Reached')}>
-            <CheckCircleOutlined style={{ color: 'var(--ant-color-success)' }} />
+            <CheckCircleOutlined
+              aria-label={t('pages.relays.address6Reached')}
+              style={{ color: 'var(--ant-color-success)' }}
+            />
           </Tooltip>
         ) : null}
         {r.ipFamily ? (
@@ -399,19 +402,32 @@ export default function RelaysPage() {
           <Tooltip title={t('pages.relays.probeHint')}>
             <Button
               size="small"
-              icon={<ThunderboltOutlined />}
+              icon={<ThunderboltOutlined aria-hidden />}
+              aria-label={t('pages.relays.probeHint')}
               loading={probeMut.isPending}
               onClick={() => onProbe(r)}
             />
           </Tooltip>
           <Switch
             size="small"
+            aria-label={t('enabled')}
             checked={r.enabled}
             loading={setEnableMut.isPending}
             onChange={(enable) => setEnableMut.mutate({ id: r.id, enable })}
           />
-          <Button size="small" icon={<EditOutlined />} onClick={() => onEdit(r)} />
-          <Button size="small" danger icon={<DeleteOutlined />} onClick={() => onDelete(r)} />
+          <Button
+            size="small"
+            icon={<EditOutlined aria-hidden />}
+            aria-label={t('edit')}
+            onClick={() => onEdit(r)}
+          />
+          <Button
+            size="small"
+            danger
+            icon={<DeleteOutlined aria-hidden />}
+            aria-label={t('delete')}
+            onClick={() => onDelete(r)}
+          />
         </Space>
       ),
     },
@@ -446,7 +462,7 @@ export default function RelaysPage() {
                           <Statistic
                             title={t('pages.relays.summary.total')}
                             value={String(summary.total)}
-                            prefix={<GlobalOutlined />}
+                            prefix={<GlobalOutlined aria-hidden />}
                           />
                         </Col>
                         <Col xs={8}>
@@ -454,7 +470,10 @@ export default function RelaysPage() {
                             title={t('pages.relays.summary.ready')}
                             value={String(summary.ready)}
                             prefix={
-                              <CheckCircleOutlined style={{ color: 'var(--ant-color-success)' }} />
+                              <CheckCircleOutlined
+                                aria-hidden
+                                style={{ color: 'var(--ant-color-success)' }}
+                              />
                             }
                           />
                         </Col>
@@ -472,7 +491,7 @@ export default function RelaysPage() {
                       size="small"
                       title={t('pages.relays.title')}
                       extra={
-                        <Button type="primary" icon={<PlusOutlined />} onClick={onAdd}>
+                        <Button type="primary" icon={<PlusOutlined aria-hidden />} onClick={onAdd}>
                           {t('pages.relays.add')}
                         </Button>
                       }

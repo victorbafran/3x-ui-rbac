@@ -39,12 +39,12 @@ func speedSampleInterval(previous, current time.Time) time.Duration {
 // source names the protocol so the page can keep each one's numbers apart and
 // expire them separately: a sidecar that stops pushing should drop its own
 // speeds to zero without touching anybody else's.
-func sidecarSpeedPayload(source string, clientTraffics []*xray.ClientTraffic, sampleInterval time.Duration) map[string]any {
+func sidecarSpeedPayload(source string, clientTraffics []*xray.ClientTraffic, sampleInterval time.Duration) trafficPush {
 	intervalMs := sampleInterval.Milliseconds()
 	if intervalMs < 1 {
 		intervalMs = 1
 	}
-	return map[string]any{
+	return trafficPush{
 		"clientTraffics":          clientTraffics,
 		"clientTrafficSource":     source,
 		"clientTrafficIntervalMs": intervalMs,
@@ -58,5 +58,5 @@ func broadcastSidecarSpeed(source string, clientTraffics []*xray.ClientTraffic, 
 	if len(clientTraffics) == 0 {
 		return
 	}
-	websocket.BroadcastTraffic(sidecarSpeedPayload(source, clientTraffics, sampleInterval))
+	websocket.BroadcastTraffic(sidecarSpeedPayload(source, clientTraffics, sampleInterval), nil)
 }

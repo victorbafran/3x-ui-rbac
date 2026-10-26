@@ -72,7 +72,7 @@ func (j *TuicJob) Run() {
 		}
 	}
 	if persisted {
-		websocket.BroadcastTraffic(tuicSpeedPayload(clientTraffics, sampleInterval))
+		websocket.BroadcastTraffic(tuicSpeedPayload(clientTraffics, sampleInterval), nil)
 		j.lastSpeedSample = sampledAt
 	}
 
@@ -92,12 +92,12 @@ func tuicSpeedSampleInterval(previous, current time.Time) time.Duration {
 	return current.Sub(previous)
 }
 
-func tuicSpeedPayload(clientTraffics []*xray.ClientTraffic, sampleInterval time.Duration) map[string]any {
+func tuicSpeedPayload(clientTraffics []*xray.ClientTraffic, sampleInterval time.Duration) trafficPush {
 	intervalMs := sampleInterval.Milliseconds()
 	if intervalMs < 1 {
 		intervalMs = 1
 	}
-	return map[string]any{
+	return trafficPush{
 		"clientTraffics":          clientTraffics,
 		"clientTrafficSource":     "tuic",
 		"clientTrafficIntervalMs": intervalMs,

@@ -6,9 +6,11 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service/panel"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/session"
+	"github.com/mhsanaei/3x-ui/v3/internal/web/websocket"
 
 	"github.com/gin-gonic/gin"
 	ws "github.com/gorilla/websocket"
@@ -63,9 +65,14 @@ func NewWebSocketController(svc *panel.WebSocketService) *WebSocketController {
 // HandleWebSocket authenticates the request, upgrades the HTTP connection, and
 // hands ownership of the connection off to the service.
 func (w *WebSocketController) HandleWebSocket(c *gin.Context) {
-	if !session.IsLogin(c) {
+	user := session.GetLoginUser(c)
+	if user == nil {
 		logger.Warningf("Unauthorized WebSocket connection attempt from %s", getRemoteIp(c))
 		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+	if !user.Enabled {
+		c.AbortWithStatus(http.StatusForbidden)
 		return
 	}
 
@@ -75,5 +82,11 @@ func (w *WebSocketController) HandleWebSocket(c *gin.Context) {
 		return
 	}
 
-	w.service.HandleConnection(conn, getRemoteIp(c))
+	w.service.HandleConnection(conn, getRemoteIp(c), viewerOf(user))
+}
+
+// viewerOf narrows the connection by the rule the REST listings use. A role
+// change bumps the login epoch, which ends the viewer with the session.
+func viewerOf(u *model.User) websocket.Viewer {
+	return websocket.Viewer{AdminId: u.Id, Scoped: scopeFor(u) != 0, LoginEpoch: u.LoginEpoch}
 }

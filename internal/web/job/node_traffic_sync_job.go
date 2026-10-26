@@ -208,7 +208,7 @@ func (j *NodeTrafficSyncJob) Run() {
 	if online == nil {
 		online = []string{}
 	}
-	trafficPayload := map[string]any{
+	trafficPayload := trafficPush{
 		"onlineClients":  online,
 		"onlineByGuid":   j.inboundService.GetOnlineClientsByGuid(),
 		"activeInbounds": j.inboundService.GetActiveInboundsByGuid(),
@@ -219,9 +219,8 @@ func (j *NodeTrafficSyncJob) Run() {
 	// client-side, leaving the last shown value untouched; an empty (non-nil)
 	// slice marshals to [] and clears stale speeds.
 	trafficPayload["nodeTraffics"] = inboundSpeed
-	websocket.BroadcastTraffic(trafficPayload)
 
-	clientStats := map[string]any{"snapshot": snapshot}
+	clientStats := clientStatsPush{"snapshot": snapshot}
 	if len(stats) > 0 {
 		clientStats["clients"] = stats
 	}
@@ -230,9 +229,11 @@ func (j *NodeTrafficSyncJob) Run() {
 	} else if len(summary) > 0 {
 		clientStats["inbounds"] = summary
 	}
+	var statsPush websocket.OwnedPayload
 	if len(clientStats) > 1 {
-		websocket.BroadcastClientStats(clientStats)
+		statsPush = clientStats
 	}
+	websocket.BroadcastTraffic(trafficPayload, statsPush)
 
 	if j.structural.takeAndReset() {
 		websocket.BroadcastInvalidate(websocket.MessageTypeInbounds)

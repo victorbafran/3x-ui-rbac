@@ -7,8 +7,11 @@ package panel
 import (
 	"time"
 
+	"github.com/mhsanaei/3x-ui/v3/internal/database"
+	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
+	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/websocket"
 
 	"github.com/google/uuid"
@@ -29,15 +32,17 @@ type WebSocketService struct {
 	hub *websocket.Hub
 }
 
-// NewWebSocketService creates a service backed by the given hub.
+// NewWebSocketService creates a service backed by the given hub and tells the
+// hub how to decide which clients each open panel may see.
 func NewWebSocketService(hub *websocket.Hub) *WebSocketService {
+	hub.SetAccessResolver(viewerAccess)
 	return &WebSocketService{hub: hub}
 }
 
 // HandleConnection takes ownership of an upgraded WebSocket connection:
 // registers a new client, starts the read/write pumps, and returns
 // immediately. The connection is closed when both pumps exit.
-func (s *WebSocketService) HandleConnection(conn *ws.Conn, remoteIP string) {
+func (s *WebSocketService) HandleConnection(conn *ws.Conn, remoteIP string, viewer websocket.Viewer) {
 	if s == nil || s.hub == nil || conn == nil {
 		if conn != nil {
 			conn.Close()
@@ -45,12 +50,79 @@ func (s *WebSocketService) HandleConnection(conn *ws.Conn, remoteIP string) {
 		return
 	}
 
-	client := websocket.NewClient(uuid.New().String())
+	client := websocket.NewViewerClient(uuid.New().String(), viewer)
 	s.hub.Register(client)
 	logger.Debugf("WebSocket client %s registered from %s", client.ID, remoteIP)
 
 	go s.writePump(client, conn)
 	go s.readPump(client, conn)
+}
+
+// viewerAccess applies the REST session rule at broadcast time: a viewer counts
+// while its admin exists, is enabled and still has the login epoch it upgraded with.
+func viewerAccess(viewers []websocket.Viewer, emails []string) map[websocket.Viewer]*websocket.Access {
+	db := database.GetDB()
+	if db == nil || len(viewers) == 0 {
+		return nil
+	}
+	ids := make([]int, 0, len(viewers))
+	for _, v := range viewers {
+		ids = append(ids, v.AdminId)
+	}
+	var admins []model.User
+	if err := db.Model(&model.User{}).Select("id", "enabled", "login_epoch").Where("id IN ?", ids).Find(&admins).Error; err != nil {
+		logger.Warning("websocket: load viewer admins failed:", err)
+		return nil
+	}
+	byId := make(map[int]model.User, len(admins))
+	for _, a := range admins {
+		byId[a.Id] = a
+	}
+
+	access := make(map[websocket.Viewer]*websocket.Access, len(viewers))
+	var scoped []websocket.Viewer
+	var scopedIds []int
+	for _, v := range viewers {
+		admin, ok := byId[v.AdminId]
+		if !ok || !admin.Enabled || admin.LoginEpoch != v.LoginEpoch {
+			continue
+		}
+		if !v.Scoped {
+			access[v] = nil
+			continue
+		}
+		// Only the viewer with the admin's current epoch gets here: one per admin.
+		scoped = append(scoped, v)
+		scopedIds = append(scopedIds, v.AdminId)
+	}
+	if len(scoped) == 0 {
+		return access
+	}
+
+	clients := service.ClientService{}
+	emailsOf, err := clients.OwnedEmailsAmong(scopedIds, emails)
+	if err != nil {
+		logger.Warning("websocket: load owned clients failed:", err)
+		return access
+	}
+	inboundsOf, err := clients.OwnedInboundsByAdmin(scopedIds)
+	if err != nil {
+		logger.Warning("websocket: load owned inbounds failed:", err)
+		return access
+	}
+	for _, v := range scoped {
+		owned := &websocket.Access{
+			Emails:      emailsOf[v.AdminId],
+			InboundTags: make(map[string]bool, len(inboundsOf[v.AdminId])),
+			InboundIds:  make(map[int]bool, len(inboundsOf[v.AdminId])),
+		}
+		for id, tag := range inboundsOf[v.AdminId] {
+			owned.InboundIds[id] = true
+			owned.InboundTags[tag] = true
+		}
+		access[v] = owned
+	}
+	return access
 }
 
 // readPump consumes inbound frames so the gorilla deadline/pong machinery keeps

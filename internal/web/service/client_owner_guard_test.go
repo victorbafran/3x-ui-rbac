@@ -2,6 +2,7 @@ package service
 
 import (
 	"path/filepath"
+	"reflect"
 	"testing"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
@@ -127,5 +128,23 @@ func TestForeignSubIdAndClientId(t *testing.T) {
 	}
 	if foreign, _ := svc.ForeignClientId(w.a, 99999); !foreign {
 		t.Fatal("an unknown client id was not refused")
+	}
+}
+
+// A live push asks who owns the few clients it names. Loading every online
+// reseller's whole list for each push grew with their size, not with the push.
+func TestOwnedEmailsAmongAnswersOnlyForTheEmailsAsked(t *testing.T) {
+	w := seedGuardWorld(t)
+	svc := &ClientService{}
+	got, err := svc.OwnedEmailsAmong([]int{w.a, w.b}, []string{w.emailA, w.shared, "ghost@example.com", w.emailA})
+	if err != nil {
+		t.Fatalf("OwnedEmailsAmong: %v", err)
+	}
+	if want := map[int]map[string]bool{w.a: {w.emailA: true}, w.b: {w.shared: true}}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("owned = %v, want %v", got, want)
+	}
+	got, err = svc.OwnedEmailsAmong([]int{w.a}, []string{w.emailB})
+	if err != nil || len(got) != 0 {
+		t.Fatalf("an admin not asked about answered: %v %v", got, err)
 	}
 }

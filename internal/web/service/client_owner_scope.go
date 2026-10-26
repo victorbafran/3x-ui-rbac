@@ -11,6 +11,35 @@ import (
 // a shared inbound the whole customer list, and the right to edit it.
 const ownedClientsCond = `c.admin_id = ?`
 
+// OwnedEmailsAmong is OwnedEmailSet for many admins at once, asked only about emails:
+// a push names a few clients, and loading each admin's whole list for it does not scale.
+func (s *ClientService) OwnedEmailsAmong(ownerIds []int, emails []string) (map[int]map[string]bool, error) {
+	byAdmin := make(map[int]map[string]bool, len(ownerIds))
+	emails = uniqueNonEmptyStrings(emails)
+	if len(ownerIds) == 0 || len(emails) == 0 {
+		return byAdmin, nil
+	}
+	for _, batch := range chunkStrings(emails, max(sqliteMaxVars-len(ownerIds), 1)) {
+		var rows []struct {
+			AdminId int
+			Email   string
+		}
+		// ownedClientsCond, for every admin in ownerIds.
+		if err := database.GetDB().Table("clients AS c").Select("c.admin_id, c.email").
+			Where("c.admin_id IN ?", ownerIds).Where("c.email IN ?", batch).
+			Scan(&rows).Error; err != nil {
+			return nil, err
+		}
+		for _, r := range rows {
+			if byAdmin[r.AdminId] == nil {
+				byAdmin[r.AdminId] = make(map[string]bool)
+			}
+			byAdmin[r.AdminId][r.Email] = true
+		}
+	}
+	return byAdmin, nil
+}
+
 // scopeToOwner applies the ownership restriction when ownerId is set. An
 // ownerId of 0 means an unscoped caller, such as a super_admin.
 func scopeToOwner(tx *gorm.DB, ownerId int) *gorm.DB {

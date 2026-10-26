@@ -120,6 +120,35 @@ func (s *ClientService) OwnedInboundTagSet(ownerId int) (map[string]bool, error)
 	return set, nil
 }
 
+// OwnedInboundsByAdmin is OwnedInboundTagSet for many admins in one query: per
+// admin, the tag of each inbound they own, by id.
+func (s *ClientService) OwnedInboundsByAdmin(ownerIds []int) (map[int]map[int]string, error) {
+	byAdmin := make(map[int]map[int]string, len(ownerIds))
+	if len(ownerIds) == 0 {
+		return byAdmin, nil
+	}
+	var rows []struct {
+		AdminId int
+		Id      int
+		Tag     string
+	}
+	err := database.GetDB().Table("users AS u").
+		Select("u.id AS admin_id, inbounds.id, inbounds.tag").
+		Joins("JOIN inbounds ON "+database.OwnedInboundByCond("inbounds", "u.id")).
+		Where("u.id IN ?", ownerIds).
+		Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	for _, r := range rows {
+		if byAdmin[r.AdminId] == nil {
+			byAdmin[r.AdminId] = make(map[int]string)
+		}
+		byAdmin[r.AdminId][r.Id] = r.Tag
+	}
+	return byAdmin, nil
+}
+
 // OwnedInboundIds lists the inbounds the admin created or was assigned,
 // ascending. It is what stands in for a choice the admin cannot make.
 func (s *ClientService) OwnedInboundIds(ownerId int) ([]int, error) {

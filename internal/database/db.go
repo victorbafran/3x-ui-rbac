@@ -3355,7 +3355,10 @@ func InitDB(dbPath string) error {
 	}
 	// Must run after runSeeders: an earlier history row makes
 	// history_of_seeders non-empty and skips its fresh-install fast path.
-	return seedSuperAdminRole()
+	if err := seedSuperAdminRole(); err != nil {
+		return err
+	}
+	return stampResellerInboundClients()
 }
 
 func normalizeApiTokenCreatedAtSeconds() error {

@@ -50,6 +50,7 @@ func NewClientController(g *gin.RouterGroup) *ClientController {
 }
 
 func (a *ClientController) initRouter(g *gin.RouterGroup) {
+	g.Use(a.refuseForeignEmailParam)
 	g.GET("/list", a.list)
 	g.GET("/list/paged", a.listPaged)
 	g.GET("/get/:email", a.get)
@@ -187,7 +188,11 @@ func (a *ClientController) getByTgId(c *gin.Context) {
 		return
 	}
 	results := make([]gin.H, 0, len(records))
+	owned := a.ownedEmailFilter(c)
 	for _, rec := range records {
+		if owned != nil && !owned[rec.Email] {
+			continue
+		}
 		payload, err := a.buildClientPayload(rec)
 		if err != nil {
 			jsonMsg(c, I18nWeb(c, "get"), err)
@@ -226,7 +231,7 @@ func (a *ClientController) create(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
 	}
-	a.stampOwner(c, payload.Client.Email)
+	stampOwner(c, payload.Client.Email)
 	jsonMsgObj(c, I18nWeb(c, "pages.inbounds.toasts.inboundClientAddSuccess"), pendingNodeObj(a.inboundService.AnyNodePending(payload.InboundIds)), nil)
 }
 
@@ -495,7 +500,7 @@ func (a *ClientController) bulkCreate(c *gin.Context) {
 		return
 	}
 	result, needRestart, err := a.clientService.BulkCreate(&a.inboundService, payloads)
-	a.stampOwner(c, emailsOf(payloads)...)
+	stampOwner(c, emailsOf(payloads)...)
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
@@ -556,7 +561,7 @@ func (a *ClientController) importClients(c *gin.Context) {
 		return
 	}
 	result, needRestart, err := a.clientService.ImportClients(&a.inboundService, items)
-	a.stampOwner(c, emailsOf(items)...)
+	stampOwner(c, emailsOf(items)...)
 	// Flagged before the error check: a failed traffic restore still leaves the
 	// clients created before it committed, and those need the restart and refresh.
 	if needRestart {

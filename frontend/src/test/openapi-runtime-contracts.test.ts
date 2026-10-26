@@ -94,7 +94,6 @@ describe('generated OpenAPI runtime contracts', () => {
       'status',
       'traffic',
       'client_stats',
-      'inbounds',
       'outbounds',
       'nodes',
       'notification',

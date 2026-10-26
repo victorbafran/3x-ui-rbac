@@ -22,8 +22,7 @@ type XrayTrafficJob struct {
 }
 
 // clientStatsSnapshotMaxClients caps how many client_traffics rows the job
-// ships as a full websocket snapshot per poll (same spirit as the
-// controller's broadcastInboundsUpdateClientLimit). Above it, a snapshot
+// ships as a full websocket snapshot per poll. Above it, a snapshot
 // would blow past the hub's payload cap and be dropped wholesale, so the job
 // broadcasts only this poll's active rows and the UI leans on its 5s REST
 // refetch for the rest.

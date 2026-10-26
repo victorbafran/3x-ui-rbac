@@ -258,12 +258,6 @@ export function buildWebSocketEvents(
       },
     },
     {
-      type: 'inbounds',
-      summary: 'Full inbound list after an inbound mutation, unless invalidate is used at scale.',
-      payloadSchema: { type: 'array', items: { $ref: '#/components/schemas/Inbound' } },
-      example: { type: 'inbounds', payload: [examples.Inbound], time: timestamp },
-    },
-    {
       type: 'outbounds',
       summary: 'Current outbound traffic rows after the periodic traffic collection.',
       payloadSchema: {
@@ -320,7 +314,7 @@ export function buildWebSocketEvents(
     {
       type: 'invalidate',
       summary:
-        'Requests a REST re-fetch. clients is an invalidate payload type, not a top-level event.',
+        'Requests a REST re-fetch. clients and inbounds are invalidate payload types, not top-level events: an inbound change no longer pushes the inbound list.',
       payloadSchema: {
         type: 'object',
         required: ['type'],

@@ -551,7 +551,7 @@ describe('the exit servers page', () => {
       </MemoryRouter>,
     );
     const row = (id: number) => document.querySelector(`tr[data-row-key="${id}"]`) as HTMLElement;
-    const reachedMark = (id: number) => row(id).querySelector('[aria-label="check-circle"]');
+    const reachedMark = (id: number) => row(id).querySelector('.anticon-check-circle');
 
     expect(row(3).textContent).toContain('IPv6 2001:db8::5');
     expect(reachedMark(3)).not.toBeNull();
@@ -668,7 +668,7 @@ describe('the exit servers page', () => {
     expect(row.textContent).toContain('IPv6 2001:db8::8');
     expect(row.textContent).not.toContain('The panel could not reach this IPv6 address');
     expect(row.querySelector('[aria-label="warning"]')).toBeNull();
-    expect(row.querySelector('[aria-label="check-circle"]')).toBeNull();
+    expect(row.querySelector('.anticon-check-circle')).toBeNull();
     cleanup();
   });
 

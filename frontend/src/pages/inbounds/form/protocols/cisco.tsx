@@ -87,28 +87,36 @@ function LocationList() {
         size="small"
         onClick={() => append({ name: '', label: '', exit: '' })}
       >
-        <PlusOutlined />
+        <PlusOutlined aria-hidden />
       </Button>
       {fields.map((field, i) => (
         <Space.Compact key={field.id} block className="mt-4">
           {named(i) ? (
             <Input
               readOnly
+              aria-label={t('pages.inbounds.form.ciscoLocations')}
               value={rows?.[i]?.label || rows?.[i]?.name || ''}
               style={{ width: '45%' }}
             />
           ) : (
             <>
               <FormField name={['settings', 'locations', i, 'name']} noStyle>
-                <Input placeholder={t('pages.inbounds.form.ciscoLocationName')} />
+                <Input
+                  aria-label={t('pages.inbounds.form.ciscoLocationName')}
+                  placeholder={t('pages.inbounds.form.ciscoLocationName')}
+                />
               </FormField>
               <FormField name={['settings', 'locations', i, 'label']} noStyle>
-                <Input placeholder={t('pages.inbounds.form.ciscoLocationLabel')} />
+                <Input
+                  aria-label={t('pages.inbounds.form.ciscoLocationLabel')}
+                  placeholder={t('pages.inbounds.form.ciscoLocationLabel')}
+                />
               </FormField>
             </>
           )}
           <FormField name={['settings', 'locations', i, 'exit']} noStyle>
             <AutoComplete
+              aria-label={t('pages.inbounds.form.ciscoLocationExit')}
               options={exitOptions}
               onSelect={(value: string) => fillFromRelay(i, value)}
               placeholder={t('pages.inbounds.form.ciscoLocationExit')}
@@ -132,7 +140,7 @@ function LocationList() {
             </Button>
           ) : null}
           <Button aria-label={t('remove')} size="small" onClick={() => remove(i)}>
-            <MinusOutlined />
+            <MinusOutlined aria-hidden />
           </Button>
         </Space.Compact>
       ))}

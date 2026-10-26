@@ -19,12 +19,20 @@ func startLifecycleTestServer(t *testing.T, relayAddr, email string) (*Server, *
 	return startLifecycleTestServerWith(t, relayAddr, email, lifecycleSetup{})
 }
 
-// lifecycleSetup adjusts a lifecycle test server: its instance before it is built,
-// the server before it starts, and the client's QUIC config (datagrams on if nil).
+// startLifecycleTestServerWithRelay serves through relay exactly as given, its
+// credentials included, instead of the lifecycle relay at an address.
+func startLifecycleTestServerWithRelay(t *testing.T, relay *SocksRelay, email string) (*Server, *clientquic.Conn, uuid.UUID, string) {
+	t.Helper()
+	return startLifecycleTestServerWith(t, relay.Addr, email, lifecycleSetup{relay: relay})
+}
+
+// lifecycleSetup adjusts a lifecycle test server: its instance and relay before it is
+// built, the server before it starts, and the client's QUIC config (datagrams on if nil).
 type lifecycleSetup struct {
 	instance func(*Instance)
 	server   func(*Server)
 	client   *clientquic.Config
+	relay    *SocksRelay
 }
 
 func startLifecycleTestServerWith(t *testing.T, relayAddr, email string, setup lifecycleSetup) (*Server, *clientquic.Conn, uuid.UUID, string) {
@@ -41,7 +49,11 @@ func startLifecycleTestServerWith(t *testing.T, relayAddr, email string, setup l
 	if setup.instance != nil {
 		setup.instance(&inst)
 	}
-	server, err := NewServer(inst, &SocksRelay{Addr: relayAddr, Password: "lifecycle-socks-password"})
+	relay := setup.relay
+	if relay == nil {
+		relay = &SocksRelay{Addr: relayAddr, Password: "lifecycle-socks-password"}
+	}
+	server, err := NewServer(inst, relay)
 	if err != nil {
 		t.Fatalf("create TUIC server: %v", err)
 	}

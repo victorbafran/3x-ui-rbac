@@ -36,12 +36,12 @@ export default function MyTrafficCard({ me, isMobile }: MyTrafficCardProps) {
         </div>
         <div className="ov-wide-legend">
           <div className="ov-legend-label">
-            <ArrowUpOutlined style={{ color: token.colorPrimary }} />
+            <ArrowUpOutlined aria-hidden style={{ color: token.colorPrimary }} />
             {t('pages.index.myTraffic.upload')}
             <span className="ov-legend-num">{SizeFormatter.sizeFormat(up)}</span>
           </div>
           <div className="ov-legend-label">
-            <ArrowDownOutlined style={{ color: token.colorTextTertiary }} />
+            <ArrowDownOutlined aria-hidden style={{ color: token.colorTextTertiary }} />
             {t('pages.index.myTraffic.download')}
             <span className="ov-legend-num">{SizeFormatter.sizeFormat(down)}</span>
           </div>

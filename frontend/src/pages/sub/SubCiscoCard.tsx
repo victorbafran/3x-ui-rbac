@@ -26,19 +26,19 @@ export interface CiscoLogin {
 const CLIENT_APPS = [
   {
     key: 'cisco-android',
-    icon: <AndroidOutlined />,
+    icon: <AndroidOutlined aria-hidden />,
     labelKey: 'subscription.ciscoAppAndroid',
     url: 'https://play.google.com/store/apps/details?id=com.cisco.anyconnect.vpn.android.avf',
   },
   {
     key: 'cisco-ios',
-    icon: <AppleOutlined />,
+    icon: <AppleOutlined aria-hidden />,
     labelKey: 'subscription.ciscoAppIos',
     url: 'https://apps.apple.com/app/id1135064690',
   },
   {
     key: 'openconnect-android',
-    icon: <DownloadOutlined />,
+    icon: <DownloadOutlined aria-hidden />,
     labelKey: 'subscription.ciscoAppOpenConnect',
     url: 'https://f-droid.org/packages/net.openconnect_vpn.android/',
   },
@@ -124,7 +124,7 @@ function Row({
             <Button
               size="small"
               type="text"
-              icon={<CopyOutlined />}
+              icon={<CopyOutlined aria-hidden />}
               aria-label={t('copy')}
               onClick={() => onCopy(value)}
             />

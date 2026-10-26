@@ -31,6 +31,7 @@ func NewHostController(g *gin.RouterGroup) *HostController {
 
 func (a *HostController) initRouter(g *gin.RouterGroup) {
 	g.GET("/list", a.list)
+	g.GET("/raw", a.raw)
 	g.GET("/get/:groupId", a.get)
 	g.GET("/byInbound/:inboundId", a.byInbound)
 	g.GET("/tags", a.tags)
@@ -47,6 +48,17 @@ func (a *HostController) initRouter(g *gin.RouterGroup) {
 
 func (a *HostController) list(c *gin.Context) {
 	hosts, err := a.hostService.GetHostsForOwner(ownerScopeOf(c))
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "pages.hosts.toasts.list"), err)
+		return
+	}
+	jsonObj(c, hosts, nil)
+}
+
+// raw lists the caller's host rows with their numeric ids for id-based pickers
+// such as the per-client host rule override.
+func (a *HostController) raw(c *gin.Context) {
+	hosts, err := a.hostService.GetRawHostsForOwner(ownerScopeOf(c))
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.hosts.toasts.list"), err)
 		return
@@ -153,7 +165,7 @@ func (a *HostController) reorder(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "pages.hosts.toasts.update"), err)
 		return
 	}
-	if err := a.hostService.ReorderHostGroups(req.Ids); err != nil {
+	if err := a.hostService.ReorderHostGroupsForOwner(req.Ids, ownerScopeOf(c)); err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.hosts.toasts.update"), err)
 		return
 	}

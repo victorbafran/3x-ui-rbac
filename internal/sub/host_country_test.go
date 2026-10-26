@@ -55,6 +55,29 @@ func TestEachCountryEntryIsNamedForWhereItLeaves(t *testing.T) {
 	}
 }
 
+// Hosts-first renders each host on its own, outside hostEndpoints, and must still
+// name it for where it leaves.
+func TestHostsFirstEntriesAreNamedForWhereTheyLeave(t *testing.T) {
+	seedSubDB(t)
+	setHostSortMode(t, "hosts-first")
+	hereIs(t, "🇩🇪 Germany")
+	if err := database.GetDB().Create(&model.Relay{Id: 9, Name: "uk", Label: "🇬🇧 United Kingdom", Address: "198.51.100.9", KeyPath: "/k", Tunnel: "wireguard", Role: model.RelayExit}).Error; err != nil {
+		t.Fatal(err)
+	}
+	ib := seedSubInbound(t, "s1", "n", 4432, 1, `{"network":"tcp","security":"none"}`)
+	seedHost(t, &model.Host{InboundId: ib.Id, SortOrder: 2, Remark: "here", Address: "tun.example.ir"})
+	seedHost(t, &model.Host{InboundId: ib.Id, SortOrder: 1, Remark: "ennn", Address: "tun.example.ir", Exit: "wgr9", VlessRoute: "9"})
+
+	links, _, _, _, err := NewSubService("").GetSubs("s1", "req.example.com")
+	if err != nil {
+		t.Fatal(err)
+	}
+	names := linkNames(t, links)
+	if len(names) != 2 || !strings.HasPrefix(names[0], "🇬🇧 United Kingdom ") || !strings.HasPrefix(names[1], "🇩🇪 Germany ") {
+		t.Errorf("names %q; want the UK entry and then the German one, each led by its country", names)
+	}
+}
+
 // Hosts that offer no country, a CDN list say, keep exactly the names they had.
 func TestHostsWithoutAnExitKeepTheirNames(t *testing.T) {
 	seedSubDB(t)

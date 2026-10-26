@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SafetyCertificateOutlined } from '@ant-design/icons';
 import { Alert, Button, Form, Modal, Select, message } from 'antd';
@@ -33,6 +33,7 @@ export function CertIssueControl({
   doneNote?: string;
 }) {
   const { t } = useTranslation();
+  const uid = useId();
   const [open, setOpen] = useState(false);
   const [names, setNames] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
@@ -76,7 +77,7 @@ export function CertIssueControl({
     <>
       {contextHolder}
       <Button
-        icon={<SafetyCertificateOutlined />}
+        icon={<SafetyCertificateOutlined aria-hidden />}
         onClick={() => {
           setError('');
           // A name already typed survives closing the dialog; the suggestion only
@@ -108,8 +109,13 @@ export function CertIssueControl({
           description={explainHint}
         />
         <Form layout="vertical">
-          <Form.Item label={t('pages.inbounds.certIssue.names')} tooltip={namesHint}>
+          <Form.Item
+            label={t('pages.inbounds.certIssue.names')}
+            tooltip={namesHint}
+            htmlFor={`${uid}-names`}
+          >
             <Select
+              id={`${uid}-names`}
               mode="tags"
               value={names}
               onChange={(v: string[]) => setNames(v.map((s) => s.trim()).filter(Boolean))}

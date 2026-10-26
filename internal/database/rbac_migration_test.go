@@ -111,9 +111,14 @@ func TestFreshInstallSeedsSuperAdmin(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = CloseDB() })
 
-	admin := loadUser(t, defaultUsername)
-	if admin.Role != model.RoleSuperAdmin {
-		t.Fatalf("default admin role = %q, want %q", admin.Role, model.RoleSuperAdmin)
+	// The first user now arrives after InitDB, once its backfill has already run.
+	username, _, err := EnsureFirstUser()
+	if err != nil {
+		t.Fatalf("EnsureFirstUser: %v", err)
+	}
+	admin := loadUser(t, username)
+	if admin.Role != model.RoleSuperAdmin || !admin.Enabled {
+		t.Fatalf("first user role = %q enabled = %v, want an enabled %q", admin.Role, admin.Enabled, model.RoleSuperAdmin)
 	}
 }
 

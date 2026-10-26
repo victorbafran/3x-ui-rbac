@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"reflect"
+	"sync"
 	"testing"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
@@ -65,7 +66,7 @@ func attachClient(t *testing.T, adminId, inboundId int, email string) {
 // listing every client on it handed a reseller the other admin's customers.
 func TestAllInboundLinksCoverOnlyTheCallersClients(t *testing.T) {
 	dbtest.InitDB(t, filepath.Join(t.TempDir(), "x-ui.db"))
-	prev := registeredSubLinkProvider
+	prev := subLinkProvider()
 	rec := &recordingLinkProvider{}
 	RegisterSubLinkProvider(rec)
 	t.Cleanup(func() { RegisterSubLinkProvider(prev) })
@@ -112,7 +113,7 @@ func TestAllInboundLinksCoverOnlyTheCallersClients(t *testing.T) {
 // share, a reseller is handed only their own; an unscoped caller gets every client.
 func TestInboundClientLinksCoverOnlyTheCallersClients(t *testing.T) {
 	dbtest.InitDB(t, filepath.Join(t.TempDir(), "x-ui.db"))
-	prev := registeredSubLinkProvider
+	prev := subLinkProvider()
 	t.Cleanup(func() { RegisterSubLinkProvider(prev) })
 
 	db := database.GetDB()
@@ -162,4 +163,35 @@ func TestInboundClientLinksCoverOnlyTheCallersClients(t *testing.T) {
 			}
 		})
 	}
+}
+
+// The owner-scoped link routes read the registry a SIGHUP restart rewrites; each
+// must take it once under the lock, or this fails under -race (make race).
+func TestOwnerLinkRoutesReadTheProviderRaceFree(t *testing.T) {
+	dbtest.InitDB(t, filepath.Join(t.TempDir(), "x-ui.db"))
+	prev := subLinkProvider()
+	t.Cleanup(func() { RegisterSubLinkProvider(prev) })
+
+	svc := &InboundService{}
+	var wg sync.WaitGroup
+	for range 8 {
+		wg.Add(4)
+		go func() {
+			defer wg.Done()
+			RegisterSubLinkProvider(fakeSubLinkProvider{links: []string{"vless://example"}})
+		}()
+		go func() {
+			defer wg.Done()
+			_, _ = svc.GetTunnelConfigs("panel.example", 1)
+		}()
+		go func() {
+			defer wg.Done()
+			_, _ = svc.GetInboundClientLinks("panel.example", 1, 0)
+		}()
+		go func() {
+			defer wg.Done()
+			_, _ = svc.GetAllInboundLinksForOwner("panel.example", 1)
+		}()
+	}
+	wg.Wait()
 }

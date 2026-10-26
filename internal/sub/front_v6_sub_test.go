@@ -114,7 +114,7 @@ func renderFrontSub(t *testing.T) frontSubOutput {
 	if err != nil {
 		t.Fatalf("GetJson: %v", err)
 	}
-	clash, _, err := NewSubClashService(false, "", NewSubService("")).GetClash(frontSubID, "sub.example.com")
+	clash, _, err := NewSubClashService(false, "", false, NewSubService("")).GetClash(frontSubID, "sub.example.com")
 	if err != nil {
 		t.Fatalf("GetClash: %v", err)
 	}
@@ -157,7 +157,7 @@ func TestFrontClashProfilesTurnIPv6On(t *testing.T) {
 	seedFront(t, "front-v6", "v6")
 	for _, legacy := range []bool{false, true} {
 		name := map[bool]string{false: "mihomo", true: "legacy"}[legacy]
-		out, _, err := NewSubClashService(false, "", NewSubService("")).getClash(frontSubID, "sub.example.com", legacy)
+		out, _, err := NewSubClashService(false, "", false, NewSubService("")).getClash(frontSubID, "sub.example.com", legacy)
 		if err != nil {
 			t.Fatalf("%s: %v", name, err)
 		}

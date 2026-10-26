@@ -181,6 +181,11 @@ func (s *Server) initRouter() (*gin.Engine, error) {
 		SubClashRules = ""
 	}
 
+	SubClashRemoteDNS, err := s.settingService.GetSubClashRemoteDNS()
+	if err != nil {
+		SubClashRemoteDNS = false
+	}
+
 	SubTitle, err := s.settingService.GetSubTitle()
 	if err != nil {
 		SubTitle = ""
@@ -362,6 +367,7 @@ func (s *Server) initRouter() (*gin.Engine, error) {
 		WithSUBJsonObservatory(SubJsonObservatory),
 		WithSUBClashEnableRouting(SubClashEnableRouting),
 		WithSUBClashRules(SubClashRules),
+		WithSUBClashRemoteDNS(SubClashRemoteDNS),
 		WithSUBTitle(SubTitle),
 		WithSUBSupportURL(SubSupportUrl),
 		WithSUBProfileURL(SubProfileUrl),
@@ -461,6 +467,9 @@ func (s *Server) Start() (err error) {
 // Stop gracefully shuts down the subscription server and closes the listener.
 func (s *Server) Stop() error {
 	s.cancel()
+	if s.sub != nil {
+		s.sub.Close()
+	}
 
 	var err1 error
 	var err2 error

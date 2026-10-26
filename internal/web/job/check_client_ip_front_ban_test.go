@@ -4,6 +4,8 @@ import (
 	"slices"
 	"testing"
 	"time"
+
+	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 )
 
 // No test reaches an entry server over SSH; one that wants the bans records them.
@@ -27,7 +29,7 @@ func TestABanReachesTheEntryServers(t *testing.T) {
 	const email = "front-ban@x"
 	seedLinkedInboundWithClient(t, "front-ban", email, 1)
 	now := time.Now().Unix()
-	seedClientIps(t, email, []IPWithTimestamp{{IP: "203.0.113.60", Timestamp: now - 500}})
+	seedClientIps(t, email, []model.ClientIpEntry{{IP: "203.0.113.60", Timestamp: now - 500}})
 
 	j := NewCheckClientIpJob()
 	j.processObserved(map[string]map[string]int64{
@@ -54,7 +56,7 @@ func TestNoBanReachesTheEntryServersWithinTheLimit(t *testing.T) {
 	const email = "front-ok@x"
 	seedLinkedInboundWithClient(t, "front-ok", email, 2)
 	now := time.Now().Unix()
-	seedClientIps(t, email, []IPWithTimestamp{{IP: "203.0.113.70", Timestamp: now - 500}})
+	seedClientIps(t, email, []model.ClientIpEntry{{IP: "203.0.113.70", Timestamp: now - 500}})
 
 	NewCheckClientIpJob().processObserved(map[string]map[string]int64{
 		email: {"203.0.113.70": now - 400, "203.0.113.71": now},
@@ -66,8 +68,8 @@ func TestNoBanReachesTheEntryServersWithinTheLimit(t *testing.T) {
 
 func TestEachBannedAddressGoesOnce(t *testing.T) {
 	got := bannedIPs([]pendingBan{
-		{banned: []IPWithTimestamp{{IP: "203.0.113.1"}, {IP: "203.0.113.2"}}},
-		{banned: []IPWithTimestamp{{IP: "203.0.113.2"}, {IP: "203.0.113.3"}}},
+		{banned: []model.ClientIpEntry{{IP: "203.0.113.1"}, {IP: "203.0.113.2"}}},
+		{banned: []model.ClientIpEntry{{IP: "203.0.113.2"}, {IP: "203.0.113.3"}}},
 		{},
 	})
 	if want := []string{"203.0.113.1", "203.0.113.2", "203.0.113.3"}; !slices.Equal(got, want) {

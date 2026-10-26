@@ -15,6 +15,7 @@ describe('hostToExternalProxyEntry', () => {
     pinnedPeerCertSha256: ['AAAA'],
     verifyPeerCertByName: 'verify.example.com',
     echConfigList: 'ECH',
+    cipherSuites: 'TLS_AES_128_GCM_SHA256',
     overrideSniFromAddress: false,
     keepSniBlank: false,
     vlessRoute: '',
@@ -33,6 +34,7 @@ describe('hostToExternalProxyEntry', () => {
     expect(ep.pinnedPeerCertSha256).toEqual(['AAAA']);
     expect(ep.verifyPeerCertByName).toBe('verify.example.com');
     expect(ep.echConfigList).toBe('ECH');
+    expect(ep.cipherSuites).toBe('TLS_AES_128_GCM_SHA256');
   });
 
   it('maps reality/same security to forceTls "same"', () => {

@@ -44,6 +44,8 @@ var exactRules = map[string]Rule{
 	"GET /panel/api/hosts/list":                     {},
 	"GET /panel/api/nodes/list":                     {},
 	"GET /panel/api/hosts/byInbound/:inboundId":     {Perm: SecInbounds, Scope: ScopeInbound, Param: "inboundId"},
+	"GET /panel/api/hosts/raw":                      {Perm: SecHosts, Scope: ScopeOwnedListing},
+	"POST /panel/api/hosts/reorder":                 {Perm: SecHosts, Scope: ScopeOwnedListing},
 
 	// Inbounds. Lists filter by owner inside the service.
 	"GET /panel/api/inbounds/list":          {Perm: SecInbounds, Scope: ScopeOwnedListing},

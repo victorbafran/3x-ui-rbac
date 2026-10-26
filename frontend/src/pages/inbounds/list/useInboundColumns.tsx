@@ -51,9 +51,11 @@ function EnableSwitch({
   record: DBInboundRecord;
   onSwitchEnable: (record: DBInboundRecord, next: boolean) => void;
 }) {
+  const { t } = useTranslation();
   const { can } = useMeQuery();
   return (
     <Switch
+      aria-label={t('pages.inbounds.enable')}
       checked={record.enable}
       disabled={!can('inbounds.edit')}
       onChange={(next) => onSwitchEnable(record, next)}
@@ -310,7 +312,7 @@ export function useInboundColumns({
                 className="client-count-tag"
                 style={{ margin: 0, marginRight: 4, padding: '0 2px' }}
               >
-                <TeamOutlined /> {cc.clients}
+                <TeamOutlined aria-hidden /> {cc.clients}
               </Tag>
               {cc.active.length > 0 ? (
                 <Popover

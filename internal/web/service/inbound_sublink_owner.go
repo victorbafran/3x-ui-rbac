@@ -10,7 +10,8 @@ import (
 // working credentials for the customers of whoever else shares that inbound.
 // ownerId 0 is the unscoped path and keeps the whole-inbound behaviour.
 func (s *InboundService) GetAllInboundLinksForOwner(host string, ownerId int) ([]string, error) {
-	if registeredSubLinkProvider == nil {
+	provider := subLinkProvider()
+	if provider == nil {
 		return nil, common.NewError("sub link provider not registered")
 	}
 	if ownerId <= 0 {
@@ -32,7 +33,7 @@ func (s *InboundService) GetAllInboundLinksForOwner(host string, ownerId int) ([
 	links := []string{}
 	for _, inbound := range inbounds {
 		for _, email := range byInbound[inbound.Id] {
-			links = append(links, registeredSubLinkProvider.LinksForClient(host, inbound, email)...)
+			links = append(links, provider.LinksForClient(host, inbound, email)...)
 		}
 	}
 	return links, nil
@@ -41,7 +42,8 @@ func (s *InboundService) GetAllInboundLinksForOwner(host string, ownerId int) ([
 // GetInboundClientLinks is each client's links and tunnel configs on one
 // inbound; a reseller sharing it gets only their own clients, as above.
 func (s *InboundService) GetInboundClientLinks(host string, inboundId, ownerId int) ([]InboundClientLinks, error) {
-	if registeredSubLinkProvider == nil {
+	provider := subLinkProvider()
+	if provider == nil {
 		return nil, common.NewError("sub link provider not registered")
 	}
 	inbound, err := s.GetInbound(inboundId)
@@ -59,7 +61,7 @@ func (s *InboundService) GetInboundClientLinks(host string, inboundId, ownerId i
 		}
 	}
 	entries := []InboundClientLinks{}
-	return append(entries, registeredSubLinkProvider.InboundClientLinks(host, inbound, emails)...), nil
+	return append(entries, provider.InboundClientLinks(host, inbound, emails)...), nil
 }
 
 // ownedEmailsByInbound is, for each of inboundIds, the emails of ownerId's own clients on it.

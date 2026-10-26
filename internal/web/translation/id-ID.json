@@ -1073,7 +1073,7 @@
       "delOrphansConfirmContent": "Menghapus setiap klien yang tidak terhubung ke inbound mana pun, beserta catatan lalu lintasnya. Tidak dapat dibatalkan.",
       "auth": "Auth",
       "hysteriaAuth": "Hysteria Auth",
-      "hysteriaAuthDesc": "Kredensial yang hanya digunakan oleh klien Hysteria. Trojan dan Shadowsocks menggunakan kolom \"Kata sandi\" sebagai gantinya.",
+      "hysteriaAuthDesc": "Kredensial yang hanya digunakan oleh klien Hysteria. Trojan dan Shadowsocks menggunakan kolom \"Kata sandi\" sebagai gantinya. Pertahankan auth panjang yang dibuat tombol \"Buat Ulang\": negara keluar sebuah host ditulis di dalamnya.",
       "uuid": "UUID",
       "flow": "Flow",
       "vmessSecurity": "Keamanan VMess",
@@ -2567,7 +2567,7 @@
         "serverDescription": "Catatan opsional yang ditampilkan di bawah catatan.",
         "allowInsecure": "Lewati verifikasi sertifikat TLS (allowInsecure / skip-cert-verify).",
         "vlessRoute": "Satu nilai rute VLESS (0-65535) yang disisipkan ke UUID, mis. 443. Biarkan kosong jika tidak ada.",
-        "exit": "Negara tempat entri ini keluar, salah satu server keluar Anda. Buat beberapa entri dengan alamat yang sama dan negara keluar berbeda, lalu setiap pelanggan memilih negara di aplikasinya sendiri. Hanya VLESS; panel mengatur rute VLESS untuk Anda.",
+        "exit": "Negara tempat entri ini keluar, salah satu server keluar Anda. Di VLESS dan Hysteria, buat beberapa entri dengan alamat yang sama dan negara keluar berbeda, lalu setiap pelanggan memilih negara di aplikasinya sendiri; panel mengatur rutenya untuk Anda. Klien Hysteria memerlukan auth panjang yang dibuat oleh tombol \"Buat Ulang\". WireGuard memakai satu negara untuk seluruh inbound, jadi buat satu inbound untuk setiap negara. Protokol lain tidak dapat memakai negara keluar.",
         "mihomoX25519": "Hanya Mihomo: gunakan handshake REALITY dengan X25519 biasa tanpa ML-KEM (support-x25519mlkem768: false). Untuk server dengan Xray-core lebih lama dari 26.9.8 yang tidak mewajibkan ML-KEM.",
         "remark": "Label sederhana untuk host ini. Ditampilkan sebagai nama konfigurasi hanya ketika inbound tidak memiliki catatan tersendiri."
       },

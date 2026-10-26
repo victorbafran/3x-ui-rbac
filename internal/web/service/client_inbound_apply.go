@@ -486,6 +486,9 @@ func (s *ClientService) AddInboundClient(inboundSvc *InboundService, data *model
 	if err := validateAmneziaWGClientWrite(oldInbound, clients); err != nil {
 		return false, err
 	}
+	if err := refuseUnroutableHysteriaAuths(oldInbound, clients); err != nil {
+		return false, err
+	}
 
 	var portCtx portConflictContext
 	if oldInbound.Protocol == model.AmneziaWG {

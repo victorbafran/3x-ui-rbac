@@ -33,7 +33,7 @@ import { Controller, FormProvider, useForm, useWatch, useFieldArray } from 'reac
 import { useMeQuery } from '@/api/queries/useMeQuery';
 import { HttpUtil, IntlUtil, RandomUtil, Wireguard } from '@/utils';
 import { formatInboundLabel } from '@/lib/inbounds/label';
-import { generateMtprotoSecret } from '@/lib/xray/inbound-defaults';
+import { generateHysteriaAuth, generateMtprotoSecret } from '@/lib/xray/inbound-defaults';
 import { normalizeClientIps, type ClientIpInfo } from '@/lib/clients/ip-log';
 import { resolveExternalLinkExpiry } from '@/lib/clients/external-link';
 import { useDatepicker } from '@/hooks/useDatepicker';
@@ -430,7 +430,7 @@ export default function ClientFormModal({
         uuid: RandomUtil.randomUUID(),
         subId: RandomUtil.randomLowerAndNum(16),
         password: RandomUtil.randomLowerAndNum(16),
-        auth: RandomUtil.randomLowerAndNum(16),
+        auth: generateHysteriaAuth(),
         wgPrivateKey: wgKeypair.privateKey,
         wgPublicKey: wgKeypair.publicKey,
       });
@@ -1393,9 +1393,7 @@ export default function ClientFormModal({
                           <Button
                             aria-label={t('regenerate')}
                             icon={<ReloadOutlined aria-hidden />}
-                            onClick={() =>
-                              methods.setValue('auth', RandomUtil.randomLowerAndNum(16))
-                            }
+                            onClick={() => methods.setValue('auth', generateHysteriaAuth())}
                           />
                         </Space.Compact>
                         <span id={`${uid}-auth-hint`} hidden>

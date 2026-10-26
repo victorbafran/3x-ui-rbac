@@ -2,7 +2,9 @@ package controller
 
 import (
 	"strconv"
+	"strings"
 
+	"github.com/mhsanaei/3x-ui/v3/internal/web/authz"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/entity"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/middleware"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
@@ -102,9 +104,21 @@ func (a *HostController) tags(c *gin.Context) {
 	jsonObj(c, tags, nil)
 }
 
+// refuseExitHost: an exit host sends customers out through another server, and
+// its inbounds, route and exit together say whose; all of that is the relays switch's.
+func refuseExitHost(c *gin.Context, req *entity.HostGroup) bool {
+	if strings.TrimSpace(req.Exit) == "" {
+		return false
+	}
+	return refuseWithout(c, authz.SecRelays)
+}
+
 func (a *HostController) add(c *gin.Context) {
 	req, ok := middleware.BindJSONAndValidate[entity.HostGroup](c)
 	if !ok {
+		return
+	}
+	if refuseExitHost(c, req) {
 		return
 	}
 	if denyForeignTargets(c, &a.clientService, req.InboundIds, nil) {
@@ -123,6 +137,9 @@ func (a *HostController) update(c *gin.Context) {
 	groupId := c.Param("groupId")
 	req, ok := middleware.BindJSONAndValidate[entity.HostGroup](c)
 	if !ok {
+		return
+	}
+	if refuseExitHost(c, req) {
 		return
 	}
 	if denyForeignTargets(c, &a.clientService, req.InboundIds, nil) {

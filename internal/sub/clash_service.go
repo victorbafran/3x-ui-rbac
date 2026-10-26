@@ -580,7 +580,7 @@ func (s *SubClashService) buildHysteriaProxy(subReq *SubService, inbound *model.
 		"server": inbound.Listen,
 		"port":   inbound.Port,
 		"udp":    true,
-		authKey:  client.Auth,
+		authKey:  hostHysteriaAuth(client.Auth, ep),
 	}
 
 	var rawStream map[string]any

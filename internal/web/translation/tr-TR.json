@@ -1073,7 +1073,7 @@
       "delOrphansConfirmContent": "Hiçbir gelen bağlantıya bağlı olmayan her kullanıcı, trafik kaydıyla birlikte silinir. Geri alınamaz.",
       "auth": "Auth",
       "hysteriaAuth": "Hysteria Yetkilendirme",
-      "hysteriaAuthDesc": "Yalnızca Hysteria istemcilerinin kullandığı kimlik bilgisi. Trojan ve Shadowsocks bunun yerine \"Şifre\" alanını kullanır.",
+      "hysteriaAuthDesc": "Yalnızca Hysteria istemcilerinin kullandığı kimlik bilgisi. Trojan ve Shadowsocks bunun yerine \"Şifre\" alanını kullanır. Yeniden Oluştur düğmesinin ürettiği uzun auth değerini koruyun: host'un çıkış ülkesi bunun içine yazılır.",
       "uuid": "UUID",
       "flow": "Akış",
       "vmessSecurity": "VMess Güvenlik",
@@ -2567,7 +2567,7 @@
         "serverDescription": "Açıklamanın altında gösterilen isteğe bağlı not.",
         "allowInsecure": "TLS sertifika doğrulamasını atla (allowInsecure / skip-cert-verify).",
         "vlessRoute": "UUID'ye gömülen tek bir VLESS rota değeri (0-65535), örn. 443. Hiçbiri için boş bırakın.",
-        "exit": "Bu kaydın çıktığı ülke, çıkış sunucularınızdan biri. Aynı adresle her biri farklı çıkış ülkesine sahip birkaç kayıt oluşturun; her müşteri ülkeyi kendi uygulamasında seçer. Yalnızca VLESS; VLESS rotasını panel ayarlar.",
+        "exit": "Bu kaydın çıktığı ülke, çıkış sunucularınızdan biri. VLESS ve Hysteria'da aynı adresle her biri farklı çıkış ülkesine sahip birkaç kayıt oluşturun; her müşteri ülkeyi kendi uygulamasında seçer ve rotayı panel ayarlar. Hysteria istemcileri, Yeniden Oluştur düğmesinin ürettiği uzun auth değerine ihtiyaç duyar. WireGuard tüm gelen bağlantı için tek bir ülke alır, bu yüzden her ülke için ayrı bir gelen bağlantı oluşturun. Diğer protokollere çıkış ülkesi verilemez.",
         "mihomoX25519": "Yalnızca Mihomo: ML-KEM olmadan düz X25519 ile REALITY el sıkışması kullanır (support-x25519mlkem768: false). ML-KEM gerektirmeyen, 26.9.8'den eski Xray-core sunucuları için.",
         "remark": "Bu host için düz bir etiket. Yalnızca gelen bağlantının kendi açıklaması yoksa yapılandırma adı olarak gösterilir."
       },

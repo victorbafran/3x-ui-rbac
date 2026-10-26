@@ -1073,7 +1073,7 @@
       "delOrphansConfirmContent": "Removes every client that is not attached to any inbound, along with its traffic record. This cannot be undone.",
       "auth": "Auth",
       "hysteriaAuth": "Hysteria Auth",
-      "hysteriaAuthDesc": "Credential used only by Hysteria clients. Trojan and Shadowsocks use the Password field instead.",
+      "hysteriaAuthDesc": "Credential used only by Hysteria clients. Trojan and Shadowsocks use the Password field instead. Keep the long auth that Regenerate makes: a host’s exit country is written into it.",
       "uuid": "UUID",
       "flow": "Flow",
       "vmessSecurity": "VMess Security",
@@ -1266,7 +1266,7 @@
         "serverDescription": "Optional note shown under the remark.",
         "allowInsecure": "Skip TLS certificate verification (allowInsecure / skip-cert-verify).",
         "vlessRoute": "Single VLESS route value (0-65535) baked into the UUID, e.g. 443. Leave blank for none.",
-        "exit": "The country this entry leaves from, one of your exit servers. Give several entries the same address and a different exit country each, and every customer picks a country in their own app. VLESS only; the panel sets the VLESS route for you.",
+        "exit": "The country this entry leaves from, one of your exit servers. On VLESS and Hysteria, give several entries the same address and a different exit country each, and every customer picks a country in their own app; the panel sets the route for you. Hysteria clients need the long auth that Regenerate makes. WireGuard takes one country for the whole inbound, so give each country its own inbound. Other protocols cannot take an exit.",
         "mihomoX25519": "Mihomo only: use a plain X25519 REALITY hello without ML-KEM (support-x25519mlkem768: false). For servers on Xray-core older than 26.9.8, which do not require ML-KEM.",
         "remark": "A plain label for this host. Shown as the config name only when the inbound has no remark of its own."
       },

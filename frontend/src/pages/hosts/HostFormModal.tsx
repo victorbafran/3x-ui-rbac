@@ -115,6 +115,7 @@ export default function HostFormModal({
   const methods = useForm<FormShape>({ defaultValues: defaultsFor(host) });
   const [messageApi, messageContextHolder] = message.useMessage();
   const [loading, setLoading] = useState(false);
+  const [saveRefusal, setSaveRefusal] = useState('');
 
   const security = (useWatch({ control: methods.control, name: 'security' }) ?? 'same') as string;
   const fingerprint = (useWatch({ control: methods.control, name: 'fingerprint' }) ?? '') as string;
@@ -141,6 +142,7 @@ export default function HostFormModal({
     if (open) {
       methods.reset(defaultsFor(host));
       setLoading(false);
+      setSaveRefusal('');
     }
   }
 
@@ -229,6 +231,7 @@ export default function HostFormModal({
       isDisabled,
     };
     setLoading(true);
+    setSaveRefusal('');
     try {
       const res = await save(payload);
       if (res?.success) {
@@ -237,7 +240,7 @@ export default function HostFormModal({
         );
         onOpenChange(false);
       } else if (res?.msg) {
-        messageApi.error(res.msg);
+        setSaveRefusal(res.msg);
       }
     } catch (err) {
       console.error(err);
@@ -267,6 +270,9 @@ export default function HostFormModal({
           wrapperCol={{ sm: { span: 14 } }}
           labelWrap
         >
+          {saveRefusal && (
+            <Alert type="error" showIcon title={saveRefusal} style={{ marginBottom: 12 }} />
+          )}
           <Tabs
             defaultActiveKey="basic"
             items={[

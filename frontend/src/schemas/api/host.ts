@@ -58,8 +58,8 @@ export const HostFormSchema = z.object({
     .refine((v) => Number(v) <= 65535, 'pages.hosts.toasts.badVlessRoute')
     .or(z.literal(''))
     .default(''),
-  // The exit server (its wgrN interface) this entry leaves through; empty is
-  // this server. The panel sets the VLESS route that selects it.
+  // The exit server (its wgrN interface) this entry leaves through; empty is this
+  // server. VLESS and Hysteria get a route from the panel; WireGuard needs none.
   exit: z.string().default(''),
 
   excludeFromSubTypes: z.array(SubTypeSchema).default([]),

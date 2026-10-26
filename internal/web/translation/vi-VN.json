@@ -1073,7 +1073,7 @@
       "delOrphansConfirmContent": "Gỡ tất cả khách hàng không được gắn vào bất kỳ inbound nào, cùng với bản ghi lưu lượng của họ. Không thể hoàn tác.",
       "auth": "Auth",
       "hysteriaAuth": "Hysteria Auth",
-      "hysteriaAuthDesc": "Thông tin xác thực chỉ dùng cho client Hysteria. Trojan và Shadowsocks dùng trường \"Mật khẩu\" thay thế.",
+      "hysteriaAuthDesc": "Thông tin xác thực chỉ dùng cho client Hysteria. Trojan và Shadowsocks dùng trường \"Mật khẩu\" thay thế. Hãy giữ auth dài do nút \"Tạo lại\" sinh ra: quốc gia ra của host được ghi vào bên trong nó.",
       "uuid": "UUID",
       "flow": "Flow",
       "vmessSecurity": "Bảo mật VMess",
@@ -2567,7 +2567,7 @@
         "serverDescription": "Ghi chú tùy chọn hiển thị bên dưới ghi chú.",
         "allowInsecure": "Bỏ qua xác minh chứng chỉ TLS (allowInsecure / skip-cert-verify).",
         "vlessRoute": "Một giá trị định tuyến VLESS (0-65535) được nhúng vào UUID, ví dụ 443. Để trống nếu không dùng.",
-        "exit": "Quốc gia mà mục này đi ra, là một trong các máy chủ ra của bạn. Tạo nhiều mục cùng địa chỉ, mỗi mục một quốc gia ra, và mỗi khách tự chọn quốc gia trong ứng dụng của mình. Chỉ VLESS; bảng điều khiển tự đặt tuyến VLESS.",
+        "exit": "Quốc gia mà mục này đi ra, là một trong các máy chủ ra của bạn. Với VLESS và Hysteria, tạo nhiều mục cùng địa chỉ, mỗi mục một quốc gia ra, và mỗi khách tự chọn quốc gia trong ứng dụng của mình; bảng điều khiển tự đặt tuyến. Client Hysteria cần auth dài do nút \"Tạo lại\" sinh ra. WireGuard dùng một quốc gia cho cả inbound, nên hãy tạo một inbound riêng cho mỗi quốc gia. Các giao thức khác không thể đặt quốc gia ra.",
         "mihomoX25519": "Chỉ Mihomo: dùng bắt tay REALITY với X25519 thường, không có ML-KEM (support-x25519mlkem768: false). Dành cho máy chủ chạy Xray-core cũ hơn 26.9.8, không yêu cầu ML-KEM.",
         "remark": "Nhãn đơn giản cho host này. Chỉ hiển thị làm tên cấu hình khi inbound không có ghi chú riêng."
       },

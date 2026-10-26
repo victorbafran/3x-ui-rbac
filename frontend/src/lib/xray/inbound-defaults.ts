@@ -137,9 +137,15 @@ export interface HysteriaClientSeed extends ClientBaseSeed {
   auth?: string;
 }
 
+// A v4 UUID as 32 hex, for Xray reads an exit route out of bytes 6-7: the version
+// nibble keeps a plain auth's route at 0x4xxx, clear of every relay id's route.
+export function generateHysteriaAuth(): string {
+  return RandomUtil.randomUUID().replace(/-/g, '');
+}
+
 export function createDefaultHysteriaClient(seed: HysteriaClientSeed = {}): HysteriaClient {
   return {
-    auth: seed.auth ?? RandomUtil.randomSeq(10),
+    auth: seed.auth ?? generateHysteriaAuth(),
     ...clientBase(seed),
   };
 }

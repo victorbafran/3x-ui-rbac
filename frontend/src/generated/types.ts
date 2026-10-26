@@ -6,6 +6,7 @@ export type ProcessState = string;
 export type Protocol = string;
 export type Role = string;
 export type addrFamily = number;
+export type exitKind = number;
 export type staticEgressResolver = string;
 export type trafficLocalApplyAction = number;
 export type transportBits = number;

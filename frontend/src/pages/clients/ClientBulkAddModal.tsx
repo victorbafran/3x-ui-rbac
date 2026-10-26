@@ -21,6 +21,7 @@ import { FormProvider, useForm, useWatch } from 'react-hook-form';
 import { useMeQuery } from '@/api/queries/useMeQuery';
 import { RandomUtil, SizeFormatter } from '@/utils';
 import { formatInboundLabel } from '@/lib/inbounds/label';
+import { generateHysteriaAuth } from '@/lib/xray/inbound-defaults';
 import { TLS_FLOW_CONTROL, TRAFFIC_RESETS } from '@/schemas/primitives';
 import { DateTimePicker, SelectAllClearButtons } from '@/components/form';
 import { FormField } from '@/components/form/rhf';
@@ -208,7 +209,7 @@ export default function ClientBulkAddModal({
           password: ss2022Method
             ? RandomUtil.randomShadowsocksPassword(ss2022Method)
             : RandomUtil.randomLowerAndNum(16),
-          auth: RandomUtil.randomLowerAndNum(16),
+          auth: generateHysteriaAuth(),
           flow: showFlow ? current.flow || '' : '',
           totalGB: Math.round((current.totalGB || 0) * SizeFormatter.ONE_GB),
           expiryTime: current.expiryTime,

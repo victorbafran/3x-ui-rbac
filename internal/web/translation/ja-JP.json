@@ -1073,7 +1073,7 @@
       "delOrphansConfirmContent": "どのインバウンドにもアタッチされていないクライアントを、そのトラフィック記録とともにすべて削除します。元に戻せません。",
       "auth": "Auth",
       "hysteriaAuth": "Hysteria Auth",
-      "hysteriaAuthDesc": "Hysteria クライアントのみが使用する認証情報です。Trojan と Shadowsocks は代わりに「パスワード」フィールドを使用します。",
+      "hysteriaAuthDesc": "Hysteria クライアントのみが使用する認証情報です。Trojan と Shadowsocks は代わりに「パスワード」フィールドを使用します。「再生成」で作られる長い auth をそのまま使ってください。ホストの出口の国はこの中に書き込まれます。",
       "uuid": "UUID",
       "flow": "Flow",
       "vmessSecurity": "VMess セキュリティ",
@@ -2567,7 +2567,7 @@
         "serverDescription": "備考の下に表示される任意のメモ。",
         "allowInsecure": "TLS 証明書の検証をスキップします（allowInsecure / skip-cert-verify）。",
         "vlessRoute": "UUID に埋め込まれる単一の VLESS ルート値（0〜65535）。例: 443。なしの場合は空欄にします。",
-        "exit": "このエントリーが出ていく国（出口サーバーのいずれか）。同じアドレスで出口の国が異なるエントリーを複数作ると、各顧客が自分のアプリで国を選べます。VLESS のみ。VLESS ルートはパネルが設定します。",
+        "exit": "このエントリーが出ていく国（出口サーバーのいずれか）。VLESS と Hysteria では、同じアドレスで出口の国が異なるエントリーを複数作ると、各顧客が自分のアプリで国を選べます。ルートはパネルが設定します。Hysteria クライアントには「再生成」で作られる長い auth が必要です。WireGuard はインバウンド全体で 1 つの国になるため、国ごとに別のインバウンドを作ってください。その他のプロトコルには出口の国を設定できません。",
         "mihomoX25519": "Mihomo のみ: ML-KEM を使わず通常の X25519 で REALITY ハンドシェイクを行います (support-x25519mlkem768: false)。ML-KEM を必要としない Xray-core 26.9.8 未満のサーバー向けです。",
         "remark": "このホストのプレーンなラベル。インバウンド自身に備考がない場合にのみ設定名として表示されます。"
       },

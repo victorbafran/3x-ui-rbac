@@ -1073,7 +1073,7 @@
       "delOrphansConfirmContent": "Odstránia sa všetci klienti, ktorí nie sú priradení k žiadnemu vstupu, aj so záznamami o spotrebe. Túto akciu nemožno vrátiť späť.",
       "auth": "Overenie",
       "hysteriaAuth": "Overovací údaj Hysteria",
-      "hysteriaAuthDesc": "Prihlasovací údaj iba pre klientov Hysteria. Trojan a Shadowsocks používajú pole Heslo.",
+      "hysteriaAuthDesc": "Prihlasovací údaj iba pre klientov Hysteria. Trojan a Shadowsocks používajú pole Heslo. Ponechajte dlhý auth, ktorý vytvorí tlačidlo Vygenerovať znova: zapisuje sa doň krajina výstupu adresy servera.",
       "uuid": "UUID",
       "flow": "Režim flow",
       "vmessSecurity": "Zabezpečenie VMess",
@@ -1266,7 +1266,7 @@
         "serverDescription": "Voliteľná poznámka zobrazená pod názvom.",
         "allowInsecure": "Vynechať overenie certifikátu TLS (allowInsecure / skip-cert-verify).",
         "vlessRoute": "Jedna hodnota trasy VLESS (0-65535) vložená do UUID, napr. 443. Prázdne pole znamená žiadnu trasu.",
-        "exit": "Krajina, z ktorej táto položka vychádza na internet — jeden z vašich výstupných serverov. Dajte viacerým položkám rovnakú adresu a každej inú krajinu výstupu a každý zákazník si krajinu vyberie vo svojej aplikácii. Iba VLESS; trasu VLESS panel nastaví sám.",
+        "exit": "Krajina, z ktorej táto položka vychádza na internet — jeden z vašich výstupných serverov. Pri VLESS a Hysteria dajte viacerým položkám rovnakú adresu a každej inú krajinu výstupu a každý zákazník si krajinu vyberie vo svojej aplikácii; trasu panel nastaví sám. Klienti Hysteria potrebujú dlhý auth, ktorý vytvorí tlačidlo Vygenerovať znova. WireGuard má jednu krajinu pre celý vstup, preto pre každú krajinu vytvorte vlastný vstup. Iné protokoly krajinu výstupu nepodporujú.",
         "mihomoX25519": "Len pre Mihomo: použiť obyčajný REALITY hello s X25519 bez ML-KEM (support-x25519mlkem768: false). Pre servery s Xray-core starším ako 26.9.8, ktoré ML-KEM nevyžadujú.",
         "remark": "Bežný názov tejto adresy servera. Ako názov konfigurácie sa zobrazí iba vtedy, ak samotný vstup nemá vlastný názov."
       },

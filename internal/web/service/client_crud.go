@@ -277,6 +277,9 @@ func (s *ClientService) Create(inboundSvc *InboundService, payload *ClientCreate
 		if err := validateAmneziaWGClientWrite(inbound, []model.Client{clientForInbound}); err != nil {
 			return false, fmt.Errorf("inbound %d: %w", ibId, err)
 		}
+		if err := refuseUnroutableHysteriaAuths(inbound, []model.Client{clientForInbound}); err != nil {
+			return false, err
+		}
 		settingsPayload, mErr := json.Marshal(map[string][]model.Client{"clients": {clientWithInboundFlow(clientForInbound, inbound)}})
 		if mErr != nil {
 			return false, fmt.Errorf("inbound %d: %w", ibId, mErr)
@@ -829,6 +832,12 @@ func (s *ClientService) Update(inboundSvc *InboundService, id int, updated model
 		}
 		if err := validateAmneziaWGClientWrite(inbound, []model.Client{clientForInbound}); err != nil {
 			return false, fmt.Errorf("inbound %d: %w", ibId, err)
+		}
+		// Only a new auth is judged: an edit leaving one as it was must still pass.
+		if updated.Auth != existing.Auth {
+			if err := refuseUnroutableHysteriaAuths(inbound, []model.Client{clientForInbound}); err != nil {
+				return false, err
+			}
 		}
 		settingsPayload, mErr := json.Marshal(map[string][]model.Client{"clients": {clientWithInboundFlow(clientForInbound, inbound)}})
 		if mErr != nil {

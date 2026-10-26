@@ -1073,7 +1073,7 @@
       "delOrphansConfirmContent": "Elimina todos los clientes que no están vinculados a ningún entrante, junto con su registro de tráfico. No se puede deshacer.",
       "auth": "Auth",
       "hysteriaAuth": "Hysteria Auth",
-      "hysteriaAuthDesc": "Credencial usada únicamente por los clientes Hysteria. Trojan y Shadowsocks usan el campo «Contraseña» en su lugar.",
+      "hysteriaAuthDesc": "Credencial usada únicamente por los clientes Hysteria. Trojan y Shadowsocks usan el campo «Contraseña» en su lugar. Conserva la auth larga que crea «Regenerar»: el país de salida de un host se escribe dentro de ella.",
       "uuid": "UUID",
       "flow": "Flow",
       "vmessSecurity": "Seguridad VMess",
@@ -2567,7 +2567,7 @@
         "serverDescription": "Nota opcional que se muestra bajo las notas.",
         "allowInsecure": "Omitir la verificación del certificado TLS (allowInsecure / skip-cert-verify).",
         "vlessRoute": "Un único valor de ruta VLESS (0-65535) incrustado en el UUID, p. ej. 443. Déjalo en blanco para ninguno.",
-        "exit": "El país por el que sale esta entrada, uno de tus servidores de salida. Crea varias entradas con la misma dirección y un país de salida distinto cada una, y cada cliente elige el país en su propia app. Solo VLESS; el panel fija la ruta VLESS por ti.",
+        "exit": "El país por el que sale esta entrada, uno de tus servidores de salida. En VLESS y Hysteria, crea varias entradas con la misma dirección y un país de salida distinto cada una, y cada cliente elige el país en su propia app; el panel fija la ruta por ti. Los clientes Hysteria necesitan la auth larga que crea «Regenerar». WireGuard toma un solo país para todo el inbound, así que crea un inbound propio para cada país. Los demás protocolos no admiten país de salida.",
         "mihomoX25519": "Solo Mihomo: usa un saludo REALITY con X25519 simple, sin ML-KEM (support-x25519mlkem768: false). Para servidores con Xray-core anterior a 26.9.8, que no exigen ML-KEM.",
         "remark": "Una etiqueta simple para este host. Se muestra como nombre de la configuración solo cuando el inbound no tiene notas propias."
       },

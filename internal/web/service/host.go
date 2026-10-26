@@ -289,7 +289,8 @@ func addHostGroup(req *entity.HostGroup, ownerId int) ([]*model.Host, error) {
 				return err
 			}
 		}
-		if err := settleHostExit(tx, groupId, req); err != nil {
+		// Adding into a named group keeps its rows, so none of them is excused.
+		if err := settleHostExit(tx, "", req); err != nil {
 			return err
 		}
 		created = buildHostRows(groupId, req)

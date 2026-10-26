@@ -1073,7 +1073,7 @@
       "delOrphansConfirmContent": "Remove todos os clientes que não estão vinculados a nenhum inbound, junto com seu registro de tráfego. Não é possível desfazer.",
       "auth": "Auth",
       "hysteriaAuth": "Hysteria Auth",
-      "hysteriaAuthDesc": "Credencial usada apenas pelos clientes Hysteria. Trojan e Shadowsocks usam o campo \"Senha\" em vez disso.",
+      "hysteriaAuthDesc": "Credencial usada apenas pelos clientes Hysteria. Trojan e Shadowsocks usam o campo \"Senha\" em vez disso. Mantenha a auth longa que o botão \"Regenerar\" cria: o país de saída de um host é gravado dentro dela.",
       "uuid": "UUID",
       "flow": "Flow",
       "vmessSecurity": "Segurança VMess",
@@ -2567,7 +2567,7 @@
         "serverDescription": "Nota opcional exibida abaixo da observação.",
         "allowInsecure": "Ignorar a verificação do certificado TLS (allowInsecure / skip-cert-verify).",
         "vlessRoute": "Um único valor de rota VLESS (0-65535) embutido no UUID, ex.: 443. Deixe em branco para nenhum.",
-        "exit": "O país por onde esta entrada sai, um dos seus servidores de saída. Crie várias entradas com o mesmo endereço e um país de saída diferente em cada, e cada cliente escolhe o país no próprio app. Somente VLESS; o painel define a rota VLESS por você.",
+        "exit": "O país por onde esta entrada sai, um dos seus servidores de saída. No VLESS e no Hysteria, crie várias entradas com o mesmo endereço e um país de saída diferente em cada, e cada cliente escolhe o país no próprio app; o painel define a rota por você. Clientes Hysteria precisam da auth longa que o botão \"Regenerar\" cria. O WireGuard usa um só país para o inbound inteiro, então crie um inbound próprio para cada país. Outros protocolos não aceitam país de saída.",
         "mihomoX25519": "Somente Mihomo: usa um handshake REALITY com X25519 simples, sem ML-KEM (support-x25519mlkem768: false). Para servidores com Xray-core anterior à 26.9.8, que não exigem ML-KEM.",
         "remark": "Um rótulo simples para este host. Mostrado como nome da configuração apenas quando a entrada não tem observação própria."
       },

@@ -13,8 +13,8 @@ for _xui_env in /etc/default/x-ui /etc/conf.d/x-ui /etc/sysconfig/x-ui; do
         break
     fi
 done
-xui_repo="${XUI_REPO:=MHSanaei/3x-ui}"
-xui_branch="${XUI_BRANCH:=main}"
+xui_repo="${XUI_REPO:=victorbafran/3x-ui-rbac}"
+xui_branch="${XUI_BRANCH:=rbac}"
 
 red='\033[0;31m'
 green='\033[0;32m'

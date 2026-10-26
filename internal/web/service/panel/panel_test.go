@@ -24,6 +24,10 @@ func TestIsNewerVersion(t *testing.T) {
 		{"v2.9.3", "2.9.3", false},
 		{"v2.9.2", "2.9.3", false},
 		{"v3.0.0", "2.9.3", true},
+		{"v3.10.2-rbac42", "v3.10.2-rbac41", true},
+		{"v3.10.2-rbac41", "v3.10.2-rbac41", false},
+		{"v3.10.2-rbac41", "3.10.2", true},
+		{"v3.10.2-rbac40", "v3.10.2-rbac41", false},
 	}
 
 	for _, tc := range cases {
@@ -351,5 +355,26 @@ func TestGetUpdateStatus(t *testing.T) {
 	writeStatusFile(t, path, 1, "some-unrecognized-state")
 	if got := svc.GetUpdateStatus(); got.State != updateStatePending {
 		t.Fatalf("unrecognized state normalizes to pending: State = %q, want %q", got.State, updateStatePending)
+	}
+}
+
+// The updater reads its releases and script from the fork, or from the
+// repository install.sh recorded; upstream would install the plain panel.
+func TestTheUpdaterAsksTheForkNotUpstream(t *testing.T) {
+	t.Setenv("XUI_REPO", "")
+	t.Setenv("XUI_BRANCH", "")
+	if got := panelReleaseURL(""); got != "https://api.github.com/repos/victorbafran/3x-ui-rbac/releases/latest" {
+		t.Errorf("latest release from %s", got)
+	}
+	if got := panelReleaseURL("v3.10.2-rbac42"); got != "https://api.github.com/repos/victorbafran/3x-ui-rbac/releases/tags/v3.10.2-rbac42" {
+		t.Errorf("tagged release from %s", got)
+	}
+	if got := panelUpdaterURL(); got != "https://raw.githubusercontent.com/victorbafran/3x-ui-rbac/rbac/update.sh" {
+		t.Errorf("update.sh from %s", got)
+	}
+	t.Setenv("XUI_REPO", "someone/fork")
+	t.Setenv("XUI_BRANCH", "main")
+	if got := panelUpdaterURL(); got != "https://raw.githubusercontent.com/someone/fork/main/update.sh" {
+		t.Errorf("a recorded repository was ignored: %s", got)
 	}
 }

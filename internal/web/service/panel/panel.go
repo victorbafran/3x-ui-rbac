@@ -41,7 +41,6 @@ type PanelUpdateInfo struct {
 }
 
 const (
-	panelUpdaterURL      = "https://raw.githubusercontent.com/MHSanaei/3x-ui/main/update.sh"
 	maxPanelUpdaterBytes = 2 << 20
 	// devReleaseTag is the fixed-tag rolling pre-release the CI force-moves to the
 	// newest main commit; the dev update channel installs from it.
@@ -137,7 +136,7 @@ func (s *PanelService) GetUpdateInfo() (*PanelUpdateInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	current := config.GetBaseVersion()
+	current := config.GetReleaseTag()
 	return &PanelUpdateInfo{
 		Channel:         "stable",
 		CurrentVersion:  current,
@@ -258,6 +257,8 @@ func (s *PanelService) startUpdate(useDev bool) (int64, error) {
 			"--setenv", "XUI_MAIN_FOLDER=" + mainFolder,
 			"--setenv", "XUI_SERVICE=" + serviceFolder,
 			"--setenv", "XUI_UPDATE_TAG=" + updateTag,
+			"--setenv", "XUI_REPO=" + config.UpdateRepo(),
+			"--setenv", "XUI_BRANCH=" + config.UpdateBranch(),
 			"--setenv", runIDEnv,
 			"--setenv", statusFileEnv,
 		}
@@ -287,6 +288,8 @@ func (s *PanelService) startUpdate(useDev bool) (int64, error) {
 		"XUI_MAIN_FOLDER="+mainFolder,
 		"XUI_SERVICE="+serviceFolder,
 		"XUI_UPDATE_TAG="+updateTag,
+		"XUI_REPO="+config.UpdateRepo(),
+		"XUI_BRANCH="+config.UpdateBranch(),
 		runIDEnv,
 		statusFileEnv,
 	)
@@ -374,7 +377,7 @@ func releaseUpdateSlot() {
 
 func downloadPanelUpdater() (string, error) {
 	client := (&service.SettingService{}).NewProxiedHTTPClient(15 * time.Second)
-	req, reqErr := http.NewRequestWithContext(context.Background(), http.MethodGet, panelUpdaterURL, nil)
+	req, reqErr := http.NewRequestWithContext(context.Background(), http.MethodGet, panelUpdaterURL(), nil)
 	if reqErr != nil {
 		return "", fmt.Errorf("download panel updater: %w", reqErr)
 	}
@@ -431,10 +434,7 @@ func fetchLatestPanelVersion() (string, error) {
 // fetchPanelRelease fetches a release from GitHub. An empty tag resolves the
 // latest stable release; a non-empty tag (e.g. dev-latest) resolves that tag.
 func fetchPanelRelease(tag string) (*service.Release, error) {
-	url := "https://api.github.com/repos/MHSanaei/3x-ui/releases/latest"
-	if tag != "" {
-		url = "https://api.github.com/repos/MHSanaei/3x-ui/releases/tags/" + tag
-	}
+	url := panelReleaseURL(tag)
 	client := (&service.SettingService{}).NewProxiedHTTPClient(10 * time.Second)
 	req, reqErr := http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil)
 	if reqErr != nil {
@@ -522,8 +522,22 @@ func resolveUpdateFolders() (string, string) {
 	return mainFolder, serviceFolder
 }
 
+// panelUpdaterURL is update.sh from the repository the updater installs from.
+func panelUpdaterURL() string {
+	return "https://raw.githubusercontent.com/" + config.UpdateRepo() + "/" + config.UpdateBranch() + "/update.sh"
+}
+
+// panelReleaseURL is the GitHub API URL of a release there; "" means the latest.
+func panelReleaseURL(tag string) string {
+	base := "https://api.github.com/repos/" + config.UpdateRepo() + "/releases/"
+	if tag == "" {
+		return base + "latest"
+	}
+	return base + "tags/" + tag
+}
+
 func isNewerVersion(latest string, current string) bool {
-	cmp, ok := version.Compare(latest, current)
+	cmp, ok := version.CompareRelease(latest, current)
 	if !ok {
 		return version.Normalize(latest) != version.Normalize(current)
 	}

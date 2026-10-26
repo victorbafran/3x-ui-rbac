@@ -21,6 +21,9 @@ export type Role = z.infer<typeof RoleSchema>;
 export const addrFamilySchema = z.number().int();
 export type addrFamily = z.infer<typeof addrFamilySchema>;
 
+export const exitKindSchema = z.number().int();
+export type exitKind = z.infer<typeof exitKindSchema>;
+
 export const staticEgressResolverSchema = z.string();
 export type staticEgressResolver = z.infer<typeof staticEgressResolverSchema>;
 

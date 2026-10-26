@@ -2900,7 +2900,7 @@ export const SCHEMAS: Record<string, unknown> = {
         "type": "array"
       },
       "exit": {
-        "description": "Exit is the exit server (its wgrN interface) this host's VLESS route leaves\nthrough; the column avoids the word exit, which some SQL dialects reserve.",
+        "description": "Exit is the exit server (wgrN) this host's VLESS or Hysteria route, or its whole WireGuard\ninbound, leaves through; the column avoids the word exit, which some SQL dialects reserve.",
         "example": "wgr9",
         "type": "string"
       },

@@ -17759,70 +17759,6 @@
             }
           },
           {
-            "type": "inbounds",
-            "summary": "Full inbound list after an inbound mutation, unless invalidate is used at scale.",
-            "payloadSchema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/components/schemas/Inbound"
-              }
-            },
-            "example": {
-              "type": "inbounds",
-              "payload": [
-                {
-                  "clientStats": [
-                    {
-                      "down": 2097152,
-                      "email": "user1",
-                      "enable": true,
-                      "expiryTime": 1735689600000,
-                      "id": 14825,
-                      "inboundId": 1,
-                      "lastOnline": 1735680000000,
-                      "lastSubFetch": 1735680000000,
-                      "reset": 0,
-                      "resetCount": 0,
-                      "resetDay": 0,
-                      "resetMax": 0,
-                      "resetWeekday": 0,
-                      "subId": "i7tvdpeffi0hvvf1",
-                      "total": 10737418240,
-                      "up": 1048576,
-                      "uuid": "e18c9a96-71bf-48d4-933f-8b9a46d4290c"
-                    }
-                  ],
-                  "disableFlow": false,
-                  "down": 0,
-                  "enable": true,
-                  "excludeFromSub": false,
-                  "expiryTime": 0,
-                  "fallbackParent": null,
-                  "id": 1,
-                  "lastTrafficResetTime": 0,
-                  "listen": "",
-                  "nodeId": null,
-                  "originNodeGuid": "",
-                  "port": 443,
-                  "protocol": "vless",
-                  "remark": "VLESS-443",
-                  "settings": null,
-                  "shareAddr": "",
-                  "shareAddrStrategy": "node",
-                  "sniffing": null,
-                  "streamSettings": null,
-                  "subSortIndex": 1,
-                  "tag": "in-443-tcp",
-                  "total": 0,
-                  "trafficReset": "never",
-                  "trafficResetDay": 1,
-                  "up": 0
-                }
-              ],
-              "time": 1735689600000
-            }
-          },
-          {
             "type": "outbounds",
             "summary": "Current outbound traffic rows after the periodic traffic collection.",
             "payloadSchema": {
@@ -17976,7 +17912,7 @@
           },
           {
             "type": "invalidate",
-            "summary": "Requests a REST re-fetch. clients is an invalidate payload type, not a top-level event.",
+            "summary": "Requests a REST re-fetch. clients and inbounds are invalidate payload types, not top-level events: an inbound change no longer pushes the inbound list.",
             "payloadSchema": {
               "type": "object",
               "required": [

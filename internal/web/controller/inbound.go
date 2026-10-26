@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
+	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/wirecodec"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/authz"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/middleware"
@@ -33,32 +34,10 @@ func NewInboundController(g *gin.RouterGroup) *InboundController {
 	return a
 }
 
-// broadcastInboundsUpdateClientLimit is the threshold past which we skip the
-// full-list push over WebSocket and signal the frontend to re-fetch via REST.
-// Mirrors the same heuristic used by the periodic traffic job.
-const broadcastInboundsUpdateClientLimit = 5000
-
-// broadcastInboundsUpdate fetches and broadcasts the inbound list for userId.
-// At scale (10k+ clients) the marshaled JSON exceeds the WS payload ceiling,
-// so we send an invalidate signal instead — frontend re-fetches via REST.
-// Skipped entirely when no WebSocket clients are connected.
-func (a *InboundController) broadcastInboundsUpdate(userId int) {
-	if !websocket.HasClients() {
-		return
-	}
-	inbounds, err := a.inboundService.GetInbounds(userId)
-	if err != nil {
-		return
-	}
-	totalClients := 0
-	for _, ib := range inbounds {
-		totalClients += len(ib.ClientStats)
-	}
-	if totalClients > broadcastInboundsUpdateClientLimit {
-		websocket.BroadcastInvalidate(websocket.MessageTypeInbounds)
-		return
-	}
-	websocket.BroadcastInbounds(inbounds)
+// broadcastInboundsUpdate tells every open panel to re-fetch its inbounds. The hub
+// sends one payload to all sessions, so a pushed list reached every reseller.
+func (a *InboundController) broadcastInboundsUpdate() {
+	websocket.BroadcastInvalidate(websocket.MessageTypeInbounds)
 }
 
 // inboundServiceFor tells the service whether this request is a master's
@@ -68,7 +47,10 @@ func (a *InboundController) inboundServiceFor(c *gin.Context) *service.InboundSe
 	scope, _ := c.Get("api_token_scope")
 	// A master enrolled with an admin token (the -getApiToken default) has no
 	// node-sync scope, so it marks every request it sends instead.
-	svc.FromNodeSync = scope == model.ApiScopeNodeSync || c.GetHeader(wirecodec.MasterPushHeader) != ""
+	marked := scope == model.ApiScopeNodeSync || c.GetHeader(wirecodec.MasterPushHeader) != ""
+	// A master pushes as the unscoped panel owner; a reseller's mark would save its
+	// own filtered client list over everyone else's.
+	svc.FromNodeSync = marked && ownerScopeOf(c) == 0
 	return &svc
 }
 
@@ -99,7 +81,7 @@ func (a *InboundController) initRouter(g *gin.RouterGroup) {
 // getInbounds retrieves the list of inbounds for the logged-in user.
 func (a *InboundController) getInbounds(c *gin.Context) {
 	user := session.GetLoginUser(c)
-	inbounds, err := a.inboundService.GetInbounds(scopeFor(user))
+	inbounds, err := a.inboundService.GetInboundsForOwner(scopeFor(user))
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.obtain"), err)
 		return
@@ -111,7 +93,7 @@ func (a *InboundController) getInbounds(c *gin.Context) {
 // payloads from settings.clients[]. Detail-view flows still use /get/:id.
 func (a *InboundController) getInboundsSlim(c *gin.Context) {
 	user := session.GetLoginUser(c)
-	inbounds, err := a.inboundService.GetInboundsSlim(scopeFor(user))
+	inbounds, err := a.inboundService.GetInboundsSlimForOwner(scopeFor(user))
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.obtain"), err)
 		return
@@ -172,7 +154,7 @@ func (a *InboundController) getInbound(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "get"), err)
 		return
 	}
-	inbound, err := a.inboundService.GetInboundDetail(id)
+	inbound, err := a.inboundService.GetInboundDetailForOwner(id, ownerScopeOf(c))
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.obtain"), err)
 		return
@@ -196,17 +178,50 @@ func (a *InboundController) addInbound(c *gin.Context) {
 		inbound.NodeID = nil
 	}
 
+	posted, ok := a.postedClientEmails(c, inbound)
+	if !ok {
+		return
+	}
 	inbound, needRestart, err := a.inboundServiceFor(c).AddInbound(inbound)
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
 	}
+	stampOwner(c, posted...)
 	jsonMsgObj(c, I18nWeb(c, "pages.inbounds.toasts.inboundCreateSuccess"), inbound, nil)
 	if needRestart {
 		a.xrayService.SetToNeedRestart()
 	}
-	a.broadcastInboundsUpdate(scopeFor(user))
+	a.broadcastInboundsUpdate()
 	notifyClientsChanged()
+}
+
+// postedClientEmails is, for a reseller, the emails a new inbound brings in; false means
+// it has answered, as when one names another admin's client AddInbound would merge into.
+func (a *InboundController) postedClientEmails(c *gin.Context, inbound *model.Inbound) ([]string, bool) {
+	if ownerScopeOf(c) == 0 {
+		return nil, true
+	}
+	clients, err := a.inboundService.GetClients(inbound)
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
+		return nil, false
+	}
+	existing, err := a.inboundService.ExistingClientEmails(clients)
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
+		return nil, false
+	}
+	if denyForeignTargets(c, &a.clientService, nil, existing) {
+		return nil, false
+	}
+	emails := make([]string, 0, len(clients))
+	for _, client := range clients {
+		if client.Email != "" {
+			emails = append(emails, client.Email)
+		}
+	}
+	return emails, true
 }
 
 // delInbound deletes an inbound configuration by its ID.
@@ -225,8 +240,7 @@ func (a *InboundController) delInbound(c *gin.Context) {
 	if needRestart {
 		a.xrayService.SetToNeedRestart()
 	}
-	user := session.GetLoginUser(c)
-	a.broadcastInboundsUpdate(scopeFor(user))
+	a.broadcastInboundsUpdate()
 	notifyClientsChanged()
 }
 
@@ -251,8 +265,7 @@ func (a *InboundController) bulkDelInbounds(c *gin.Context) {
 	if needRestart {
 		a.xrayService.SetToNeedRestart()
 	}
-	user := session.GetLoginUser(c)
-	a.broadcastInboundsUpdate(scopeFor(user))
+	a.broadcastInboundsUpdate()
 	notifyClientsChanged()
 }
 
@@ -281,12 +294,17 @@ func (a *InboundController) updateInbound(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
 	}
-	jsonMsgObj(c, I18nWeb(c, "pages.inbounds.toasts.inboundUpdateSuccess"), inbound, nil)
+	// The save put every admin's clients back into inbound; a reseller is answered
+	// with their own only, or with no row when that cut fails.
+	reply, err := a.inboundService.OwnerView(inbound, ownerScopeOf(c))
+	if err != nil {
+		logger.Warning("inbound update reply:", err)
+	}
+	jsonMsgObj(c, I18nWeb(c, "pages.inbounds.toasts.inboundUpdateSuccess"), reply, nil)
 	if needRestart {
 		a.xrayService.SetToNeedRestart()
 	}
-	user := session.GetLoginUser(c)
-	a.broadcastInboundsUpdate(scopeFor(user))
+	a.broadcastInboundsUpdate()
 	notifyClientsChanged()
 }
 
@@ -378,6 +396,15 @@ func (a *InboundController) delAllInboundClients(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
 	}
+	// On a shared inbound "all" is the caller's own clients, not the other admins'.
+	if ownerId := ownerScopeOf(c); ownerId != 0 {
+		owned, err := a.clientService.OwnedEmailSet(ownerId)
+		if err != nil {
+			jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
+			return
+		}
+		emails = keepEmails(emails, owned)
+	}
 	if len(emails) == 0 {
 		jsonObj(c, service.BulkDeleteResult{}, nil)
 		return
@@ -391,8 +418,7 @@ func (a *InboundController) delAllInboundClients(c *gin.Context) {
 	if needRestart {
 		a.xrayService.SetToNeedRestart()
 	}
-	user := session.GetLoginUser(c)
-	a.broadcastInboundsUpdate(scopeFor(user))
+	a.broadcastInboundsUpdate()
 	notifyClientsChanged()
 }
 
@@ -454,16 +480,21 @@ func (a *InboundController) importInbound(c *gin.Context) {
 		inbound.ClientStats[index].Enable = true
 	}
 
+	posted, ok := a.postedClientEmails(c, inbound)
+	if !ok {
+		return
+	}
 	inbound, needRestart, err := a.inboundService.AddInbound(inbound)
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
 	}
+	stampOwner(c, posted...)
 	jsonMsgObj(c, I18nWeb(c, "pages.inbounds.toasts.inboundCreateSuccess"), inbound, nil)
 	if needRestart {
 		a.xrayService.SetToNeedRestart()
 	}
-	a.broadcastInboundsUpdate(scopeFor(user))
+	a.broadcastInboundsUpdate()
 	notifyClientsChanged()
 }
 

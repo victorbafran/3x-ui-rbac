@@ -56,13 +56,6 @@ func BroadcastClientStats(stats any) {
 	}
 }
 
-// BroadcastInbounds broadcasts inbounds list update to all connected clients.
-func BroadcastInbounds(inbounds any) {
-	if hub := GetHub(); hub != nil {
-		hub.Broadcast(MessageTypeInbounds, inbounds)
-	}
-}
-
 func BroadcastNodes(nodes any) {
 	if hub := GetHub(); hub != nil {
 		hub.Broadcast(MessageTypeNodes, nodes)

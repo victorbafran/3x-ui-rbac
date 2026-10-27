@@ -715,6 +715,13 @@ func (s *RelayService) frontForwardedPorts(tunnelPort, secondTunnelPort, sshPort
 		}
 	}
 	var settings SettingService
+	// the subscription server too, so a sub name pointed at a front's IP
+	// reaches it where this panel's own IP is filtered
+	if on, _ := settings.GetSubEnable(); on {
+		if subPort, err := settings.GetSubPort(); err == nil && subPort > 0 {
+			rows = append(rows, tunnel.Inbound{Port: subPort, Enabled: true, Local: true})
+		}
+	}
 	panelPort, _ := settings.GetPort()
 	reserved := tunnel.Reserved{
 		PanelPort:        panelPort,

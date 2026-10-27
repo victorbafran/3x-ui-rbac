@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"os"
 	"os/exec"
@@ -304,6 +305,16 @@ func (s *PanelCloneService) Promote(id int) error {
 		if err := s.sync(ctx, cl, row); err != nil {
 			return
 		}
+		// a copy that cannot reach the relays would cut every tunnel once main
+		s.step(id, "Checking that the copy reaches every relay")
+		if blocked, err := cloneUnreachedRelays(ctx, cl); err != nil || blocked != "" {
+			if err == nil {
+				err = fmt.Errorf("the copy cannot reach %s; its provider may block these ports, so it stays on standby and this panel stays main", blocked)
+			}
+			s.fail(row, err)
+			s.update(id, map[string]any{"status": CloneStandby})
+			return
+		}
 		s.step(id, "Making the copy the main panel")
 		if err := promoteClone(ctx, cl); err != nil {
 			s.putBack(ctx, cl, row, "it could not run as the main panel", err)
@@ -361,8 +372,58 @@ func (s *PanelCloneService) Check(id int) (*model.PanelClone, error) {
 	default:
 		fields["status"], fields["last_error"] = CloneMain, ""
 	}
+	if fields["status"] == CloneStandby || fields["status"] == CloneMain {
+		if blocked, err := cloneUnreachedRelays(ctx, cl); err != nil {
+			fields["last_error"] = "could not test the relays from the copy: " + err.Error()
+		} else if blocked != "" {
+			fields["last_error"] = "the copy cannot reach " + blocked + "; it must not be made main from this server"
+		}
+	}
 	s.update(id, fields)
 	return loadClone(id)
+}
+
+// cloneUnreachedRelays dials every enabled relay's SSH port, and a front's
+// tunnel port, from the copy; a provider that filters ports shows up here.
+func cloneUnreachedRelays(ctx context.Context, cl *relay.Client) (string, error) {
+	var relays []model.Relay
+	if err := database.GetDB().Where("enabled = ?", true).Order("id").Find(&relays).Error; err != nil {
+		return "", err
+	}
+	type target struct {
+		label, host string
+		port        int
+	}
+	var targets []target
+	for _, r := range relays {
+		// the address lands in a shell line on the copy, so only plain hosts pass
+		if strings.Trim(r.Address, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-:") != "" {
+			continue
+		}
+		targets = append(targets, target{r.Name + " ssh", r.Address, r.SSHPort})
+		if r.Role == model.RelayFront && r.TunnelPort > 0 {
+			targets = append(targets, target{r.Name + " tunnel", r.Address, r.TunnelPort})
+		}
+	}
+	if len(targets) == 0 {
+		return "", nil
+	}
+	var script strings.Builder
+	for _, t := range targets {
+		fmt.Fprintf(&script, "timeout 6 bash -c 'exec 3<>/dev/tcp/%s/%d' 2>/dev/null || echo %s\n",
+			t.host, t.port, cloneQuote(fmt.Sprintf("%s %s", t.label, net.JoinHostPort(t.host, strconv.Itoa(t.port)))))
+	}
+	out, err := cl.Run(ctx, "bash -c "+cloneQuote(script.String()))
+	if err != nil {
+		return "", err
+	}
+	var blocked []string
+	for line := range strings.Lines(out) {
+		if line = strings.TrimSpace(line); line != "" {
+			blocked = append(blocked, line)
+		}
+	}
+	return strings.Join(blocked, ", "), nil
 }
 
 // Delete forgets a copy: its row and its key. The server itself is left as it is.

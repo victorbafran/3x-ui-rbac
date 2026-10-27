@@ -31,6 +31,7 @@ import ThroughputCard from './ThroughputCard';
 import MyTrafficCard from './MyTrafficCard';
 import ConnectionsCard from './ConnectionsCard';
 import SystemStrip from './SystemStrip';
+import StandbyBanner from '@/pages/settings/StandbyBanner';
 import { mean, peak, useOverviewHistory } from './useOverviewHistory';
 import type { PanelUpdateInfo } from './PanelUpdateModal';
 const JsonEditor = lazy(() => import('@/components/form/JsonEditor'));
@@ -200,6 +201,7 @@ export default function IndexPage() {
                 />
               ) : (
                 <div className="ov-page">
+                  {isSuperAdmin && <StandbyBanner showLink />}
                   {isSuperAdmin && (
                     <OverviewActionBar
                       status={status}

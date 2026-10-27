@@ -177,6 +177,12 @@ func GetUpdateStatusFilePath() string {
 	return filepath.Join(GetDBFolderPath(), "update-status.json")
 }
 
+// StandbyMarkerPath returns the file whose presence puts this panel on standby.
+// A file rather than a setting, so restoring a backup can never flip it.
+func StandbyMarkerPath() string {
+	return filepath.Join(GetDBFolderPath(), "standby")
+}
+
 // GetDBKind returns the configured database backend: "sqlite" (default) or "postgres".
 func GetDBKind() string {
 	v := strings.ToLower(strings.TrimSpace(os.Getenv("XUI_DB_TYPE")))

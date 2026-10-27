@@ -145,7 +145,8 @@
     "pinSidebar": "Fijar barra lateral",
     "unpinSidebar": "Desfijar barra lateral",
     "subFormats": "Sub Formats",
-    "relays": "Servidores de salida"
+    "relays": "Servidores de salida",
+    "copies": "Copias del panel"
   },
   "pages": {
     "login": {
@@ -2734,6 +2735,7 @@
       "realIpPorts": "IP real: {ports}",
       "realIpNeedsBackpack": "No se reenvía: {ports}. La IP real del cliente necesita un servidor de entrada BackPack.",
       "noPorts": "Aún no hay puertos que reenviar",
+      "frontTrafficHint": "Tráfico de clientes a través de este servidor de entrada desde que se añadió: ↓ lo que descargaron los clientes, ↑ lo que subieron.",
       "address6Reached": "El panel llegó a este servidor por IPv6",
       "address6Failed": "El panel no pudo llegar a esta dirección IPv6: {reason}",
       "address6Check": "Revisa el dominio IPv6 de este servidor: {reason}",
@@ -2811,6 +2813,202 @@
         "delete": "Quitar servidor de salida",
         "probe": "Comprobar el servidor de salida",
         "deleted": "Eliminado"
+      },
+      "arvan": {
+        "open": "IP de reserva en ArvanCloud",
+        "title": "IP de reserva en ArvanCloud · {name}",
+        "intro": "Los clientes se conectan por el nombre DNS, no por la IP. Un cambio lleva ese nombre a una IP de reserva ya probada en el mismo servidor de Arvan y vuelve a marcar el túnel, así que una IP filtrada se deja atrás en unos dos minutos.",
+        "never": "nunca",
+        "key": {
+          "title": "Clave API de ArvanCloud",
+          "input": "Clave API",
+          "configured": "Guardada",
+          "unreadable": "Ilegible, introdúcela de nuevo",
+          "missing": "Sin configurar",
+          "save": "Guardar clave",
+          "clear": "Quitar clave",
+          "confirmClear": "¿Quitar la clave de ArvanCloud?",
+          "confirmClearHint": "Las IP de reserva siguen en el servidor, pero nada se comprueba, añade ni cambia hasta que se guarde otra clave.",
+          "hint": "Crea en ArvanCloud un usuario de máquina con acceso solo a este servidor y a este dominio, y pega su clave. El panel la guarda cifrada y no vuelve a mostrarla."
+        },
+        "binding": {
+          "title": "Servidor y registro DNS",
+          "detect": "Buscar en ArvanCloud",
+          "detectHint": "Busca el servidor de Arvan que tiene {ip} y el registro DNS que apunta a ella.",
+          "zone": "Zona",
+          "server": "Servidor",
+          "record": "Registro DNS",
+          "notBound": "Aún no se ha encontrado. Guarda una clave y pulsa «Buscar en ArvanCloud».",
+          "noRecord": "No hay ningún registro DNS vinculado, así que un cambio no mueve ningún nombre y los clientes siguen en la IP antigua.",
+          "recordElsewhere": "El registro apunta a {ip}, no a la IP activa.",
+          "pickRecord": "Registro que usan los clientes",
+          "pickRecordHint": "Varios registros apuntan a esta IP. Elige el que está en las configuraciones de los clientes y guarda los ajustes."
+        },
+        "settings": {
+          "title": "Ajustes",
+          "reserveTarget": "IP de reserva que mantener",
+          "reserveTargetHint": "Cada reserva cuesta unos 468.000 tomanes al mes. Un servidor admite como máximo 4 IP, es decir, 3 reservas.",
+          "autoSwap": "Cambiar automáticamente",
+          "autoSwapHint": "Tras unas 3 comprobaciones fallidas con un minuto de separación, pasa a una reserva sana. Sin reserva, pide una IP nueva a Arvan, la prueba, se cambia a ella y libera la averiada.",
+          "dailySwapAt": "Cambiar cada día a las",
+          "dailySwapAtHint": "HH:MM en la zona horaria del panel. Vacío lo desactiva.",
+          "save": "Guardar ajustes"
+        },
+        "prepare": {
+          "title": "Enrutamiento del servidor",
+          "button": "Preparar servidor",
+          "done": "Preparado",
+          "notDone": "Sin preparar",
+          "hint": "Instala en el servidor un enrutamiento por IP, para que una IP nueva nunca corte la activa. Hace falta una vez, antes de añadir reservas o cambiar."
+        },
+        "ips": {
+          "title": "IP",
+          "ip": "IP",
+          "status": "Estado",
+          "iran": "Desde Irán",
+          "lastCheck": "Última comprobación",
+          "error": "Error",
+          "active": "Activa",
+          "healthy": "Sana",
+          "unhealthy": "No responde",
+          "unchecked": "Sin comprobar",
+          "testing": "Probando",
+          "dead": "Muerta",
+          "fails": "{count} comprobaciones fallidas",
+          "swapTo": "Cambiar a esta IP",
+          "release": "Liberar esta IP",
+          "refill": "Añadir reservas ahora",
+          "testAll": "Probar todas",
+          "swapNow": "Cambiar ahora",
+          "needsPrepare": "Prepara el servidor antes de añadir reservas o cambiar.",
+          "confirmSwapTo": "¿Hacer de {ip} la IP activa?",
+          "confirmSwapNow": "¿Cambiar ahora la IP activa?",
+          "confirmSwapHint": "El registro DNS pasa a la nueva IP y el panel vuelve a marcar el túnel. Los clientes se reconectan en unos dos minutos.",
+          "confirmRelease": "¿Liberar {ip}?",
+          "confirmReleaseHint": "La IP vuelve a ArvanCloud para siempre y no se puede recuperar.",
+          "empty": "Aún no hay IP",
+          "addsToday": "IP añadidas hoy: {count}"
+        },
+        "activity": {
+          "busy": "En curso: {action}",
+          "lastAction": "Última acción",
+          "lastError": "Último error",
+          "lastSwap": "Último cambio"
+        },
+        "busyLabels": {
+          "detect": "buscando el servidor",
+          "prepare": "preparando el servidor",
+          "refill": "añadiendo IP de reserva",
+          "test": "probando las IP",
+          "swap": "cambiando la IP activa",
+          "release": "liberando una IP"
+        },
+        "errors": {
+          "reserveTarget": "Introduce un número entero de 0 a 3.",
+          "dailySwapAt": "Usa HH:MM, por ejemplo 04:30, o déjalo vacío."
+        },
+        "toasts": {
+          "key": "Guardar clave de ArvanCloud",
+          "keyClear": "Quitar clave de ArvanCloud",
+          "view": "Leer estado de ArvanCloud",
+          "detect": "Buscar en ArvanCloud",
+          "save": "Guardar ajustes de ArvanCloud",
+          "prepare": "Preparar servidor",
+          "refill": "Añadir IP de reserva",
+          "test": "Probar IP",
+          "swap": "Cambiar IP activa",
+          "release": "Liberar IP"
+        }
+      }
+    },
+    "standby": {
+      "refused": "Este panel está en espera; conviértelo primero en el panel principal.",
+      "toasts": {
+        "get": "Estado de espera",
+        "set": "Cambiar el estado de espera"
+      },
+      "banner": {
+        "title": "Este panel está en espera",
+        "desc": "Aquí funcionan Xray, las entradas y los servidores cisco y OpenVPN, pero los túneles de los servidores de salida y de entrada, la tarea de ArvanCloud, la renovación de certificados, las tareas de nodos, la rotación de WARP, los bots y las alertas están apagados para no chocar con el panel principal.",
+        "open": "Abrir copias del panel"
+      },
+      "thisPanel": "Este panel",
+      "tagMain": "Principal",
+      "tagStandby": "En espera",
+      "mainDesc": "Este es el panel principal: aquí funcionan los túneles de los servidores de salida y de entrada, las tareas programadas y los bots.",
+      "standbyDesc": "Este panel es un suplente. Conviértelo en el principal cuando el panel principal se pierda o se retire.",
+      "makeMain": "Hacer de este el panel principal",
+      "makeMainConfirm": "¿Hacer de este el panel principal?",
+      "makeMainConfirmDesc": "Pon antes el otro panel en espera, o usa «Hacer principal» desde la lista de copias del otro panel. Dos paneles principales se pelean por los mismos servidores de salida y de entrada y los mismos bots.",
+      "goStandby": "Poner este panel en espera",
+      "goStandbyConfirm": "¿Poner este panel en espera?",
+      "goStandbyConfirmDesc": "Aquí se cortan los túneles de los servidores de salida y de entrada, y se detienen la tarea de ArvanCloud, la renovación de certificados, las tareas de nodos, la rotación de WARP, los bots y las alertas. Xray y las entradas siguen funcionando. Haz principal a otro panel, o los clientes cuyo tráfico pasa por esos servidores perderán la conexión."
+    },
+    "clones": {
+      "intro": "Una copia es este mismo panel instalado en otro servidor con todos sus datos, en espera para tomar el relevo si se pierde este servidor.",
+      "never": "Nunca",
+      "add": {
+        "title": "Copiar a un servidor nuevo",
+        "hint": "El panel actual no cambia. El servidor nuevo recibe la última versión publicada del panel, o la compilación de este panel si es más reciente, luego la copia de seguridad completa de este panel, y arranca en espera. La contraseña se usa una sola vez para instalar la clave SSH propia del panel y nunca se guarda.",
+        "submit": "Copiar este panel"
+      },
+      "fields": {
+        "address": "IP del servidor",
+        "sshPort": "Puerto SSH",
+        "sshUser": "Usuario SSH",
+        "password": "Contraseña SSH"
+      },
+      "errors": {
+        "address": "Introduce la IP del servidor nuevo.",
+        "sshPort": "Introduce un puerto entre 1 y 65535.",
+        "sshUser": "Introduce el usuario SSH.",
+        "password": "Introduce la contraseña SSH."
+      },
+      "list": {
+        "title": "Copias",
+        "empty": "Todavía no hay copias"
+      },
+      "cols": {
+        "address": "Servidor",
+        "status": "Estado",
+        "step": "Paso",
+        "mode": "Instalado",
+        "version": "Versión",
+        "lastSync": "Última sincronización",
+        "lastSeen": "Última comprobación",
+        "lastError": "Último error"
+      },
+      "status": {
+        "pending": "En cola",
+        "installing": "Instalando",
+        "standby": "En espera",
+        "main": "Principal",
+        "error": "Error"
+      },
+      "mode": {
+        "release": "Última versión",
+        "copied": "Copiada esta compilación"
+      },
+      "actions": {
+        "check": "Comprobar",
+        "checkHint": "Pregunta a la copia si su panel está funcionando y en espera.",
+        "sync": "Sincronizar",
+        "syncHint": "Vuelve a enviar los datos actuales de este panel a la copia; sigue en espera.",
+        "promote": "Hacer principal",
+        "remove": "Quitar",
+        "removeHint": "Solo olvida la copia; el servidor no se toca."
+      },
+      "promoteConfirm": "¿Hacer de {address} el panel principal?",
+      "promoteConfirmDesc": "La copia se sincroniza una última vez y pasa a ser el panel principal; después este panel queda en espera. Recuerda apuntar los dominios del panel y de la suscripción a {address}.",
+      "removeConfirm": "¿Olvidar la copia en {address}?",
+      "removeConfirmDesc": "Solo se borran esta fila y su clave SSH. El servidor y el panel que tiene no se tocan.",
+      "toasts": {
+        "list": "Copias del panel",
+        "add": "Copiar el panel",
+        "sync": "Sincronizar la copia",
+        "check": "Comprobar la copia",
+        "promote": "Hacer principal la copia",
+        "delete": "Quitar la copia"
       }
     }
   },

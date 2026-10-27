@@ -145,7 +145,8 @@
     "pinSidebar": "固定側邊欄",
     "unpinSidebar": "取消固定側邊欄",
     "subFormats": "Sub Formats",
-    "relays": "出口伺服器"
+    "relays": "出口伺服器",
+    "copies": "面板副本"
   },
   "pages": {
     "login": {
@@ -2734,6 +2735,7 @@
       "realIpPorts": "真實 IP：{ports}",
       "realIpNeedsBackpack": "未轉送：{ports}。客戶真實 IP 需要 BackPack 入口伺服器。",
       "noPorts": "目前沒有要轉送的連接埠",
+      "frontTrafficHint": "自新增以來經過此入口伺服器的客戶流量：↓ 客戶下載的量，↑ 客戶上傳的量。",
       "address6Reached": "面板已透過 IPv6 連到這台伺服器",
       "address6Failed": "面板無法連到這個 IPv6 位址：{reason}",
       "address6Check": "請檢查這台伺服器的 IPv6 網域：{reason}",
@@ -2811,6 +2813,202 @@
         "delete": "移除出口伺服器",
         "probe": "檢查出口伺服器",
         "deleted": "已移除"
+      },
+      "arvan": {
+        "open": "ArvanCloud 備用 IP",
+        "title": "ArvanCloud 備用 IP · {name}",
+        "intro": "客戶透過 DNS 名稱而非 IP 連線。切換會把該名稱指向同一台 Arvan 伺服器上已測試的備用 IP，並重新撥通通道，因此約兩分鐘即可擺脫被過濾的 IP。",
+        "never": "從未",
+        "key": {
+          "title": "ArvanCloud API 金鑰",
+          "input": "API 金鑰",
+          "configured": "已儲存",
+          "unreadable": "無法讀取，請重新輸入",
+          "missing": "未設定",
+          "save": "儲存金鑰",
+          "clear": "移除金鑰",
+          "confirmClear": "移除 ArvanCloud 金鑰？",
+          "confirmClearHint": "備用 IP 仍留在伺服器上，但在重新儲存金鑰之前，不會進行任何檢查、新增或切換。",
+          "hint": "在 ArvanCloud 建立一個只能存取此伺服器與此網域的機器使用者，並貼上其金鑰。面板會加密儲存，且不再顯示。"
+        },
+        "binding": {
+          "title": "伺服器與 DNS 記錄",
+          "detect": "在 ArvanCloud 中尋找",
+          "detectHint": "尋找擁有 {ip} 的 Arvan 伺服器，以及指向它的 DNS 記錄。",
+          "zone": "區域",
+          "server": "伺服器",
+          "record": "DNS 記錄",
+          "notBound": "尚未找到。請先儲存金鑰，再點選「在 ArvanCloud 中尋找」。",
+          "noRecord": "未綁定 DNS 記錄，切換不會移動任何名稱，客戶仍停留在舊 IP。",
+          "recordElsewhere": "該記錄指向 {ip}，而不是目前使用中的 IP。",
+          "pickRecord": "客戶使用的記錄",
+          "pickRecordHint": "有多筆記錄指向此 IP。請選擇客戶設定中使用的那一筆，然後儲存設定。"
+        },
+        "settings": {
+          "title": "設定",
+          "reserveTarget": "保留的備用 IP 數量",
+          "reserveTargetHint": "每個備用 IP 每月約 468,000 托曼。一台伺服器最多 4 個 IP，因此最多 3 個備用。",
+          "autoSwap": "自動切換",
+          "autoSwapHint": "每隔一分鐘檢查一次，約 3 次失敗後切換到健康的備用 IP。沒有備用時，會向 Arvan 申請新 IP，測試後切換過去，並釋放壞掉的 IP。",
+          "dailySwapAt": "每天切換時間",
+          "dailySwapAtHint": "依面板時區填寫 HH:MM。留空即關閉。",
+          "save": "儲存設定"
+        },
+        "prepare": {
+          "title": "伺服器路由",
+          "button": "準備伺服器",
+          "done": "已準備",
+          "notDone": "未準備",
+          "hint": "在伺服器上安裝依 IP 的路由，使新增的 IP 永遠不會切斷使用中的 IP。新增備用或切換前只需執行一次。"
+        },
+        "ips": {
+          "title": "IP 清單",
+          "ip": "IP",
+          "status": "狀態",
+          "iran": "伊朗節點",
+          "lastCheck": "上次檢查",
+          "error": "錯誤",
+          "active": "使用中",
+          "healthy": "健康",
+          "unhealthy": "無回應",
+          "unchecked": "尚未檢查",
+          "testing": "測試中",
+          "dead": "無法使用",
+          "fails": "檢查失敗 {count} 次",
+          "swapTo": "切換到此 IP",
+          "release": "釋放此 IP",
+          "refill": "立即新增備用",
+          "testAll": "全部測試",
+          "swapNow": "立即切換",
+          "needsPrepare": "新增備用或切換前，請先準備伺服器。",
+          "confirmSwapTo": "將 {ip} 設為使用中的 IP？",
+          "confirmSwapNow": "立即切換使用中的 IP？",
+          "confirmSwapHint": "DNS 記錄將指向新 IP，面板會重新撥通通道。客戶約兩分鐘內重新連線。",
+          "confirmRelease": "釋放 {ip}？",
+          "confirmReleaseHint": "此 IP 將永久歸還 ArvanCloud，無法取回。",
+          "empty": "尚無 IP",
+          "addsToday": "今日已新增 IP：{count}"
+        },
+        "activity": {
+          "busy": "進行中：{action}",
+          "lastAction": "上次操作",
+          "lastError": "上次錯誤",
+          "lastSwap": "上次切換"
+        },
+        "busyLabels": {
+          "detect": "正在尋找伺服器",
+          "prepare": "正在準備伺服器",
+          "refill": "正在新增備用 IP",
+          "test": "正在測試 IP",
+          "swap": "正在切換使用中的 IP",
+          "release": "正在釋放 IP"
+        },
+        "errors": {
+          "reserveTarget": "請輸入 0 到 3 之間的整數。",
+          "dailySwapAt": "請使用 HH:MM 格式，例如 04:30，或留空。"
+        },
+        "toasts": {
+          "key": "儲存 ArvanCloud 金鑰",
+          "keyClear": "移除 ArvanCloud 金鑰",
+          "view": "讀取 ArvanCloud 狀態",
+          "detect": "在 ArvanCloud 中尋找",
+          "save": "儲存 ArvanCloud 設定",
+          "prepare": "準備伺服器",
+          "refill": "新增備用 IP",
+          "test": "測試 IP",
+          "swap": "切換使用中的 IP",
+          "release": "釋放 IP"
+        }
+      }
+    },
+    "standby": {
+      "refused": "此面板處於待命狀態；請先將它設為主面板。",
+      "toasts": {
+        "get": "待命狀態",
+        "set": "變更待命狀態"
+      },
+      "banner": {
+        "title": "此面板處於待命狀態",
+        "desc": "Xray、入站以及 cisco 與 OpenVPN 伺服器在這裡運作，但出口與入口伺服器的通道、ArvanCloud 工作、憑證續期、節點工作、WARP 輪替、機器人與警示都已關閉，以免與主面板衝突。",
+        "open": "開啟面板副本"
+      },
+      "thisPanel": "此面板",
+      "tagMain": "主面板",
+      "tagStandby": "待命",
+      "mainDesc": "這是主面板：出口與入口伺服器的通道、排程工作與機器人都在這裡運作。",
+      "standbyDesc": "此面板是替補。當主面板遺失或退役時，將它設為主面板。",
+      "makeMain": "將此面板設為主面板",
+      "makeMainConfirm": "將此面板設為主面板？",
+      "makeMainConfirmDesc": "請先讓另一個面板進入待命，或改在另一個面板的副本清單中使用「設為主面板」。兩個主面板會爭搶相同的出口與入口伺服器和機器人。",
+      "goStandby": "讓此面板進入待命",
+      "goStandbyConfirm": "讓此面板進入待命？",
+      "goStandbyConfirmDesc": "這裡的出口與入口伺服器通道會中斷，ArvanCloud 工作、憑證續期、節點工作、WARP 輪替、機器人與警示都會停止。Xray 與入站繼續運作。請將另一個面板設為主面板，否則流量經過這些伺服器的客戶會斷線。"
+    },
+    "clones": {
+      "intro": "副本就是此面板連同全部資料安裝在另一台伺服器上，保持待命，以便在此伺服器遺失時接手。",
+      "never": "從未",
+      "add": {
+        "title": "複製到新伺服器",
+        "hint": "目前的面板不會改變。新伺服器會安裝面板的最新發行版（若此面板的建置較新，則用此面板的建置），接著還原此面板的完整備份，並以待命狀態啟動。密碼只用一次，用來安裝面板自己的 SSH 金鑰，絕不儲存。",
+        "submit": "複製此面板"
+      },
+      "fields": {
+        "address": "伺服器 IP",
+        "sshPort": "SSH 連接埠",
+        "sshUser": "SSH 使用者",
+        "password": "SSH 密碼"
+      },
+      "errors": {
+        "address": "請輸入新伺服器的 IP。",
+        "sshPort": "請輸入 1 到 65535 之間的連接埠。",
+        "sshUser": "請輸入 SSH 使用者。",
+        "password": "請輸入 SSH 密碼。"
+      },
+      "list": {
+        "title": "副本清單",
+        "empty": "還沒有副本"
+      },
+      "cols": {
+        "address": "伺服器",
+        "status": "狀態",
+        "step": "步驟",
+        "mode": "安裝內容",
+        "version": "版本",
+        "lastSync": "上次同步",
+        "lastSeen": "上次檢查",
+        "lastError": "上次錯誤"
+      },
+      "status": {
+        "pending": "等待中",
+        "installing": "安裝中",
+        "standby": "待命",
+        "main": "主面板",
+        "error": "錯誤"
+      },
+      "mode": {
+        "release": "最新發行版",
+        "copied": "複製了此建置"
+      },
+      "actions": {
+        "check": "檢查",
+        "checkHint": "詢問副本其面板是否在運作、是否處於待命。",
+        "sync": "同步",
+        "syncHint": "再次把此面板目前的資料傳送到副本；副本保持待命。",
+        "promote": "設為主面板",
+        "remove": "移除",
+        "removeHint": "只是忘記此副本，不會動到伺服器。"
+      },
+      "promoteConfirm": "將 {address} 設為主面板？",
+      "promoteConfirmDesc": "副本會再同步一次並成為主面板，接著此面板進入待命。記得把面板與訂閱的網域指向 {address}。",
+      "removeConfirm": "忘記 {address} 上的副本？",
+      "removeConfirmDesc": "只刪除這一列及其 SSH 金鑰。伺服器與其上的面板不會被動到。",
+      "toasts": {
+        "list": "面板副本",
+        "add": "複製面板",
+        "sync": "同步副本",
+        "check": "檢查副本",
+        "promote": "將副本設為主面板",
+        "delete": "移除副本"
       }
     }
   },

@@ -88,7 +88,10 @@ func allModels() []any {
 		&model.SubBalancer{},
 		&model.TuicTrafficReceipt{},
 		&model.Relay{},
+		&model.ArvanFront{},
+		&model.ArvanIP{},
 		&model.AdminInbound{},
+		&model.PanelClone{},
 	}
 }
 
@@ -3609,4 +3612,22 @@ func ValidateSQLiteDB(dbPath string) error {
 		return errors.New("sqlite integrity check failed: " + res)
 	}
 	return nil
+}
+
+// DeleteFromSQLiteFile deletes row id of value's table in a standalone SQLite
+// file such as a BackupSQLite snapshot, leaving the live database alone.
+func DeleteFromSQLiteFile(path string, value any, id int) error {
+	if _, err := os.Stat(path); err != nil {
+		return err
+	}
+	gdb, err := gorm.Open(sqlite.Open(path), &gorm.Config{Logger: logger.Discard})
+	if err != nil {
+		return err
+	}
+	sqlDB, err := gdb.DB()
+	if err != nil {
+		return err
+	}
+	defer sqlDB.Close()
+	return gdb.Delete(value, id).Error
 }

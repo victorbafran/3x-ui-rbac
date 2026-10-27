@@ -229,6 +229,10 @@ func (a *APIController) initRouter(g *gin.RouterGroup) {
 	relays := api.Group("/relays")
 	a.relayController = NewRelayController(relays)
 
+	// Copies of this panel on other servers, kept on standby to take over.
+	clones := api.Group("/clones")
+	NewCloneController(clones)
+
 	// Hosts API — per-inbound override endpoints for subscription links
 	hosts := api.Group("/hosts")
 	a.hostController = NewHostController(hosts)

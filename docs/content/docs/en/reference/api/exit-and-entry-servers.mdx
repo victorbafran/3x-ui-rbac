@@ -109,6 +109,76 @@ _openapi:
         publicName6’s DNS records when it is set, and records the outcome in
         address6Error; a known address6 is dialled even when SSH failed.'
       url: '#ask-the-server-what-the-internet-gives-it-where-the-address-is-and-which-of-the-services-customers-ask-for-will-answer-it-for-an-entry-server-it-also-reads-the-servers-ipv6-when-address6-is-empty-and-the-probe-got-onto-the-server-then-dials-address6-from-the-panel-checks-publicname6s-dns-records-when-it-is-set-and-records-the-outcome-in-address6error-a-known-address6-is-dialled-even-when-ssh-failed'
+    - depth: 2
+      title: Whether an ArvanCloud API key is saved (configured) and whether the panel
+        can still decrypt it (readable). The key itself is never returned. It is
+        stored encrypted with a key file beside the database, so a database-only
+        backup carries only ciphertext; readable is false when that file is
+        missing, and the key has to be entered again.
+      url: '#whether-an-arvancloud-api-key-is-saved-configured-and-whether-the-panel-can-still-decrypt-it-readable-the-key-itself-is-never-returned-it-is-stored-encrypted-with-a-key-file-beside-the-database-so-a-database-only-backup-carries-only-ciphertext-readable-is-false-when-that-file-is-missing-and-the-key-has-to-be-entered-again'
+    - depth: 2
+      title: Save the ArvanCloud API key, exactly as ArvanCloud shows it ("apikey " is
+        added when missing). The key is checked by listing the regions before it
+        is stored; a key without permission is refused with ArvanCloud’s own
+        message. A machine-user key limited to the entry server and its DNS
+        domain is enough.
+      url: '#save-the-arvancloud-api-key-exactly-as-arvancloud-shows-it-apikey--is-added-when-missing-the-key-is-checked-by-listing-the-regions-before-it-is-stored-a-key-without-permission-is-refused-with-arvanclouds-own-message-a-machine-user-key-limited-to-the-entry-server-and-its-dns-domain-is-enough'
+    - depth: 2
+      title: Forget the ArvanCloud API key. Reserve IPs stay on their servers, but
+        nothing is checked, added or swapped until a key is saved again.
+      url: '#forget-the-arvancloud-api-key-reserve-ips-stay-on-their-servers-but-nothing-is-checked-added-or-swapped-until-a-key-is-saved-again'
+    - depth: 2
+      title: 'The ArvanCloud state of an entry server: its Arvan zone and server, the
+        DNS record bound to it (domain, recordName, recordId and the IP the
+        record holds now), the active IP (the relay’s address) and whether its
+        last check passed, the settings (reserveTarget 0–3, autoSwap,
+        dailySwapAt as "HH:MM" or ""), whether the server is prepared, the
+        reserve IPs with their status ("testing", "healthy" or "dead"), the
+        Iranian check-host nodes that reached each, and busy, the action running
+        now ("" when none).'
+      url: '#the-arvancloud-state-of-an-entry-server-its-arvan-zone-and-server-the-dns-record-bound-to-it-domain-recordname-recordid-and-the-ip-the-record-holds-now-the-active-ip-the-relays-address-and-whether-its-last-check-passed-the-settings-reservetarget-03-autoswap-dailyswapat-as-hhmm-or--whether-the-server-is-prepared-the-reserve-ips-with-their-status-testing-healthy-or-dead-the-iranian-check-host-nodes-that-reached-each-and-busy-the-action-running-now--when-none'
+    - depth: 2
+      title: Find the ArvanCloud server that owns the entry server’s address, in every
+        zone, and the DNS A records pointing at it. One record, or the one named
+        by publicName, is bound at once; when several fit they come back as
+        candidates and the save endpoint binds the one picked. Returns the state
+        as the GET does.
+      url: '#find-the-arvancloud-server-that-owns-the-entry-servers-address-in-every-zone-and-the-dns-a-records-pointing-at-it-one-record-or-the-one-named-by-publicname-is-bound-at-once-when-several-fit-they-come-back-as-candidates-and-the-save-endpoint-binds-the-one-picked-returns-the-state-as-the-get-does'
+    - depth: 2
+      title: 'Save the DNS record to move on a swap and the reserve settings.
+        reserveTarget is how many tested reserve IPs to keep (0–3: a server
+        takes at most four IPs, and each costs money every hour it is held).
+        autoSwap moves to a healthy reserve after three failed checks a minute
+        apart; dailySwapAt swaps once a day at that time in the panel’s time
+        zone ("" turns it off). Returns the state as the GET does.'
+      url: '#save-the-dns-record-to-move-on-a-swap-and-the-reserve-settings-reservetarget-is-how-many-tested-reserve-ips-to-keep-03-a-server-takes-at-most-four-ips-and-each-costs-money-every-hour-it-is-held-autoswap-moves-to-a-healthy-reserve-after-three-failed-checks-a-minute-apart-dailyswapat-swaps-once-a-day-at-that-time-in-the-panels-time-zone--turns-it-off-returns-the-state-as-the-get-does'
+    - depth: 2
+      title: Install per-IP routing on the entry server over SSH, so an IP added later
+        never takes the active IP’s replies or cuts it off; the active IP keeps
+        the main default route. Needed once before reserves are added. Returns
+        at once; poll the GET for busy and prepared.
+      url: '#install-per-ip-routing-on-the-entry-server-over-ssh-so-an-ip-added-later-never-takes-the-active-ips-replies-or-cuts-it-off-the-active-ip-keeps-the-main-default-route-needed-once-before-reserves-are-added-returns-at-once-poll-the-get-for-busy-and-prepared'
+    - depth: 2
+      title: Add reserve IPs until reserveTarget is reached, never past four IPs on
+        the server. Each new IP is tested from the panel and from Iranian
+        check-host nodes; one that does not answer is released at once. Requires
+        a prepared server. Returns at once.
+      url: '#add-reserve-ips-until-reservetarget-is-reached-never-past-four-ips-on-the-server-each-new-ip-is-tested-from-the-panel-and-from-iranian-check-host-nodes-one-that-does-not-answer-is-released-at-once-requires-a-prepared-server-returns-at-once'
+    - depth: 2
+      title: Test the active IP and every reserve again. Returns at once.
+      url: '#test-the-active-ip-and-every-reserve-again-returns-at-once'
+    - depth: 2
+      title: 'Make a reserve the active IP: the routing on the server moves to it, the
+        DNS record is pointed at it, the relay’s address changes and the panel
+        re-dials the tunnel. Without ip the healthiest reserve is used. The
+        target is tested first and a dead one aborts the swap. The old IP is
+        kept as a reserve when it is healthy and a reserve is still wanted, and
+        released otherwise. Returns at once.'
+      url: '#make-a-reserve-the-active-ip-the-routing-on-the-server-moves-to-it-the-dns-record-is-pointed-at-it-the-relays-address-changes-and-the-panel-re-dials-the-tunnel-without-ip-the-healthiest-reserve-is-used-the-target-is-tested-first-and-a-dead-one-aborts-the-swap-the-old-ip-is-kept-as-a-reserve-when-it-is-healthy-and-a-reserve-is-still-wanted-and-released-otherwise-returns-at-once'
+    - depth: 2
+      title: Give a reserve IP back to ArvanCloud for good. The active IP is refused.
+        Returns at once.
+      url: '#give-a-reserve-ip-back-to-arvancloud-for-good-the-active-ip-is-refused-returns-at-once'
   structuredData:
     headings:
       - content: 'Every server with the live state of its tunnel. An exit carries which
@@ -201,6 +271,65 @@ _openapi:
           publicName6’s DNS records when it is set, and records the outcome in
           address6Error; a known address6 is dialled even when SSH failed.'
         id: ask-the-server-what-the-internet-gives-it-where-the-address-is-and-which-of-the-services-customers-ask-for-will-answer-it-for-an-entry-server-it-also-reads-the-servers-ipv6-when-address6-is-empty-and-the-probe-got-onto-the-server-then-dials-address6-from-the-panel-checks-publicname6s-dns-records-when-it-is-set-and-records-the-outcome-in-address6error-a-known-address6-is-dialled-even-when-ssh-failed
+      - content: Whether an ArvanCloud API key is saved (configured) and whether the
+          panel can still decrypt it (readable). The key itself is never
+          returned. It is stored encrypted with a key file beside the database,
+          so a database-only backup carries only ciphertext; readable is false
+          when that file is missing, and the key has to be entered again.
+        id: whether-an-arvancloud-api-key-is-saved-configured-and-whether-the-panel-can-still-decrypt-it-readable-the-key-itself-is-never-returned-it-is-stored-encrypted-with-a-key-file-beside-the-database-so-a-database-only-backup-carries-only-ciphertext-readable-is-false-when-that-file-is-missing-and-the-key-has-to-be-entered-again
+      - content: Save the ArvanCloud API key, exactly as ArvanCloud shows it ("apikey "
+          is added when missing). The key is checked by listing the regions
+          before it is stored; a key without permission is refused with
+          ArvanCloud’s own message. A machine-user key limited to the entry
+          server and its DNS domain is enough.
+        id: save-the-arvancloud-api-key-exactly-as-arvancloud-shows-it-apikey--is-added-when-missing-the-key-is-checked-by-listing-the-regions-before-it-is-stored-a-key-without-permission-is-refused-with-arvanclouds-own-message-a-machine-user-key-limited-to-the-entry-server-and-its-dns-domain-is-enough
+      - content: Forget the ArvanCloud API key. Reserve IPs stay on their servers, but
+          nothing is checked, added or swapped until a key is saved again.
+        id: forget-the-arvancloud-api-key-reserve-ips-stay-on-their-servers-but-nothing-is-checked-added-or-swapped-until-a-key-is-saved-again
+      - content: 'The ArvanCloud state of an entry server: its Arvan zone and server,
+          the DNS record bound to it (domain, recordName, recordId and the IP
+          the record holds now), the active IP (the relay’s address) and whether
+          its last check passed, the settings (reserveTarget 0–3, autoSwap,
+          dailySwapAt as "HH:MM" or ""), whether the server is prepared, the
+          reserve IPs with their status ("testing", "healthy" or "dead"), the
+          Iranian check-host nodes that reached each, and busy, the action
+          running now ("" when none).'
+        id: the-arvancloud-state-of-an-entry-server-its-arvan-zone-and-server-the-dns-record-bound-to-it-domain-recordname-recordid-and-the-ip-the-record-holds-now-the-active-ip-the-relays-address-and-whether-its-last-check-passed-the-settings-reservetarget-03-autoswap-dailyswapat-as-hhmm-or--whether-the-server-is-prepared-the-reserve-ips-with-their-status-testing-healthy-or-dead-the-iranian-check-host-nodes-that-reached-each-and-busy-the-action-running-now--when-none
+      - content: Find the ArvanCloud server that owns the entry server’s address, in
+          every zone, and the DNS A records pointing at it. One record, or the
+          one named by publicName, is bound at once; when several fit they come
+          back as candidates and the save endpoint binds the one picked. Returns
+          the state as the GET does.
+        id: find-the-arvancloud-server-that-owns-the-entry-servers-address-in-every-zone-and-the-dns-a-records-pointing-at-it-one-record-or-the-one-named-by-publicname-is-bound-at-once-when-several-fit-they-come-back-as-candidates-and-the-save-endpoint-binds-the-one-picked-returns-the-state-as-the-get-does
+      - content: 'Save the DNS record to move on a swap and the reserve settings.
+          reserveTarget is how many tested reserve IPs to keep (0–3: a server
+          takes at most four IPs, and each costs money every hour it is held).
+          autoSwap moves to a healthy reserve after three failed checks a minute
+          apart; dailySwapAt swaps once a day at that time in the panel’s time
+          zone ("" turns it off). Returns the state as the GET does.'
+        id: save-the-dns-record-to-move-on-a-swap-and-the-reserve-settings-reservetarget-is-how-many-tested-reserve-ips-to-keep-03-a-server-takes-at-most-four-ips-and-each-costs-money-every-hour-it-is-held-autoswap-moves-to-a-healthy-reserve-after-three-failed-checks-a-minute-apart-dailyswapat-swaps-once-a-day-at-that-time-in-the-panels-time-zone--turns-it-off-returns-the-state-as-the-get-does
+      - content: Install per-IP routing on the entry server over SSH, so an IP added
+          later never takes the active IP’s replies or cuts it off; the active
+          IP keeps the main default route. Needed once before reserves are
+          added. Returns at once; poll the GET for busy and prepared.
+        id: install-per-ip-routing-on-the-entry-server-over-ssh-so-an-ip-added-later-never-takes-the-active-ips-replies-or-cuts-it-off-the-active-ip-keeps-the-main-default-route-needed-once-before-reserves-are-added-returns-at-once-poll-the-get-for-busy-and-prepared
+      - content: Add reserve IPs until reserveTarget is reached, never past four IPs on
+          the server. Each new IP is tested from the panel and from Iranian
+          check-host nodes; one that does not answer is released at once.
+          Requires a prepared server. Returns at once.
+        id: add-reserve-ips-until-reservetarget-is-reached-never-past-four-ips-on-the-server-each-new-ip-is-tested-from-the-panel-and-from-iranian-check-host-nodes-one-that-does-not-answer-is-released-at-once-requires-a-prepared-server-returns-at-once
+      - content: Test the active IP and every reserve again. Returns at once.
+        id: test-the-active-ip-and-every-reserve-again-returns-at-once
+      - content: 'Make a reserve the active IP: the routing on the server moves to it,
+          the DNS record is pointed at it, the relay’s address changes and the
+          panel re-dials the tunnel. Without ip the healthiest reserve is used.
+          The target is tested first and a dead one aborts the swap. The old IP
+          is kept as a reserve when it is healthy and a reserve is still wanted,
+          and released otherwise. Returns at once.'
+        id: make-a-reserve-the-active-ip-the-routing-on-the-server-moves-to-it-the-dns-record-is-pointed-at-it-the-relays-address-changes-and-the-panel-re-dials-the-tunnel-without-ip-the-healthiest-reserve-is-used-the-target-is-tested-first-and-a-dead-one-aborts-the-swap-the-old-ip-is-kept-as-a-reserve-when-it-is-healthy-and-a-reserve-is-still-wanted-and-released-otherwise-returns-at-once
+      - content: Give a reserve IP back to ArvanCloud for good. The active IP is
+          refused. Returns at once.
+        id: give-a-reserve-ip-back-to-arvancloud-for-good-the-active-ip-is-refused-returns-at-once
     contents: []
 ---
 
@@ -211,7 +340,7 @@ export default function Layout(props) {
   return (
     <>
       {props.children}
-      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/relays/list","method":"get"},{"path":"/panel/api/relays/options","method":"get"},{"path":"/panel/api/relays/fronts","method":"get"},{"path":"/panel/api/relays/add","method":"post"},{"path":"/panel/api/relays/update/{id}","method":"post"},{"path":"/panel/api/relays/del/{id}","method":"post"},{"path":"/panel/api/relays/setEnable/{id}","method":"post"},{"path":"/panel/api/relays/probe/{id}","method":"post"}]} showTitle />
+      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/relays/list","method":"get"},{"path":"/panel/api/relays/options","method":"get"},{"path":"/panel/api/relays/fronts","method":"get"},{"path":"/panel/api/relays/add","method":"post"},{"path":"/panel/api/relays/update/{id}","method":"post"},{"path":"/panel/api/relays/del/{id}","method":"post"},{"path":"/panel/api/relays/setEnable/{id}","method":"post"},{"path":"/panel/api/relays/probe/{id}","method":"post"},{"path":"/panel/api/relays/arvan/key","method":"get"},{"path":"/panel/api/relays/arvan/key","method":"post"},{"path":"/panel/api/relays/arvan/key/clear","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}","method":"get"},{"path":"/panel/api/relays/arvan/front/{id}/detect","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/save","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/prepare","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/refill","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/test","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/swap","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/release","method":"post"}]} showTitle />
     </>
   );
 }

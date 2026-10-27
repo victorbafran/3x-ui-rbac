@@ -145,7 +145,8 @@
     "pinSidebar": "Pin sidebar",
     "unpinSidebar": "Unpin sidebar",
     "subFormats": "Sub Formats",
-    "relays": "Exit servers"
+    "relays": "Exit servers",
+    "copies": "Panel copies"
   },
   "pages": {
     "login": {
@@ -2734,6 +2735,7 @@
       "realIpPorts": "Real client IP: {ports}",
       "realIpNeedsBackpack": "Not carried: {ports}. Real client IP needs a BackPack entry server.",
       "noPorts": "No ports to forward yet",
+      "frontTrafficHint": "Customer traffic through this entry server since it was added: ↓ what customers downloaded, ↑ what they uploaded.",
       "address6Reached": "The panel reached this server over IPv6",
       "address6Failed": "The panel could not reach this IPv6 address: {reason}",
       "address6Check": "Check this server’s IPv6 domain: {reason}",
@@ -2811,6 +2813,202 @@
         "delete": "Remove exit server",
         "probe": "Check the exit server",
         "deleted": "Removed"
+      },
+      "arvan": {
+        "open": "ArvanCloud reserve IPs",
+        "title": "ArvanCloud reserve IPs · {name}",
+        "intro": "Customers connect by the DNS name, not the IP. A swap moves that name to a tested reserve IP on the same Arvan server and re-dials the tunnel, so a filtered IP is left behind in about two minutes.",
+        "never": "never",
+        "key": {
+          "title": "ArvanCloud API key",
+          "input": "API key",
+          "configured": "Saved",
+          "unreadable": "Unreadable, enter it again",
+          "missing": "Not set",
+          "save": "Save key",
+          "clear": "Remove key",
+          "confirmClear": "Remove the ArvanCloud key?",
+          "confirmClearHint": "Reserve IPs stay on the server, but nothing is checked, added or swapped until a key is saved again.",
+          "hint": "Create a machine user in ArvanCloud with access only to this server and this domain, and paste its key. The panel stores it encrypted and never shows it again."
+        },
+        "binding": {
+          "title": "Server and DNS record",
+          "detect": "Find on ArvanCloud",
+          "detectHint": "Finds the Arvan server that owns {ip} and the DNS record pointing at it.",
+          "zone": "Zone",
+          "server": "Server",
+          "record": "DNS record",
+          "notBound": "Not found yet. Save a key, then press “Find on ArvanCloud”.",
+          "noRecord": "No DNS record is bound, so a swap moves no name and customers stay on the old IP.",
+          "recordElsewhere": "The record points at {ip}, not at the active IP.",
+          "pickRecord": "Record customers use",
+          "pickRecordHint": "Several records point at this IP. Pick the one in customers’ configs, then save the settings."
+        },
+        "settings": {
+          "title": "Settings",
+          "reserveTarget": "Reserve IPs to keep",
+          "reserveTargetHint": "Each reserve costs about 468,000 toman a month. A server takes at most 4 IPs, so at most 3 reserves.",
+          "autoSwap": "Swap automatically",
+          "autoSwapHint": "After about 3 failed checks a minute apart, moves to a healthy reserve. With no reserve it takes a fresh IP from Arvan, tests it, moves to it and releases the broken one.",
+          "dailySwapAt": "Swap every day at",
+          "dailySwapAtHint": "HH:MM in the panel’s time zone. Empty turns it off.",
+          "save": "Save settings"
+        },
+        "prepare": {
+          "title": "Server routing",
+          "button": "Prepare server",
+          "done": "Prepared",
+          "notDone": "Not prepared",
+          "hint": "Installs per-IP routing on the server, so a newly added IP never cuts the active one. Needed once, before adding reserves or swapping."
+        },
+        "ips": {
+          "title": "IPs",
+          "ip": "IP",
+          "status": "Status",
+          "iran": "From Iran",
+          "lastCheck": "Last check",
+          "error": "Error",
+          "active": "Active",
+          "healthy": "Healthy",
+          "unhealthy": "Not answering",
+          "unchecked": "Not checked yet",
+          "testing": "Testing",
+          "dead": "Dead",
+          "fails": "{count} failed checks",
+          "swapTo": "Swap to this IP",
+          "release": "Release this IP",
+          "refill": "Add reserves now",
+          "testAll": "Test all",
+          "swapNow": "Swap now",
+          "needsPrepare": "Prepare the server before adding reserves or swapping.",
+          "confirmSwapTo": "Make {ip} the active IP?",
+          "confirmSwapNow": "Swap the active IP now?",
+          "confirmSwapHint": "The DNS record moves to the new IP and the panel re-dials the tunnel. Customers reconnect within about two minutes.",
+          "confirmRelease": "Release {ip}?",
+          "confirmReleaseHint": "The IP goes back to ArvanCloud for good and cannot be taken back.",
+          "empty": "No IPs yet",
+          "addsToday": "IPs added today: {count}"
+        },
+        "activity": {
+          "busy": "In progress: {action}",
+          "lastAction": "Last action",
+          "lastError": "Last error",
+          "lastSwap": "Last swap"
+        },
+        "busyLabels": {
+          "detect": "finding the server",
+          "prepare": "preparing the server",
+          "refill": "adding reserve IPs",
+          "test": "testing the IPs",
+          "swap": "swapping the active IP",
+          "release": "releasing an IP"
+        },
+        "errors": {
+          "reserveTarget": "Enter a whole number from 0 to 3.",
+          "dailySwapAt": "Use HH:MM, such as 04:30, or leave it empty."
+        },
+        "toasts": {
+          "key": "Save ArvanCloud key",
+          "keyClear": "Remove ArvanCloud key",
+          "view": "Read ArvanCloud state",
+          "detect": "Find on ArvanCloud",
+          "save": "Save ArvanCloud settings",
+          "prepare": "Prepare server",
+          "refill": "Add reserve IPs",
+          "test": "Test IPs",
+          "swap": "Swap active IP",
+          "release": "Release IP"
+        }
+      }
+    },
+    "standby": {
+      "refused": "This panel is on standby; make it the main panel first.",
+      "toasts": {
+        "get": "Standby state",
+        "set": "Change standby state"
+      },
+      "banner": {
+        "title": "This panel is on standby",
+        "desc": "Xray, the inbounds and the cisco and OpenVPN servers run here, but the exit and entry server tunnels, the ArvanCloud job, certificate renewal, node jobs, WARP rotation, the bots and alarms are off so it does not clash with the main panel.",
+        "open": "Open panel copies"
+      },
+      "thisPanel": "This panel",
+      "tagMain": "Main",
+      "tagStandby": "Standby",
+      "mainDesc": "This is the main panel: the exit and entry server tunnels, scheduled jobs and the bots run here.",
+      "standbyDesc": "This panel is a stand-in. Make it the main one when the main panel is lost or retired.",
+      "makeMain": "Make this panel the main one",
+      "makeMainConfirm": "Make this panel the main one?",
+      "makeMainConfirmDesc": "Put the other panel on standby first, or use Make main from the other panel's copies list instead. Two main panels fight over the same exit and entry servers and bots.",
+      "goStandby": "Put this panel on standby",
+      "goStandbyConfirm": "Put this panel on standby?",
+      "goStandbyConfirmDesc": "The exit and entry server tunnels go down here, and the ArvanCloud job, certificate renewal, node jobs, WARP rotation, the bots and alarms stop. Xray and the inbounds keep running. Make another panel the main one, or customers whose traffic goes through those servers lose their connection."
+    },
+    "clones": {
+      "intro": "A copy is this panel installed on another server with all of its data, kept on standby to take over if this server is lost.",
+      "never": "Never",
+      "add": {
+        "title": "Copy to a new server",
+        "hint": "The current panel is not changed. The new server gets the latest release of the panel, or this panel's own build when it is newer, then this panel's full backup, and starts on standby. The password is used once to install the panel's own SSH key and is never stored.",
+        "submit": "Copy this panel"
+      },
+      "fields": {
+        "address": "Server IP",
+        "sshPort": "SSH port",
+        "sshUser": "SSH user",
+        "password": "SSH password"
+      },
+      "errors": {
+        "address": "Enter the new server's IP address.",
+        "sshPort": "Enter a port between 1 and 65535.",
+        "sshUser": "Enter the SSH user.",
+        "password": "Enter the SSH password."
+      },
+      "list": {
+        "title": "Copies",
+        "empty": "No copies yet"
+      },
+      "cols": {
+        "address": "Server",
+        "status": "Status",
+        "step": "Step",
+        "mode": "Installed",
+        "version": "Version",
+        "lastSync": "Last sync",
+        "lastSeen": "Last checked",
+        "lastError": "Last error"
+      },
+      "status": {
+        "pending": "Waiting",
+        "installing": "Installing",
+        "standby": "Standby",
+        "main": "Main",
+        "error": "Error"
+      },
+      "mode": {
+        "release": "Latest release",
+        "copied": "Copied this build"
+      },
+      "actions": {
+        "check": "Check",
+        "checkHint": "Ask the copy whether its panel is running and on standby.",
+        "sync": "Sync",
+        "syncHint": "Send this panel's current data to the copy again; it stays on standby.",
+        "promote": "Make main",
+        "remove": "Remove",
+        "removeHint": "Only forgets the copy; the server is not touched."
+      },
+      "promoteConfirm": "Make {address} the main panel?",
+      "promoteConfirmDesc": "The copy is synced once more and becomes the main panel, then this panel goes on standby. Remember to point the panel and subscription domains at {address}.",
+      "removeConfirm": "Forget the copy on {address}?",
+      "removeConfirmDesc": "Only this row and its SSH key are removed. The server and the panel on it are not touched.",
+      "toasts": {
+        "list": "Panel copies",
+        "add": "Copy the panel",
+        "sync": "Sync the copy",
+        "check": "Check the copy",
+        "promote": "Make the copy main",
+        "delete": "Remove the copy"
       }
     }
   },

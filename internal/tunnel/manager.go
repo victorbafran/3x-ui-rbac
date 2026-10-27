@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
@@ -149,6 +150,7 @@ func (m *Manager) Ensure(p Pair) error {
 	}
 
 	proc := sidecar.New(binary, "tunnel "+key, "-c", path)
+	proc.SetNoise(acmePortNoise...)
 	if err := proc.Start(); err != nil {
 		return fmt.Errorf("start the tunnel client: %w", err)
 	}
@@ -156,6 +158,16 @@ func (m *Manager) Ensure(p Pair) error {
 	logger.Infof("tunnel: %s now dialling %s:%d over %s", key, p.FrontAddress, p.TunnelPort, p.Tool.norm())
 	return nil
 }
+
+// acmePortNoise folds BackPack's six-line refusal for a scanner reaching
+// ACMEPort between issuances; the same refusal for any other port is a real fault.
+var acmePortNoise = []sidecar.NoiseRule{{
+	Kind: fmt.Sprintf("nothing on :%d", ACMEPort),
+	Line: regexp.MustCompile(`\[ERROR\] nothing is listening on 127\.0\.0\.1:` + strconv.Itoa(ACMEPort) + ` on THIS server\.$`),
+	Continuation: regexp.MustCompile(`^(The tunnel delivered the connection correctly|service being forwarded to\. Either it is not running|` +
+		`to a different address \(many panels bind a public IP|Check with:\s+ss -tlnp \| grep :?` + strconv.Itoa(ACMEPort) + `$|` +
+		`\(repeats are suppressed for \d+s\)$)`),
+}}
 
 // ownedBy is whether a leg's key belongs to tunnel id.
 func ownedBy(key string, id int) bool {

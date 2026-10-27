@@ -583,6 +583,19 @@ export const sections: readonly Section[] = [
       },
       {
         method: 'GET',
+        path: '/panel/api/server/standby',
+        summary:
+          'Whether this panel is on standby: {"standby": true} or false. A standby panel runs the web panel, Xray, the inbounds and the cisco and OpenVPN servers, but none of the work that would clash with the main panel: no relay, entry or exit tunnels, no ArvanCloud job, no certificate renewal, no node jobs, no WARP rotation, no Telegram or Discord bot with their reports and backups, no alarm notifiers and no bans sent to entry servers. Relay and ArvanCloud actions, node pushes and issueCert are refused while it is. The state is a marker file beside the database, so a restored backup never carries it.',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/server/standby',
+        summary:
+          'Put this panel on standby (true) or make it the main panel (false). Going on standby takes this panel\u2019s relay tunnels down first; becoming main starts Xray when it is not running. About a second later the panel process restarts so its jobs and bots read the new state; Xray and the inbounds keep running. Two main panels fight over the same relays, entry servers and bots, so put the other panel on standby first, or use promote from the panel that holds the copy.',
+        body: '{\n  "standby": true\n}',
+      },
+      {
+        method: 'GET',
         path: '/panel/api/server/getConfigJson',
         summary: 'Return the assembled Xray config that\u2019s currently running on this host.',
         response:
@@ -1783,6 +1796,121 @@ export const sections: readonly Section[] = [
         path: '/panel/api/relays/probe/:id',
         summary:
           'Ask the server what the internet gives it: where the address is, and which of the services customers ask for will answer it. For an entry server it also reads the server’s IPv6 when address6 is empty and the probe got onto the server, then dials address6 from the panel, checks publicName6’s DNS records when it is set, and records the outcome in address6Error; a known address6 is dialled even when SSH failed.',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/relays/arvan/key',
+        summary:
+          'Whether an ArvanCloud API key is saved (configured) and whether the panel can still decrypt it (readable). The key itself is never returned. It is stored encrypted with a key file beside the database, so a database-only backup carries only ciphertext; readable is false when that file is missing, and the key has to be entered again.',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/relays/arvan/key',
+        summary:
+          'Save the ArvanCloud API key, exactly as ArvanCloud shows it ("apikey " is added when missing). The key is checked by listing the regions before it is stored; a key without permission is refused with ArvanCloud’s own message. A machine-user key limited to the entry server and its DNS domain is enough.',
+        body: '{\n  "key": "apikey 00000000-0000-0000-0000-000000000000"\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/relays/arvan/key/clear',
+        summary:
+          'Forget the ArvanCloud API key. Reserve IPs stay on their servers, but nothing is checked, added or swapped until a key is saved again.',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/relays/arvan/front/:id',
+        summary:
+          'The ArvanCloud state of an entry server: its Arvan zone and server, the DNS record bound to it (domain, recordName, recordId and the IP the record holds now), the active IP (the relay’s address) and whether its last check passed, the settings (reserveTarget 0–3, autoSwap, dailySwapAt as "HH:MM" or ""), whether the server is prepared, the reserve IPs with their status ("testing", "healthy" or "dead"), the Iranian check-host nodes that reached each, and busy, the action running now ("" when none).',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/relays/arvan/front/:id/detect',
+        summary:
+          'Find the ArvanCloud server that owns the entry server’s address, in every zone, and the DNS A records pointing at it. One record, or the one named by publicName, is bound at once; when several fit they come back as candidates and the save endpoint binds the one picked. Returns the state as the GET does.',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/relays/arvan/front/:id/save',
+        summary:
+          'Save the DNS record to move on a swap and the reserve settings. reserveTarget is how many tested reserve IPs to keep (0–3: a server takes at most four IPs, and each costs money every hour it is held). autoSwap moves to a healthy reserve after three failed checks a minute apart; dailySwapAt swaps once a day at that time in the panel’s time zone ("" turns it off). Returns the state as the GET does.',
+        body: '{\n  "domain": "example.ir",\n  "recordName": "tun",\n  "reserveTarget": 1,\n  "autoSwap": true,\n  "dailySwapAt": "04:30"\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/relays/arvan/front/:id/prepare',
+        summary:
+          'Install per-IP routing on the entry server over SSH, so an IP added later never takes the active IP’s replies or cuts it off; the active IP keeps the main default route. Needed once before reserves are added. Returns at once; poll the GET for busy and prepared.',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/relays/arvan/front/:id/refill',
+        summary:
+          'Add reserve IPs until reserveTarget is reached, never past four IPs on the server. Each new IP is tested from the panel and from Iranian check-host nodes; one that does not answer is released at once. Requires a prepared server. Returns at once.',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/relays/arvan/front/:id/test',
+        summary: 'Test the active IP and every reserve again. Returns at once.',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/relays/arvan/front/:id/swap',
+        summary:
+          'Make a reserve the active IP: the routing on the server moves to it, the DNS record is pointed at it, the relay’s address changes and the panel re-dials the tunnel. Without ip the healthiest reserve is used. The target is tested first and a dead one aborts the swap. The old IP is kept as a reserve when it is healthy and a reserve is still wanted, and released otherwise. Returns at once.',
+        body: '{\n  "ip": "203.0.113.20"\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/relays/arvan/front/:id/release',
+        summary:
+          'Give a reserve IP back to ArvanCloud for good. The active IP is refused. Returns at once.',
+        body: '{\n  "ip": "203.0.113.20"\n}',
+      },
+    ],
+  },
+
+  {
+    id: 'clones',
+    title: 'Panel copies',
+    description:
+      'Copies of this panel on other servers, each a full, normal install of the fork\u2019s latest release with this panel\u2019s full backup restored onto it, started on standby (see GET /panel/api/server/standby) so it can take over when this panel is lost. When this panel is newer than that release, or the same release with a different binary, its own binary is copied over the installed one. Copying never changes this panel. The SSH password is used once to install a key of the panel\u2019s own, kept with the relay keys, and is never stored. Super admin only. All endpoints under /panel/api/clones.',
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/panel/api/clones/list',
+        summary:
+          'Every copy: address, sshPort, sshUser, status ("pending", "installing", "standby", "main" or "error"), step (what is running now, "" when nothing), mode ("release" when the latest release was installed, "copied" when this panel\u2019s own build was put over it), version, lastError, and lastSeen, lastSync and createdAt as Unix seconds.',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/clones/add',
+        summary:
+          'Copy this panel to a new server. Returns at once while the work runs behind it; poll the list for step and status. The panel installs its own SSH key, checks the server (same CPU architecture, Debian or Ubuntu with systemd, at least 1.5 GB free, no panel database there yet), installs the fork\u2019s latest release non-interactively with the extra packages this server has, puts this panel\u2019s binary over it when this one is newer, restores this panel\u2019s full backup, sets up fail2ban when this server runs it, and starts the copy on standby. Refused for an address that is already a copy, and while this panel is on standby.',
+        body: '{\n  "address": "203.0.113.10",\n  "sshPort": 22,\n  "sshUser": "root",\n  "password": "..."\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/clones/sync/:id',
+        summary:
+          'Send this panel\u2019s current full backup to a copy and restore it there, first putting this panel\u2019s binary over the copy\u2019s when this one is not older; the copy stays on standby. Returns at once; poll the list for step. Refused for a copy that never finished installing or has become the main panel, and while this panel is on standby.',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/clones/check/:id',
+        summary:
+          'Ask the copy over SSH whether its panel is running, whether it is on standby and which version it runs, and record the answer in status and lastSeen. Allowed while this panel is on standby.',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/clones/promote/:id',
+        summary:
+          'Make a copy the main panel: sync it once more, take it off standby, check that it came up, then put this panel on standby. If the copy does not come up it is put back on standby and this panel stays main. Returns at once; poll the list for step. The panel and subscription domains still point at this server; move them to the copy\u2019s address. Refused as sync is.',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/clones/del/:id',
+        summary:
+          'Forget a copy: its row and its SSH key are removed. The server and the panel on it are not touched.',
       },
     ],
   },

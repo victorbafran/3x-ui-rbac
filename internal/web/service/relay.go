@@ -19,6 +19,9 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/ocserv"
 	"github.com/mhsanaei/3x-ui/v3/internal/relay"
 	"github.com/mhsanaei/3x-ui/v3/internal/tunnel"
+	"github.com/mhsanaei/3x-ui/v3/internal/web/global"
+
+	"gorm.io/gorm"
 )
 
 // A relay is a plain server in another country that a cisco inbound's traffic
@@ -70,6 +73,10 @@ type RelayView struct {
 	// ProxyPorts are the forwarded ports whose service wants the customer's
 	// real address; only a BackPack front carries them.
 	ProxyPorts []int `json:"proxyPorts"`
+	// RateIn and RateOut are a BackPack front's customer upload and download
+	// speed in bytes a second, from its last two readings; 0 once those are stale.
+	RateIn  float64 `json:"rateIn"`
+	RateOut float64 `json:"rateOut"`
 }
 
 // RelayRequest is what the operator fills in. Password and PrivateKey are
@@ -169,6 +176,7 @@ func (s *RelayService) frontHealth(v *RelayView) {
 		v.ForwardedPorts = plain
 		v.ProxyPorts = proxied
 	}
+	v.RateIn, v.RateOut = frontSpeed(v.Id, time.Now())
 }
 
 // usage maps an interface name to the inbounds whose countries point at it.
@@ -245,6 +253,9 @@ func appendOnce(list []string, v string) []string {
 // an operator who has just typed an address should not watch a spinner for
 // four minutes wondering whether the panel has hung.
 func (s *RelayService) Add(req RelayRequest) (*model.Relay, error) {
+	if global.IsStandby() {
+		return nil, global.ErrStandby
+	}
 	r, err := s.rowFrom(req, nil)
 	if err != nil {
 		return nil, err
@@ -298,6 +309,9 @@ func (s *RelayService) Add(req RelayRequest) (*model.Relay, error) {
 // enrollment; without them the stored key is kept and the tunnel is simply
 // rebuilt wherever the address or port moved.
 func (s *RelayService) Update(id int, req RelayRequest) error {
+	if global.IsStandby() {
+		return global.ErrStandby
+	}
 	var existing model.Relay
 	if err := database.GetDB().First(&existing, id).Error; err != nil {
 		return err
@@ -701,6 +715,13 @@ func (s *RelayService) frontForwardedPorts(tunnelPort, secondTunnelPort, sshPort
 		}
 	}
 	var settings SettingService
+	// the subscription server too, so a sub name pointed at a front's IP
+	// reaches it where this panel's own IP is filtered
+	if on, _ := settings.GetSubEnable(); on {
+		if subPort, err := settings.GetSubPort(); err == nil && subPort > 0 {
+			rows = append(rows, tunnel.Inbound{Port: subPort, Enabled: true, Local: true})
+		}
+	}
 	panelPort, _ := settings.GetPort()
 	reserved := tunnel.Reserved{
 		PanelPort:        panelPort,
@@ -745,6 +766,9 @@ func (s *RelayService) mark(id int, status, lastError string) {
 // disabled relay has its tunnel taken down here but keeps its key, so turning
 // it back on does not ask the operator for a password again.
 func (s *RelayService) SetEnable(id int, enable bool) error {
+	if global.IsStandby() {
+		return global.ErrStandby
+	}
 	var r model.Relay
 	if err := database.GetDB().First(&r, id).Error; err != nil {
 		return err
@@ -766,6 +790,10 @@ func (s *RelayService) SetEnable(id int, enable bool) error {
 // refuses while a cisco inbound still offers it as a country: the alternative
 // is a country that stays in every customer's dropdown and leads nowhere.
 func (s *RelayService) Delete(id int) error {
+	// A copy deleting a relay would tear down the main panel's tunnel on the far end.
+	if global.IsStandby() {
+		return global.ErrStandby
+	}
 	var r model.Relay
 	if err := database.GetDB().First(&r, id).Error; err != nil {
 		return err
@@ -777,6 +805,7 @@ func (s *RelayService) Delete(id int) error {
 		// The panel's own end first, so it stops dialling a machine that is
 		// about to lose its tunnel. Then the far end, and the row.
 		tunnel.GetManager().Remove(r.Id)
+		tunnel.RemoveFrontMetrics(r.Id)
 		if creds, cerr := frontCreds(r); cerr == nil {
 			if err := tunnel.Teardown(ctx, tunnel.Front{Pair: tunnel.Pair{Id: r.Id, Tool: frontTool(r)}, Credentials: creds}); err != nil {
 				// The box may be gone already — often why it is being removed.
@@ -785,7 +814,13 @@ func (s *RelayService) Delete(id int) error {
 		} else {
 			logger.Warningf("front %s: cannot reach it to tear the tunnel down: %v", r.Name, cerr)
 		}
-		return database.GetDB().Delete(&model.Relay{}, id).Error
+		// Its Arvan rows go with it, or a later relay reusing the id inherits them.
+		return database.GetDB().Transaction(func(tx *gorm.DB) error {
+			if err := deleteArvanRows(tx, id); err != nil {
+				return err
+			}
+			return tx.Delete(&model.Relay{}, id).Error
+		})
 	}
 
 	if used := s.usage()[relay.InterfaceName(r.Id)]; len(used) > 0 {
@@ -808,6 +843,9 @@ func (s *RelayService) Delete(id int) error {
 // guessed from the address: the same request from two hosts gets two
 // different answers.
 func (s *RelayService) Probe(id int) (relay.Reachability, error) {
+	if global.IsStandby() {
+		return relay.Reachability{}, global.ErrStandby
+	}
 	var r model.Relay
 	if err := database.GetDB().First(&r, id).Error; err != nil {
 		return relay.Reachability{}, err
@@ -880,6 +918,15 @@ func (s *RelayService) ensureXrayExit(r model.Relay) {
 	}
 }
 
+// StandDown takes this panel's own end of every tunnel down, here only: the far
+// ends stay as they are, serving the main panel, which dials the same fronts and exits.
+func (s *RelayService) StandDown() {
+	tunnel.GetManager().Reconcile(nil)
+	for _, id := range relay.LocalInterfaceIDs() {
+		relay.DownOrphan(id)
+	}
+}
+
 // downOrphans takes down any tunnel this panel brought up for a relay that no
 // longer exists; a delete racing a save once left one up for days.
 func (s *RelayService) downOrphans() {
@@ -949,6 +996,10 @@ var banOnFront = tunnel.Ban
 // BanOnFronts cuts addresses off at every enabled entry server for d: a customer
 // behind one connects there, and this panel's firewall never sees them.
 func (s *RelayService) BanOnFronts(ips []string, d time.Duration) {
+	// The fronts serve the main panel; a copy never reaches into them over SSH.
+	if global.IsStandby() {
+		return
+	}
 	var fronts []model.Relay
 	if err := database.GetDB().Where("enabled = ? AND role = ?", true, model.RelayFront).
 		Find(&fronts).Error; err != nil {

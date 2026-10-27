@@ -202,6 +202,7 @@ var defaultValueMap = map[string]string{
 	"warpUpdateInterval":          "0",
 	"nord":                        "",
 	"pia":                         "",
+	"arvanApiKey":                 "",
 	"externalTrafficInformEnable": "false",
 	"externalTrafficInformURI":    "",
 	"restartXrayOnClientDisable":  "true",
@@ -1333,6 +1334,15 @@ func (s *SettingService) GetPia() (string, error) {
 
 func (s *SettingService) SetPia(data string) error {
 	return s.setString("pia", data)
+}
+
+// GetArvanApiKey is the sealed ArvanCloud key; ArvanService opens it.
+func (s *SettingService) GetArvanApiKey() (string, error) {
+	return s.getString("arvanApiKey")
+}
+
+func (s *SettingService) SetArvanApiKey(sealed string) error {
+	return s.setString("arvanApiKey", sealed)
 }
 
 func (s *SettingService) GetExternalTrafficInformEnable() (bool, error) {

@@ -49,6 +49,10 @@ const relays: Relay[] = [
     address6: '',
     ipFamily: '',
     address6Error: '',
+    trafficIn: 0,
+    trafficOut: 0,
+    rateIn: 0,
+    rateOut: 0,
   },
   {
     id: 2,
@@ -85,6 +89,10 @@ const relays: Relay[] = [
     address6: '',
     ipFamily: '',
     address6Error: '',
+    trafficIn: 0,
+    trafficOut: 0,
+    rateIn: 0,
+    rateOut: 0,
   },
 ];
 
@@ -246,6 +254,43 @@ describe('the exit servers page', () => {
     expect(table.getByText('Exit')).toBeTruthy();
     expect(document.body.textContent).toContain('Forwards 1194, 10434, 41330');
     expect(document.body.textContent).toContain('tcp:3080');
+    cleanup();
+  });
+
+  // What customers moved through a BackPack front, with the speed under it only
+  // while it has one; a Backhaul front counts nothing, so its row stays ports only.
+  it('shows what customers moved through an entry server, and how fast right now', async () => {
+    rows = [
+      {
+        ...front,
+        tunnel: 'backpack',
+        trafficOut: 699355553,
+        trafficIn: 75264133,
+        rateOut: 1572864,
+        rateIn: 51200,
+      },
+      { ...front, id: 4, name: 'iran-idle', tunnel: 'backpack', trafficOut: 2048 },
+      { ...front, id: 5, name: 'iran-bh' },
+    ];
+    renderWithProviders(
+      <MemoryRouter>
+        <RelaysPage />
+      </MemoryRouter>,
+    );
+    const row = (id: number) => document.querySelector(`tr[data-row-key="${id}"]`) as HTMLElement;
+    expect(row(3).textContent).toContain('↓ 667 MB · ↑ 72 MB');
+    expect(row(3).textContent).toContain('↓ 1.5 MB/s · ↑ 50 KB/s');
+    expect(row(3).textContent).toContain('Forwards 1194, 10434, 41330');
+    expect(row(4).textContent).toContain('↓ 2.0 KB · ↑ 0');
+    expect(row(4).textContent).not.toContain('/s');
+    expect(row(5).textContent).not.toContain('↓');
+    expect(row(5).textContent).toContain('Forwards 1194, 10434, 41330');
+    fireEvent.mouseEnter(within(row(3)).getByText('↓ 667 MB · ↑ 72 MB'));
+    await waitFor(() =>
+      expect(document.body.textContent).toContain(
+        'Customer traffic through this entry server since it was added',
+      ),
+    );
     cleanup();
   });
 

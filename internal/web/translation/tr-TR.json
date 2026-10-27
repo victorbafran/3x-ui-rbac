@@ -145,7 +145,8 @@
     "pinSidebar": "Kenar çubuğunu sabitle",
     "unpinSidebar": "Kenar çubuğu sabitlemesini kaldır",
     "subFormats": "Abonelik Formatları",
-    "relays": "Çıkış sunucuları"
+    "relays": "Çıkış sunucuları",
+    "copies": "Panel kopyaları"
   },
   "pages": {
     "login": {
@@ -2734,6 +2735,7 @@
       "realIpPorts": "Gerçek IP: {ports}",
       "realIpNeedsBackpack": "Yönlendirilmiyor: {ports}. Müşterinin gerçek IP'si için BackPack giriş sunucusu gerekir.",
       "noPorts": "Henüz yönlendirilecek port yok",
+      "frontTrafficHint": "Bu giriş sunucusu eklendiğinden beri üzerinden geçen müşteri trafiği: ↓ müşterilerin indirdikleri, ↑ yükledikleri.",
       "address6Reached": "Panel bu sunucuya IPv6 üzerinden ulaştı",
       "address6Failed": "Panel bu IPv6 adresine ulaşamadı: {reason}",
       "address6Check": "Bu sunucunun IPv6 alan adını kontrol edin: {reason}",
@@ -2811,6 +2813,202 @@
         "delete": "Çıkış sunucusunu kaldırma",
         "probe": "Çıkış sunucusunu denetleme",
         "deleted": "Kaldırıldı"
+      },
+      "arvan": {
+        "open": "ArvanCloud yedek IP'leri",
+        "title": "ArvanCloud yedek IP'leri · {name}",
+        "intro": "Müşteriler IP ile değil DNS adıyla bağlanır. Geçiş bu adı aynı Arvan sunucusundaki test edilmiş bir yedek IP'ye taşır ve tüneli yeniden kurar; böylece filtrelenen bir IP yaklaşık iki dakikada geride bırakılır.",
+        "never": "hiç",
+        "key": {
+          "title": "ArvanCloud API anahtarı",
+          "input": "API anahtarı",
+          "configured": "Kayıtlı",
+          "unreadable": "Okunamıyor, yeniden girin",
+          "missing": "Ayarlanmadı",
+          "save": "Anahtarı kaydet",
+          "clear": "Anahtarı kaldır",
+          "confirmClear": "ArvanCloud anahtarı kaldırılsın mı?",
+          "confirmClearHint": "Yedek IP'ler sunucuda kalır, ancak yeni bir anahtar kaydedilene kadar hiçbir şey denetlenmez, eklenmez ya da değiştirilmez.",
+          "hint": "ArvanCloud'da yalnızca bu sunucuya ve bu alan adına erişebilen bir makine kullanıcısı oluşturun ve anahtarını yapıştırın. Panel onu şifreli saklar ve bir daha göstermez."
+        },
+        "binding": {
+          "title": "Sunucu ve DNS kaydı",
+          "detect": "ArvanCloud'da bul",
+          "detectHint": "{ip} adresinin sahibi olan Arvan sunucusunu ve ona işaret eden DNS kaydını bulur.",
+          "zone": "Bölge",
+          "server": "Sunucu",
+          "record": "DNS kaydı",
+          "notBound": "Henüz bulunmadı. Bir anahtar kaydedin, ardından “ArvanCloud'da bul” düğmesine basın.",
+          "noRecord": "Bağlı DNS kaydı yok; geçiş hiçbir adı taşımaz ve müşteriler eski IP'de kalır.",
+          "recordElsewhere": "Kayıt etkin IP'ye değil, {ip} adresine işaret ediyor.",
+          "pickRecord": "Müşterilerin kullandığı kayıt",
+          "pickRecordHint": "Bu IP'ye birden çok kayıt işaret ediyor. Müşteri yapılandırmalarında olanı seçin, ardından ayarları kaydedin."
+        },
+        "settings": {
+          "title": "Ayarlar",
+          "reserveTarget": "Tutulacak yedek IP sayısı",
+          "reserveTargetHint": "Her yedek ayda yaklaşık 468.000 tümen tutar. Bir sunucu en fazla 4 IP alır, yani en fazla 3 yedek.",
+          "autoSwap": "Otomatik geçiş",
+          "autoSwapHint": "Bir dakika arayla yaklaşık 3 başarısız denetimden sonra sağlıklı bir yedeğe geçer. Yedek yoksa Arvan'dan yeni bir IP alır, test eder, ona geçer ve bozuk olanı bırakır.",
+          "dailySwapAt": "Her gün şu saatte geçiş",
+          "dailySwapAtHint": "Panelin saat diliminde HH:MM. Boş bırakılırsa kapalıdır.",
+          "save": "Ayarları kaydet"
+        },
+        "prepare": {
+          "title": "Sunucu yönlendirmesi",
+          "button": "Sunucuyu hazırla",
+          "done": "Hazır",
+          "notDone": "Hazır değil",
+          "hint": "Sunucuya IP başına yönlendirme kurar; böylece yeni eklenen bir IP etkin IP'yi asla kesmez. Yedek eklemeden veya geçiş yapmadan önce bir kez gerekir."
+        },
+        "ips": {
+          "title": "IP'ler",
+          "ip": "IP",
+          "status": "Durum",
+          "iran": "İran'dan",
+          "lastCheck": "Son denetim",
+          "error": "Hata",
+          "active": "Etkin",
+          "healthy": "Sağlıklı",
+          "unhealthy": "Yanıt vermiyor",
+          "unchecked": "Henüz denetlenmedi",
+          "testing": "Test ediliyor",
+          "dead": "Ölü",
+          "fails": "{count} başarısız denetim",
+          "swapTo": "Bu IP'ye geç",
+          "release": "Bu IP'yi bırak",
+          "refill": "Şimdi yedek ekle",
+          "testAll": "Tümünü test et",
+          "swapNow": "Şimdi geç",
+          "needsPrepare": "Yedek eklemeden veya geçiş yapmadan önce sunucuyu hazırlayın.",
+          "confirmSwapTo": "{ip} etkin IP yapılsın mı?",
+          "confirmSwapNow": "Etkin IP şimdi değiştirilsin mi?",
+          "confirmSwapHint": "DNS kaydı yeni IP'ye taşınır ve panel tüneli yeniden kurar. Müşteriler yaklaşık iki dakika içinde yeniden bağlanır.",
+          "confirmRelease": "{ip} bırakılsın mı?",
+          "confirmReleaseHint": "IP kalıcı olarak ArvanCloud'a geri döner ve geri alınamaz.",
+          "empty": "Henüz IP yok",
+          "addsToday": "Bugün eklenen IP: {count}"
+        },
+        "activity": {
+          "busy": "Sürüyor: {action}",
+          "lastAction": "Son işlem",
+          "lastError": "Son hata",
+          "lastSwap": "Son geçiş"
+        },
+        "busyLabels": {
+          "detect": "sunucu aranıyor",
+          "prepare": "sunucu hazırlanıyor",
+          "refill": "yedek IP'ler ekleniyor",
+          "test": "IP'ler test ediliyor",
+          "swap": "etkin IP değiştiriliyor",
+          "release": "bir IP bırakılıyor"
+        },
+        "errors": {
+          "reserveTarget": "0 ile 3 arasında bir tam sayı girin.",
+          "dailySwapAt": "04:30 gibi HH:MM kullanın ya da boş bırakın."
+        },
+        "toasts": {
+          "key": "ArvanCloud anahtarını kaydetme",
+          "keyClear": "ArvanCloud anahtarını kaldırma",
+          "view": "ArvanCloud durumunu okuma",
+          "detect": "ArvanCloud'da arama",
+          "save": "ArvanCloud ayarlarını kaydetme",
+          "prepare": "Sunucuyu hazırlama",
+          "refill": "Yedek IP ekleme",
+          "test": "IP'leri test etme",
+          "swap": "Etkin IP'yi değiştirme",
+          "release": "IP'yi bırakma"
+        }
+      }
+    },
+    "standby": {
+      "refused": "Bu panel beklemede; önce onu ana panel yapın.",
+      "toasts": {
+        "get": "Bekleme durumu",
+        "set": "Bekleme durumunu değiştir"
+      },
+      "banner": {
+        "title": "Bu panel beklemede",
+        "desc": "Xray, gelen bağlantılar ve cisco ile OpenVPN sunucuları burada çalışıyor, ancak çıkış ve giriş sunucularının tünelleri, ArvanCloud görevi, sertifika yenileme, düğüm görevleri, WARP rotasyonu, botlar ve uyarılar ana panelle çakışmaması için kapalı.",
+        "open": "Panel kopyalarını aç"
+      },
+      "thisPanel": "Bu panel",
+      "tagMain": "Ana",
+      "tagStandby": "Beklemede",
+      "mainDesc": "Bu ana panel: çıkış ve giriş sunucularının tünelleri, zamanlanmış görevler ve botlar burada çalışır.",
+      "standbyDesc": "Bu panel yedektir. Ana panel kaybolduğunda veya devreden çıkarıldığında bunu ana panel yapın.",
+      "makeMain": "Bu paneli ana panel yap",
+      "makeMainConfirm": "Bu panel ana panel yapılsın mı?",
+      "makeMainConfirmDesc": "Önce diğer paneli beklemeye alın ya da bunun yerine diğer panelin kopya listesinden «Ana yap» düğmesini kullanın. İki ana panel aynı çıkış ve giriş sunucuları ve botlar için çekişir.",
+      "goStandby": "Bu paneli beklemeye al",
+      "goStandbyConfirm": "Bu panel beklemeye alınsın mı?",
+      "goStandbyConfirmDesc": "Buradaki çıkış ve giriş sunucusu tünelleri kapanır; ArvanCloud görevi, sertifika yenileme, düğüm görevleri, WARP rotasyonu, botlar ve uyarılar durur. Xray ve gelen bağlantılar çalışmaya devam eder. Başka bir paneli ana yapın, yoksa trafiği bu sunuculardan geçen müşterilerin bağlantısı kopar."
+    },
+    "clones": {
+      "intro": "Kopya, bu panelin tüm verileriyle başka bir sunucuya kurulmuş hâlidir; bu sunucu kaybolursa devralmak üzere beklemede tutulur.",
+      "never": "Hiç",
+      "add": {
+        "title": "Yeni bir sunucuya kopyala",
+        "hint": "Mevcut panel değişmez. Yeni sunucuya panelin son sürümü, daha yeniyse bu panelin kendi derlemesi kurulur; ardından bu panelin tam yedeği geri yüklenir ve kopya beklemede başlar. Parola, panelin kendi SSH anahtarını kurmak için yalnızca bir kez kullanılır ve hiçbir yerde saklanmaz.",
+        "submit": "Bu paneli kopyala"
+      },
+      "fields": {
+        "address": "Sunucu IP adresi",
+        "sshPort": "SSH bağlantı noktası",
+        "sshUser": "SSH kullanıcısı",
+        "password": "SSH parolası"
+      },
+      "errors": {
+        "address": "Yeni sunucunun IP adresini girin.",
+        "sshPort": "1 ile 65535 arasında bir bağlantı noktası girin.",
+        "sshUser": "SSH kullanıcısını girin.",
+        "password": "SSH parolasını girin."
+      },
+      "list": {
+        "title": "Kopyalar",
+        "empty": "Henüz kopya yok"
+      },
+      "cols": {
+        "address": "Sunucu",
+        "status": "Durum",
+        "step": "Adım",
+        "mode": "Kurulan",
+        "version": "Sürüm",
+        "lastSync": "Son eşitleme",
+        "lastSeen": "Son denetim",
+        "lastError": "Son hata"
+      },
+      "status": {
+        "pending": "Sırada",
+        "installing": "Kuruluyor",
+        "standby": "Beklemede",
+        "main": "Ana",
+        "error": "Hata"
+      },
+      "mode": {
+        "release": "Son sürüm",
+        "copied": "Bu derleme kopyalandı"
+      },
+      "actions": {
+        "check": "Denetle",
+        "checkHint": "Kopyaya panelinin çalışıp çalışmadığını ve beklemede olup olmadığını sorar.",
+        "sync": "Eşitle",
+        "syncHint": "Bu panelin güncel verilerini kopyaya yeniden gönderir; kopya beklemede kalır.",
+        "promote": "Ana yap",
+        "remove": "Kaldır",
+        "removeHint": "Yalnızca kopyayı unutur; sunucuya dokunulmaz."
+      },
+      "promoteConfirm": "{address} ana panel yapılsın mı?",
+      "promoteConfirmDesc": "Kopya bir kez daha eşitlenir ve ana panel olur, ardından bu panel beklemeye geçer. Panel ve abonelik alan adlarını {address} adresine yönlendirmeyi unutmayın.",
+      "removeConfirm": "{address} üzerindeki kopya unutulsun mu?",
+      "removeConfirmDesc": "Yalnızca bu satır ve SSH anahtarı silinir. Sunucuya ve üzerindeki panele dokunulmaz.",
+      "toasts": {
+        "list": "Panel kopyaları",
+        "add": "Paneli kopyala",
+        "sync": "Kopyayı eşitle",
+        "check": "Kopyayı denetle",
+        "promote": "Kopyayı ana yap",
+        "delete": "Kopyayı kaldır"
       }
     }
   },

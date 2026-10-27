@@ -3,7 +3,9 @@ package global
 
 import (
 	"context"
+	"errors"
 	"sync"
+	"sync/atomic"
 	_ "unsafe"
 
 	"github.com/robfig/cron/v3"
@@ -15,7 +17,22 @@ var (
 
 	restartHookMu sync.RWMutex
 	restartHook   func()
+
+	standby atomic.Bool
 )
+
+// ErrStandby refuses work that would clash with the main panel on a standby copy.
+var ErrStandby = errors.New("this panel is on standby; make it the main panel first")
+
+// SetStandby records whether this panel is a standby copy of another one.
+func SetStandby(on bool) {
+	standby.Store(on)
+}
+
+// IsStandby reports whether this panel is a standby copy of another one.
+func IsStandby() bool {
+	return standby.Load()
+}
 
 // WebServer interface defines methods for accessing the web server instance.
 type WebServer interface {

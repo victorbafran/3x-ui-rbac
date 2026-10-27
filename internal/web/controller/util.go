@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/entity"
+	"github.com/mhsanaei/3x-ui/v3/internal/web/global"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 
 	"github.com/gin-gonic/gin"
@@ -187,6 +189,10 @@ func jsonMsgObj(c *gin.Context, msg string, obj any, err error) {
 		ctx := requestErrorContext(c)
 		fail := I18nWeb(c, "fail")
 		errStr := err.Error()
+		// every route refused on a standby copy says so in the panel's language
+		if errors.Is(err, global.ErrStandby) {
+			errStr = I18nWeb(c, "pages.standby.refused")
+		}
 		if errStr != "" {
 			m.Msg = msg + " (" + errStr + ")"
 			logger.Warningf("%s %s %s: %v", ctx, msg, fail, err)

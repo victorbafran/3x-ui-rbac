@@ -6,6 +6,7 @@ import (
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
+	"github.com/mhsanaei/3x-ui/v3/internal/web/global"
 )
 
 type NodeEgressResolver interface {
@@ -79,6 +80,10 @@ func (m *Manager) RuntimeFor(nodeID *int) (Runtime, error) {
 		}
 		m.mu.RUnlock()
 		return m.local, nil
+	}
+	// A standby copy shares the main panel's nodes; a second master would fight it.
+	if global.IsStandby() {
+		return nil, global.ErrStandby
 	}
 	m.mu.RLock()
 	if rt, ok := m.overrides[*nodeID]; ok {

@@ -111,6 +111,12 @@ type Relay struct {
 	Country     string `json:"country"`
 	CountryCode string `json:"countryCode" gorm:"column:country_code"`
 	City        string `json:"city"`
+
+	// What customers uploaded (in) and downloaded (out) through a BackPack front
+	// since it was added; MetricsLast is its client's last reading, by leg.
+	TrafficIn   int64  `json:"trafficIn" gorm:"column:traffic_in;not null;default:0" example:"75264133"`
+	TrafficOut  int64  `json:"trafficOut" gorm:"column:traffic_out;not null;default:0" example:"699355553"`
+	MetricsLast string `json:"-" gorm:"column:metrics_last;not null;default:''"`
 }
 
 // AdminInbound hands an inbound to an admin who did not create it. Ownership

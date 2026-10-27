@@ -3,6 +3,11 @@ export const keys = {
   server: {
     status: () => ['server', 'status'] as const,
     fail2banStatus: () => ['server', 'fail2banStatus'] as const,
+    standby: () => ['server', 'standby'] as const,
+  },
+  clones: {
+    root: () => ['clones'] as const,
+    list: () => ['clones', 'list'] as const,
   },
   nodes: {
     root: () => ['nodes'] as const,
@@ -13,6 +18,11 @@ export const keys = {
     list: () => ['relays', 'list'] as const,
     options: () => ['relays', 'options'] as const,
     fronts: () => ['relays', 'fronts'] as const,
+    arvan: {
+      root: () => ['relays', 'arvan'] as const,
+      key: () => ['relays', 'arvan', 'key'] as const,
+      front: (relayId: number) => ['relays', 'arvan', 'front', relayId] as const,
+    },
   },
   admins: {
     root: () => ['admins'] as const,

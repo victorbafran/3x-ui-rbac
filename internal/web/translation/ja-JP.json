@@ -145,7 +145,8 @@
     "pinSidebar": "サイドバーを固定",
     "unpinSidebar": "サイドバーの固定を解除",
     "subFormats": "Sub Formats",
-    "relays": "出口サーバー"
+    "relays": "出口サーバー",
+    "copies": "パネルのコピー"
   },
   "pages": {
     "login": {
@@ -2734,6 +2735,7 @@
       "realIpPorts": "実IP: {ports}",
       "realIpNeedsBackpack": "転送されません: {ports}。顧客の実IPにはBackPack入口サーバーが必要です。",
       "noPorts": "転送するポートはまだありません",
+      "frontTrafficHint": "この入口サーバーを追加してからの顧客トラフィック: ↓ 顧客がダウンロードした量、↑ アップロードした量。",
       "address6Reached": "パネルは IPv6 でこのサーバーに到達できました",
       "address6Failed": "パネルはこの IPv6 アドレスに到達できませんでした: {reason}",
       "address6Check": "このサーバーの IPv6 ドメインを確認してください: {reason}",
@@ -2811,6 +2813,202 @@
         "delete": "出口サーバーの削除",
         "probe": "出口サーバーの確認",
         "deleted": "削除しました"
+      },
+      "arvan": {
+        "open": "ArvanCloud の予備 IP",
+        "title": "ArvanCloud の予備 IP · {name}",
+        "intro": "顧客は IP ではなく DNS 名で接続します。切り替えはその名前を同じ Arvan サーバー上のテスト済み予備 IP に移してトンネルを張り直すため、フィルタされた IP から約 2 分で離れられます。",
+        "never": "なし",
+        "key": {
+          "title": "ArvanCloud API キー",
+          "input": "API キー",
+          "configured": "保存済み",
+          "unreadable": "読み取れません。再入力してください",
+          "missing": "未設定",
+          "save": "キーを保存",
+          "clear": "キーを削除",
+          "confirmClear": "ArvanCloud キーを削除しますか？",
+          "confirmClearHint": "予備 IP はサーバーに残りますが、キーを再保存するまで確認・追加・切り替えは行われません。",
+          "hint": "ArvanCloud でこのサーバーとこのドメインだけにアクセスできるマシンユーザーを作成し、そのキーを貼り付けてください。パネルは暗号化して保存し、二度と表示しません。"
+        },
+        "binding": {
+          "title": "サーバーと DNS レコード",
+          "detect": "ArvanCloud で検索",
+          "detectHint": "{ip} を持つ Arvan サーバーと、それを指す DNS レコードを探します。",
+          "zone": "ゾーン",
+          "server": "サーバー",
+          "record": "DNS レコード",
+          "notBound": "まだ見つかっていません。キーを保存してから「ArvanCloud で検索」を押してください。",
+          "noRecord": "DNS レコードが紐付いていないため、切り替えても名前は移らず、顧客は古い IP のままです。",
+          "recordElsewhere": "レコードはアクティブな IP ではなく {ip} を指しています。",
+          "pickRecord": "顧客が使うレコード",
+          "pickRecordHint": "複数のレコードがこの IP を指しています。顧客の設定にあるものを選び、設定を保存してください。"
+        },
+        "settings": {
+          "title": "設定",
+          "reserveTarget": "保持する予備 IP の数",
+          "reserveTargetHint": "予備 1 つにつき月約 468,000 トマンかかります。1 台のサーバーは最大 4 IP なので、予備は最大 3 つです。",
+          "autoSwap": "自動で切り替え",
+          "autoSwapHint": "1分おきのチェックが約3回失敗すると、正常な予備IPに切り替えます。予備がない場合はArvanから新しいIPを取得してテストし、切り替えた後に壊れたIPを解放します。",
+          "dailySwapAt": "毎日の切り替え時刻",
+          "dailySwapAtHint": "パネルのタイムゾーンで HH:MM。空欄でオフ。",
+          "save": "設定を保存"
+        },
+        "prepare": {
+          "title": "サーバーのルーティング",
+          "button": "サーバーを準備",
+          "done": "準備済み",
+          "notDone": "未準備",
+          "hint": "IP ごとのルーティングをサーバーに入れ、新しく追加した IP がアクティブな IP を切断しないようにします。予備の追加や切り替えの前に一度だけ必要です。"
+        },
+        "ips": {
+          "title": "IP",
+          "ip": "IP",
+          "status": "状態",
+          "iran": "イランから",
+          "lastCheck": "最終確認",
+          "error": "エラー",
+          "active": "アクティブ",
+          "healthy": "正常",
+          "unhealthy": "応答なし",
+          "unchecked": "未確認",
+          "testing": "テスト中",
+          "dead": "不通",
+          "fails": "確認失敗 {count} 回",
+          "swapTo": "この IP に切り替え",
+          "release": "この IP を解放",
+          "refill": "今すぐ予備を追加",
+          "testAll": "すべてテスト",
+          "swapNow": "今すぐ切り替え",
+          "needsPrepare": "予備の追加や切り替えの前にサーバーを準備してください。",
+          "confirmSwapTo": "{ip} をアクティブな IP にしますか？",
+          "confirmSwapNow": "今すぐアクティブな IP を切り替えますか？",
+          "confirmSwapHint": "DNS レコードが新しい IP に移り、パネルがトンネルを張り直します。顧客は約 2 分で再接続します。",
+          "confirmRelease": "{ip} を解放しますか？",
+          "confirmReleaseHint": "IP は ArvanCloud に完全に返却され、取り戻せません。",
+          "empty": "IP はまだありません",
+          "addsToday": "今日追加した IP: {count}"
+        },
+        "activity": {
+          "busy": "実行中: {action}",
+          "lastAction": "最後の操作",
+          "lastError": "最後のエラー",
+          "lastSwap": "最後の切り替え"
+        },
+        "busyLabels": {
+          "detect": "サーバーを検索中",
+          "prepare": "サーバーを準備中",
+          "refill": "予備 IP を追加中",
+          "test": "IP をテスト中",
+          "swap": "アクティブな IP を切り替え中",
+          "release": "IP を解放中"
+        },
+        "errors": {
+          "reserveTarget": "0 から 3 の整数を入力してください。",
+          "dailySwapAt": "04:30 のように HH:MM で入力するか、空欄にしてください。"
+        },
+        "toasts": {
+          "key": "ArvanCloud キーの保存",
+          "keyClear": "ArvanCloud キーの削除",
+          "view": "ArvanCloud 状態の読み込み",
+          "detect": "ArvanCloud で検索",
+          "save": "ArvanCloud 設定の保存",
+          "prepare": "サーバーの準備",
+          "refill": "予備 IP の追加",
+          "test": "IP のテスト",
+          "swap": "アクティブな IP の切り替え",
+          "release": "IP の解放"
+        }
+      }
+    },
+    "standby": {
+      "refused": "このパネルはスタンバイ中です。先にメインパネルにしてください。",
+      "toasts": {
+        "get": "スタンバイ状態",
+        "set": "スタンバイ状態の変更"
+      },
+      "banner": {
+        "title": "このパネルはスタンバイ中です",
+        "desc": "Xray、インバウンド、cisco と OpenVPN のサーバーはここで動いていますが、出口・入口サーバーのトンネル、ArvanCloud のジョブ、証明書の更新、ノードのジョブ、WARP のローテーション、ボット、アラートはメインパネルと衝突しないよう停止しています。",
+        "open": "パネルのコピーを開く"
+      },
+      "thisPanel": "このパネル",
+      "tagMain": "メイン",
+      "tagStandby": "スタンバイ",
+      "mainDesc": "これがメインパネルです。出口・入口サーバーのトンネル、定期ジョブ、ボットはここで動いています。",
+      "standbyDesc": "このパネルは予備です。メインパネルが失われたり退役したりしたときに、これをメインにしてください。",
+      "makeMain": "このパネルをメインにする",
+      "makeMainConfirm": "このパネルをメインにしますか？",
+      "makeMainConfirmDesc": "先にもう一方のパネルをスタンバイにするか、代わりにもう一方のパネルのコピー一覧から「メインにする」を使ってください。メインパネルが2つあると、同じ出口・入口サーバーやボットを取り合います。",
+      "goStandby": "このパネルをスタンバイにする",
+      "goStandbyConfirm": "このパネルをスタンバイにしますか？",
+      "goStandbyConfirmDesc": "ここでの出口・入口サーバーのトンネルが切断され、ArvanCloud のジョブ、証明書の更新、ノードのジョブ、WARP のローテーション、ボット、アラートが止まります。Xray とインバウンドは動き続けます。別のパネルをメインにしないと、それらのサーバーを経由する顧客の接続が切れます。"
+    },
+    "clones": {
+      "intro": "コピーとは、このパネルをすべてのデータごと別のサーバーにインストールしたもので、このサーバーが失われたときに引き継げるようスタンバイで待機します。",
+      "never": "なし",
+      "add": {
+        "title": "新しいサーバーにコピー",
+        "hint": "現在のパネルは変更されません。新しいサーバーにはパネルの最新リリース（このパネルのビルドの方が新しければそのビルド）がインストールされ、このパネルの完全バックアップが復元されて、スタンバイで起動します。パスワードはパネル独自の SSH 鍵を入れるために一度だけ使われ、保存されません。",
+        "submit": "このパネルをコピー"
+      },
+      "fields": {
+        "address": "サーバーの IP",
+        "sshPort": "SSHポート",
+        "sshUser": "SSHユーザー",
+        "password": "SSHパスワード"
+      },
+      "errors": {
+        "address": "新しいサーバーの IP を入力してください。",
+        "sshPort": "1〜65535 のポートを入力してください。",
+        "sshUser": "SSHユーザーを入力してください。",
+        "password": "SSHパスワードを入力してください。"
+      },
+      "list": {
+        "title": "コピー一覧",
+        "empty": "まだコピーはありません"
+      },
+      "cols": {
+        "address": "サーバー",
+        "status": "状態",
+        "step": "ステップ",
+        "mode": "インストール内容",
+        "version": "バージョン",
+        "lastSync": "最終同期",
+        "lastSeen": "最終確認",
+        "lastError": "最後のエラー"
+      },
+      "status": {
+        "pending": "待機中",
+        "installing": "インストール中",
+        "standby": "スタンバイ",
+        "main": "メイン",
+        "error": "エラー"
+      },
+      "mode": {
+        "release": "最新リリース",
+        "copied": "このビルドをコピー"
+      },
+      "actions": {
+        "check": "確認",
+        "checkHint": "コピーのパネルが動いていてスタンバイ中かを問い合わせます。",
+        "sync": "同期",
+        "syncHint": "このパネルの現在のデータをもう一度コピーに送ります。コピーはスタンバイのままです。",
+        "promote": "メインにする",
+        "remove": "削除",
+        "removeHint": "コピーを一覧から外すだけで、サーバーには触れません。"
+      },
+      "promoteConfirm": "{address} をメインパネルにしますか？",
+      "promoteConfirmDesc": "コピーをもう一度同期してメインパネルにし、その後このパネルをスタンバイにします。パネルとサブスクリプションのドメインを {address} に向け直すのを忘れないでください。",
+      "removeConfirm": "{address} のコピーを一覧から外しますか？",
+      "removeConfirmDesc": "この行とその SSH 鍵だけが削除されます。サーバーとその上のパネルには触れません。",
+      "toasts": {
+        "list": "パネルのコピー",
+        "add": "パネルのコピー作成",
+        "sync": "コピーの同期",
+        "check": "コピーの確認",
+        "promote": "コピーをメインにする",
+        "delete": "コピーの削除"
       }
     }
   },

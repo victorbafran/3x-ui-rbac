@@ -61,6 +61,26 @@ _openapi:
         updatePanel returned to tell this run apart from a stale result.
       url: '#report-the-outcome-of-the-most-recently-launched-panel-self-update-see-post-updatepanel-compare-the-returned-runid-against-the-one-updatepanel-returned-to-tell-this-run-apart-from-a-stale-result'
     - depth: 2
+      title: 'Whether this panel is on standby: {"standby": true} or false. A standby
+        panel runs the web panel, Xray, the inbounds and the cisco and OpenVPN
+        servers, but none of the work that would clash with the main panel: no
+        relay, entry or exit tunnels, no ArvanCloud job, no certificate renewal,
+        no node jobs, no WARP rotation, no Telegram or Discord bot with their
+        reports and backups, no alarm notifiers and no bans sent to entry
+        servers. Relay and ArvanCloud actions, node pushes and issueCert are
+        refused while it is. The state is a marker file beside the database, so
+        a restored backup never carries it.'
+      url: '#whether-this-panel-is-on-standby-standby-true-or-false-a-standby-panel-runs-the-web-panel-xray-the-inbounds-and-the-cisco-and-openvpn-servers-but-none-of-the-work-that-would-clash-with-the-main-panel-no-relay-entry-or-exit-tunnels-no-arvancloud-job-no-certificate-renewal-no-node-jobs-no-warp-rotation-no-telegram-or-discord-bot-with-their-reports-and-backups-no-alarm-notifiers-and-no-bans-sent-to-entry-servers-relay-and-arvancloud-actions-node-pushes-and-issuecert-are-refused-while-it-is-the-state-is-a-marker-file-beside-the-database-so-a-restored-backup-never-carries-it'
+    - depth: 2
+      title: Put this panel on standby (true) or make it the main panel (false). Going
+        on standby takes this panel’s relay tunnels down first; becoming main
+        starts Xray when it is not running. About a second later the panel
+        process restarts so its jobs and bots read the new state; Xray and the
+        inbounds keep running. Two main panels fight over the same relays, entry
+        servers and bots, so put the other panel on standby first, or use
+        promote from the panel that holds the copy.
+      url: '#put-this-panel-on-standby-true-or-make-it-the-main-panel-false-going-on-standby-takes-this-panels-relay-tunnels-down-first-becoming-main-starts-xray-when-it-is-not-running-about-a-second-later-the-panel-process-restarts-so-its-jobs-and-bots-read-the-new-state-xray-and-the-inbounds-keep-running-two-main-panels-fight-over-the-same-relays-entry-servers-and-bots-so-put-the-other-panel-on-standby-first-or-use-promote-from-the-panel-that-holds-the-copy'
+    - depth: 2
       title: Return the assembled Xray config that’s currently running on this host.
       url: '#return-the-assembled-xray-config-thats-currently-running-on-this-host'
     - depth: 2
@@ -242,6 +262,24 @@ _openapi:
           POST updatePanel). Compare the returned runId against the one
           updatePanel returned to tell this run apart from a stale result.
         id: report-the-outcome-of-the-most-recently-launched-panel-self-update-see-post-updatepanel-compare-the-returned-runid-against-the-one-updatepanel-returned-to-tell-this-run-apart-from-a-stale-result
+      - content: 'Whether this panel is on standby: {"standby": true} or false. A
+          standby panel runs the web panel, Xray, the inbounds and the cisco and
+          OpenVPN servers, but none of the work that would clash with the main
+          panel: no relay, entry or exit tunnels, no ArvanCloud job, no
+          certificate renewal, no node jobs, no WARP rotation, no Telegram or
+          Discord bot with their reports and backups, no alarm notifiers and no
+          bans sent to entry servers. Relay and ArvanCloud actions, node pushes
+          and issueCert are refused while it is. The state is a marker file
+          beside the database, so a restored backup never carries it.'
+        id: whether-this-panel-is-on-standby-standby-true-or-false-a-standby-panel-runs-the-web-panel-xray-the-inbounds-and-the-cisco-and-openvpn-servers-but-none-of-the-work-that-would-clash-with-the-main-panel-no-relay-entry-or-exit-tunnels-no-arvancloud-job-no-certificate-renewal-no-node-jobs-no-warp-rotation-no-telegram-or-discord-bot-with-their-reports-and-backups-no-alarm-notifiers-and-no-bans-sent-to-entry-servers-relay-and-arvancloud-actions-node-pushes-and-issuecert-are-refused-while-it-is-the-state-is-a-marker-file-beside-the-database-so-a-restored-backup-never-carries-it
+      - content: Put this panel on standby (true) or make it the main panel (false).
+          Going on standby takes this panel’s relay tunnels down first; becoming
+          main starts Xray when it is not running. About a second later the
+          panel process restarts so its jobs and bots read the new state; Xray
+          and the inbounds keep running. Two main panels fight over the same
+          relays, entry servers and bots, so put the other panel on standby
+          first, or use promote from the panel that holds the copy.
+        id: put-this-panel-on-standby-true-or-make-it-the-main-panel-false-going-on-standby-takes-this-panels-relay-tunnels-down-first-becoming-main-starts-xray-when-it-is-not-running-about-a-second-later-the-panel-process-restarts-so-its-jobs-and-bots-read-the-new-state-xray-and-the-inbounds-keep-running-two-main-panels-fight-over-the-same-relays-entry-servers-and-bots-so-put-the-other-panel-on-standby-first-or-use-promote-from-the-panel-that-holds-the-copy
       - content: Return the assembled Xray config that’s currently running on this host.
         id: return-the-assembled-xray-config-thats-currently-running-on-this-host
       - content: 'Stream a full database backup as an attachment: the SQLite .db file on
@@ -364,7 +402,7 @@ export default function Layout(props) {
   return (
     <>
       {props.children}
-      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/openapi.json","method":"get"},{"path":"/panel/api/server/status","method":"get"},{"path":"/panel/api/server/fail2banStatus","method":"get"},{"path":"/panel/api/server/cpuHistory/{bucket}","method":"get"},{"path":"/panel/api/server/history/{metric}/{bucket}","method":"get"},{"path":"/panel/api/server/xrayMetricsState","method":"get"},{"path":"/panel/api/server/xrayMetricsHistory/{metric}/{bucket}","method":"get"},{"path":"/panel/api/server/xrayObservatory","method":"get"},{"path":"/panel/api/server/xrayObservatoryHistory/{tag}/{bucket}","method":"get"},{"path":"/panel/api/server/getXrayVersion","method":"get"},{"path":"/panel/api/server/getPanelUpdateInfo","method":"get"},{"path":"/panel/api/server/getUpdateStatus","method":"get"},{"path":"/panel/api/server/getConfigJson","method":"get"},{"path":"/panel/api/server/getDb","method":"get"},{"path":"/panel/api/server/getMigration","method":"get"},{"path":"/panel/api/server/getNewUUID","method":"get"},{"path":"/panel/api/server/getWebCertFiles","method":"get"},{"path":"/panel/api/server/issueCert","method":"post"},{"path":"/panel/api/server/descendants","method":"get"},{"path":"/panel/api/server/getNewX25519Cert","method":"get"},{"path":"/panel/api/server/getNewmldsa65","method":"get"},{"path":"/panel/api/server/getNewmlkem768","method":"get"},{"path":"/panel/api/server/getNewVlessEnc","method":"get"},{"path":"/panel/api/server/stopXrayService","method":"post"},{"path":"/panel/api/server/restartXrayService","method":"post"},{"path":"/panel/api/server/installXray/{version}","method":"post"},{"path":"/panel/api/server/updatePanel","method":"post"},{"path":"/panel/api/server/setUpdateChannel","method":"post"},{"path":"/panel/api/server/updateGeofile","method":"post"},{"path":"/panel/api/server/updateGeofile/{fileName}","method":"post"},{"path":"/panel/api/server/logs/{count}","method":"post"},{"path":"/panel/api/server/xraylogs/{count}","method":"post"},{"path":"/panel/api/server/amneziawglogs/{count}","method":"post"},{"path":"/panel/api/server/importDB","method":"post"},{"path":"/panel/api/server/getNewEchCert","method":"post"},{"path":"/panel/api/server/getCertHash","method":"post"},{"path":"/panel/api/server/getRemoteCertHash","method":"post"},{"path":"/panel/api/server/scanRealityTarget","method":"post"},{"path":"/panel/api/server/scanRealityTargets","method":"post"},{"path":"/panel/api/server/clientIps","method":"get"},{"path":"/panel/api/server/clientIps","method":"post"}]} showTitle />
+      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/openapi.json","method":"get"},{"path":"/panel/api/server/status","method":"get"},{"path":"/panel/api/server/fail2banStatus","method":"get"},{"path":"/panel/api/server/cpuHistory/{bucket}","method":"get"},{"path":"/panel/api/server/history/{metric}/{bucket}","method":"get"},{"path":"/panel/api/server/xrayMetricsState","method":"get"},{"path":"/panel/api/server/xrayMetricsHistory/{metric}/{bucket}","method":"get"},{"path":"/panel/api/server/xrayObservatory","method":"get"},{"path":"/panel/api/server/xrayObservatoryHistory/{tag}/{bucket}","method":"get"},{"path":"/panel/api/server/getXrayVersion","method":"get"},{"path":"/panel/api/server/getPanelUpdateInfo","method":"get"},{"path":"/panel/api/server/getUpdateStatus","method":"get"},{"path":"/panel/api/server/standby","method":"get"},{"path":"/panel/api/server/standby","method":"post"},{"path":"/panel/api/server/getConfigJson","method":"get"},{"path":"/panel/api/server/getDb","method":"get"},{"path":"/panel/api/server/getMigration","method":"get"},{"path":"/panel/api/server/getNewUUID","method":"get"},{"path":"/panel/api/server/getWebCertFiles","method":"get"},{"path":"/panel/api/server/issueCert","method":"post"},{"path":"/panel/api/server/descendants","method":"get"},{"path":"/panel/api/server/getNewX25519Cert","method":"get"},{"path":"/panel/api/server/getNewmldsa65","method":"get"},{"path":"/panel/api/server/getNewmlkem768","method":"get"},{"path":"/panel/api/server/getNewVlessEnc","method":"get"},{"path":"/panel/api/server/stopXrayService","method":"post"},{"path":"/panel/api/server/restartXrayService","method":"post"},{"path":"/panel/api/server/installXray/{version}","method":"post"},{"path":"/panel/api/server/updatePanel","method":"post"},{"path":"/panel/api/server/setUpdateChannel","method":"post"},{"path":"/panel/api/server/updateGeofile","method":"post"},{"path":"/panel/api/server/updateGeofile/{fileName}","method":"post"},{"path":"/panel/api/server/logs/{count}","method":"post"},{"path":"/panel/api/server/xraylogs/{count}","method":"post"},{"path":"/panel/api/server/amneziawglogs/{count}","method":"post"},{"path":"/panel/api/server/importDB","method":"post"},{"path":"/panel/api/server/getNewEchCert","method":"post"},{"path":"/panel/api/server/getCertHash","method":"post"},{"path":"/panel/api/server/getRemoteCertHash","method":"post"},{"path":"/panel/api/server/scanRealityTarget","method":"post"},{"path":"/panel/api/server/scanRealityTargets","method":"post"},{"path":"/panel/api/server/clientIps","method":"get"},{"path":"/panel/api/server/clientIps","method":"post"}]} showTitle />
     </>
   );
 }

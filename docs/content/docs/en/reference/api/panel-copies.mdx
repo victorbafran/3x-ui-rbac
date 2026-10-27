@@ -1,0 +1,110 @@
+---
+title: Panel copies
+description: Copies of this panel on other servers, each a full, normal install
+  of the fork’s latest release with this panel’s full backup restored onto it,
+  started on standby (see GET /panel/api/server/standby) so it can take over
+  when this panel is lost. When this panel is newer than that release, or the
+  same release with a different binary, its own binary is copied over the
+  installed one. Copying never changes this panel. The SSH password is used once
+  to install a key of the panel’s own, kept with the relay keys, and is never
+  stored. Super admin only. All endpoints under /panel/api/clones.
+full: true
+_openapi:
+  preload:
+    - ./public/openapi.json
+  toc:
+    - depth: 2
+      title: 'Every copy: address, sshPort, sshUser, status ("pending", "installing",
+        "standby", "main" or "error"), step (what is running now, "" when
+        nothing), mode ("release" when the latest release was installed,
+        "copied" when this panel’s own build was put over it), version,
+        lastError, and lastSeen, lastSync and createdAt as Unix seconds.'
+      url: '#every-copy-address-sshport-sshuser-status-pending-installing-standby-main-or-error-step-what-is-running-now--when-nothing-mode-release-when-the-latest-release-was-installed-copied-when-this-panels-own-build-was-put-over-it-version-lasterror-and-lastseen-lastsync-and-createdat-as-unix-seconds'
+    - depth: 2
+      title: Copy this panel to a new server. Returns at once while the work runs
+        behind it; poll the list for step and status. The panel installs its own
+        SSH key, checks the server (same CPU architecture, Debian or Ubuntu with
+        systemd, at least 1.5 GB free, no panel database there yet), installs
+        the fork’s latest release non-interactively with the extra packages this
+        server has, puts this panel’s binary over it when this one is newer,
+        restores this panel’s full backup, sets up fail2ban when this server
+        runs it, and starts the copy on standby. Refused for an address that is
+        already a copy, and while this panel is on standby.
+      url: '#copy-this-panel-to-a-new-server-returns-at-once-while-the-work-runs-behind-it-poll-the-list-for-step-and-status-the-panel-installs-its-own-ssh-key-checks-the-server-same-cpu-architecture-debian-or-ubuntu-with-systemd-at-least-15-gb-free-no-panel-database-there-yet-installs-the-forks-latest-release-non-interactively-with-the-extra-packages-this-server-has-puts-this-panels-binary-over-it-when-this-one-is-newer-restores-this-panels-full-backup-sets-up-fail2ban-when-this-server-runs-it-and-starts-the-copy-on-standby-refused-for-an-address-that-is-already-a-copy-and-while-this-panel-is-on-standby'
+    - depth: 2
+      title: Send this panel’s current full backup to a copy and restore it there,
+        first putting this panel’s binary over the copy’s when this one is not
+        older; the copy stays on standby. Returns at once; poll the list for
+        step. Refused for a copy that never finished installing or has become
+        the main panel, and while this panel is on standby.
+      url: '#send-this-panels-current-full-backup-to-a-copy-and-restore-it-there-first-putting-this-panels-binary-over-the-copys-when-this-one-is-not-older-the-copy-stays-on-standby-returns-at-once-poll-the-list-for-step-refused-for-a-copy-that-never-finished-installing-or-has-become-the-main-panel-and-while-this-panel-is-on-standby'
+    - depth: 2
+      title: Ask the copy over SSH whether its panel is running, whether it is on
+        standby and which version it runs, and record the answer in status and
+        lastSeen. Allowed while this panel is on standby.
+      url: '#ask-the-copy-over-ssh-whether-its-panel-is-running-whether-it-is-on-standby-and-which-version-it-runs-and-record-the-answer-in-status-and-lastseen-allowed-while-this-panel-is-on-standby'
+    - depth: 2
+      title: 'Make a copy the main panel: sync it once more, take it off standby,
+        check that it came up, then put this panel on standby. If the copy does
+        not come up it is put back on standby and this panel stays main. Returns
+        at once; poll the list for step. The panel and subscription domains
+        still point at this server; move them to the copy’s address. Refused as
+        sync is.'
+      url: '#make-a-copy-the-main-panel-sync-it-once-more-take-it-off-standby-check-that-it-came-up-then-put-this-panel-on-standby-if-the-copy-does-not-come-up-it-is-put-back-on-standby-and-this-panel-stays-main-returns-at-once-poll-the-list-for-step-the-panel-and-subscription-domains-still-point-at-this-server-move-them-to-the-copys-address-refused-as-sync-is'
+    - depth: 2
+      title: 'Forget a copy: its row and its SSH key are removed. The server and the
+        panel on it are not touched.'
+      url: '#forget-a-copy-its-row-and-its-ssh-key-are-removed-the-server-and-the-panel-on-it-are-not-touched'
+  structuredData:
+    headings:
+      - content: 'Every copy: address, sshPort, sshUser, status ("pending",
+          "installing", "standby", "main" or "error"), step (what is running
+          now, "" when nothing), mode ("release" when the latest release was
+          installed, "copied" when this panel’s own build was put over it),
+          version, lastError, and lastSeen, lastSync and createdAt as Unix
+          seconds.'
+        id: every-copy-address-sshport-sshuser-status-pending-installing-standby-main-or-error-step-what-is-running-now--when-nothing-mode-release-when-the-latest-release-was-installed-copied-when-this-panels-own-build-was-put-over-it-version-lasterror-and-lastseen-lastsync-and-createdat-as-unix-seconds
+      - content: Copy this panel to a new server. Returns at once while the work runs
+          behind it; poll the list for step and status. The panel installs its
+          own SSH key, checks the server (same CPU architecture, Debian or
+          Ubuntu with systemd, at least 1.5 GB free, no panel database there
+          yet), installs the fork’s latest release non-interactively with the
+          extra packages this server has, puts this panel’s binary over it when
+          this one is newer, restores this panel’s full backup, sets up fail2ban
+          when this server runs it, and starts the copy on standby. Refused for
+          an address that is already a copy, and while this panel is on standby.
+        id: copy-this-panel-to-a-new-server-returns-at-once-while-the-work-runs-behind-it-poll-the-list-for-step-and-status-the-panel-installs-its-own-ssh-key-checks-the-server-same-cpu-architecture-debian-or-ubuntu-with-systemd-at-least-15-gb-free-no-panel-database-there-yet-installs-the-forks-latest-release-non-interactively-with-the-extra-packages-this-server-has-puts-this-panels-binary-over-it-when-this-one-is-newer-restores-this-panels-full-backup-sets-up-fail2ban-when-this-server-runs-it-and-starts-the-copy-on-standby-refused-for-an-address-that-is-already-a-copy-and-while-this-panel-is-on-standby
+      - content: Send this panel’s current full backup to a copy and restore it there,
+          first putting this panel’s binary over the copy’s when this one is not
+          older; the copy stays on standby. Returns at once; poll the list for
+          step. Refused for a copy that never finished installing or has become
+          the main panel, and while this panel is on standby.
+        id: send-this-panels-current-full-backup-to-a-copy-and-restore-it-there-first-putting-this-panels-binary-over-the-copys-when-this-one-is-not-older-the-copy-stays-on-standby-returns-at-once-poll-the-list-for-step-refused-for-a-copy-that-never-finished-installing-or-has-become-the-main-panel-and-while-this-panel-is-on-standby
+      - content: Ask the copy over SSH whether its panel is running, whether it is on
+          standby and which version it runs, and record the answer in status and
+          lastSeen. Allowed while this panel is on standby.
+        id: ask-the-copy-over-ssh-whether-its-panel-is-running-whether-it-is-on-standby-and-which-version-it-runs-and-record-the-answer-in-status-and-lastseen-allowed-while-this-panel-is-on-standby
+      - content: 'Make a copy the main panel: sync it once more, take it off standby,
+          check that it came up, then put this panel on standby. If the copy
+          does not come up it is put back on standby and this panel stays main.
+          Returns at once; poll the list for step. The panel and subscription
+          domains still point at this server; move them to the copy’s address.
+          Refused as sync is.'
+        id: make-a-copy-the-main-panel-sync-it-once-more-take-it-off-standby-check-that-it-came-up-then-put-this-panel-on-standby-if-the-copy-does-not-come-up-it-is-put-back-on-standby-and-this-panel-stays-main-returns-at-once-poll-the-list-for-step-the-panel-and-subscription-domains-still-point-at-this-server-move-them-to-the-copys-address-refused-as-sync-is
+      - content: 'Forget a copy: its row and its SSH key are removed. The server and the
+          panel on it are not touched.'
+        id: forget-a-copy-its-row-and-its-ssh-key-are-removed-the-server-and-the-panel-on-it-are-not-touched
+    contents: []
+---
+
+{/* This file was generated by Fumadocs. Do not edit this file directly. Any changes should be made by running the generation command again. */}
+
+export default function Layout(props) {
+  const { OpenAPIPage } = props.components ?? {};
+  return (
+    <>
+      {props.children}
+      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/clones/list","method":"get"},{"path":"/panel/api/clones/add","method":"post"},{"path":"/panel/api/clones/sync/{id}","method":"post"},{"path":"/panel/api/clones/check/{id}","method":"post"},{"path":"/panel/api/clones/promote/{id}","method":"post"},{"path":"/panel/api/clones/del/{id}","method":"post"}]} showTitle />
+    </>
+  );
+}

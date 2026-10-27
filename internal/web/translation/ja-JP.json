@@ -2735,6 +2735,7 @@
       "realIpPorts": "実IP: {ports}",
       "realIpNeedsBackpack": "転送されません: {ports}。顧客の実IPにはBackPack入口サーバーが必要です。",
       "noPorts": "転送するポートはまだありません",
+      "frontTrafficHint": "この入口サーバーを追加してからの顧客トラフィック: ↓ 顧客がダウンロードした量、↑ アップロードした量。",
       "address6Reached": "パネルは IPv6 でこのサーバーに到達できました",
       "address6Failed": "パネルはこの IPv6 アドレスに到達できませんでした: {reason}",
       "address6Check": "このサーバーの IPv6 ドメインを確認してください: {reason}",

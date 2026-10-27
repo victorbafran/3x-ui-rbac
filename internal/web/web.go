@@ -336,6 +336,9 @@ const (
 	cadenceCertRenew = "@every 12h"
 	// Three failed checks a minute apart trigger an automatic IP swap.
 	cadenceArvan = "@every 1m"
+	// BackPack rewrites each front's counters every 30s; reading as often keeps
+	// the speed shown on the relays page within a minute of the truth.
+	cadenceFrontTraffic = "@every 30s"
 )
 
 // mainOnlyJob skips its job while this panel is on standby, where it would
@@ -400,6 +403,9 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 
 	// Watch the fronts on ArvanCloud; no run at start, the first tick is soon enough.
 	_, _ = s.cron.AddJob(cadenceArvan, mainOnlyJob{job.NewArvanJob()})
+
+	// Count the customer traffic through each BackPack front.
+	_, _ = s.cron.AddJob(cadenceFrontTraffic, mainOnlyJob{job.NewFrontTrafficJob()})
 
 	// Renew the certificates the panel issued for its inbounds. Run once at
 	// start as well: a panel restarted more often than the cadence would

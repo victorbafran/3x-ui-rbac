@@ -2735,6 +2735,7 @@
       "realIpPorts": "IP الحقيقي: {ports}",
       "realIpNeedsBackpack": "لا يُمرَّر: {ports}. يحتاج IP العميل الحقيقي إلى خادم دخول BackPack.",
       "noPorts": "لا توجد منافذ لتمريرها بعد",
+      "frontTrafficHint": "حركة مرور العملاء عبر خادم الدخول هذا منذ إضافته: ↓ ما نزّله العملاء، ↑ ما رفعوه.",
       "address6Reached": "وصلت اللوحة إلى هذا الخادم عبر IPv6",
       "address6Failed": "تعذّر على اللوحة الوصول إلى عنوان IPv6 هذا: {reason}",
       "address6Check": "تحقّق من نطاق IPv6 لهذا الخادم: {reason}",

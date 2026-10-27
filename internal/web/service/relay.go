@@ -73,6 +73,10 @@ type RelayView struct {
 	// ProxyPorts are the forwarded ports whose service wants the customer's
 	// real address; only a BackPack front carries them.
 	ProxyPorts []int `json:"proxyPorts"`
+	// RateIn and RateOut are a BackPack front's customer upload and download
+	// speed in bytes a second, from its last two readings; 0 once those are stale.
+	RateIn  float64 `json:"rateIn"`
+	RateOut float64 `json:"rateOut"`
 }
 
 // RelayRequest is what the operator fills in. Password and PrivateKey are
@@ -172,6 +176,7 @@ func (s *RelayService) frontHealth(v *RelayView) {
 		v.ForwardedPorts = plain
 		v.ProxyPorts = proxied
 	}
+	v.RateIn, v.RateOut = frontSpeed(v.Id, time.Now())
 }
 
 // usage maps an interface name to the inbounds whose countries point at it.
@@ -793,6 +798,7 @@ func (s *RelayService) Delete(id int) error {
 		// The panel's own end first, so it stops dialling a machine that is
 		// about to lose its tunnel. Then the far end, and the row.
 		tunnel.GetManager().Remove(r.Id)
+		tunnel.RemoveFrontMetrics(r.Id)
 		if creds, cerr := frontCreds(r); cerr == nil {
 			if err := tunnel.Teardown(ctx, tunnel.Front{Pair: tunnel.Pair{Id: r.Id, Tool: frontTool(r)}, Credentials: creds}); err != nil {
 				// The box may be gone already — often why it is being removed.

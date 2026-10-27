@@ -2735,6 +2735,7 @@
       "realIpPorts": "Skutočná IP klienta: {ports}",
       "realIpNeedsBackpack": "Neprenáša sa: {ports}. Skutočná IP klienta vyžaduje vstupný server BackPack.",
       "noPorts": "Zatiaľ nie sú žiadne porty na presmerovanie",
+      "frontTrafficHint": "Prenos zákazníkov cez tento vstupný server od jeho pridania: ↓ čo zákazníci stiahli, ↑ čo odoslali.",
       "address6Reached": "Panel sa k tomuto serveru dostal cez IPv6",
       "address6Failed": "Panel sa nedostal k tejto adrese IPv6: {reason}",
       "address6Check": "Skontrolujte doménu IPv6 tohto servera: {reason}",

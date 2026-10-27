@@ -359,13 +359,24 @@ export default function RelaysPage() {
       title: t('pages.relays.columns.traffic'),
       key: 'traffic',
       render: (_: unknown, r: Relay) => {
-        // A front has no counters of its own to show. What the operator needs
-        // is which customer ports it opens, because a port missing here is a
-        // customer who cannot connect through it.
+        // Below a front's customer traffic, the ports it opens: a port missing
+        // here is a customer who cannot connect through it.
         if (r.role === 'front') {
           const realIp = r.proxyPorts.join(', ');
           return (
             <Space orientation="vertical" size={0}>
+              {r.trafficOut > 0 || r.trafficIn > 0 ? (
+                <Tooltip title={t('pages.relays.frontTrafficHint')}>
+                  <span style={{ cursor: 'help' }}>
+                    {`↓ ${bytes(r.trafficOut)} · ↑ ${bytes(r.trafficIn)}`}
+                  </span>
+                </Tooltip>
+              ) : null}
+              {r.rateOut > 0 || r.rateIn > 0 ? (
+                <span style={{ opacity: 0.6, fontSize: 12 }}>
+                  {`↓ ${bytes(r.rateOut)}/s · ↑ ${bytes(r.rateIn)}/s`}
+                </span>
+              ) : null}
               {r.forwardedPorts.length ? (
                 t('pages.relays.forwards', { ports: r.forwardedPorts.join(', ') })
               ) : (

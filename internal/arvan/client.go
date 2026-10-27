@@ -53,7 +53,7 @@ type Client struct {
 // Arvan's Authorization header needs.
 func New(key string, hc *http.Client) *Client {
 	if hc == nil {
-		hc = &http.Client{Timeout: 25 * time.Second}
+		hc = &http.Client{Timeout: 90 * time.Second}
 	}
 	return &Client{key: normaliseKey(key), base: strings.TrimRight(Base, "/"), hc: hc}
 }

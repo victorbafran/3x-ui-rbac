@@ -2735,6 +2735,7 @@
       "realIpPorts": "IP real: {ports}",
       "realIpNeedsBackpack": "No se reenvía: {ports}. La IP real del cliente necesita un servidor de entrada BackPack.",
       "noPorts": "Aún no hay puertos que reenviar",
+      "frontTrafficHint": "Tráfico de clientes a través de este servidor de entrada desde que se añadió: ↓ lo que descargaron los clientes, ↑ lo que subieron.",
       "address6Reached": "El panel llegó a este servidor por IPv6",
       "address6Failed": "El panel no pudo llegar a esta dirección IPv6: {reason}",
       "address6Check": "Revisa el dominio IPv6 de este servidor: {reason}",

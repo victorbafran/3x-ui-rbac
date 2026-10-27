@@ -2735,6 +2735,7 @@
       "realIpPorts": "Real client IP: {ports}",
       "realIpNeedsBackpack": "Not carried: {ports}. Real client IP needs a BackPack entry server.",
       "noPorts": "No ports to forward yet",
+      "frontTrafficHint": "Customer traffic through this entry server since it was added: ↓ what customers downloaded, ↑ what they uploaded.",
       "address6Reached": "The panel reached this server over IPv6",
       "address6Failed": "The panel could not reach this IPv6 address: {reason}",
       "address6Check": "Check this server’s IPv6 domain: {reason}",

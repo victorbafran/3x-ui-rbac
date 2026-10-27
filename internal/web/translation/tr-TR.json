@@ -2735,6 +2735,7 @@
       "realIpPorts": "Gerçek IP: {ports}",
       "realIpNeedsBackpack": "Yönlendirilmiyor: {ports}. Müşterinin gerçek IP'si için BackPack giriş sunucusu gerekir.",
       "noPorts": "Henüz yönlendirilecek port yok",
+      "frontTrafficHint": "Bu giriş sunucusu eklendiğinden beri üzerinden geçen müşteri trafiği: ↓ müşterilerin indirdikleri, ↑ yükledikleri.",
       "address6Reached": "Panel bu sunucuya IPv6 üzerinden ulaştı",
       "address6Failed": "Panel bu IPv6 adresine ulaşamadı: {reason}",
       "address6Check": "Bu sunucunun IPv6 alan adını kontrol edin: {reason}",

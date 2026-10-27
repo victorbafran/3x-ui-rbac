@@ -2735,6 +2735,7 @@
       "realIpPorts": "IP real: {ports}",
       "realIpNeedsBackpack": "Não encaminhado: {ports}. O IP real do cliente precisa de um servidor de entrada BackPack.",
       "noPorts": "Ainda não há portas para encaminhar",
+      "frontTrafficHint": "Tráfego dos clientes por este servidor de entrada desde que foi adicionado: ↓ o que os clientes baixaram, ↑ o que enviaram.",
       "address6Reached": "O painel alcançou este servidor por IPv6",
       "address6Failed": "O painel não conseguiu alcançar este endereço IPv6: {reason}",
       "address6Check": "Verifique o domínio IPv6 deste servidor: {reason}",

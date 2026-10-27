@@ -379,6 +379,81 @@ func liveReserves(rows []model.ArvanIP) int {
 	return n
 }
 
+// strayPorts are the public IPv4 ports on the front's Arvan server that carry
+// neither the active IP nor a tracked reserve.
+func strayPorts(ctx context.Context, c *arvan.Client, r model.Relay, f model.ArvanFront) ([]arvan.Port, error) {
+	ports, err := c.Ports(ctx, f.Zone)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := arvanReserves(r.Id)
+	if err != nil {
+		return nil, err
+	}
+	tracked := map[string]bool{r.Address: true}
+	for _, row := range rows {
+		tracked[row.IP] = true
+	}
+	var out []arvan.Port
+	for _, p := range ports {
+		if p.InstanceID != f.ServerId || len(p.IPs) == 0 || slices.ContainsFunc(p.IPs, func(ip string) bool { return tracked[ip] }) {
+			continue
+		}
+		if slices.ContainsFunc(p.IPs, func(ip string) bool { v := net.ParseIP(ip); return v != nil && v.To4() != nil }) {
+			out = append(out, p)
+		}
+	}
+	return out, nil
+}
+
+// waitStrayPort looks, for half a minute, for the IP an add whose reply was
+// lost made anyway.
+func waitStrayPort(ctx context.Context, c *arvan.Client, r model.Relay, f model.ArvanFront) (arvan.Port, bool) {
+	for range 6 {
+		select {
+		case <-ctx.Done():
+			return arvan.Port{}, false
+		case <-time.After(5 * time.Second):
+		}
+		if strays, err := strayPorts(ctx, c, r, f); err == nil && len(strays) > 0 {
+			return strays[0], true
+		}
+	}
+	return arvan.Port{}, false
+}
+
+// settleStrays keeps untracked IPs as reserves to test while the front is
+// short of its target, and gives the rest back, so no paid IP is forgotten.
+func (s *ArvanService) settleStrays(ctx context.Context, c *arvan.Client, r model.Relay, f model.ArvanFront) (string, error) {
+	strays, err := strayPorts(ctx, c, r, f)
+	if err != nil || len(strays) == 0 {
+		return "", err
+	}
+	rows, err := arvanReserves(r.Id)
+	if err != nil {
+		return "", err
+	}
+	live := liveReserves(rows)
+	var notes []string
+	for _, p := range strays {
+		ip := firstOf(p.IPs)
+		if live < f.ReserveTarget {
+			if err := database.GetDB().Create(&model.ArvanIP{RelayId: r.Id, IP: ip, PortId: p.ID, Status: ArvanIPTesting}).Error; err == nil {
+				live++
+				notes = append(notes, "kept the untracked "+ip+" as a reserve to test")
+			}
+			continue
+		}
+		if err := releasePort(ctx, c, r.Id, f.Zone, p); err != nil {
+			logger.Warningf("front %s: could not release the untracked IP %s: %v", r.Name, ip, err)
+			continue
+		}
+		logger.Infof("front %s: released %s, an IP on its Arvan server the panel had lost track of", r.Name, ip)
+		notes = append(notes, "released the untracked "+ip)
+	}
+	return strings.Join(notes, "; "), nil
+}
+
 // deleteArvanRows forgets a deleted front's binding and reserves; the IPs stay
 // on the Arvan account, since releasing them is never a side effect.
 func deleteArvanRows(tx *gorm.DB, relayId int) error {
@@ -973,7 +1048,13 @@ var errArvanNoIP = errors.New("the new port came back with no IP; it was release
 func (s *ArvanService) addOne(ctx context.Context, c *arvan.Client, r model.Relay, f model.ArvanFront, sgIDs []string, emergency bool) (string, bool, error) {
 	port, err := c.AddPublicIP(ctx, f.Zone, f.ServerId, sgIDs)
 	if err != nil {
-		return "", false, err
+		// a reply lost to a timeout does not mean Arvan made no IP
+		stray, ok := waitStrayPort(ctx, c, r, f)
+		if !ok {
+			return "", false, err
+		}
+		logger.Warningf("front %s: Arvan's reply to the add was lost (%v); it made %s, which is used", r.Name, err, firstOf(stray.IPs))
+		port = stray
 	}
 	cleanup, cancel := context.WithTimeout(context.WithoutCancel(ctx), arvanCallTimeout)
 	defer cancel()
@@ -1115,13 +1196,10 @@ func (s *ArvanService) Test(relayId int) error {
 	if global.IsStandby() {
 		return global.ErrStandby
 	}
+	// the same pass the job runs: test, give back the dead and the untracked
+	// IPs, and top the reserves up to the target
 	return s.start(relayId, "test", func(ctx context.Context) (string, error) {
-		r, err := arvanRelay(relayId)
-		if err != nil {
-			return "", err
-		}
-		activeOK, healthy, dead, err := testArvanIPs(ctx, r)
-		return testSummary(r.Address, activeOK, healthy, dead), err
+		return s.sweep(ctx, relayId)
 	})
 }
 
@@ -1497,7 +1575,8 @@ func (s *ArvanService) watchOne(st *arvanState, r model.Relay, f model.ArvanFron
 	}
 	var reserves int64
 	database.GetDB().Model(&model.ArvanIP{}).Where("relay_id = ?", r.Id).Count(&reserves)
-	if (reserves > 0 || (f.Prepared && f.ReserveTarget > 0)) && st.due(&st.lastSweep, arvanSweepEvery, now) {
+	// the sweep also runs with no reserves: it finds IPs the panel lost track of
+	if (reserves > 0 || f.Prepared) && st.due(&st.lastSweep, arvanSweepEvery, now) {
 		return "test", func(ctx context.Context) (string, error) { return s.sweep(ctx, r.Id) }
 	}
 	return "", nil
@@ -1541,6 +1620,11 @@ func (s *ArvanService) sweep(ctx context.Context, relayId int) (string, error) {
 		database.GetDB().Delete(&model.ArvanIP{}, row.Id)
 		logger.Infof("front %s: released the dead reserve %s", r.Name, row.IP)
 		summary += "; released " + row.IP
+	}
+	if strays, err := s.settleStrays(ctx, c, r, f); err != nil {
+		logger.Warningf("front %s: could not look for untracked IPs: %v", r.Name, err)
+	} else if strays != "" {
+		summary += "; " + strays
 	}
 	if !f.Prepared || f.ReserveTarget == 0 {
 		return summary, nil

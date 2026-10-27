@@ -2735,6 +2735,7 @@
       "realIpPorts": "真實 IP：{ports}",
       "realIpNeedsBackpack": "未轉送：{ports}。客戶真實 IP 需要 BackPack 入口伺服器。",
       "noPorts": "目前沒有要轉送的連接埠",
+      "frontTrafficHint": "自新增以來經過此入口伺服器的客戶流量：↓ 客戶下載的量，↑ 客戶上傳的量。",
       "address6Reached": "面板已透過 IPv6 連到這台伺服器",
       "address6Failed": "面板無法連到這個 IPv6 位址：{reason}",
       "address6Check": "請檢查這台伺服器的 IPv6 網域：{reason}",

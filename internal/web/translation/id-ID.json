@@ -2735,6 +2735,7 @@
       "realIpPorts": "IP asli: {ports}",
       "realIpNeedsBackpack": "Tidak diteruskan: {ports}. IP asli pelanggan butuh server masuk BackPack.",
       "noPorts": "Belum ada port untuk diteruskan",
+      "frontTrafficHint": "Lalu lintas pelanggan melalui server masuk ini sejak ditambahkan: ↓ yang diunduh pelanggan, ↑ yang mereka unggah.",
       "address6Reached": "Panel berhasil menjangkau server ini lewat IPv6",
       "address6Failed": "Panel tidak dapat menjangkau alamat IPv6 ini: {reason}",
       "address6Check": "Periksa domain IPv6 server ini: {reason}",

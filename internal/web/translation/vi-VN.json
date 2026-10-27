@@ -2735,6 +2735,7 @@
       "realIpPorts": "IP thật: {ports}",
       "realIpNeedsBackpack": "Không chuyển tiếp: {ports}. IP thật của khách cần máy chủ vào BackPack.",
       "noPorts": "Chưa có cổng nào để chuyển tiếp",
+      "frontTrafficHint": "Lưu lượng của khách qua máy chủ vào này kể từ khi được thêm: ↓ khách đã tải xuống, ↑ khách đã tải lên.",
       "address6Reached": "Bảng điều khiển đã tới được máy chủ này qua IPv6",
       "address6Failed": "Bảng điều khiển không tới được địa chỉ IPv6 này: {reason}",
       "address6Check": "Hãy kiểm tra tên miền IPv6 của máy chủ này: {reason}",

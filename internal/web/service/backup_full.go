@@ -31,9 +31,10 @@ var (
 func notTemp(rel string) bool { return !strings.HasSuffix(rel, ".tmp") }
 
 // backupSets is what a full backup carries beside the database: issued
-// certificates, relay SSH keys, OpenVPN and cisco keys, the node-token key.
+// certificates, relay SSH keys, OpenVPN and cisco keys, the node-token and Arvan keys.
 var backupSets = func() []fullbackup.Set {
 	tokenKey := config.GetNodeTokenKeyFile()
+	arvanKey := arvanKeyFile()
 	return []fullbackup.Set{
 		{Kind: "certs", Dir: certissue.Dir, Keep: notTemp, DirMode: 0o700},
 		{Kind: "relay-keys", Dir: relayKeyDir, Keep: notTemp, Flat: true, Private: true, DirMode: 0o700},
@@ -42,6 +43,10 @@ var backupSets = func() []fullbackup.Set {
 		{
 			Kind: "node-token", Dir: func() string { return filepath.Dir(tokenKey) },
 			Keep: func(rel string) bool { return rel == filepath.Base(tokenKey) }, Flat: true, Private: true, DirMode: 0o700,
+		},
+		{
+			Kind: "arvan-key", Dir: func() string { return filepath.Dir(arvanKey) },
+			Keep: func(rel string) bool { return rel == filepath.Base(arvanKey) }, Flat: true, Private: true, DirMode: 0o700,
 		},
 	}
 }

@@ -13,6 +13,11 @@ export const keys = {
     list: () => ['relays', 'list'] as const,
     options: () => ['relays', 'options'] as const,
     fronts: () => ['relays', 'fronts'] as const,
+    arvan: {
+      root: () => ['relays', 'arvan'] as const,
+      key: () => ['relays', 'arvan', 'key'] as const,
+      front: (relayId: number) => ['relays', 'arvan', 'front', relayId] as const,
+    },
   },
   admins: {
     root: () => ['admins'] as const,

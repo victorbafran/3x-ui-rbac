@@ -14,6 +14,7 @@ import (
 // registered super-admin only in the authz registry, like the node routes.
 type RelayController struct {
 	relayService service.RelayService
+	arvanService service.ArvanService
 }
 
 func NewRelayController(g *gin.RouterGroup) *RelayController {
@@ -32,6 +33,8 @@ func (a *RelayController) initRouter(g *gin.RouterGroup) {
 	g.POST("/del/:id", a.del)
 	g.POST("/setEnable/:id", a.setEnable)
 	g.POST("/probe/:id", a.probe)
+
+	a.initArvanRouter(g)
 }
 
 func (a *RelayController) list(c *gin.Context) {

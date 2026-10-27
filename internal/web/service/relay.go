@@ -19,6 +19,8 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/ocserv"
 	"github.com/mhsanaei/3x-ui/v3/internal/relay"
 	"github.com/mhsanaei/3x-ui/v3/internal/tunnel"
+
+	"gorm.io/gorm"
 )
 
 // A relay is a plain server in another country that a cisco inbound's traffic
@@ -785,7 +787,13 @@ func (s *RelayService) Delete(id int) error {
 		} else {
 			logger.Warningf("front %s: cannot reach it to tear the tunnel down: %v", r.Name, cerr)
 		}
-		return database.GetDB().Delete(&model.Relay{}, id).Error
+		// Its Arvan rows go with it, or a later relay reusing the id inherits them.
+		return database.GetDB().Transaction(func(tx *gorm.DB) error {
+			if err := deleteArvanRows(tx, id); err != nil {
+				return err
+			}
+			return tx.Delete(&model.Relay{}, id).Error
+		})
 	}
 
 	if used := s.usage()[relay.InterfaceName(r.Id)]; len(used) > 0 {

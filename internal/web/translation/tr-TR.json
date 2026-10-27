@@ -2811,6 +2811,112 @@
         "delete": "Çıkış sunucusunu kaldırma",
         "probe": "Çıkış sunucusunu denetleme",
         "deleted": "Kaldırıldı"
+      },
+      "arvan": {
+        "open": "ArvanCloud yedek IP'leri",
+        "title": "ArvanCloud yedek IP'leri · {name}",
+        "intro": "Müşteriler IP ile değil DNS adıyla bağlanır. Geçiş bu adı aynı Arvan sunucusundaki test edilmiş bir yedek IP'ye taşır ve tüneli yeniden kurar; böylece filtrelenen bir IP yaklaşık iki dakikada geride bırakılır.",
+        "never": "hiç",
+        "key": {
+          "title": "ArvanCloud API anahtarı",
+          "input": "API anahtarı",
+          "configured": "Kayıtlı",
+          "unreadable": "Okunamıyor, yeniden girin",
+          "missing": "Ayarlanmadı",
+          "save": "Anahtarı kaydet",
+          "clear": "Anahtarı kaldır",
+          "confirmClear": "ArvanCloud anahtarı kaldırılsın mı?",
+          "confirmClearHint": "Yedek IP'ler sunucuda kalır, ancak yeni bir anahtar kaydedilene kadar hiçbir şey denetlenmez, eklenmez ya da değiştirilmez.",
+          "hint": "ArvanCloud'da yalnızca bu sunucuya ve bu alan adına erişebilen bir makine kullanıcısı oluşturun ve anahtarını yapıştırın. Panel onu şifreli saklar ve bir daha göstermez."
+        },
+        "binding": {
+          "title": "Sunucu ve DNS kaydı",
+          "detect": "ArvanCloud'da bul",
+          "detectHint": "{ip} adresinin sahibi olan Arvan sunucusunu ve ona işaret eden DNS kaydını bulur.",
+          "zone": "Bölge",
+          "server": "Sunucu",
+          "record": "DNS kaydı",
+          "notBound": "Henüz bulunmadı. Bir anahtar kaydedin, ardından “ArvanCloud'da bul” düğmesine basın.",
+          "noRecord": "Bağlı DNS kaydı yok; geçiş hiçbir adı taşımaz ve müşteriler eski IP'de kalır.",
+          "recordElsewhere": "Kayıt etkin IP'ye değil, {ip} adresine işaret ediyor.",
+          "pickRecord": "Müşterilerin kullandığı kayıt",
+          "pickRecordHint": "Bu IP'ye birden çok kayıt işaret ediyor. Müşteri yapılandırmalarında olanı seçin, ardından ayarları kaydedin."
+        },
+        "settings": {
+          "title": "Ayarlar",
+          "reserveTarget": "Tutulacak yedek IP sayısı",
+          "reserveTargetHint": "Her yedek ayda yaklaşık 468.000 tümen tutar. Bir sunucu en fazla 4 IP alır, yani en fazla 3 yedek.",
+          "autoSwap": "Otomatik geçiş",
+          "autoSwapHint": "Bir dakika arayla yaklaşık 3 başarısız denetimden sonra sağlıklı bir yedeğe geçer. Yedek yoksa Arvan'dan yeni bir IP alır, test eder, ona geçer ve bozuk olanı bırakır.",
+          "dailySwapAt": "Her gün şu saatte geçiş",
+          "dailySwapAtHint": "Panelin saat diliminde HH:MM. Boş bırakılırsa kapalıdır.",
+          "save": "Ayarları kaydet"
+        },
+        "prepare": {
+          "title": "Sunucu yönlendirmesi",
+          "button": "Sunucuyu hazırla",
+          "done": "Hazır",
+          "notDone": "Hazır değil",
+          "hint": "Sunucuya IP başına yönlendirme kurar; böylece yeni eklenen bir IP etkin IP'yi asla kesmez. Yedek eklemeden veya geçiş yapmadan önce bir kez gerekir."
+        },
+        "ips": {
+          "title": "IP'ler",
+          "ip": "IP",
+          "status": "Durum",
+          "iran": "İran'dan",
+          "lastCheck": "Son denetim",
+          "error": "Hata",
+          "active": "Etkin",
+          "healthy": "Sağlıklı",
+          "unhealthy": "Yanıt vermiyor",
+          "unchecked": "Henüz denetlenmedi",
+          "testing": "Test ediliyor",
+          "dead": "Ölü",
+          "fails": "{count} başarısız denetim",
+          "swapTo": "Bu IP'ye geç",
+          "release": "Bu IP'yi bırak",
+          "refill": "Şimdi yedek ekle",
+          "testAll": "Tümünü test et",
+          "swapNow": "Şimdi geç",
+          "needsPrepare": "Yedek eklemeden veya geçiş yapmadan önce sunucuyu hazırlayın.",
+          "confirmSwapTo": "{ip} etkin IP yapılsın mı?",
+          "confirmSwapNow": "Etkin IP şimdi değiştirilsin mi?",
+          "confirmSwapHint": "DNS kaydı yeni IP'ye taşınır ve panel tüneli yeniden kurar. Müşteriler yaklaşık iki dakika içinde yeniden bağlanır.",
+          "confirmRelease": "{ip} bırakılsın mı?",
+          "confirmReleaseHint": "IP kalıcı olarak ArvanCloud'a geri döner ve geri alınamaz.",
+          "empty": "Henüz IP yok",
+          "addsToday": "Bugün eklenen IP: {count}"
+        },
+        "activity": {
+          "busy": "Sürüyor: {action}",
+          "lastAction": "Son işlem",
+          "lastError": "Son hata",
+          "lastSwap": "Son geçiş"
+        },
+        "busyLabels": {
+          "detect": "sunucu aranıyor",
+          "prepare": "sunucu hazırlanıyor",
+          "refill": "yedek IP'ler ekleniyor",
+          "test": "IP'ler test ediliyor",
+          "swap": "etkin IP değiştiriliyor",
+          "release": "bir IP bırakılıyor"
+        },
+        "errors": {
+          "reserveTarget": "0 ile 3 arasında bir tam sayı girin.",
+          "dailySwapAt": "04:30 gibi HH:MM kullanın ya da boş bırakın."
+        },
+        "toasts": {
+          "key": "ArvanCloud anahtarını kaydetme",
+          "keyClear": "ArvanCloud anahtarını kaldırma",
+          "view": "ArvanCloud durumunu okuma",
+          "detect": "ArvanCloud'da arama",
+          "save": "ArvanCloud ayarlarını kaydetme",
+          "prepare": "Sunucuyu hazırlama",
+          "refill": "Yedek IP ekleme",
+          "test": "IP'leri test etme",
+          "swap": "Etkin IP'yi değiştirme",
+          "release": "IP'yi bırakma"
+        }
       }
     }
   },

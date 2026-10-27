@@ -333,6 +333,8 @@ const (
 	// certificate before a customer meets an expired one, and the check is
 	// a directory read when nothing is due.
 	cadenceCertRenew = "@every 12h"
+	// Three failed checks a minute apart trigger an automatic IP swap.
+	cadenceArvan = "@every 1m"
 )
 
 // startTask schedules background jobs (Xray checks, traffic jobs, cron
@@ -383,6 +385,9 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 	relayJob := job.NewRelayJob()
 	_, _ = s.cron.AddJob(cadenceRelay, relayJob)
 	go relayJob.Run()
+
+	// Watch the fronts on ArvanCloud; no run at start, the first tick is soon enough.
+	_, _ = s.cron.AddJob(cadenceArvan, job.NewArvanJob())
 
 	// Renew the certificates the panel issued for its inbounds. Run once at
 	// start as well: a panel restarted more often than the cadence would

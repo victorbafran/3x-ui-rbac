@@ -2811,6 +2811,112 @@
         "delete": "Gỡ máy chủ lối ra",
         "probe": "Kiểm tra máy chủ lối ra",
         "deleted": "Đã gỡ"
+      },
+      "arvan": {
+        "open": "IP dự phòng trên ArvanCloud",
+        "title": "IP dự phòng trên ArvanCloud · {name}",
+        "intro": "Khách hàng kết nối bằng tên DNS, không phải bằng IP. Việc chuyển đổi đưa tên đó sang một IP dự phòng đã kiểm tra trên cùng máy chủ Arvan và kết nối lại đường hầm, nên một IP bị lọc được bỏ lại sau khoảng hai phút.",
+        "never": "chưa bao giờ",
+        "key": {
+          "title": "Khóa API ArvanCloud",
+          "input": "Khóa API",
+          "configured": "Đã lưu",
+          "unreadable": "Không đọc được, hãy nhập lại",
+          "missing": "Chưa đặt",
+          "save": "Lưu khóa",
+          "clear": "Xóa khóa",
+          "confirmClear": "Xóa khóa ArvanCloud?",
+          "confirmClearHint": "Các IP dự phòng vẫn ở trên máy chủ, nhưng không có gì được kiểm tra, thêm hay chuyển đổi cho đến khi lưu khóa mới.",
+          "hint": "Hãy tạo trong ArvanCloud một người dùng máy chỉ có quyền với máy chủ này và tên miền này, rồi dán khóa của nó. Bảng điều khiển lưu khóa ở dạng mã hóa và không bao giờ hiển thị lại."
+        },
+        "binding": {
+          "title": "Máy chủ và bản ghi DNS",
+          "detect": "Tìm trên ArvanCloud",
+          "detectHint": "Tìm máy chủ Arvan sở hữu {ip} và bản ghi DNS trỏ tới nó.",
+          "zone": "Vùng",
+          "server": "Máy chủ",
+          "record": "Bản ghi DNS",
+          "notBound": "Chưa tìm thấy. Hãy lưu khóa rồi nhấn “Tìm trên ArvanCloud”.",
+          "noRecord": "Chưa gắn bản ghi DNS nào, nên việc chuyển đổi không dời tên nào và khách hàng vẫn ở IP cũ.",
+          "recordElsewhere": "Bản ghi đang trỏ tới {ip}, không phải IP đang hoạt động.",
+          "pickRecord": "Bản ghi khách hàng dùng",
+          "pickRecordHint": "Có nhiều bản ghi trỏ tới IP này. Hãy chọn bản ghi có trong cấu hình của khách hàng, rồi lưu cài đặt."
+        },
+        "settings": {
+          "title": "Cài đặt",
+          "reserveTarget": "Số IP dự phòng cần giữ",
+          "reserveTargetHint": "Mỗi IP dự phòng tốn khoảng 468.000 toman mỗi tháng. Một máy chủ nhận tối đa 4 IP, tức là tối đa 3 IP dự phòng.",
+          "autoSwap": "Tự động chuyển đổi",
+          "autoSwapHint": "Sau khoảng 3 lần kiểm tra thất bại cách nhau một phút, chuyển sang IP dự phòng còn tốt. Nếu không có dự phòng, lấy IP mới từ Arvan, kiểm tra, chuyển sang rồi trả lại IP hỏng.",
+          "dailySwapAt": "Chuyển đổi hằng ngày lúc",
+          "dailySwapAtHint": "HH:MM theo múi giờ của bảng điều khiển. Để trống là tắt.",
+          "save": "Lưu cài đặt"
+        },
+        "prepare": {
+          "title": "Định tuyến máy chủ",
+          "button": "Chuẩn bị máy chủ",
+          "done": "Đã chuẩn bị",
+          "notDone": "Chưa chuẩn bị",
+          "hint": "Cài định tuyến theo từng IP trên máy chủ, để IP mới thêm không bao giờ cắt IP đang hoạt động. Chỉ cần một lần, trước khi thêm IP dự phòng hoặc chuyển đổi."
+        },
+        "ips": {
+          "title": "Các IP",
+          "ip": "IP",
+          "status": "Trạng thái",
+          "iran": "Từ Iran",
+          "lastCheck": "Lần kiểm tra cuối",
+          "error": "Lỗi",
+          "active": "Đang hoạt động",
+          "healthy": "Tốt",
+          "unhealthy": "Không phản hồi",
+          "unchecked": "Chưa kiểm tra",
+          "testing": "Đang kiểm tra",
+          "dead": "Chết",
+          "fails": "{count} lần kiểm tra thất bại",
+          "swapTo": "Chuyển sang IP này",
+          "release": "Trả lại IP này",
+          "refill": "Thêm IP dự phòng ngay",
+          "testAll": "Kiểm tra tất cả",
+          "swapNow": "Chuyển đổi ngay",
+          "needsPrepare": "Hãy chuẩn bị máy chủ trước khi thêm IP dự phòng hoặc chuyển đổi.",
+          "confirmSwapTo": "Đặt {ip} làm IP đang hoạt động?",
+          "confirmSwapNow": "Chuyển IP đang hoạt động ngay bây giờ?",
+          "confirmSwapHint": "Bản ghi DNS chuyển sang IP mới và bảng điều khiển kết nối lại đường hầm. Khách hàng kết nối lại trong khoảng hai phút.",
+          "confirmRelease": "Trả lại {ip}?",
+          "confirmReleaseHint": "IP được trả về ArvanCloud vĩnh viễn và không thể lấy lại.",
+          "empty": "Chưa có IP nào",
+          "addsToday": "IP đã thêm hôm nay: {count}"
+        },
+        "activity": {
+          "busy": "Đang thực hiện: {action}",
+          "lastAction": "Thao tác cuối",
+          "lastError": "Lỗi cuối",
+          "lastSwap": "Lần chuyển đổi cuối"
+        },
+        "busyLabels": {
+          "detect": "đang tìm máy chủ",
+          "prepare": "đang chuẩn bị máy chủ",
+          "refill": "đang thêm IP dự phòng",
+          "test": "đang kiểm tra các IP",
+          "swap": "đang chuyển IP hoạt động",
+          "release": "đang trả lại một IP"
+        },
+        "errors": {
+          "reserveTarget": "Nhập một số nguyên từ 0 đến 3.",
+          "dailySwapAt": "Dùng dạng HH:MM, ví dụ 04:30, hoặc để trống."
+        },
+        "toasts": {
+          "key": "Lưu khóa ArvanCloud",
+          "keyClear": "Xóa khóa ArvanCloud",
+          "view": "Đọc trạng thái ArvanCloud",
+          "detect": "Tìm trên ArvanCloud",
+          "save": "Lưu cài đặt ArvanCloud",
+          "prepare": "Chuẩn bị máy chủ",
+          "refill": "Thêm IP dự phòng",
+          "test": "Kiểm tra IP",
+          "swap": "Chuyển IP hoạt động",
+          "release": "Trả lại IP"
+        }
       }
     }
   },

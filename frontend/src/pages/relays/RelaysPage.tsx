@@ -29,6 +29,7 @@ import {
 } from 'antd';
 import {
   CheckCircleOutlined,
+  CloudServerOutlined,
   DeleteOutlined,
   EditOutlined,
   GlobalOutlined,
@@ -53,6 +54,7 @@ import {
   udpLegPort,
 } from '@/schemas/relay';
 import type { IPFamily, Reachability, Relay, RelayFormValues } from '@/schemas/relay';
+import ArvanFrontModal from './ArvanFrontModal';
 
 // A relay is a plain server the panel reaches over SSH once. An exit sits in
 // another country: WireGuard and one forwarding rule go on it, and a cisco
@@ -200,6 +202,8 @@ export default function RelaysPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Relay | null>(null);
   const [reach, setReach] = useState<{ relay: Relay; result: Reachability } | null>(null);
+  const [arvanRelayId, setArvanRelayId] = useState<number | null>(null);
+  const arvanRelay = relays.find((r) => r.id === arvanRelayId) ?? null;
   const [form] = Form.useForm<RelayFormValues>();
   const role = Form.useWatch('role', form);
   const isFront = editing ? editing.role === 'front' : role === 'front';
@@ -408,6 +412,16 @@ export default function RelaysPage() {
               onClick={() => onProbe(r)}
             />
           </Tooltip>
+          {r.role === 'front' ? (
+            <Tooltip title={t('pages.relays.arvan.open')}>
+              <Button
+                size="small"
+                icon={<CloudServerOutlined aria-hidden />}
+                aria-label={t('pages.relays.arvan.open')}
+                onClick={() => setArvanRelayId(r.id)}
+              />
+            </Tooltip>
+          ) : null}
           <Switch
             size="small"
             aria-label={t('enabled')}
@@ -776,6 +790,10 @@ export default function RelaysPage() {
           </>
         )}
       </Modal>
+
+      {arvanRelay ? (
+        <ArvanFrontModal relay={arvanRelay} onClose={() => setArvanRelayId(null)} />
+      ) : null}
     </ConfigProvider>
   );
 }

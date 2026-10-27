@@ -1784,6 +1784,75 @@ export const sections: readonly Section[] = [
         summary:
           'Ask the server what the internet gives it: where the address is, and which of the services customers ask for will answer it. For an entry server it also reads the server’s IPv6 when address6 is empty and the probe got onto the server, then dials address6 from the panel, checks publicName6’s DNS records when it is set, and records the outcome in address6Error; a known address6 is dialled even when SSH failed.',
       },
+      {
+        method: 'GET',
+        path: '/panel/api/relays/arvan/key',
+        summary:
+          'Whether an ArvanCloud API key is saved (configured) and whether the panel can still decrypt it (readable). The key itself is never returned. It is stored encrypted with a key file beside the database, so a database-only backup carries only ciphertext; readable is false when that file is missing, and the key has to be entered again.',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/relays/arvan/key',
+        summary:
+          'Save the ArvanCloud API key, exactly as ArvanCloud shows it ("apikey " is added when missing). The key is checked by listing the regions before it is stored; a key without permission is refused with ArvanCloud’s own message. A machine-user key limited to the entry server and its DNS domain is enough.',
+        body: '{\n  "key": "apikey 00000000-0000-0000-0000-000000000000"\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/relays/arvan/key/clear',
+        summary:
+          'Forget the ArvanCloud API key. Reserve IPs stay on their servers, but nothing is checked, added or swapped until a key is saved again.',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/relays/arvan/front/:id',
+        summary:
+          'The ArvanCloud state of an entry server: its Arvan zone and server, the DNS record bound to it (domain, recordName, recordId and the IP the record holds now), the active IP (the relay’s address) and whether its last check passed, the settings (reserveTarget 0–3, autoSwap, dailySwapAt as "HH:MM" or ""), whether the server is prepared, the reserve IPs with their status ("testing", "healthy" or "dead"), the Iranian check-host nodes that reached each, and busy, the action running now ("" when none).',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/relays/arvan/front/:id/detect',
+        summary:
+          'Find the ArvanCloud server that owns the entry server’s address, in every zone, and the DNS A records pointing at it. One record, or the one named by publicName, is bound at once; when several fit they come back as candidates and the save endpoint binds the one picked. Returns the state as the GET does.',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/relays/arvan/front/:id/save',
+        summary:
+          'Save the DNS record to move on a swap and the reserve settings. reserveTarget is how many tested reserve IPs to keep (0–3: a server takes at most four IPs, and each costs money every hour it is held). autoSwap moves to a healthy reserve after three failed checks a minute apart; dailySwapAt swaps once a day at that time in the panel’s time zone ("" turns it off). Returns the state as the GET does.',
+        body: '{\n  "domain": "example.ir",\n  "recordName": "tun",\n  "reserveTarget": 1,\n  "autoSwap": true,\n  "dailySwapAt": "04:30"\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/relays/arvan/front/:id/prepare',
+        summary:
+          'Install per-IP routing on the entry server over SSH, so an IP added later never takes the active IP’s replies or cuts it off; the active IP keeps the main default route. Needed once before reserves are added. Returns at once; poll the GET for busy and prepared.',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/relays/arvan/front/:id/refill',
+        summary:
+          'Add reserve IPs until reserveTarget is reached, never past four IPs on the server. Each new IP is tested from the panel and from Iranian check-host nodes; one that does not answer is released at once. Requires a prepared server. Returns at once.',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/relays/arvan/front/:id/test',
+        summary: 'Test the active IP and every reserve again. Returns at once.',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/relays/arvan/front/:id/swap',
+        summary:
+          'Make a reserve the active IP: the routing on the server moves to it, the DNS record is pointed at it, the relay’s address changes and the panel re-dials the tunnel. Without ip the healthiest reserve is used. The target is tested first and a dead one aborts the swap. The old IP is kept as a reserve when it is healthy and a reserve is still wanted, and released otherwise. Returns at once.',
+        body: '{\n  "ip": "203.0.113.20"\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/relays/arvan/front/:id/release',
+        summary:
+          'Give a reserve IP back to ArvanCloud for good. The active IP is refused. Returns at once.',
+        body: '{\n  "ip": "203.0.113.20"\n}',
+      },
     ],
   },
 

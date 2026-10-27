@@ -2811,6 +2811,112 @@
         "delete": "Remover servidor de saída",
         "probe": "Verificar o servidor de saída",
         "deleted": "Removido"
+      },
+      "arvan": {
+        "open": "IPs reserva na ArvanCloud",
+        "title": "IPs reserva na ArvanCloud · {name}",
+        "intro": "Os clientes se conectam pelo nome DNS, não pelo IP. Uma troca leva esse nome para um IP reserva já testado no mesmo servidor da Arvan e refaz o túnel, então um IP filtrado fica para trás em uns dois minutos.",
+        "never": "nunca",
+        "key": {
+          "title": "Chave de API da ArvanCloud",
+          "input": "Chave de API",
+          "configured": "Salva",
+          "unreadable": "Ilegível, informe de novo",
+          "missing": "Não definida",
+          "save": "Salvar chave",
+          "clear": "Remover chave",
+          "confirmClear": "Remover a chave da ArvanCloud?",
+          "confirmClearHint": "Os IPs reserva continuam no servidor, mas nada é verificado, adicionado ou trocado até que uma chave seja salva de novo.",
+          "hint": "Crie na ArvanCloud um usuário de máquina com acesso só a este servidor e a este domínio e cole a chave dele. O painel a guarda criptografada e nunca mais a mostra."
+        },
+        "binding": {
+          "title": "Servidor e registro DNS",
+          "detect": "Buscar na ArvanCloud",
+          "detectHint": "Encontra o servidor da Arvan dono de {ip} e o registro DNS que aponta para ele.",
+          "zone": "Zona",
+          "server": "Servidor",
+          "record": "Registro DNS",
+          "notBound": "Ainda não encontrado. Salve uma chave e clique em “Buscar na ArvanCloud”.",
+          "noRecord": "Nenhum registro DNS vinculado, então a troca não move nenhum nome e os clientes ficam no IP antigo.",
+          "recordElsewhere": "O registro aponta para {ip}, não para o IP ativo.",
+          "pickRecord": "Registro que os clientes usam",
+          "pickRecordHint": "Vários registros apontam para este IP. Escolha o que está nas configurações dos clientes e salve as configurações."
+        },
+        "settings": {
+          "title": "Configurações",
+          "reserveTarget": "IPs reserva a manter",
+          "reserveTargetHint": "Cada reserva custa cerca de 468.000 tomans por mês. Um servidor aceita no máximo 4 IPs, ou seja, no máximo 3 reservas.",
+          "autoSwap": "Trocar automaticamente",
+          "autoSwapHint": "Após cerca de 3 verificações com falha, com um minuto entre elas, passa para uma reserva saudável. Sem reserva, pega um IP novo na Arvan, testa, muda para ele e libera o que falhou.",
+          "dailySwapAt": "Trocar todo dia às",
+          "dailySwapAtHint": "HH:MM no fuso horário do painel. Vazio desliga.",
+          "save": "Salvar configurações"
+        },
+        "prepare": {
+          "title": "Roteamento do servidor",
+          "button": "Preparar servidor",
+          "done": "Preparado",
+          "notDone": "Não preparado",
+          "hint": "Instala no servidor um roteamento por IP, para que um IP recém-adicionado nunca derrube o ativo. Necessário uma vez, antes de adicionar reservas ou trocar."
+        },
+        "ips": {
+          "title": "IPs",
+          "ip": "IP",
+          "status": "Status",
+          "iran": "Do Irã",
+          "lastCheck": "Última verificação",
+          "error": "Erro",
+          "active": "Ativo",
+          "healthy": "Saudável",
+          "unhealthy": "Sem resposta",
+          "unchecked": "Ainda não verificado",
+          "testing": "Testando",
+          "dead": "Morto",
+          "fails": "{count} verificações com falha",
+          "swapTo": "Trocar para este IP",
+          "release": "Liberar este IP",
+          "refill": "Adicionar reservas agora",
+          "testAll": "Testar todos",
+          "swapNow": "Trocar agora",
+          "needsPrepare": "Prepare o servidor antes de adicionar reservas ou trocar.",
+          "confirmSwapTo": "Tornar {ip} o IP ativo?",
+          "confirmSwapNow": "Trocar o IP ativo agora?",
+          "confirmSwapHint": "O registro DNS passa para o novo IP e o painel refaz o túnel. Os clientes se reconectam em cerca de dois minutos.",
+          "confirmRelease": "Liberar {ip}?",
+          "confirmReleaseHint": "O IP volta para a ArvanCloud para sempre e não pode ser recuperado.",
+          "empty": "Nenhum IP ainda",
+          "addsToday": "IPs adicionados hoje: {count}"
+        },
+        "activity": {
+          "busy": "Em andamento: {action}",
+          "lastAction": "Última ação",
+          "lastError": "Último erro",
+          "lastSwap": "Última troca"
+        },
+        "busyLabels": {
+          "detect": "buscando o servidor",
+          "prepare": "preparando o servidor",
+          "refill": "adicionando IPs reserva",
+          "test": "testando os IPs",
+          "swap": "trocando o IP ativo",
+          "release": "liberando um IP"
+        },
+        "errors": {
+          "reserveTarget": "Informe um número inteiro de 0 a 3.",
+          "dailySwapAt": "Use HH:MM, como 04:30, ou deixe vazio."
+        },
+        "toasts": {
+          "key": "Salvar chave da ArvanCloud",
+          "keyClear": "Remover chave da ArvanCloud",
+          "view": "Ler estado da ArvanCloud",
+          "detect": "Buscar na ArvanCloud",
+          "save": "Salvar configurações da ArvanCloud",
+          "prepare": "Preparar servidor",
+          "refill": "Adicionar IPs reserva",
+          "test": "Testar IPs",
+          "swap": "Trocar IP ativo",
+          "release": "Liberar IP"
+        }
       }
     }
   },

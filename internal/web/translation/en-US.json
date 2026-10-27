@@ -2811,6 +2811,112 @@
         "delete": "Remove exit server",
         "probe": "Check the exit server",
         "deleted": "Removed"
+      },
+      "arvan": {
+        "open": "ArvanCloud reserve IPs",
+        "title": "ArvanCloud reserve IPs · {name}",
+        "intro": "Customers connect by the DNS name, not the IP. A swap moves that name to a tested reserve IP on the same Arvan server and re-dials the tunnel, so a filtered IP is left behind in about two minutes.",
+        "never": "never",
+        "key": {
+          "title": "ArvanCloud API key",
+          "input": "API key",
+          "configured": "Saved",
+          "unreadable": "Unreadable, enter it again",
+          "missing": "Not set",
+          "save": "Save key",
+          "clear": "Remove key",
+          "confirmClear": "Remove the ArvanCloud key?",
+          "confirmClearHint": "Reserve IPs stay on the server, but nothing is checked, added or swapped until a key is saved again.",
+          "hint": "Create a machine user in ArvanCloud with access only to this server and this domain, and paste its key. The panel stores it encrypted and never shows it again."
+        },
+        "binding": {
+          "title": "Server and DNS record",
+          "detect": "Find on ArvanCloud",
+          "detectHint": "Finds the Arvan server that owns {ip} and the DNS record pointing at it.",
+          "zone": "Zone",
+          "server": "Server",
+          "record": "DNS record",
+          "notBound": "Not found yet. Save a key, then press “Find on ArvanCloud”.",
+          "noRecord": "No DNS record is bound, so a swap moves no name and customers stay on the old IP.",
+          "recordElsewhere": "The record points at {ip}, not at the active IP.",
+          "pickRecord": "Record customers use",
+          "pickRecordHint": "Several records point at this IP. Pick the one in customers’ configs, then save the settings."
+        },
+        "settings": {
+          "title": "Settings",
+          "reserveTarget": "Reserve IPs to keep",
+          "reserveTargetHint": "Each reserve costs about 468,000 toman a month. A server takes at most 4 IPs, so at most 3 reserves.",
+          "autoSwap": "Swap automatically",
+          "autoSwapHint": "After about 3 failed checks a minute apart, moves to a healthy reserve. With no reserve it takes a fresh IP from Arvan, tests it, moves to it and releases the broken one.",
+          "dailySwapAt": "Swap every day at",
+          "dailySwapAtHint": "HH:MM in the panel’s time zone. Empty turns it off.",
+          "save": "Save settings"
+        },
+        "prepare": {
+          "title": "Server routing",
+          "button": "Prepare server",
+          "done": "Prepared",
+          "notDone": "Not prepared",
+          "hint": "Installs per-IP routing on the server, so a newly added IP never cuts the active one. Needed once, before adding reserves or swapping."
+        },
+        "ips": {
+          "title": "IPs",
+          "ip": "IP",
+          "status": "Status",
+          "iran": "From Iran",
+          "lastCheck": "Last check",
+          "error": "Error",
+          "active": "Active",
+          "healthy": "Healthy",
+          "unhealthy": "Not answering",
+          "unchecked": "Not checked yet",
+          "testing": "Testing",
+          "dead": "Dead",
+          "fails": "{count} failed checks",
+          "swapTo": "Swap to this IP",
+          "release": "Release this IP",
+          "refill": "Add reserves now",
+          "testAll": "Test all",
+          "swapNow": "Swap now",
+          "needsPrepare": "Prepare the server before adding reserves or swapping.",
+          "confirmSwapTo": "Make {ip} the active IP?",
+          "confirmSwapNow": "Swap the active IP now?",
+          "confirmSwapHint": "The DNS record moves to the new IP and the panel re-dials the tunnel. Customers reconnect within about two minutes.",
+          "confirmRelease": "Release {ip}?",
+          "confirmReleaseHint": "The IP goes back to ArvanCloud for good and cannot be taken back.",
+          "empty": "No IPs yet",
+          "addsToday": "IPs added today: {count}"
+        },
+        "activity": {
+          "busy": "In progress: {action}",
+          "lastAction": "Last action",
+          "lastError": "Last error",
+          "lastSwap": "Last swap"
+        },
+        "busyLabels": {
+          "detect": "finding the server",
+          "prepare": "preparing the server",
+          "refill": "adding reserve IPs",
+          "test": "testing the IPs",
+          "swap": "swapping the active IP",
+          "release": "releasing an IP"
+        },
+        "errors": {
+          "reserveTarget": "Enter a whole number from 0 to 3.",
+          "dailySwapAt": "Use HH:MM, such as 04:30, or leave it empty."
+        },
+        "toasts": {
+          "key": "Save ArvanCloud key",
+          "keyClear": "Remove ArvanCloud key",
+          "view": "Read ArvanCloud state",
+          "detect": "Find on ArvanCloud",
+          "save": "Save ArvanCloud settings",
+          "prepare": "Prepare server",
+          "refill": "Add reserve IPs",
+          "test": "Test IPs",
+          "swap": "Swap active IP",
+          "release": "Release IP"
+        }
       }
     }
   },

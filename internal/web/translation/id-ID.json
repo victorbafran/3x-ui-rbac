@@ -2811,6 +2811,112 @@
         "delete": "Hapus server keluar",
         "probe": "Periksa server keluar",
         "deleted": "Dihapus"
+      },
+      "arvan": {
+        "open": "IP cadangan di ArvanCloud",
+        "title": "IP cadangan di ArvanCloud · {name}",
+        "intro": "Pelanggan terhubung lewat nama DNS, bukan IP. Pertukaran memindahkan nama itu ke IP cadangan yang sudah diuji di server Arvan yang sama lalu menyambungkan ulang terowongan, sehingga IP yang terblokir ditinggalkan dalam sekitar dua menit.",
+        "never": "belum pernah",
+        "key": {
+          "title": "Kunci API ArvanCloud",
+          "input": "Kunci API",
+          "configured": "Tersimpan",
+          "unreadable": "Tidak terbaca, masukkan lagi",
+          "missing": "Belum diatur",
+          "save": "Simpan kunci",
+          "clear": "Hapus kunci",
+          "confirmClear": "Hapus kunci ArvanCloud?",
+          "confirmClearHint": "IP cadangan tetap ada di server, tetapi tidak ada yang diperiksa, ditambahkan, atau ditukar sampai kunci disimpan lagi.",
+          "hint": "Buat machine user di ArvanCloud yang hanya punya akses ke server ini dan domain ini, lalu tempel kuncinya. Panel menyimpannya terenkripsi dan tidak pernah menampilkannya lagi."
+        },
+        "binding": {
+          "title": "Server dan record DNS",
+          "detect": "Cari di ArvanCloud",
+          "detectHint": "Mencari server Arvan pemilik {ip} dan record DNS yang mengarah ke sana.",
+          "zone": "Zona",
+          "server": "Server",
+          "record": "Record DNS",
+          "notBound": "Belum ditemukan. Simpan kunci, lalu tekan “Cari di ArvanCloud”.",
+          "noRecord": "Tidak ada record DNS yang terikat, jadi pertukaran tidak memindahkan nama apa pun dan pelanggan tetap di IP lama.",
+          "recordElsewhere": "Record mengarah ke {ip}, bukan ke IP aktif.",
+          "pickRecord": "Record yang dipakai pelanggan",
+          "pickRecordHint": "Beberapa record mengarah ke IP ini. Pilih yang ada di konfigurasi pelanggan, lalu simpan pengaturan."
+        },
+        "settings": {
+          "title": "Pengaturan",
+          "reserveTarget": "Jumlah IP cadangan",
+          "reserveTargetHint": "Setiap cadangan berbiaya sekitar 468.000 toman per bulan. Satu server menampung paling banyak 4 IP, jadi paling banyak 3 cadangan.",
+          "autoSwap": "Tukar otomatis",
+          "autoSwapHint": "Setelah sekitar 3 pemeriksaan gagal berjarak satu menit, pindah ke cadangan yang sehat. Tanpa cadangan, ambil IP baru dari Arvan, uji, pindah ke sana, lalu lepaskan IP yang rusak.",
+          "dailySwapAt": "Tukar setiap hari pukul",
+          "dailySwapAtHint": "HH:MM menurut zona waktu panel. Kosong berarti mati.",
+          "save": "Simpan pengaturan"
+        },
+        "prepare": {
+          "title": "Routing server",
+          "button": "Siapkan server",
+          "done": "Siap",
+          "notDone": "Belum siap",
+          "hint": "Memasang routing per IP di server, sehingga IP yang baru ditambahkan tidak pernah memutus IP aktif. Diperlukan sekali, sebelum menambah cadangan atau menukar."
+        },
+        "ips": {
+          "title": "IP",
+          "ip": "IP",
+          "status": "Status",
+          "iran": "Dari Iran",
+          "lastCheck": "Pemeriksaan terakhir",
+          "error": "Galat",
+          "active": "Aktif",
+          "healthy": "Sehat",
+          "unhealthy": "Tidak menjawab",
+          "unchecked": "Belum diperiksa",
+          "testing": "Sedang diuji",
+          "dead": "Mati",
+          "fails": "{count} pemeriksaan gagal",
+          "swapTo": "Tukar ke IP ini",
+          "release": "Lepas IP ini",
+          "refill": "Tambah cadangan sekarang",
+          "testAll": "Uji semua",
+          "swapNow": "Tukar sekarang",
+          "needsPrepare": "Siapkan server sebelum menambah cadangan atau menukar.",
+          "confirmSwapTo": "Jadikan {ip} sebagai IP aktif?",
+          "confirmSwapNow": "Tukar IP aktif sekarang?",
+          "confirmSwapHint": "Record DNS pindah ke IP baru dan panel menyambungkan ulang terowongan. Pelanggan tersambung lagi dalam sekitar dua menit.",
+          "confirmRelease": "Lepas {ip}?",
+          "confirmReleaseHint": "IP kembali ke ArvanCloud untuk selamanya dan tidak bisa diambil lagi.",
+          "empty": "Belum ada IP",
+          "addsToday": "IP yang ditambahkan hari ini: {count}"
+        },
+        "activity": {
+          "busy": "Sedang berjalan: {action}",
+          "lastAction": "Tindakan terakhir",
+          "lastError": "Galat terakhir",
+          "lastSwap": "Pertukaran terakhir"
+        },
+        "busyLabels": {
+          "detect": "mencari server",
+          "prepare": "menyiapkan server",
+          "refill": "menambah IP cadangan",
+          "test": "menguji IP",
+          "swap": "menukar IP aktif",
+          "release": "melepas IP"
+        },
+        "errors": {
+          "reserveTarget": "Masukkan bilangan bulat dari 0 sampai 3.",
+          "dailySwapAt": "Gunakan HH:MM, misalnya 04:30, atau biarkan kosong."
+        },
+        "toasts": {
+          "key": "Simpan kunci ArvanCloud",
+          "keyClear": "Hapus kunci ArvanCloud",
+          "view": "Baca status ArvanCloud",
+          "detect": "Cari di ArvanCloud",
+          "save": "Simpan pengaturan ArvanCloud",
+          "prepare": "Siapkan server",
+          "refill": "Tambah IP cadangan",
+          "test": "Uji IP",
+          "swap": "Tukar IP aktif",
+          "release": "Lepas IP"
+        }
       }
     }
   },

@@ -2811,6 +2811,112 @@
         "delete": "Odstrániť výstupný server",
         "probe": "Skontrolovať výstupný server",
         "deleted": "Odstránené"
+      },
+      "arvan": {
+        "open": "Záložné IP v ArvanCloud",
+        "title": "Záložné IP v ArvanCloud · {name}",
+        "intro": "Zákazníci sa pripájajú cez DNS meno, nie cez IP. Prepnutie presunie toto meno na otestovanú záložnú IP na tom istom serveri Arvan a znova vytočí tunel, takže filtrovanú IP možno opustiť zhruba za dve minúty.",
+        "never": "nikdy",
+        "key": {
+          "title": "API kľúč ArvanCloud",
+          "input": "API kľúč",
+          "configured": "Uložený",
+          "unreadable": "Nečitateľný, zadajte ho znova",
+          "missing": "Nenastavený",
+          "save": "Uložiť kľúč",
+          "clear": "Odstrániť kľúč",
+          "confirmClear": "Odstrániť kľúč ArvanCloud?",
+          "confirmClearHint": "Záložné IP zostanú na serveri, ale kým sa neuloží nový kľúč, nič sa nekontroluje, nepridáva ani neprepína.",
+          "hint": "V ArvanCloud vytvorte strojového používateľa s prístupom len k tomuto serveru a tejto doméne a vložte jeho kľúč. Panel ho uloží zašifrovaný a už ho nikdy nezobrazí."
+        },
+        "binding": {
+          "title": "Server a DNS záznam",
+          "detect": "Nájsť v ArvanCloud",
+          "detectHint": "Nájde server Arvan, ktorému patrí {ip}, a DNS záznam, ktorý naň ukazuje.",
+          "zone": "Zóna",
+          "server": "Server",
+          "record": "DNS záznam",
+          "notBound": "Zatiaľ nenájdené. Uložte kľúč a stlačte „Nájsť v ArvanCloud“.",
+          "noRecord": "Nie je naviazaný žiadny DNS záznam, takže prepnutie nepresunie žiadne meno a zákazníci zostanú na starej IP.",
+          "recordElsewhere": "Záznam ukazuje na {ip}, nie na aktívnu IP.",
+          "pickRecord": "Záznam, ktorý používajú zákazníci",
+          "pickRecordHint": "Na túto IP ukazuje viac záznamov. Vyberte ten, ktorý je v konfiguráciách zákazníkov, a uložte nastavenia."
+        },
+        "settings": {
+          "title": "Nastavenia",
+          "reserveTarget": "Počet záložných IP",
+          "reserveTargetHint": "Každá záloha stojí asi 468 000 tománov mesačne. Server unesie najviac 4 IP, teda najviac 3 zálohy.",
+          "autoSwap": "Prepínať automaticky",
+          "autoSwapHint": "Po asi 3 neúspešných kontrolách s odstupom minúty prejde na zdravú rezervu. Bez rezervy si vezme novú IP z Arvanu, otestuje ju, prejde na ňu a uvoľní pokazenú.",
+          "dailySwapAt": "Prepínať každý deň o",
+          "dailySwapAtHint": "HH:MM v časovom pásme panela. Prázdne ho vypne.",
+          "save": "Uložiť nastavenia"
+        },
+        "prepare": {
+          "title": "Smerovanie servera",
+          "button": "Pripraviť server",
+          "done": "Pripravený",
+          "notDone": "Nepripravený",
+          "hint": "Nainštaluje na server smerovanie pre každú IP, aby novo pridaná IP nikdy neodrezala aktívnu. Treba to raz, pred pridaním záloh alebo prepnutím."
+        },
+        "ips": {
+          "title": "IP adresy",
+          "ip": "IP",
+          "status": "Stav",
+          "iran": "Z Iránu",
+          "lastCheck": "Posledná kontrola",
+          "error": "Chyba",
+          "active": "Aktívna",
+          "healthy": "Zdravá",
+          "unhealthy": "Neodpovedá",
+          "unchecked": "Zatiaľ nekontrolovaná",
+          "testing": "Testuje sa",
+          "dead": "Mŕtva",
+          "fails": "Neúspešné kontroly: {count}",
+          "swapTo": "Prepnúť na túto IP",
+          "release": "Uvoľniť túto IP",
+          "refill": "Pridať zálohy teraz",
+          "testAll": "Otestovať všetky",
+          "swapNow": "Prepnúť teraz",
+          "needsPrepare": "Pred pridaním záloh alebo prepnutím pripravte server.",
+          "confirmSwapTo": "Urobiť z {ip} aktívnu IP?",
+          "confirmSwapNow": "Prepnúť aktívnu IP teraz?",
+          "confirmSwapHint": "DNS záznam sa presunie na novú IP a panel znova vytočí tunel. Zákazníci sa znova pripoja zhruba do dvoch minút.",
+          "confirmRelease": "Uvoľniť {ip}?",
+          "confirmReleaseHint": "IP sa natrvalo vráti do ArvanCloud a nedá sa vziať späť.",
+          "empty": "Zatiaľ žiadne IP",
+          "addsToday": "Dnes pridané IP: {count}"
+        },
+        "activity": {
+          "busy": "Prebieha: {action}",
+          "lastAction": "Posledná akcia",
+          "lastError": "Posledná chyba",
+          "lastSwap": "Posledné prepnutie"
+        },
+        "busyLabels": {
+          "detect": "hľadanie servera",
+          "prepare": "príprava servera",
+          "refill": "pridávanie záložných IP",
+          "test": "testovanie IP",
+          "swap": "prepínanie aktívnej IP",
+          "release": "uvoľňovanie IP"
+        },
+        "errors": {
+          "reserveTarget": "Zadajte celé číslo od 0 do 3.",
+          "dailySwapAt": "Použite HH:MM, napríklad 04:30, alebo nechajte prázdne."
+        },
+        "toasts": {
+          "key": "Uložiť kľúč ArvanCloud",
+          "keyClear": "Odstrániť kľúč ArvanCloud",
+          "view": "Načítať stav ArvanCloud",
+          "detect": "Nájsť v ArvanCloud",
+          "save": "Uložiť nastavenia ArvanCloud",
+          "prepare": "Pripraviť server",
+          "refill": "Pridať záložné IP",
+          "test": "Otestovať IP",
+          "swap": "Prepnúť aktívnu IP",
+          "release": "Uvoľniť IP"
+        }
       }
     }
   },

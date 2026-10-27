@@ -2811,6 +2811,112 @@
         "delete": "移除出口伺服器",
         "probe": "檢查出口伺服器",
         "deleted": "已移除"
+      },
+      "arvan": {
+        "open": "ArvanCloud 備用 IP",
+        "title": "ArvanCloud 備用 IP · {name}",
+        "intro": "客戶透過 DNS 名稱而非 IP 連線。切換會把該名稱指向同一台 Arvan 伺服器上已測試的備用 IP，並重新撥通通道，因此約兩分鐘即可擺脫被過濾的 IP。",
+        "never": "從未",
+        "key": {
+          "title": "ArvanCloud API 金鑰",
+          "input": "API 金鑰",
+          "configured": "已儲存",
+          "unreadable": "無法讀取，請重新輸入",
+          "missing": "未設定",
+          "save": "儲存金鑰",
+          "clear": "移除金鑰",
+          "confirmClear": "移除 ArvanCloud 金鑰？",
+          "confirmClearHint": "備用 IP 仍留在伺服器上，但在重新儲存金鑰之前，不會進行任何檢查、新增或切換。",
+          "hint": "在 ArvanCloud 建立一個只能存取此伺服器與此網域的機器使用者，並貼上其金鑰。面板會加密儲存，且不再顯示。"
+        },
+        "binding": {
+          "title": "伺服器與 DNS 記錄",
+          "detect": "在 ArvanCloud 中尋找",
+          "detectHint": "尋找擁有 {ip} 的 Arvan 伺服器，以及指向它的 DNS 記錄。",
+          "zone": "區域",
+          "server": "伺服器",
+          "record": "DNS 記錄",
+          "notBound": "尚未找到。請先儲存金鑰，再點選「在 ArvanCloud 中尋找」。",
+          "noRecord": "未綁定 DNS 記錄，切換不會移動任何名稱，客戶仍停留在舊 IP。",
+          "recordElsewhere": "該記錄指向 {ip}，而不是目前使用中的 IP。",
+          "pickRecord": "客戶使用的記錄",
+          "pickRecordHint": "有多筆記錄指向此 IP。請選擇客戶設定中使用的那一筆，然後儲存設定。"
+        },
+        "settings": {
+          "title": "設定",
+          "reserveTarget": "保留的備用 IP 數量",
+          "reserveTargetHint": "每個備用 IP 每月約 468,000 托曼。一台伺服器最多 4 個 IP，因此最多 3 個備用。",
+          "autoSwap": "自動切換",
+          "autoSwapHint": "每隔一分鐘檢查一次，約 3 次失敗後切換到健康的備用 IP。沒有備用時，會向 Arvan 申請新 IP，測試後切換過去，並釋放壞掉的 IP。",
+          "dailySwapAt": "每天切換時間",
+          "dailySwapAtHint": "依面板時區填寫 HH:MM。留空即關閉。",
+          "save": "儲存設定"
+        },
+        "prepare": {
+          "title": "伺服器路由",
+          "button": "準備伺服器",
+          "done": "已準備",
+          "notDone": "未準備",
+          "hint": "在伺服器上安裝依 IP 的路由，使新增的 IP 永遠不會切斷使用中的 IP。新增備用或切換前只需執行一次。"
+        },
+        "ips": {
+          "title": "IP 清單",
+          "ip": "IP",
+          "status": "狀態",
+          "iran": "伊朗節點",
+          "lastCheck": "上次檢查",
+          "error": "錯誤",
+          "active": "使用中",
+          "healthy": "健康",
+          "unhealthy": "無回應",
+          "unchecked": "尚未檢查",
+          "testing": "測試中",
+          "dead": "無法使用",
+          "fails": "檢查失敗 {count} 次",
+          "swapTo": "切換到此 IP",
+          "release": "釋放此 IP",
+          "refill": "立即新增備用",
+          "testAll": "全部測試",
+          "swapNow": "立即切換",
+          "needsPrepare": "新增備用或切換前，請先準備伺服器。",
+          "confirmSwapTo": "將 {ip} 設為使用中的 IP？",
+          "confirmSwapNow": "立即切換使用中的 IP？",
+          "confirmSwapHint": "DNS 記錄將指向新 IP，面板會重新撥通通道。客戶約兩分鐘內重新連線。",
+          "confirmRelease": "釋放 {ip}？",
+          "confirmReleaseHint": "此 IP 將永久歸還 ArvanCloud，無法取回。",
+          "empty": "尚無 IP",
+          "addsToday": "今日已新增 IP：{count}"
+        },
+        "activity": {
+          "busy": "進行中：{action}",
+          "lastAction": "上次操作",
+          "lastError": "上次錯誤",
+          "lastSwap": "上次切換"
+        },
+        "busyLabels": {
+          "detect": "正在尋找伺服器",
+          "prepare": "正在準備伺服器",
+          "refill": "正在新增備用 IP",
+          "test": "正在測試 IP",
+          "swap": "正在切換使用中的 IP",
+          "release": "正在釋放 IP"
+        },
+        "errors": {
+          "reserveTarget": "請輸入 0 到 3 之間的整數。",
+          "dailySwapAt": "請使用 HH:MM 格式，例如 04:30，或留空。"
+        },
+        "toasts": {
+          "key": "儲存 ArvanCloud 金鑰",
+          "keyClear": "移除 ArvanCloud 金鑰",
+          "view": "讀取 ArvanCloud 狀態",
+          "detect": "在 ArvanCloud 中尋找",
+          "save": "儲存 ArvanCloud 設定",
+          "prepare": "準備伺服器",
+          "refill": "新增備用 IP",
+          "test": "測試 IP",
+          "swap": "切換使用中的 IP",
+          "release": "釋放 IP"
+        }
       }
     }
   },

@@ -42,6 +42,8 @@ func migrationModels() []any {
 		&model.HistoryOfSeeders{},
 		&model.Node{},
 		&model.Relay{},
+		&model.ArvanFront{},
+		&model.ArvanIP{},
 		&model.ApiToken{},
 		&model.Inbound{},
 		&model.AdminInbound{},

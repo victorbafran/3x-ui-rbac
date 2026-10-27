@@ -145,7 +145,8 @@
     "pinSidebar": "固定侧边栏",
     "unpinSidebar": "取消固定侧边栏",
     "subFormats": "Sub Formats",
-    "relays": "出口服务器"
+    "relays": "出口服务器",
+    "copies": "面板副本"
   },
   "pages": {
     "login": {
@@ -2917,6 +2918,96 @@
           "swap": "切换活动 IP",
           "release": "释放 IP"
         }
+      }
+    },
+    "standby": {
+      "refused": "此面板处于待机状态；请先将其设为主面板。",
+      "toasts": {
+        "get": "待机状态",
+        "set": "更改待机状态"
+      },
+      "banner": {
+        "title": "此面板处于待机状态",
+        "desc": "Xray、入站以及 cisco 和 OpenVPN 服务器在这里运行，但出口与入口服务器的隧道、ArvanCloud 任务、证书续期、节点任务、WARP 轮换、机器人和告警均已关闭，以免与主面板冲突。",
+        "open": "打开面板副本"
+      },
+      "thisPanel": "此面板",
+      "tagMain": "主面板",
+      "tagStandby": "待机",
+      "mainDesc": "这是主面板：出口与入口服务器的隧道、定时任务和机器人都在这里运行。",
+      "standbyDesc": "此面板是替补。当主面板丢失或退役时，将其设为主面板。",
+      "makeMain": "将此面板设为主面板",
+      "makeMainConfirm": "将此面板设为主面板？",
+      "makeMainConfirmDesc": "请先让另一个面板进入待机，或改为在另一个面板的副本列表中使用「设为主面板」。两个主面板会争抢同样的出口与入口服务器和机器人。",
+      "goStandby": "让此面板进入待机",
+      "goStandbyConfirm": "让此面板进入待机？",
+      "goStandbyConfirmDesc": "这里的出口与入口服务器隧道会断开，ArvanCloud 任务、证书续期、节点任务、WARP 轮换、机器人和告警都会停止。Xray 和入站继续运行。请将另一个面板设为主面板，否则流量经过这些服务器的客户会断线。"
+    },
+    "clones": {
+      "intro": "副本就是此面板连同全部数据安装在另一台服务器上，保持待机，以便在此服务器丢失时接管。",
+      "never": "从未",
+      "add": {
+        "title": "复制到新服务器",
+        "hint": "当前面板不会改变。新服务器会安装面板的最新发行版（如果此面板的构建更新，则用此面板的构建），然后恢复此面板的完整备份，并以待机状态启动。密码只用一次，用来安装面板自己的 SSH 密钥，绝不保存。",
+        "submit": "复制此面板"
+      },
+      "fields": {
+        "address": "服务器 IP",
+        "sshPort": "SSH 端口",
+        "sshUser": "SSH 用户",
+        "password": "SSH 密码"
+      },
+      "errors": {
+        "address": "请输入新服务器的 IP。",
+        "sshPort": "请输入 1 到 65535 之间的端口。",
+        "sshUser": "请输入 SSH 用户。",
+        "password": "请输入 SSH 密码。"
+      },
+      "list": {
+        "title": "副本列表",
+        "empty": "还没有副本"
+      },
+      "cols": {
+        "address": "服务器",
+        "status": "状态",
+        "step": "步骤",
+        "mode": "安装内容",
+        "version": "版本",
+        "lastSync": "上次同步",
+        "lastSeen": "上次检查",
+        "lastError": "上次错误"
+      },
+      "status": {
+        "pending": "等待中",
+        "installing": "安装中",
+        "standby": "待机",
+        "main": "主面板",
+        "error": "错误"
+      },
+      "mode": {
+        "release": "最新发行版",
+        "copied": "复制了此构建"
+      },
+      "actions": {
+        "check": "检查",
+        "checkHint": "询问副本其面板是否在运行、是否处于待机。",
+        "sync": "同步",
+        "syncHint": "再次把此面板当前的数据发送到副本；副本保持待机。",
+        "promote": "设为主面板",
+        "remove": "移除",
+        "removeHint": "只是忘记该副本，不会触碰服务器。"
+      },
+      "promoteConfirm": "将 {address} 设为主面板？",
+      "promoteConfirmDesc": "副本会再同步一次并成为主面板，随后此面板进入待机。记得把面板和订阅的域名指向 {address}。",
+      "removeConfirm": "忘记 {address} 上的副本？",
+      "removeConfirmDesc": "只删除这一行及其 SSH 密钥。服务器和其上的面板不会被触碰。",
+      "toasts": {
+        "list": "面板副本",
+        "add": "复制面板",
+        "sync": "同步副本",
+        "check": "检查副本",
+        "promote": "将副本设为主面板",
+        "delete": "移除副本"
       }
     }
   },

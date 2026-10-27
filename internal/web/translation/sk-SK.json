@@ -145,7 +145,8 @@
     "pinSidebar": "Pripnúť bočné menu",
     "unpinSidebar": "Odopnúť bočné menu",
     "subFormats": "Formáty odberu",
-    "relays": "Výstupné servery"
+    "relays": "Výstupné servery",
+    "copies": "Kópie panela"
   },
   "pages": {
     "login": {
@@ -2917,6 +2918,96 @@
           "swap": "Prepnúť aktívnu IP",
           "release": "Uvoľniť IP"
         }
+      }
+    },
+    "standby": {
+      "refused": "Tento panel je v pohotovosti; najprv z neho urobte hlavný panel.",
+      "toasts": {
+        "get": "Stav pohotovosti",
+        "set": "Zmena stavu pohotovosti"
+      },
+      "banner": {
+        "title": "Tento panel je v pohotovosti",
+        "desc": "Bežia tu Xray, vstupy a servery cisco a OpenVPN, ale tunely výstupných a vstupných serverov, úloha ArvanCloud, obnova certifikátov, úlohy uzlov, rotácia WARP, boty a upozornenia sú vypnuté, aby sa nebili s hlavným panelom.",
+        "open": "Otvoriť kópie panela"
+      },
+      "thisPanel": "Tento panel",
+      "tagMain": "Hlavný",
+      "tagStandby": "Pohotovosť",
+      "mainDesc": "Toto je hlavný panel: bežia tu tunely výstupných a vstupných serverov, plánované úlohy a boty.",
+      "standbyDesc": "Tento panel je náhradný. Urobte z neho hlavný, keď sa hlavný panel stratí alebo vyradí.",
+      "makeMain": "Urobiť tento panel hlavným",
+      "makeMainConfirm": "Urobiť tento panel hlavným?",
+      "makeMainConfirmDesc": "Najprv dajte druhý panel do pohotovosti, alebo namiesto toho použite „Urobiť hlavným“ v zozname kópií druhého panela. Dva hlavné panely sa bijú o rovnaké výstupné a vstupné servery a boty.",
+      "goStandby": "Dať tento panel do pohotovosti",
+      "goStandbyConfirm": "Dať tento panel do pohotovosti?",
+      "goStandbyConfirmDesc": "Tunely výstupných a vstupných serverov sa tu odpoja a úloha ArvanCloud, obnova certifikátov, úlohy uzlov, rotácia WARP, boty a upozornenia sa zastavia. Xray a vstupy bežia ďalej. Urobte hlavným iný panel, inak zákazníci, ktorých prevádzka ide cez tieto servery, stratia spojenie."
+    },
+    "clones": {
+      "intro": "Kópia je tento panel so všetkými údajmi nainštalovaný na inom serveri, držaný v pohotovosti, aby prevzal prácu, ak sa tento server stratí.",
+      "never": "Nikdy",
+      "add": {
+        "title": "Kopírovať na nový server",
+        "hint": "Aktuálny panel sa nemení. Na nový server sa nainštaluje najnovšie vydanie panela, alebo zostavenie tohto panela, ak je novšie, potom dostane úplnú zálohu tohto panela a spustí sa v pohotovosti. Heslo sa použije raz na inštaláciu vlastného SSH kľúča panela a nikdy sa neukladá.",
+        "submit": "Kopírovať tento panel"
+      },
+      "fields": {
+        "address": "IP servera",
+        "sshPort": "Port SSH",
+        "sshUser": "Používateľ SSH",
+        "password": "Heslo SSH"
+      },
+      "errors": {
+        "address": "Zadajte IP nového servera.",
+        "sshPort": "Zadajte port od 1 do 65535.",
+        "sshUser": "Zadajte používateľa SSH.",
+        "password": "Zadajte heslo SSH."
+      },
+      "list": {
+        "title": "Kópie",
+        "empty": "Zatiaľ žiadne kópie"
+      },
+      "cols": {
+        "address": "Server",
+        "status": "Stav",
+        "step": "Krok",
+        "mode": "Nainštalované",
+        "version": "Verzia",
+        "lastSync": "Posledná synchronizácia",
+        "lastSeen": "Posledná kontrola",
+        "lastError": "Posledná chyba"
+      },
+      "status": {
+        "pending": "Čaká",
+        "installing": "Inštaluje sa",
+        "standby": "Pohotovosť",
+        "main": "Hlavný",
+        "error": "Chyba"
+      },
+      "mode": {
+        "release": "Najnovšie vydanie",
+        "copied": "Skopírované toto zostavenie"
+      },
+      "actions": {
+        "check": "Skontrolovať",
+        "checkHint": "Spýta sa kópie, či jej panel beží a je v pohotovosti.",
+        "sync": "Synchronizovať",
+        "syncHint": "Znova pošle aktuálne údaje tohto panela do kópie; kópia zostane v pohotovosti.",
+        "promote": "Urobiť hlavným",
+        "remove": "Odstrániť",
+        "removeHint": "Len zabudne kópiu; server sa nezmení."
+      },
+      "promoteConfirm": "Urobiť {address} hlavným panelom?",
+      "promoteConfirmDesc": "Kópia sa ešte raz zosynchronizuje a stane sa hlavným panelom, potom tento panel prejde do pohotovosti. Nezabudnite nasmerovať domény panela a odberu na {address}.",
+      "removeConfirm": "Zabudnúť kópiu na {address}?",
+      "removeConfirmDesc": "Odstráni sa len tento riadok a jeho SSH kľúč. Server ani panel na ňom sa nezmenia.",
+      "toasts": {
+        "list": "Kópie panela",
+        "add": "Kopírovanie panela",
+        "sync": "Synchronizácia kópie",
+        "check": "Kontrola kópie",
+        "promote": "Zmena kópie na hlavnú",
+        "delete": "Odstránenie kópie"
       }
     }
   },

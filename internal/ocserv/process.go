@@ -6,12 +6,13 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"strings"
+	"regexp"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
+	"github.com/mhsanaei/3x-ui/v3/internal/sidecar"
 )
 
 var (
@@ -19,56 +20,25 @@ var (
 	forceStopTimeout    = 2 * time.Second
 )
 
-// procLogWriter forwards the ocserv child's stdout/stderr into the panel log,
-// line by line, and remembers the last line so a failed instance can say why
-// in the UI instead of just being absent.
-type procLogWriter struct {
-	mu       sync.Mutex
-	label    string
-	buf      string
-	lastLine string
+// probeNoise is what scanners' half-finished handshakes leave, ~30K lines a day.
+// Timeouts, fatal alerts and bad certificates stay: they diagnose DPI and pins.
+var probeNoise = []sidecar.NoiseRule{
+	handshakeNoise("non-properly terminated", "The TLS connection was non-properly terminated"),
+	handshakeNoise("error decoding", "Error decoding the received TLS packet"),
+	handshakeNoise("unsupported version", "A packet with illegal or unsupported version was received"),
+	handshakeNoise("unexpected packet", "An unexpected TLS packet was received"),
+	handshakeNoise("no cipher suites", "No supported cipher suites have been found"),
+	handshakeNoise("pull function", "Error in the pull function"),
+	{Kind: "unknown record type", Line: regexp.MustCompile(`^ocserv\[\d+\]: worker: \S+ warning: Received record packet of unknown type \d+$`)},
 }
 
-func (w *procLogWriter) Write(p []byte) (int, error) {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-	w.buf += string(p)
-	for {
-		i := strings.IndexByte(w.buf, '\n')
-		if i < 0 {
-			break
-		}
-		line := w.buf[:i]
-		w.buf = w.buf[i+1:]
-		w.emitLocked(line)
+// handshakeNoise matches only a worker that never got a session: one that had
+// one names it as worker[id], and its errors are a customer's.
+func handshakeNoise(kind, message string) sidecar.NoiseRule {
+	return sidecar.NoiseRule{
+		Kind: kind,
+		Line: regexp.MustCompile(`^ocserv\[\d+\]: GnuTLS error \(at worker-vpn\.c:\d+\): ` + regexp.QuoteMeta(message) + `\.$`),
 	}
-	return len(p), nil
-}
-
-// Flush emits a final un-terminated line once the process exits.
-func (w *procLogWriter) Flush() {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-	if w.buf != "" {
-		line := w.buf
-		w.buf = ""
-		w.emitLocked(line)
-	}
-}
-
-func (w *procLogWriter) emitLocked(line string) {
-	trimmed := strings.TrimSpace(strings.TrimRight(line, "\r"))
-	if trimmed == "" {
-		return
-	}
-	w.lastLine = trimmed
-	logger.Infof("ocserv: %s | %s", w.label, trimmed)
-}
-
-func (w *procLogWriter) LastLine() string {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-	return w.lastLine
 }
 
 // Process wraps one ocserv invocation, serving one cisco inbound.
@@ -77,13 +47,13 @@ type Process struct {
 	cmd             *exec.Cmd
 	done            chan struct{}
 	configPath      string
-	logWriter       *procLogWriter
+	logWriter       *sidecar.LineWriter
 	exitErr         error
 	intentionalStop atomic.Bool
 }
 
 func newProcess(configPath, label string) *Process {
-	return &Process{configPath: configPath, logWriter: &procLogWriter{label: label}}
+	return &Process{configPath: configPath, logWriter: sidecar.NewLineWriter("ocserv: "+label, probeNoise...)}
 }
 
 // IsRunning reports whether the ocserv process is currently running.

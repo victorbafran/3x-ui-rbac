@@ -145,7 +145,8 @@
     "pinSidebar": "Kenar çubuğunu sabitle",
     "unpinSidebar": "Kenar çubuğu sabitlemesini kaldır",
     "subFormats": "Abonelik Formatları",
-    "relays": "Çıkış sunucuları"
+    "relays": "Çıkış sunucuları",
+    "copies": "Panel kopyaları"
   },
   "pages": {
     "login": {
@@ -2917,6 +2918,96 @@
           "swap": "Etkin IP'yi değiştirme",
           "release": "IP'yi bırakma"
         }
+      }
+    },
+    "standby": {
+      "refused": "Bu panel beklemede; önce onu ana panel yapın.",
+      "toasts": {
+        "get": "Bekleme durumu",
+        "set": "Bekleme durumunu değiştir"
+      },
+      "banner": {
+        "title": "Bu panel beklemede",
+        "desc": "Xray, gelen bağlantılar ve cisco ile OpenVPN sunucuları burada çalışıyor, ancak çıkış ve giriş sunucularının tünelleri, ArvanCloud görevi, sertifika yenileme, düğüm görevleri, WARP rotasyonu, botlar ve uyarılar ana panelle çakışmaması için kapalı.",
+        "open": "Panel kopyalarını aç"
+      },
+      "thisPanel": "Bu panel",
+      "tagMain": "Ana",
+      "tagStandby": "Beklemede",
+      "mainDesc": "Bu ana panel: çıkış ve giriş sunucularının tünelleri, zamanlanmış görevler ve botlar burada çalışır.",
+      "standbyDesc": "Bu panel yedektir. Ana panel kaybolduğunda veya devreden çıkarıldığında bunu ana panel yapın.",
+      "makeMain": "Bu paneli ana panel yap",
+      "makeMainConfirm": "Bu panel ana panel yapılsın mı?",
+      "makeMainConfirmDesc": "Önce diğer paneli beklemeye alın ya da bunun yerine diğer panelin kopya listesinden «Ana yap» düğmesini kullanın. İki ana panel aynı çıkış ve giriş sunucuları ve botlar için çekişir.",
+      "goStandby": "Bu paneli beklemeye al",
+      "goStandbyConfirm": "Bu panel beklemeye alınsın mı?",
+      "goStandbyConfirmDesc": "Buradaki çıkış ve giriş sunucusu tünelleri kapanır; ArvanCloud görevi, sertifika yenileme, düğüm görevleri, WARP rotasyonu, botlar ve uyarılar durur. Xray ve gelen bağlantılar çalışmaya devam eder. Başka bir paneli ana yapın, yoksa trafiği bu sunuculardan geçen müşterilerin bağlantısı kopar."
+    },
+    "clones": {
+      "intro": "Kopya, bu panelin tüm verileriyle başka bir sunucuya kurulmuş hâlidir; bu sunucu kaybolursa devralmak üzere beklemede tutulur.",
+      "never": "Hiç",
+      "add": {
+        "title": "Yeni bir sunucuya kopyala",
+        "hint": "Mevcut panel değişmez. Yeni sunucuya panelin son sürümü, daha yeniyse bu panelin kendi derlemesi kurulur; ardından bu panelin tam yedeği geri yüklenir ve kopya beklemede başlar. Parola, panelin kendi SSH anahtarını kurmak için yalnızca bir kez kullanılır ve hiçbir yerde saklanmaz.",
+        "submit": "Bu paneli kopyala"
+      },
+      "fields": {
+        "address": "Sunucu IP adresi",
+        "sshPort": "SSH bağlantı noktası",
+        "sshUser": "SSH kullanıcısı",
+        "password": "SSH parolası"
+      },
+      "errors": {
+        "address": "Yeni sunucunun IP adresini girin.",
+        "sshPort": "1 ile 65535 arasında bir bağlantı noktası girin.",
+        "sshUser": "SSH kullanıcısını girin.",
+        "password": "SSH parolasını girin."
+      },
+      "list": {
+        "title": "Kopyalar",
+        "empty": "Henüz kopya yok"
+      },
+      "cols": {
+        "address": "Sunucu",
+        "status": "Durum",
+        "step": "Adım",
+        "mode": "Kurulan",
+        "version": "Sürüm",
+        "lastSync": "Son eşitleme",
+        "lastSeen": "Son denetim",
+        "lastError": "Son hata"
+      },
+      "status": {
+        "pending": "Sırada",
+        "installing": "Kuruluyor",
+        "standby": "Beklemede",
+        "main": "Ana",
+        "error": "Hata"
+      },
+      "mode": {
+        "release": "Son sürüm",
+        "copied": "Bu derleme kopyalandı"
+      },
+      "actions": {
+        "check": "Denetle",
+        "checkHint": "Kopyaya panelinin çalışıp çalışmadığını ve beklemede olup olmadığını sorar.",
+        "sync": "Eşitle",
+        "syncHint": "Bu panelin güncel verilerini kopyaya yeniden gönderir; kopya beklemede kalır.",
+        "promote": "Ana yap",
+        "remove": "Kaldır",
+        "removeHint": "Yalnızca kopyayı unutur; sunucuya dokunulmaz."
+      },
+      "promoteConfirm": "{address} ana panel yapılsın mı?",
+      "promoteConfirmDesc": "Kopya bir kez daha eşitlenir ve ana panel olur, ardından bu panel beklemeye geçer. Panel ve abonelik alan adlarını {address} adresine yönlendirmeyi unutmayın.",
+      "removeConfirm": "{address} üzerindeki kopya unutulsun mu?",
+      "removeConfirmDesc": "Yalnızca bu satır ve SSH anahtarı silinir. Sunucuya ve üzerindeki panele dokunulmaz.",
+      "toasts": {
+        "list": "Panel kopyaları",
+        "add": "Paneli kopyala",
+        "sync": "Kopyayı eşitle",
+        "check": "Kopyayı denetle",
+        "promote": "Kopyayı ana yap",
+        "delete": "Kopyayı kaldır"
       }
     }
   },

@@ -145,7 +145,8 @@
     "pinSidebar": "Ghim thanh bên",
     "unpinSidebar": "Bỏ ghim thanh bên",
     "subFormats": "Sub Formats",
-    "relays": "Máy chủ lối ra"
+    "relays": "Máy chủ lối ra",
+    "copies": "Bản sao panel"
   },
   "pages": {
     "login": {
@@ -2917,6 +2918,96 @@
           "swap": "Chuyển IP hoạt động",
           "release": "Trả lại IP"
         }
+      }
+    },
+    "standby": {
+      "refused": "Panel này đang ở chế độ chờ; hãy đặt nó làm panel chính trước.",
+      "toasts": {
+        "get": "Trạng thái chờ",
+        "set": "Đổi trạng thái chờ"
+      },
+      "banner": {
+        "title": "Panel này đang ở chế độ chờ",
+        "desc": "Xray, các inbound và máy chủ cisco, OpenVPN vẫn chạy ở đây, nhưng đường hầm của máy chủ lối ra và lối vào, tác vụ ArvanCloud, gia hạn chứng chỉ, tác vụ nút, xoay vòng WARP, bot và cảnh báo đều tắt để không xung đột với panel chính.",
+        "open": "Mở bản sao panel"
+      },
+      "thisPanel": "Panel này",
+      "tagMain": "Chính",
+      "tagStandby": "Chờ",
+      "mainDesc": "Đây là panel chính: đường hầm của máy chủ lối ra và lối vào, các tác vụ định kỳ và bot chạy ở đây.",
+      "standbyDesc": "Panel này là bản dự phòng. Hãy đặt nó làm panel chính khi panel chính bị mất hoặc ngừng dùng.",
+      "makeMain": "Đặt panel này làm panel chính",
+      "makeMainConfirm": "Đặt panel này làm panel chính?",
+      "makeMainConfirmDesc": "Hãy chuyển panel kia sang chế độ chờ trước, hoặc dùng «Đặt làm chính» trong danh sách bản sao của panel kia. Hai panel chính sẽ tranh nhau cùng máy chủ lối ra, lối vào và bot.",
+      "goStandby": "Chuyển panel này sang chế độ chờ",
+      "goStandbyConfirm": "Chuyển panel này sang chế độ chờ?",
+      "goStandbyConfirmDesc": "Đường hầm của máy chủ lối ra và lối vào ở đây sẽ bị ngắt, và tác vụ ArvanCloud, gia hạn chứng chỉ, tác vụ nút, xoay vòng WARP, bot và cảnh báo sẽ dừng. Xray và các inbound vẫn chạy. Hãy đặt panel khác làm chính, nếu không khách hàng có lưu lượng đi qua các máy chủ đó sẽ mất kết nối."
+    },
+    "clones": {
+      "intro": "Bản sao là chính panel này cùng toàn bộ dữ liệu, được cài trên máy chủ khác và để ở chế độ chờ để tiếp quản nếu máy chủ này bị mất.",
+      "never": "Chưa bao giờ",
+      "add": {
+        "title": "Sao chép sang máy chủ mới",
+        "hint": "Panel hiện tại không bị thay đổi. Máy chủ mới được cài bản phát hành mới nhất của panel, hoặc bản build của panel này nếu nó mới hơn, sau đó nhận bản sao lưu đầy đủ của panel này và khởi động ở chế độ chờ. Mật khẩu chỉ dùng một lần để cài khóa SSH riêng của panel và không bao giờ được lưu.",
+        "submit": "Sao chép panel này"
+      },
+      "fields": {
+        "address": "IP máy chủ",
+        "sshPort": "Cổng SSH",
+        "sshUser": "Người dùng SSH",
+        "password": "Mật khẩu SSH"
+      },
+      "errors": {
+        "address": "Nhập IP của máy chủ mới.",
+        "sshPort": "Nhập cổng từ 1 đến 65535.",
+        "sshUser": "Nhập người dùng SSH.",
+        "password": "Nhập mật khẩu SSH."
+      },
+      "list": {
+        "title": "Các bản sao",
+        "empty": "Chưa có bản sao nào"
+      },
+      "cols": {
+        "address": "Máy chủ",
+        "status": "Trạng thái",
+        "step": "Bước",
+        "mode": "Đã cài",
+        "version": "Phiên bản",
+        "lastSync": "Đồng bộ lần cuối",
+        "lastSeen": "Kiểm tra lần cuối",
+        "lastError": "Lỗi cuối"
+      },
+      "status": {
+        "pending": "Đang chờ",
+        "installing": "Đang cài",
+        "standby": "Chờ",
+        "main": "Chính",
+        "error": "Lỗi"
+      },
+      "mode": {
+        "release": "Bản phát hành mới nhất",
+        "copied": "Đã chép bản build này"
+      },
+      "actions": {
+        "check": "Kiểm tra",
+        "checkHint": "Hỏi bản sao xem panel của nó có đang chạy và ở chế độ chờ không.",
+        "sync": "Đồng bộ",
+        "syncHint": "Gửi lại dữ liệu hiện tại của panel này sang bản sao; bản sao vẫn ở chế độ chờ.",
+        "promote": "Đặt làm chính",
+        "remove": "Gỡ",
+        "removeHint": "Chỉ quên bản sao; máy chủ không bị động đến."
+      },
+      "promoteConfirm": "Đặt {address} làm panel chính?",
+      "promoteConfirmDesc": "Bản sao được đồng bộ thêm một lần rồi trở thành panel chính, sau đó panel này chuyển sang chế độ chờ. Nhớ trỏ tên miền của panel và gói đăng ký về {address}.",
+      "removeConfirm": "Quên bản sao trên {address}?",
+      "removeConfirmDesc": "Chỉ dòng này và khóa SSH của nó bị xóa. Máy chủ và panel trên đó không bị động đến.",
+      "toasts": {
+        "list": "Bản sao panel",
+        "add": "Sao chép panel",
+        "sync": "Đồng bộ bản sao",
+        "check": "Kiểm tra bản sao",
+        "promote": "Đặt bản sao làm chính",
+        "delete": "Gỡ bản sao"
       }
     }
   },

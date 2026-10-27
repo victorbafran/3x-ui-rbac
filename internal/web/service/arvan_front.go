@@ -25,6 +25,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/relay"
 	"github.com/mhsanaei/3x-ui/v3/internal/tunnel"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
+	"github.com/mhsanaei/3x-ui/v3/internal/web/global"
 
 	"gorm.io/gorm"
 )
@@ -514,6 +515,9 @@ func recordFQDN(name, domain string) string {
 // Detect finds the Arvan server holding the front's address and the A records
 // that point at it, binding the record when only one fits.
 func (s *ArvanService) Detect(relayId int) (ArvanFrontView, error) {
+	if global.IsStandby() {
+		return ArvanFrontView{}, global.ErrStandby
+	}
 	r, err := arvanRelay(relayId)
 	if err != nil {
 		return ArvanFrontView{}, err
@@ -636,6 +640,9 @@ func normalizeDailySwapAt(raw string) (string, error) {
 
 // Save stores the operator's choices, resolving the record's id when its name moved.
 func (s *ArvanService) Save(relayId int, req ArvanFrontRequest) (ArvanFrontView, error) {
+	if global.IsStandby() {
+		return ArvanFrontView{}, global.ErrStandby
+	}
 	if _, err := arvanRelay(relayId); err != nil {
 		return ArvanFrontView{}, err
 	}
@@ -825,6 +832,9 @@ func defaultRouteFrom(out, ip string) bool {
 // Prepare installs per-IP routing on the front, so a new NIC never takes the
 // active IP's replies.
 func (s *ArvanService) Prepare(relayId int) error {
+	if global.IsStandby() {
+		return global.ErrStandby
+	}
 	return s.start(relayId, "prepare", func(ctx context.Context) (string, error) {
 		r, err := arvanRelay(relayId)
 		if err != nil {
@@ -846,6 +856,9 @@ func (s *ArvanService) Prepare(relayId int) error {
 
 // Refill adds tested reserves until the front holds its target.
 func (s *ArvanService) Refill(relayId int) error {
+	if global.IsStandby() {
+		return global.ErrStandby
+	}
 	return s.start(relayId, "refill", func(ctx context.Context) (string, error) {
 		r, err := arvanRelay(relayId)
 		if err != nil {
@@ -1099,6 +1112,9 @@ func releaseIP(ctx context.Context, c *arvan.Client, relayId int, zone, ip strin
 
 // Test re-tests the active IP and every reserve.
 func (s *ArvanService) Test(relayId int) error {
+	if global.IsStandby() {
+		return global.ErrStandby
+	}
 	return s.start(relayId, "test", func(ctx context.Context) (string, error) {
 		r, err := arvanRelay(relayId)
 		if err != nil {
@@ -1149,6 +1165,9 @@ func testArvanIPs(ctx context.Context, r model.Relay) (activeOK bool, healthy, d
 
 // Swap moves the front to target, or to the healthiest reserve when target is "".
 func (s *ArvanService) Swap(relayId int, target string) error {
+	if global.IsStandby() {
+		return global.ErrStandby
+	}
 	target = strings.TrimSpace(target)
 	return s.start(relayId, "swap", func(ctx context.Context) (string, error) {
 		return s.swap(ctx, relayId, target, false)
@@ -1299,6 +1318,10 @@ func (s *ArvanService) swap(ctx context.Context, relayId int, target string, aut
 // redial points the panel's tunnel client at the front's new address, as
 // reconcileFront does without provisioning the far side again.
 func (s *ArvanService) redial(r model.Relay) error {
+	// A swap that began before this panel went on standby must not dial beside the new main.
+	if global.IsStandby() {
+		return nil
+	}
 	token, err := decryptRelaySecret(r.Id, r.TunnelToken)
 	if err != nil {
 		return err
@@ -1354,6 +1377,9 @@ func (s *ArvanService) retireOld(ctx context.Context, c *arvan.Client, r model.R
 
 // Release gives a reserve back to Arvan; the active IP is refused.
 func (s *ArvanService) Release(relayId int, ip string) error {
+	if global.IsStandby() {
+		return global.ErrStandby
+	}
 	ip = strings.TrimSpace(ip)
 	if ip == "" {
 		return errors.New("which IP should be released?")
@@ -1409,6 +1435,10 @@ func dailyMoment(now time.Time, hhmm string, loc *time.Location) (time.Time, boo
 // Watch is the minute job: check each bound front's active IP, swap when it
 // keeps failing or the daily time came, and re-test reserves every 15 minutes.
 func (s *ArvanService) Watch() {
+	// Checked from a second place, a front could be swapped under the main panel.
+	if global.IsStandby() {
+		return
+	}
 	var fronts []model.ArvanFront
 	if err := database.GetDB().Where("server_id <> ''").Find(&fronts).Error; err != nil || len(fronts) == 0 {
 		return

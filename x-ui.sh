@@ -320,6 +320,17 @@ uninstall() {
         rm -rf -- "${xui_service}/x-ui.service.d"
         systemctl daemon-reload
         systemctl reset-failed
+        # The journal cap install.sh/update.sh set for the panel goes with it.
+        # journald reads its limits only at start; from systemd 230 a restart
+        # keeps every service's open log stream, before that it would cut them.
+        if [[ -f /etc/systemd/journald.conf.d/60-x-ui.conf ]]; then
+            rm -f /etc/systemd/journald.conf.d/60-x-ui.conf
+            local systemd_version
+            systemd_version="$(systemctl --version 2> /dev/null | awk 'NR == 1 {print $2}')"
+            if [[ "$systemd_version" =~ ^[0-9]+$ && "$systemd_version" -ge 230 ]]; then
+                systemctl restart systemd-journald > /dev/null 2>&1 || true
+            fi
+        fi
     fi
 
     local panel_used_postgres="false"

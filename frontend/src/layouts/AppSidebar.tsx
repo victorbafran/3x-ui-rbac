@@ -10,6 +10,7 @@ import {
   CloudServerOutlined,
   ClusterOutlined,
   CodeOutlined,
+  CopyOutlined,
   DatabaseOutlined,
   DiscordOutlined,
   GithubOutlined,
@@ -157,6 +158,8 @@ export default function AppSidebar() {
   const { allSetting } = useAllSettings();
   const showSubFormats = !!(allSetting.subJsonEnable || allSetting.subClashEnable);
   const showSubBalancers = !!allSetting.subJsonEnable;
+  // Copying the panel hands its root keys to another machine; the routes are super-admin only.
+  const isSuperAdmin = me?.role === 'super_admin';
 
   const [hovered, setHovered] = useState(() => hoveredAcrossRemounts);
   const [pinned, setPinned] = useState(readSidebarPinned);
@@ -260,8 +263,15 @@ export default function AppSidebar() {
         label: t('pages.settings.subBalancers.menu'),
       });
     }
+    if (isSuperAdmin) {
+      children.push({
+        key: '/settings#copies',
+        icon: <CopyOutlined aria-hidden />,
+        label: t('menu.copies'),
+      });
+    }
     return children;
-  }, [t, showSubFormats, showSubBalancers]);
+  }, [t, showSubFormats, showSubBalancers, isSuperAdmin]);
 
   const xrayChildren = useMemo<NonNullable<MenuProps['items']>>(
     () => [

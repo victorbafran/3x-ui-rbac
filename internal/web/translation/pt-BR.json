@@ -145,7 +145,8 @@
     "pinSidebar": "Fixar barra lateral",
     "unpinSidebar": "Desafixar barra lateral",
     "subFormats": "Sub Formats",
-    "relays": "Servidores de saída"
+    "relays": "Servidores de saída",
+    "copies": "Cópias do painel"
   },
   "pages": {
     "login": {
@@ -2917,6 +2918,96 @@
           "swap": "Trocar IP ativo",
           "release": "Liberar IP"
         }
+      }
+    },
+    "standby": {
+      "refused": "Este painel está em espera; torne-o o painel principal primeiro.",
+      "toasts": {
+        "get": "Estado de espera",
+        "set": "Alterar o estado de espera"
+      },
+      "banner": {
+        "title": "Este painel está em espera",
+        "desc": "O Xray, as entradas e os servidores cisco e OpenVPN funcionam aqui, mas os túneis dos servidores de saída e de entrada, a tarefa do ArvanCloud, a renovação de certificados, as tarefas dos nós, a rotação do WARP, os bots e os alertas estão desligados para não conflitar com o painel principal.",
+        "open": "Abrir cópias do painel"
+      },
+      "thisPanel": "Este painel",
+      "tagMain": "Principal",
+      "tagStandby": "Em espera",
+      "mainDesc": "Este é o painel principal: os túneis dos servidores de saída e de entrada, as tarefas agendadas e os bots funcionam aqui.",
+      "standbyDesc": "Este painel é um substituto. Torne-o o principal quando o painel principal for perdido ou desativado.",
+      "makeMain": "Tornar este o painel principal",
+      "makeMainConfirm": "Tornar este o painel principal?",
+      "makeMainConfirmDesc": "Coloque o outro painel em espera primeiro, ou use «Tornar principal» na lista de cópias do outro painel. Dois painéis principais disputam os mesmos servidores de saída e de entrada e os mesmos bots.",
+      "goStandby": "Colocar este painel em espera",
+      "goStandbyConfirm": "Colocar este painel em espera?",
+      "goStandbyConfirmDesc": "Os túneis dos servidores de saída e de entrada caem aqui, e a tarefa do ArvanCloud, a renovação de certificados, as tarefas dos nós, a rotação do WARP, os bots e os alertas param. O Xray e as entradas continuam funcionando. Torne outro painel o principal, ou os clientes cujo tráfego passa por esses servidores perdem a conexão."
+    },
+    "clones": {
+      "intro": "Uma cópia é este painel instalado em outro servidor com todos os seus dados, mantido em espera para assumir caso este servidor seja perdido.",
+      "never": "Nunca",
+      "add": {
+        "title": "Copiar para um novo servidor",
+        "hint": "O painel atual não é alterado. O novo servidor recebe a versão mais recente do painel, ou a compilação deste painel quando ela for mais nova, depois o backup completo deste painel, e inicia em espera. A senha é usada uma única vez para instalar a chave SSH própria do painel e nunca é guardada.",
+        "submit": "Copiar este painel"
+      },
+      "fields": {
+        "address": "IP do servidor",
+        "sshPort": "Porta SSH",
+        "sshUser": "Usuário SSH",
+        "password": "Senha SSH"
+      },
+      "errors": {
+        "address": "Informe o IP do novo servidor.",
+        "sshPort": "Informe uma porta entre 1 e 65535.",
+        "sshUser": "Informe o usuário SSH.",
+        "password": "Informe a senha SSH."
+      },
+      "list": {
+        "title": "Cópias",
+        "empty": "Nenhuma cópia ainda"
+      },
+      "cols": {
+        "address": "Servidor",
+        "status": "Status",
+        "step": "Etapa",
+        "mode": "Instalado",
+        "version": "Versão",
+        "lastSync": "Última sincronização",
+        "lastSeen": "Última verificação",
+        "lastError": "Último erro"
+      },
+      "status": {
+        "pending": "Aguardando",
+        "installing": "Instalando",
+        "standby": "Em espera",
+        "main": "Principal",
+        "error": "Erro"
+      },
+      "mode": {
+        "release": "Versão mais recente",
+        "copied": "Esta compilação copiada"
+      },
+      "actions": {
+        "check": "Verificar",
+        "checkHint": "Pergunta à cópia se o painel dela está funcionando e em espera.",
+        "sync": "Sincronizar",
+        "syncHint": "Envia de novo os dados atuais deste painel para a cópia; ela continua em espera.",
+        "promote": "Tornar principal",
+        "remove": "Remover",
+        "removeHint": "Só esquece a cópia; o servidor não é tocado."
+      },
+      "promoteConfirm": "Tornar {address} o painel principal?",
+      "promoteConfirmDesc": "A cópia é sincronizada mais uma vez e se torna o painel principal; depois este painel entra em espera. Lembre-se de apontar os domínios do painel e da assinatura para {address}.",
+      "removeConfirm": "Esquecer a cópia em {address}?",
+      "removeConfirmDesc": "Só esta linha e a chave SSH dela são removidas. O servidor e o painel nele não são tocados.",
+      "toasts": {
+        "list": "Cópias do painel",
+        "add": "Copiar o painel",
+        "sync": "Sincronizar a cópia",
+        "check": "Verificar a cópia",
+        "promote": "Tornar a cópia principal",
+        "delete": "Remover a cópia"
       }
     }
   },

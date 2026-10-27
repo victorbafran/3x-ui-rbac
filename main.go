@@ -600,6 +600,52 @@ func migrateDb() {
 	fmt.Println("Migration done!")
 }
 
+// standbyCommand runs `x-ui standby on|off|status`. It edits only the marker,
+// so it works with the panel stopped; a running one reads it at its next start.
+func standbyCommand(args []string) {
+	if len(args) != 1 {
+		fmt.Println("usage: x-ui standby on|off|status")
+		os.Exit(2)
+	}
+	switch args[0] {
+	case "on", "off":
+		if err := service.WriteStandbyMarker(args[0] == "on"); err != nil {
+			fmt.Println("standby:", err)
+			os.Exit(1)
+		}
+		fmt.Println("standby: " + args[0])
+		fmt.Println("a running panel takes this up after: systemctl restart x-ui")
+	case "status":
+		on, err := service.StandbyMarked()
+		if err != nil {
+			fmt.Println("standby: the marker cannot be read:", err)
+			os.Exit(1)
+		}
+		if on {
+			fmt.Println("standby: on")
+		} else {
+			fmt.Println("standby: off")
+		}
+	default:
+		fmt.Println("usage: x-ui standby on|off|status")
+		os.Exit(2)
+	}
+}
+
+// restoreFull runs `x-ui restore-full [-force] <archive>` with the panel stopped.
+func restoreFull(cmd *flag.FlagSet, force bool) {
+	if cmd.NArg() != 1 {
+		fmt.Println("usage: x-ui restore-full [-force] <archive>")
+		os.Exit(2)
+	}
+	logger.InitLogger(logging.INFO)
+	if err := service.RestoreFullBackupOffline(cmd.Arg(0), force); err != nil {
+		fmt.Println("restore failed:", err)
+		os.Exit(1)
+	}
+	fmt.Printf("Restored %s into %s\n", cmd.Arg(0), config.GetDBPath())
+}
+
 // loadServiceEnvFile loads the systemd EnvironmentFile so CLI subcommands like
 // "x-ui setting" hit the same database backend as the panel. godotenv.Load does
 // not override variables already in the environment, so it is a no-op for the
@@ -642,6 +688,10 @@ func main() {
 	migrateDbCmd.StringVar(&migrateDump, "dump", "", "Write a portable SQL text dump of --src to this file (.db -> .dump)")
 	migrateDbCmd.StringVar(&migrateRestore, "restore", "", "Rebuild a SQLite database from this SQL text dump (.dump -> .db); requires --out")
 	migrateDbCmd.StringVar(&migrateOut, "out", "", "Destination SQLite file for --restore (must not already exist)")
+
+	restoreFullCmd := flag.NewFlagSet("restore-full", flag.ExitOnError)
+	var restoreForce bool
+	restoreFullCmd.BoolVar(&restoreForce, "force", false, "Replace the database this panel already has")
 
 	settingCmd := flag.NewFlagSet("setting", flag.ExitOnError)
 	var port int
@@ -711,6 +761,14 @@ func main() {
 		migrateDb()
 	case "encrypt-tokens":
 		encryptNodeTokens()
+	case "standby":
+		standbyCommand(os.Args[2:])
+	case "restore-full":
+		if err := restoreFullCmd.Parse(os.Args[2:]); err != nil {
+			fmt.Println(err)
+			return
+		}
+		restoreFull(restoreFullCmd, restoreForce)
 	case "migrate-db":
 		if err := migrateDbCmd.Parse(os.Args[2:]); err != nil {
 			fmt.Println(err)
@@ -814,6 +872,8 @@ Commands:
     migrate-db     SQLite <-> .dump (--dump/--restore) or copy into PostgreSQL (--dsn)
     encrypt-tokens encrypt node bearer tokens with the configured active key
     setting        set settings
+    standby        on|off|status: keep this panel as a standby copy of another
+    restore-full   [-force] <archive>: restore a full backup with the panel stopped
     install-awg-kernel
                    build and install the AmneziaWG kernel module (required for
                    an AmneziaWG inbound's kernel mode)

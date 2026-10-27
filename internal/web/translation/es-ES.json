@@ -145,7 +145,8 @@
     "pinSidebar": "Fijar barra lateral",
     "unpinSidebar": "Desfijar barra lateral",
     "subFormats": "Sub Formats",
-    "relays": "Servidores de salida"
+    "relays": "Servidores de salida",
+    "copies": "Copias del panel"
   },
   "pages": {
     "login": {
@@ -2917,6 +2918,96 @@
           "swap": "Cambiar IP activa",
           "release": "Liberar IP"
         }
+      }
+    },
+    "standby": {
+      "refused": "Este panel está en espera; conviértelo primero en el panel principal.",
+      "toasts": {
+        "get": "Estado de espera",
+        "set": "Cambiar el estado de espera"
+      },
+      "banner": {
+        "title": "Este panel está en espera",
+        "desc": "Aquí funcionan Xray, las entradas y los servidores cisco y OpenVPN, pero los túneles de los servidores de salida y de entrada, la tarea de ArvanCloud, la renovación de certificados, las tareas de nodos, la rotación de WARP, los bots y las alertas están apagados para no chocar con el panel principal.",
+        "open": "Abrir copias del panel"
+      },
+      "thisPanel": "Este panel",
+      "tagMain": "Principal",
+      "tagStandby": "En espera",
+      "mainDesc": "Este es el panel principal: aquí funcionan los túneles de los servidores de salida y de entrada, las tareas programadas y los bots.",
+      "standbyDesc": "Este panel es un suplente. Conviértelo en el principal cuando el panel principal se pierda o se retire.",
+      "makeMain": "Hacer de este el panel principal",
+      "makeMainConfirm": "¿Hacer de este el panel principal?",
+      "makeMainConfirmDesc": "Pon antes el otro panel en espera, o usa «Hacer principal» desde la lista de copias del otro panel. Dos paneles principales se pelean por los mismos servidores de salida y de entrada y los mismos bots.",
+      "goStandby": "Poner este panel en espera",
+      "goStandbyConfirm": "¿Poner este panel en espera?",
+      "goStandbyConfirmDesc": "Aquí se cortan los túneles de los servidores de salida y de entrada, y se detienen la tarea de ArvanCloud, la renovación de certificados, las tareas de nodos, la rotación de WARP, los bots y las alertas. Xray y las entradas siguen funcionando. Haz principal a otro panel, o los clientes cuyo tráfico pasa por esos servidores perderán la conexión."
+    },
+    "clones": {
+      "intro": "Una copia es este mismo panel instalado en otro servidor con todos sus datos, en espera para tomar el relevo si se pierde este servidor.",
+      "never": "Nunca",
+      "add": {
+        "title": "Copiar a un servidor nuevo",
+        "hint": "El panel actual no cambia. El servidor nuevo recibe la última versión publicada del panel, o la compilación de este panel si es más reciente, luego la copia de seguridad completa de este panel, y arranca en espera. La contraseña se usa una sola vez para instalar la clave SSH propia del panel y nunca se guarda.",
+        "submit": "Copiar este panel"
+      },
+      "fields": {
+        "address": "IP del servidor",
+        "sshPort": "Puerto SSH",
+        "sshUser": "Usuario SSH",
+        "password": "Contraseña SSH"
+      },
+      "errors": {
+        "address": "Introduce la IP del servidor nuevo.",
+        "sshPort": "Introduce un puerto entre 1 y 65535.",
+        "sshUser": "Introduce el usuario SSH.",
+        "password": "Introduce la contraseña SSH."
+      },
+      "list": {
+        "title": "Copias",
+        "empty": "Todavía no hay copias"
+      },
+      "cols": {
+        "address": "Servidor",
+        "status": "Estado",
+        "step": "Paso",
+        "mode": "Instalado",
+        "version": "Versión",
+        "lastSync": "Última sincronización",
+        "lastSeen": "Última comprobación",
+        "lastError": "Último error"
+      },
+      "status": {
+        "pending": "En cola",
+        "installing": "Instalando",
+        "standby": "En espera",
+        "main": "Principal",
+        "error": "Error"
+      },
+      "mode": {
+        "release": "Última versión",
+        "copied": "Copiada esta compilación"
+      },
+      "actions": {
+        "check": "Comprobar",
+        "checkHint": "Pregunta a la copia si su panel está funcionando y en espera.",
+        "sync": "Sincronizar",
+        "syncHint": "Vuelve a enviar los datos actuales de este panel a la copia; sigue en espera.",
+        "promote": "Hacer principal",
+        "remove": "Quitar",
+        "removeHint": "Solo olvida la copia; el servidor no se toca."
+      },
+      "promoteConfirm": "¿Hacer de {address} el panel principal?",
+      "promoteConfirmDesc": "La copia se sincroniza una última vez y pasa a ser el panel principal; después este panel queda en espera. Recuerda apuntar los dominios del panel y de la suscripción a {address}.",
+      "removeConfirm": "¿Olvidar la copia en {address}?",
+      "removeConfirmDesc": "Solo se borran esta fila y su clave SSH. El servidor y el panel que tiene no se tocan.",
+      "toasts": {
+        "list": "Copias del panel",
+        "add": "Copiar el panel",
+        "sync": "Sincronizar la copia",
+        "check": "Comprobar la copia",
+        "promote": "Hacer principal la copia",
+        "delete": "Quitar la copia"
       }
     }
   },

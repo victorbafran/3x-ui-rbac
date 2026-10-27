@@ -30,6 +30,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/util/cronspec"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/sys"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/controller"
+	"github.com/mhsanaei/3x-ui/v3/internal/web/global"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/job"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/locale"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/middleware"
@@ -337,6 +338,17 @@ const (
 	cadenceArvan = "@every 1m"
 )
 
+// mainOnlyJob skips its job while this panel is on standby, where it would
+// clash with the main panel: a second tunnel client, a second bot, a second master.
+type mainOnlyJob struct{ cron.Job }
+
+func (j mainOnlyJob) Run() {
+	if global.IsStandby() {
+		return
+	}
+	j.Job.Run()
+}
+
 // startTask schedules background jobs (Xray checks, traffic jobs, cron
 // jobs) which the panel relies on for periodic maintenance and monitoring.
 func (s *Server) startTask(restartXray bool, loc *time.Location) {
@@ -382,17 +394,17 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 	_, _ = s.cron.AddJob(cadenceOpenVPN, openvpnJob)
 	go openvpnJob.Run()
 
-	relayJob := job.NewRelayJob()
+	relayJob := mainOnlyJob{job.NewRelayJob()}
 	_, _ = s.cron.AddJob(cadenceRelay, relayJob)
 	go relayJob.Run()
 
 	// Watch the fronts on ArvanCloud; no run at start, the first tick is soon enough.
-	_, _ = s.cron.AddJob(cadenceArvan, job.NewArvanJob())
+	_, _ = s.cron.AddJob(cadenceArvan, mainOnlyJob{job.NewArvanJob()})
 
 	// Renew the certificates the panel issued for its inbounds. Run once at
 	// start as well: a panel restarted more often than the cadence would
 	// otherwise never reach its first check.
-	certRenewJob := job.NewCertRenewJob()
+	certRenewJob := mainOnlyJob{job.NewCertRenewJob()}
 	_, _ = s.cron.AddJob(cadenceCertRenew, certRenewJob)
 	go certRenewJob.Run()
 
@@ -404,14 +416,14 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 	_, _ = s.cron.AddJob(cadenceClientIPScan, job.NewCheckClientIpJob())
 	_, _ = s.cron.AddJob(cadenceAdminLimits, job.NewAdminLimitsJob())
 
-	_, _ = s.cron.AddJob(cadenceNodeHeartbeat, job.NewNodeHeartbeatJob())
+	_, _ = s.cron.AddJob(cadenceNodeHeartbeat, mainOnlyJob{job.NewNodeHeartbeatJob()})
 
-	_, _ = s.cron.AddJob(cadenceNodeTraffic, job.NewNodeTrafficSyncJob())
+	_, _ = s.cron.AddJob(cadenceNodeTraffic, mainOnlyJob{job.NewNodeTrafficSyncJob()})
 
 	// Outbound subscription auto-refresh (respects per-sub updateInterval)
 	_, _ = s.cron.AddJob(cadenceOutboundSub, job.NewOutboundSubscriptionJob())
 
-	_, _ = s.cron.AddJob(cadenceReapOrphans, job.NewReapSyncOrphansJob())
+	_, _ = s.cron.AddJob(cadenceReapOrphans, mainOnlyJob{job.NewReapSyncOrphansJob()})
 
 	// Warm permanent routing URLs immediately and refresh them outside the
 	// latency-sensitive subscription request path.
@@ -422,7 +434,7 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 	// check client ips from log file every day
 	_, _ = s.cron.AddJob("@daily", job.NewClearLogsJob())
 	_, _ = s.cron.AddJob(cadenceXrayLogPrune, job.NewPruneXrayLogsJob())
-	_, _ = s.cron.AddJob("@hourly", job.NewWarpIpJob())
+	_, _ = s.cron.AddJob("@hourly", mainOnlyJob{job.NewWarpIpJob()})
 
 	// Inbound traffic reset jobs
 	// Run every hour
@@ -438,7 +450,7 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 	if ldapEnabled, _ := s.settingService.GetLdapEnable(); ldapEnabled {
 		runtime, _ := s.settingService.GetLdapSyncCron()
 		// job has zero-value services with method receivers that read settings on demand
-		scheduleSettingJob(s.cron, "LDAP sync", runtime, "@every 1m", job.NewLdapSyncJob())
+		scheduleSettingJob(s.cron, "LDAP sync", runtime, "@every 1m", mainOnlyJob{job.NewLdapSyncJob()})
 	}
 
 	// Telegram-bot–dependent jobs: periodic stats report + callback-hash cleanup.
@@ -448,10 +460,10 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 		if err != nil {
 			logger.Warningf("Telegram notify: failed to load runtime: %v", err)
 		}
-		scheduleSettingJob(s.cron, "Telegram notify", runtime, "@daily", job.NewStatsNotifyJob())
+		scheduleSettingJob(s.cron, "Telegram notify", runtime, "@daily", mainOnlyJob{job.NewStatsNotifyJob()})
 
 		// check for Telegram bot callback query hash storage reset
-		_, _ = s.cron.AddJob(cadenceCheckHash, job.NewCheckHashStorageJob())
+		_, _ = s.cron.AddJob(cadenceCheckHash, mainOnlyJob{job.NewCheckHashStorageJob()})
 	}
 
 	// Discord-bot-dependent jobs: periodic stats report + database backup.
@@ -461,17 +473,17 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 		if err != nil {
 			logger.Warningf("Discord notify: failed to load runtime: %v", err)
 		}
-		s.discordNotifyEntryID = scheduleSettingJob(s.cron, "Discord notify", runtime, "@daily", job.NewDiscordNotifyJob(s.discordService))
+		s.discordNotifyEntryID = scheduleSettingJob(s.cron, "Discord notify", runtime, "@daily", mainOnlyJob{job.NewDiscordNotifyJob(s.discordService)})
 	}
 
 	// CPU monitor publishes cpu.high events; register it whenever any notifier
 	// (Telegram or Email) wants them, independent of the Telegram bot being on.
 	if s.cpuAlarmWanted() {
-		_, _ = s.cron.AddJob(cadenceCPUAlarm, job.NewCheckCpuJob())
+		_, _ = s.cron.AddJob(cadenceCPUAlarm, mainOnlyJob{job.NewCheckCpuJob()})
 	}
 	// Memory monitor publishes memory.high events; register it whenever any notifier wants them.
 	if s.memoryAlarmWanted() {
-		_, _ = s.cron.AddJob(cadenceMemoryAlarm, job.NewCheckMemJob())
+		_, _ = s.cron.AddJob(cadenceMemoryAlarm, mainOnlyJob{job.NewCheckMemJob()})
 	}
 
 	if mins := sys.MemoryReleaseIntervalMinutes(); mins > 0 {
@@ -578,6 +590,17 @@ func (s *Server) start(restartXray bool, startTgBot bool) (err error) {
 	loc, err := s.settingService.GetTimeLocation()
 	if err != nil {
 		return err
+	}
+	// Every start, not only boot: a panel-only restart leaves the tunnel clients
+	// and wgr interfaces of the panel it replaced running.
+	standby, markErr := service.StandbyMarked()
+	if markErr != nil {
+		logger.Warning("standby marker cannot be read; staying on standby:", markErr)
+	}
+	global.SetStandby(standby)
+	if standby {
+		logger.Info("this panel is on standby: tunnels, bots, notifiers and node jobs stay off")
+		(&service.RelayService{}).StandDown()
 	}
 	service.StartTrafficWriter()
 
@@ -709,18 +732,22 @@ func (s *Server) start(restartXray bool, startTgBot bool) (err error) {
 		}
 	}
 
-	// Register email subscriber (always — it checks smtpEnable at runtime)
+	// Register email subscriber (it checks smtpEnable at runtime); a standby copy sends nothing
 	emailService := email.NewEmailService(s.settingService)
 	emailSub := email.NewSubscriber(s.settingService, emailService)
-	s.bus.Subscribe("email-notifier", emailSub.HandleEvent)
+	if !global.IsStandby() {
+		s.bus.Subscribe("email-notifier", emailSub.HandleEvent)
+	}
 
 	// Wire email service to controller for test endpoint
 	controller.SetEmailService(emailService)
 
-	// Register discord subscriber (always — it checks discordBotEnable at runtime)
+	// Register discord subscriber (it checks discordBotEnable at runtime); a standby copy sends nothing
 	s.discordService = discord.NewDiscordService(s.settingService)
 	discordSub := discord.NewSubscriber(s.settingService, s.discordService)
-	s.bus.Subscribe("discord-notifier", discordSub.HandleEvent)
+	if !global.IsStandby() {
+		s.bus.Subscribe("discord-notifier", discordSub.HandleEvent)
+	}
 
 	// Wire discord service to controller for test endpoint
 	controller.SetDiscordService(s.discordService)
@@ -736,7 +763,7 @@ func (s *Server) start(restartXray bool, startTgBot bool) (err error) {
 			s.discordNotifyEntryID = 0
 		}
 		enabled, err := s.settingService.GetDiscordBotEnable()
-		if err != nil || !enabled {
+		if err != nil || !enabled || global.IsStandby() {
 			if s.discordGateway != nil && s.discordGateway.IsRunning() {
 				s.discordGateway.Stop()
 			}
@@ -746,7 +773,7 @@ func (s *Server) start(restartXray bool, startTgBot bool) (err error) {
 		if err != nil {
 			logger.Warningf("Discord notify: failed to load runtime: %v", err)
 		}
-		s.discordNotifyEntryID = scheduleSettingJob(s.cron, "Discord notify", runtime, "@daily", job.NewDiscordNotifyJob(s.discordService))
+		s.discordNotifyEntryID = scheduleSettingJob(s.cron, "Discord notify", runtime, "@daily", mainOnlyJob{job.NewDiscordNotifyJob(s.discordService)})
 
 		if s.discordGateway != nil && !s.discordGateway.IsRunning() {
 			_ = s.discordGateway.Start(s.ctx)
@@ -780,7 +807,7 @@ func (s *Server) start(restartXray bool, startTgBot bool) (err error) {
 
 	controller.SetReloadTgbotFunc(func() {
 		enabled, err := s.settingService.GetTgbotEnabled()
-		if err != nil || !enabled {
+		if err != nil || !enabled || global.IsStandby() {
 			if s.tgbotService.IsRunning() {
 				s.tgbotService.Stop()
 			}
@@ -802,7 +829,8 @@ func (s *Server) start(restartXray bool, startTgBot bool) (err error) {
 
 	s.startTask(restartXray, loc)
 
-	if startTgBot {
+	// One bot token serves one server: a second poller gets Telegram's 409.
+	if startTgBot && !global.IsStandby() {
 		isTgbotenabled, err := s.settingService.GetTgbotEnabled()
 		if (err == nil) && isTgbotenabled {
 			tgBot := s.tgbotService.NewTgbot()
@@ -813,7 +841,7 @@ func (s *Server) start(restartXray bool, startTgBot bool) (err error) {
 	}
 
 	isDiscordEnabled, err := s.settingService.GetDiscordBotEnable()
-	if (err == nil) && isDiscordEnabled && s.discordGateway != nil {
+	if (err == nil) && isDiscordEnabled && s.discordGateway != nil && !global.IsStandby() {
 		_ = s.discordGateway.Start(s.ctx)
 	}
 

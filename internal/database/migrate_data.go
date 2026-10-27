@@ -44,6 +44,7 @@ func migrationModels() []any {
 		&model.Relay{},
 		&model.ArvanFront{},
 		&model.ArvanIP{},
+		&model.PanelClone{},
 		&model.ApiToken{},
 		&model.Inbound{},
 		&model.AdminInbound{},

@@ -145,7 +145,8 @@
     "pinSidebar": "固定側邊欄",
     "unpinSidebar": "取消固定側邊欄",
     "subFormats": "Sub Formats",
-    "relays": "出口伺服器"
+    "relays": "出口伺服器",
+    "copies": "面板副本"
   },
   "pages": {
     "login": {
@@ -2917,6 +2918,96 @@
           "swap": "切換使用中的 IP",
           "release": "釋放 IP"
         }
+      }
+    },
+    "standby": {
+      "refused": "此面板處於待命狀態；請先將它設為主面板。",
+      "toasts": {
+        "get": "待命狀態",
+        "set": "變更待命狀態"
+      },
+      "banner": {
+        "title": "此面板處於待命狀態",
+        "desc": "Xray、入站以及 cisco 與 OpenVPN 伺服器在這裡運作，但出口與入口伺服器的通道、ArvanCloud 工作、憑證續期、節點工作、WARP 輪替、機器人與警示都已關閉，以免與主面板衝突。",
+        "open": "開啟面板副本"
+      },
+      "thisPanel": "此面板",
+      "tagMain": "主面板",
+      "tagStandby": "待命",
+      "mainDesc": "這是主面板：出口與入口伺服器的通道、排程工作與機器人都在這裡運作。",
+      "standbyDesc": "此面板是替補。當主面板遺失或退役時，將它設為主面板。",
+      "makeMain": "將此面板設為主面板",
+      "makeMainConfirm": "將此面板設為主面板？",
+      "makeMainConfirmDesc": "請先讓另一個面板進入待命，或改在另一個面板的副本清單中使用「設為主面板」。兩個主面板會爭搶相同的出口與入口伺服器和機器人。",
+      "goStandby": "讓此面板進入待命",
+      "goStandbyConfirm": "讓此面板進入待命？",
+      "goStandbyConfirmDesc": "這裡的出口與入口伺服器通道會中斷，ArvanCloud 工作、憑證續期、節點工作、WARP 輪替、機器人與警示都會停止。Xray 與入站繼續運作。請將另一個面板設為主面板，否則流量經過這些伺服器的客戶會斷線。"
+    },
+    "clones": {
+      "intro": "副本就是此面板連同全部資料安裝在另一台伺服器上，保持待命，以便在此伺服器遺失時接手。",
+      "never": "從未",
+      "add": {
+        "title": "複製到新伺服器",
+        "hint": "目前的面板不會改變。新伺服器會安裝面板的最新發行版（若此面板的建置較新，則用此面板的建置），接著還原此面板的完整備份，並以待命狀態啟動。密碼只用一次，用來安裝面板自己的 SSH 金鑰，絕不儲存。",
+        "submit": "複製此面板"
+      },
+      "fields": {
+        "address": "伺服器 IP",
+        "sshPort": "SSH 連接埠",
+        "sshUser": "SSH 使用者",
+        "password": "SSH 密碼"
+      },
+      "errors": {
+        "address": "請輸入新伺服器的 IP。",
+        "sshPort": "請輸入 1 到 65535 之間的連接埠。",
+        "sshUser": "請輸入 SSH 使用者。",
+        "password": "請輸入 SSH 密碼。"
+      },
+      "list": {
+        "title": "副本清單",
+        "empty": "還沒有副本"
+      },
+      "cols": {
+        "address": "伺服器",
+        "status": "狀態",
+        "step": "步驟",
+        "mode": "安裝內容",
+        "version": "版本",
+        "lastSync": "上次同步",
+        "lastSeen": "上次檢查",
+        "lastError": "上次錯誤"
+      },
+      "status": {
+        "pending": "等待中",
+        "installing": "安裝中",
+        "standby": "待命",
+        "main": "主面板",
+        "error": "錯誤"
+      },
+      "mode": {
+        "release": "最新發行版",
+        "copied": "複製了此建置"
+      },
+      "actions": {
+        "check": "檢查",
+        "checkHint": "詢問副本其面板是否在運作、是否處於待命。",
+        "sync": "同步",
+        "syncHint": "再次把此面板目前的資料傳送到副本；副本保持待命。",
+        "promote": "設為主面板",
+        "remove": "移除",
+        "removeHint": "只是忘記此副本，不會動到伺服器。"
+      },
+      "promoteConfirm": "將 {address} 設為主面板？",
+      "promoteConfirmDesc": "副本會再同步一次並成為主面板，接著此面板進入待命。記得把面板與訂閱的網域指向 {address}。",
+      "removeConfirm": "忘記 {address} 上的副本？",
+      "removeConfirmDesc": "只刪除這一列及其 SSH 金鑰。伺服器與其上的面板不會被動到。",
+      "toasts": {
+        "list": "面板副本",
+        "add": "複製面板",
+        "sync": "同步副本",
+        "check": "檢查副本",
+        "promote": "將副本設為主面板",
+        "delete": "移除副本"
       }
     }
   },

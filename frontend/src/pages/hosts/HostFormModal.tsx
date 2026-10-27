@@ -133,9 +133,9 @@ export default function HostFormModal({
   const watchedHosts = useWatch({ control: methods.control, name: 'hosts' });
   const hasCidr = Boolean(watchedHosts?.some((h) => typeof h === 'string' && h.includes('/')));
 
-  // React resets this during render rather than in an effect so the modal's
-  // first open frame already shows cleared fields.
-  const openHost = open ? host : null;
+  // Reset during render so the first open frame is clean; undefined means closed,
+  // because an Add opens with host null and must still reset.
+  const openHost = open ? host : undefined;
   const [syncedHost, setSyncedHost] = useState(openHost);
   if (openHost !== syncedHost) {
     setSyncedHost(openHost);

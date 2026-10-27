@@ -145,7 +145,8 @@
     "pinSidebar": "Sematkan bilah sisi",
     "unpinSidebar": "Lepas sematan bilah sisi",
     "subFormats": "Sub Formats",
-    "relays": "Server keluar"
+    "relays": "Server keluar",
+    "copies": "Salinan panel"
   },
   "pages": {
     "login": {
@@ -2917,6 +2918,96 @@
           "swap": "Tukar IP aktif",
           "release": "Lepas IP"
         }
+      }
+    },
+    "standby": {
+      "refused": "Panel ini sedang siaga; jadikan panel utama terlebih dahulu.",
+      "toasts": {
+        "get": "Status siaga",
+        "set": "Ubah status siaga"
+      },
+      "banner": {
+        "title": "Panel ini sedang siaga",
+        "desc": "Xray, inbound, serta server cisco dan OpenVPN berjalan di sini, tetapi tunnel server keluar dan masuk, tugas ArvanCloud, perpanjangan sertifikat, tugas node, rotasi WARP, bot, dan peringatan dimatikan agar tidak bentrok dengan panel utama.",
+        "open": "Buka salinan panel"
+      },
+      "thisPanel": "Panel ini",
+      "tagMain": "Utama",
+      "tagStandby": "Siaga",
+      "mainDesc": "Ini panel utama: tunnel server keluar dan masuk, tugas terjadwal, dan bot berjalan di sini.",
+      "standbyDesc": "Panel ini adalah cadangan. Jadikan utama ketika panel utama hilang atau dipensiunkan.",
+      "makeMain": "Jadikan panel ini utama",
+      "makeMainConfirm": "Jadikan panel ini panel utama?",
+      "makeMainConfirmDesc": "Siagakan panel lain terlebih dahulu, atau gunakan «Jadikan utama» dari daftar salinan di panel lain. Dua panel utama akan berebut server keluar dan masuk serta bot yang sama.",
+      "goStandby": "Siagakan panel ini",
+      "goStandbyConfirm": "Siagakan panel ini?",
+      "goStandbyConfirmDesc": "Tunnel server keluar dan masuk di sini diputus, dan tugas ArvanCloud, perpanjangan sertifikat, tugas node, rotasi WARP, bot, serta peringatan berhenti. Xray dan inbound tetap berjalan. Jadikan panel lain sebagai utama, atau pelanggan yang lalu lintasnya melewati server tersebut akan terputus."
+    },
+    "clones": {
+      "intro": "Salinan adalah panel ini yang dipasang di server lain beserta semua datanya, disiagakan untuk mengambil alih jika server ini hilang.",
+      "never": "Belum pernah",
+      "add": {
+        "title": "Salin ke server baru",
+        "hint": "Panel saat ini tidak diubah. Server baru dipasangi rilis terbaru panel, atau build panel ini jika lebih baru, lalu menerima cadangan lengkap panel ini dan mulai dalam mode siaga. Kata sandi hanya dipakai sekali untuk memasang kunci SSH milik panel dan tidak pernah disimpan.",
+        "submit": "Salin panel ini"
+      },
+      "fields": {
+        "address": "IP server",
+        "sshPort": "Port SSH",
+        "sshUser": "Pengguna SSH",
+        "password": "Kata sandi SSH"
+      },
+      "errors": {
+        "address": "Masukkan IP server baru.",
+        "sshPort": "Masukkan port antara 1 dan 65535.",
+        "sshUser": "Masukkan pengguna SSH.",
+        "password": "Masukkan kata sandi SSH."
+      },
+      "list": {
+        "title": "Daftar salinan",
+        "empty": "Belum ada salinan"
+      },
+      "cols": {
+        "address": "Server",
+        "status": "Status",
+        "step": "Langkah",
+        "mode": "Terpasang",
+        "version": "Versi",
+        "lastSync": "Sinkron terakhir",
+        "lastSeen": "Pemeriksaan terakhir",
+        "lastError": "Galat terakhir"
+      },
+      "status": {
+        "pending": "Menunggu",
+        "installing": "Memasang",
+        "standby": "Siaga",
+        "main": "Utama",
+        "error": "Galat"
+      },
+      "mode": {
+        "release": "Rilis terbaru",
+        "copied": "Build ini disalin"
+      },
+      "actions": {
+        "check": "Periksa",
+        "checkHint": "Menanyakan ke salinan apakah panelnya berjalan dan dalam mode siaga.",
+        "sync": "Sinkronkan",
+        "syncHint": "Mengirim ulang data panel ini saat ini ke salinan; salinan tetap siaga.",
+        "promote": "Jadikan utama",
+        "remove": "Hapus",
+        "removeHint": "Hanya melupakan salinan; server tidak disentuh."
+      },
+      "promoteConfirm": "Jadikan {address} panel utama?",
+      "promoteConfirmDesc": "Salinan disinkronkan sekali lagi lalu menjadi panel utama, kemudian panel ini menjadi siaga. Ingat arahkan domain panel dan langganan ke {address}.",
+      "removeConfirm": "Lupakan salinan di {address}?",
+      "removeConfirmDesc": "Hanya baris ini dan kunci SSH-nya yang dihapus. Server dan panel di dalamnya tidak disentuh.",
+      "toasts": {
+        "list": "Salinan panel",
+        "add": "Salin panel",
+        "sync": "Sinkronkan salinan",
+        "check": "Periksa salinan",
+        "promote": "Jadikan salinan utama",
+        "delete": "Hapus salinan"
       }
     }
   },

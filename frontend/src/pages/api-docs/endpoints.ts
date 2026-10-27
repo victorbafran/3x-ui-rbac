@@ -583,6 +583,19 @@ export const sections: readonly Section[] = [
       },
       {
         method: 'GET',
+        path: '/panel/api/server/standby',
+        summary:
+          'Whether this panel is on standby: {"standby": true} or false. A standby panel runs the web panel, Xray, the inbounds and the cisco and OpenVPN servers, but none of the work that would clash with the main panel: no relay, entry or exit tunnels, no ArvanCloud job, no certificate renewal, no node jobs, no WARP rotation, no Telegram or Discord bot with their reports and backups, no alarm notifiers and no bans sent to entry servers. Relay and ArvanCloud actions, node pushes and issueCert are refused while it is. The state is a marker file beside the database, so a restored backup never carries it.',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/server/standby',
+        summary:
+          'Put this panel on standby (true) or make it the main panel (false). Going on standby takes this panel\u2019s relay tunnels down first; becoming main starts Xray when it is not running. About a second later the panel process restarts so its jobs and bots read the new state; Xray and the inbounds keep running. Two main panels fight over the same relays, entry servers and bots, so put the other panel on standby first, or use promote from the panel that holds the copy.',
+        body: '{\n  "standby": true\n}',
+      },
+      {
+        method: 'GET',
         path: '/panel/api/server/getConfigJson',
         summary: 'Return the assembled Xray config that\u2019s currently running on this host.',
         response:
@@ -1852,6 +1865,52 @@ export const sections: readonly Section[] = [
         summary:
           'Give a reserve IP back to ArvanCloud for good. The active IP is refused. Returns at once.',
         body: '{\n  "ip": "203.0.113.20"\n}',
+      },
+    ],
+  },
+
+  {
+    id: 'clones',
+    title: 'Panel copies',
+    description:
+      'Copies of this panel on other servers, each a full, normal install of the fork\u2019s latest release with this panel\u2019s full backup restored onto it, started on standby (see GET /panel/api/server/standby) so it can take over when this panel is lost. When this panel is newer than that release, or the same release with a different binary, its own binary is copied over the installed one. Copying never changes this panel. The SSH password is used once to install a key of the panel\u2019s own, kept with the relay keys, and is never stored. Super admin only. All endpoints under /panel/api/clones.',
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/panel/api/clones/list',
+        summary:
+          'Every copy: address, sshPort, sshUser, status ("pending", "installing", "standby", "main" or "error"), step (what is running now, "" when nothing), mode ("release" when the latest release was installed, "copied" when this panel\u2019s own build was put over it), version, lastError, and lastSeen, lastSync and createdAt as Unix seconds.',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/clones/add',
+        summary:
+          'Copy this panel to a new server. Returns at once while the work runs behind it; poll the list for step and status. The panel installs its own SSH key, checks the server (same CPU architecture, Debian or Ubuntu with systemd, at least 1.5 GB free, no panel database there yet), installs the fork\u2019s latest release non-interactively with the extra packages this server has, puts this panel\u2019s binary over it when this one is newer, restores this panel\u2019s full backup, sets up fail2ban when this server runs it, and starts the copy on standby. Refused for an address that is already a copy, and while this panel is on standby.',
+        body: '{\n  "address": "203.0.113.10",\n  "sshPort": 22,\n  "sshUser": "root",\n  "password": "..."\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/clones/sync/:id',
+        summary:
+          'Send this panel\u2019s current full backup to a copy and restore it there, first putting this panel\u2019s binary over the copy\u2019s when this one is not older; the copy stays on standby. Returns at once; poll the list for step. Refused for a copy that never finished installing or has become the main panel, and while this panel is on standby.',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/clones/check/:id',
+        summary:
+          'Ask the copy over SSH whether its panel is running, whether it is on standby and which version it runs, and record the answer in status and lastSeen. Allowed while this panel is on standby.',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/clones/promote/:id',
+        summary:
+          'Make a copy the main panel: sync it once more, take it off standby, check that it came up, then put this panel on standby. If the copy does not come up it is put back on standby and this panel stays main. Returns at once; poll the list for step. The panel and subscription domains still point at this server; move them to the copy\u2019s address. Refused as sync is.',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/clones/del/:id',
+        summary:
+          'Forget a copy: its row and its SSH key are removed. The server and the panel on it are not touched.',
       },
     ],
   },

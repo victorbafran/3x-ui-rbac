@@ -124,20 +124,37 @@ func (c *Client) Close() {
 // there and nowhere else, and an operator reading "exit status 100" learns
 // nothing at all.
 func (c *Client) Run(ctx context.Context, command string) (string, error) {
-	return c.run(ctx, command, nil)
+	return c.run(ctx, command, nil, commandTimeout)
+}
+
+// RunLong is Run for work that outlasts commandTimeout, such as a whole panel
+// install; ctx is its only deadline, so the caller must give it one.
+func (c *Client) RunLong(ctx context.Context, command string, stdin io.Reader) (string, error) {
+	return c.run(ctx, command, stdin, 0)
 }
 
 // Upload writes data to path on the relay through the session's input, which
 // is how a binary far too large for a command line gets there. It is written
 // beside the target and renamed over it, so nothing ever reads half a file.
 func (c *Client) Upload(ctx context.Context, path string, data []byte) error {
-	q := shellQuote(path)
-	part := shellQuote(path + ".part")
-	_, err := c.run(ctx, "umask 077; cat > "+part+" && mv -f "+part+" "+q, bytes.NewReader(data))
+	_, err := c.run(ctx, uploadCommand(path), bytes.NewReader(data), commandTimeout)
 	return err
 }
 
-func (c *Client) run(ctx context.Context, command string, stdin io.Reader) (string, error) {
+// UploadFrom is Upload streamed from r with ctx as the only deadline, for a
+// file too big to hold in memory or to send within commandTimeout.
+func (c *Client) UploadFrom(ctx context.Context, path string, r io.Reader) error {
+	_, err := c.RunLong(ctx, uploadCommand(path), r)
+	return err
+}
+
+func uploadCommand(path string) string {
+	part := shellQuote(path + ".part")
+	return "umask 077; cat > " + part + " && mv -f " + part + " " + shellQuote(path)
+}
+
+// run executes command; a zero limit leaves ctx as the only deadline.
+func (c *Client) run(ctx context.Context, command string, stdin io.Reader, limit time.Duration) (string, error) {
 	if c == nil || c.conn == nil {
 		return "", errors.New("no connection to the relay")
 	}
@@ -157,8 +174,12 @@ func (c *Client) run(ctx context.Context, command string, stdin io.Reader) (stri
 	done := make(chan error, 1)
 	go func() { done <- session.Run(command) }()
 
-	timeout := time.NewTimer(commandTimeout)
-	defer timeout.Stop()
+	var expired <-chan time.Time
+	if limit > 0 {
+		timeout := time.NewTimer(limit)
+		defer timeout.Stop()
+		expired = timeout.C
+	}
 	select {
 	case err := <-done:
 		if err != nil {
@@ -175,9 +196,9 @@ func (c *Client) run(ctx context.Context, command string, stdin io.Reader) (stri
 	case <-ctx.Done():
 		_ = session.Signal(ssh.SIGKILL)
 		return out.String(), ctx.Err()
-	case <-timeout.C:
+	case <-expired:
 		_ = session.Signal(ssh.SIGKILL)
-		return out.String(), fmt.Errorf("%s took longer than %s", firstLines(command, 1), commandTimeout)
+		return out.String(), fmt.Errorf("%s took longer than %s", firstLines(command, 1), limit)
 	}
 }
 

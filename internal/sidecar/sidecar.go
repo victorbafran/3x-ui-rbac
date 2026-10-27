@@ -3,9 +3,8 @@
 // behind, and keep the last thing it said so the panel can show the operator
 // why it is not running.
 //
-// internal/ocserv has its own copy of this, written first. This package is
-// the shared one; moving ocserv onto it is a separate change, because that
-// protocol is in use and its tests need a linux host to run.
+// internal/ocserv keeps its own Process, written first, and shares only the
+// LineWriter; moving the rest is a separate change, as that protocol is in use.
 package sidecar
 
 import (
@@ -26,62 +25,6 @@ var (
 	forceStopTimeout    = 2 * time.Second
 )
 
-// logWriter forwards the child's output into the panel log line by line, and
-// remembers the last line.
-//
-// The last line is what the panel shows for an instance that will not start.
-// Without it the operator sees an inbound that is simply absent, which is the
-// hardest kind of failure to act on: the reason was printed and thrown away.
-type logWriter struct {
-	mu       sync.Mutex
-	label    string
-	buf      string
-	lastLine string
-}
-
-func (w *logWriter) Write(p []byte) (int, error) {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-	w.buf += string(p)
-	for {
-		i := strings.IndexByte(w.buf, '\n')
-		if i < 0 {
-			break
-		}
-		line := w.buf[:i]
-		w.buf = w.buf[i+1:]
-		w.emitLocked(line)
-	}
-	return len(p), nil
-}
-
-// Flush emits a final line that never got its newline, which is how a process
-// that dies mid-sentence still says what went wrong.
-func (w *logWriter) Flush() {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-	if w.buf != "" {
-		line := w.buf
-		w.buf = ""
-		w.emitLocked(line)
-	}
-}
-
-func (w *logWriter) emitLocked(line string) {
-	trimmed := strings.TrimSpace(strings.TrimRight(line, "\r"))
-	if trimmed == "" {
-		return
-	}
-	w.lastLine = trimmed
-	logger.Infof("%s | %s", w.label, trimmed)
-}
-
-func (w *logWriter) LastLine() string {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-	return w.lastLine
-}
-
 // Process is one supervised helper.
 type Process struct {
 	mu              sync.RWMutex
@@ -89,7 +32,7 @@ type Process struct {
 	done            chan struct{}
 	binary          string
 	args            []string
-	log             *logWriter
+	log             *LineWriter
 	exitErr         error
 	intentionalStop atomic.Bool
 }
@@ -97,7 +40,13 @@ type Process struct {
 // New describes a process without starting it. label prefixes every line the
 // child writes into the panel log.
 func New(binary, label string, args ...string) *Process {
-	return &Process{binary: binary, args: args, log: &logWriter{label: label}}
+	return &Process{binary: binary, args: args, log: NewLineWriter(label)}
+}
+
+// SetNoise folds the lines the child prints for every stranger who knocks;
+// call it before Start.
+func (p *Process) SetNoise(rules ...NoiseRule) {
+	p.log.setNoise(rules)
 }
 
 // IsRunning reports whether the child is alive.

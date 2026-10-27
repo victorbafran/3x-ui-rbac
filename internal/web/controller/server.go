@@ -69,6 +69,7 @@ func (a *ServerController) initRouter(g *gin.RouterGroup) {
 	g.GET("/getNewVlessEnc", a.getNewVlessEnc)
 	g.GET("/clientIps", a.getClientIps)
 	g.GET("/fail2banStatus", a.getFail2banStatus)
+	g.GET("/standby", a.getStandby)
 
 	g.POST("/issueCert", a.issueCert)
 	g.POST("/stopXrayService", a.stopXrayService)
@@ -88,6 +89,7 @@ func (a *ServerController) initRouter(g *gin.RouterGroup) {
 	g.POST("/scanRealityTarget", a.scanRealityTarget)
 	g.POST("/scanRealityTargets", a.scanRealityTargets)
 	g.POST("/clientIps", a.setClientIps)
+	g.POST("/standby", a.setStandby)
 }
 
 // startTask registers the @2s ticker that refreshes server status, samples
@@ -456,6 +458,11 @@ type issueCertRequest struct {
 // /panel/api/server/ prefix rule: it opens port 80 and writes under the
 // panel's own directory.
 func (a *ServerController) issueCert(c *gin.Context) {
+	// The copy shares the main panel's ACME account; its failed checks count there.
+	if global.IsStandby() {
+		pureJsonMsg(c, http.StatusOK, false, I18nWeb(c, "pages.standby.refused"))
+		return
+	}
 	req, ok := middleware.BindJSONAndValidate[issueCertRequest](c)
 	if !ok {
 		return
@@ -478,6 +485,30 @@ func (a *ServerController) issueCert(c *gin.Context) {
 		return
 	}
 	jsonObj(c, res, nil)
+}
+
+// standbyRequest puts this panel on standby (true) or makes it the main one (false).
+type standbyRequest struct {
+	Standby *bool `json:"standby" validate:"required"`
+}
+
+// getStandby reports whether this panel is a standby copy, as its marker says.
+func (a *ServerController) getStandby(c *gin.Context) {
+	on, err := service.StandbyMarked()
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "pages.standby.toasts.get"), err)
+		return
+	}
+	jsonObj(c, gin.H{"standby": on}, nil)
+}
+
+// setStandby switches the mode; the panel process restarts a second later.
+func (a *ServerController) setStandby(c *gin.Context) {
+	req, ok := middleware.BindJSONAndValidate[standbyRequest](c)
+	if !ok {
+		return
+	}
+	jsonMsg(c, I18nWeb(c, "pages.standby.toasts.set"), service.SetStandbyMode(*req.Standby))
 }
 
 // getNewX25519Cert generates a new X25519 certificate.

@@ -601,7 +601,7 @@ func (s *PanelCloneService) putBack(ctx context.Context, cl *relay.Client, row *
 		err = waitCloneActive(ctx, cl)
 	}
 	if err != nil {
-		s.fail(row, fmt.Errorf("%s (%v), and putting the copy back on standby failed too: %w", what, cause, err))
+		s.fail(row, fmt.Errorf("%s (%w), and putting the copy back on standby failed too: %w", what, cause, err))
 		return
 	}
 	msg := fmt.Sprintf("%s (%v), so the copy is back on standby and this panel stays main", what, cause)

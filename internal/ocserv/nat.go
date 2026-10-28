@@ -3,7 +3,6 @@ package ocserv
 import (
 	"context"
 	"os/exec"
-	"runtime"
 	"time"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
@@ -17,7 +16,7 @@ import (
 
 const natTimeout = 10 * time.Second
 
-func run(name string, args ...string) error {
+var run = func(name string, args ...string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), natTimeout)
 	defer cancel()
 	return exec.CommandContext(ctx, name, args...).Run()
@@ -32,7 +31,7 @@ func ruleExists(args ...string) bool {
 // idempotent: the rule is added only when an identical one is not already
 // there, so repeated reconciles do not stack duplicates.
 func ensureNAT(cidr string) {
-	if runtime.GOOS != "linux" || cidr == "" {
+	if !onLinux || cidr == "" {
 		return
 	}
 	if err := run("sysctl", "-w", "net.ipv4.ip_forward=1"); err != nil {
@@ -53,7 +52,7 @@ func ensureNAT(cidr string) {
 // removeNAT drops the masquerade rule for a pool that is no longer served, so
 // a deleted inbound does not leave a rule behind for the next one to inherit.
 func removeNAT(cidr string) {
-	if runtime.GOOS != "linux" || cidr == "" {
+	if !onLinux || cidr == "" {
 		return
 	}
 	rule := []string{"-s", cidr, "-j", "MASQUERADE"}

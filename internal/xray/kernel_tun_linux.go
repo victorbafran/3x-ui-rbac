@@ -43,6 +43,16 @@ func kernelTunReachable() bool {
 		}
 		_ = f.Close()
 	}
+	return tunDeviceOpens()
+}
+
+// TunInboundPossible reports that the core can create a TUN inbound: CAP_NET_ADMIN and
+// /dev/net/tun. Without them one TUN inbound aborts the start of every other inbound.
+var TunInboundPossible = sync.OnceValue(func() bool {
+	return hasEffectiveNetAdmin() && tunDeviceOpens()
+})
+
+func tunDeviceOpens() bool {
 	tun, err := os.OpenFile("/dev/net/tun", os.O_RDWR, 0)
 	if err != nil {
 		return false

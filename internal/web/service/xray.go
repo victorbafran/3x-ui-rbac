@@ -1527,6 +1527,7 @@ func (s *XrayService) RestartXray(isForce bool) error {
 			}
 			if applied {
 				logger.Info("Xray config changes applied through the core API, no restart needed")
+				reassertSidecarExits(xrayConfig)
 				return nil
 			}
 		}
@@ -1548,6 +1549,8 @@ func (s *XrayService) RestartXray(isForce bool) error {
 		return err
 	}
 
+	// Before the TUIC readiness, whose failure returns: the TUNs are up either way.
+	reassertSidecarExits(xrayConfig)
 	if err := publishTuicRelayReadiness(xrayConfig); err != nil {
 		return err
 	}

@@ -23,6 +23,17 @@ type OpenVPNJob struct {
 	lastSpeedSample time.Time
 }
 
+// openvpnSidecars is what a tick asks of the openvpn manager.
+type openvpnSidecars interface {
+	HasRunning() bool
+	Reconcile([]openvpn.Instance)
+	ReassertRoutes()
+	CollectTraffic() ([]openvpn.Traffic, []string)
+}
+
+// openvpnManager is the openvpn manager; a variable so a test can see what a tick does.
+var openvpnManager = func() openvpnSidecars { return openvpn.GetManager() }
+
 func NewOpenVPNJob() *OpenVPNJob { return new(OpenVPNJob) }
 
 func (j *OpenVPNJob) Run() {
@@ -32,7 +43,7 @@ func (j *OpenVPNJob) Run() {
 		return
 	}
 
-	mgr := openvpn.GetManager()
+	mgr := openvpnManager()
 	// Nothing wanted and nothing running: skip entirely, so a host without
 	// openvpn installed does not log a failure every few seconds for a
 	// feature it is not using.
@@ -46,6 +57,9 @@ func (j *OpenVPNJob) Run() {
 	}
 
 	mgr.Reconcile(desired)
+	// A device recreated under a running server (an Xray restart, a relay brought
+	// back up) took its route with it; nothing restarts the server to put it back.
+	mgr.ReassertRoutes()
 
 	deltas, onlineEmails := mgr.CollectTraffic()
 

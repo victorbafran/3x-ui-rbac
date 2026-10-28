@@ -34,6 +34,16 @@ vi.mock('@/api/queries/useRelaysQuery', () => ({
         countryCode: 'NL',
         ready: true,
       },
+      {
+        interface: 'psi-AT',
+        name: 'Psiphon AT',
+        label: '🇦🇹 Austria',
+        address: '',
+        country: 'Austria',
+        countryCode: 'AT',
+        ready: true,
+        kind: 'psiphon',
+      },
     ],
   }),
   useRelaysQuery: () => ({
@@ -158,6 +168,35 @@ describe('the countries a cisco inbound offers', () => {
       (el) => el.value,
     );
     expect(shown).toContain('🇳🇱 Netherlands');
+    cleanup();
+  });
+
+  // A Psiphon country is an Xray TUN named after its exit, which ocserv routes into
+  // like a relay: offered after the exit servers, and naming the row for its country.
+  it('offers the Psiphon countries under their own heading and names the row', () => {
+    renderCisco(createDefaultCiscoInboundSettings());
+    const add = Array.from(document.querySelectorAll<HTMLElement>('button[aria-label="Add"]')).at(
+      -1,
+    );
+    fireEvent.click(add as HTMLElement);
+    const exitInput = Array.from(document.querySelectorAll<HTMLInputElement>('input')).at(-1);
+    fireEvent.mouseDown(exitInput as HTMLElement);
+    fireEvent.focus(exitInput as HTMLElement);
+
+    const listed = Array.from(
+      document.querySelectorAll('.ant-select-item-group, .ant-select-item-option'),
+    ).map((el) => el.textContent ?? '');
+    expect(listed.slice(-2)).toEqual(['Psiphon', '🇦🇹 Austria']);
+    const option = Array.from(document.querySelectorAll('.ant-select-item-option')).find((el) =>
+      (el.textContent ?? '').includes('Austria'),
+    );
+    fireEvent.click(option as HTMLElement);
+
+    expect(countryNames()).toHaveLength(0);
+    const shown = Array.from(document.querySelectorAll<HTMLInputElement>('input[readonly]')).map(
+      (el) => el.value,
+    );
+    expect(shown).toContain('🇦🇹 Austria');
     cleanup();
   });
 

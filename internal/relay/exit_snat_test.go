@@ -23,6 +23,33 @@ func TestOnlyAPoolInsideTheExitsBlockGoesInAsItIs(t *testing.T) {
 	}
 }
 
+// OpenVPN's 10.1.x pool on a Psiphon exit was refused as "not one of this panel's
+// exits" and logged on every start; Xray's TUN takes any source as it is. A rewrite
+// the pool kept from a relay it left goes, or its packets reach Xray as the relay's.
+func TestAPsiphonExitNeedsNoRewrite(t *testing.T) {
+	var ran []string
+	ipt := func(args ...string) (string, error) {
+		ran = append(ran, strings.Join(args, " "))
+		if slices.Contains(args, "-S") {
+			return "-P POSTROUTING ACCEPT\n-A POSTROUTING -s 10.1.3.0/24 -o wgr9 -j SNAT --to-source 10.255.255.9\n", nil
+		}
+		return "", nil
+	}
+	if err := ensureExitSNAT("10.1.3.0/24", "psi-AT", ipt); err != nil {
+		t.Fatalf("a Psiphon exit: %v", err)
+	}
+	want := []string{
+		"-t nat -S POSTROUTING",
+		"-t nat -D POSTROUTING -s 10.1.3.0/24 -o wgr9 -j SNAT --to-source 10.255.255.9",
+	}
+	if !slices.Equal(ran, want) {
+		t.Errorf("ran %q, want only the old relay rewrite taken out: %q", ran, want)
+	}
+	if !exitNeedsSNAT("10.1.3.0/24", "wgr9") {
+		t.Error("a relay exit lost the rewrite its peer needs for a pool outside exitPools")
+	}
+}
+
 func TestAPoolOutsideIsRewrittenToItsExitsSource(t *testing.T) {
 	got, err := exitSNATArgs("-A", "10.1.3.0/24", "wgr9")
 	if err != nil {

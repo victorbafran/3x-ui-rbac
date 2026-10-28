@@ -1,6 +1,7 @@
 package sub
 
 import (
+	"maps"
 	"net/url"
 	"strings"
 	"testing"
@@ -108,5 +109,31 @@ func TestACountryIsNamedOnce(t *testing.T) {
 		if got := withCountry(tc.remark, tc.country); got != tc.want {
 			t.Errorf("withCountry(%q, %q) = %q, want %q", tc.remark, tc.country, got, tc.want)
 		}
+	}
+}
+
+// A Psiphon host was named for this server beside a relay's. An inbound with
+// Psiphon countries alone keeps the names its customers have: a Psiphon host's own
+// carries its country already, and renaming the rest would read as new configs.
+func TestAPsiphonHostIsNamedForItsCountry(t *testing.T) {
+	seedSubDB(t)
+	hereIs(t, "🇩🇪 Germany")
+	if err := database.GetDB().Create(&model.Relay{Id: 9, Name: "uk", Label: "🇬🇧 United Kingdom", Address: "198.51.100.9", KeyPath: "/k", Tunnel: "wireguard", Role: model.RelayExit}).Error; err != nil {
+		t.Fatal(err)
+	}
+	got := hostCountries([]*model.Host{{Id: 1, Exit: "psi-AT"}, {Id: 2}, {Id: 3, Exit: "wgr9"}})
+	if want := map[int]string{1: "🇦🇹 Austria", 2: "🇩🇪 Germany", 3: "🇬🇧 United Kingdom"}; !maps.Equal(got, want) {
+		t.Errorf("labels %v, want %v", got, want)
+	}
+	if got := hostCountries([]*model.Host{{Id: 1, Exit: "psi-AT"}, {Id: 2}}); got != nil {
+		t.Errorf("labels %v for an inbound with Psiphon countries alone, want none: its names stay", got)
+	}
+}
+
+// The app lists an OpenVPN profile by its country; one on Psiphon had none.
+func TestAnOpenVPNProfileOnPsiphonIsNamedForItsCountry(t *testing.T) {
+	ib := &model.Inbound{Protocol: model.OpenVPN, Settings: `{"exit":"psi-AT"}`}
+	if got := openvpnCountry(ib); got != "🇦🇹 Austria" {
+		t.Errorf("openvpnCountry = %q, want 🇦🇹 Austria", got)
 	}
 }

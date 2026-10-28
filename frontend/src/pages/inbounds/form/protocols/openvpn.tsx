@@ -1,9 +1,11 @@
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert, AutoComplete, Input, InputNumber, Select, Switch } from 'antd';
 import { useFormContext, useWatch } from 'react-hook-form';
 
 import { FormField } from '@/components/form/rhf';
 import { useRelayOptions } from '@/api/queries/useRelaysQuery';
+import type { RelayOption } from '@/schemas/relay';
 
 // An OpenVPN inbound is one country. The protocol has no way to offer a
 // choice before connecting — that is a cisco feature, built for corporate
@@ -20,15 +22,24 @@ export default function OpenVPNFields() {
   // The exit servers already enrolled, offered by the country the panel found
   // them in. A reseller who cannot read the relay routes simply gets no
   // suggestions and can still type an interface of their own.
-  const { options: relayOptions } = useRelayOptions();
-  // A Psiphon country is an Xray exit, not an interface OpenVPN can route into.
-  const relays = relayOptions.filter((r) => r.kind !== 'psiphon');
-  const exitOptions = relays.map((r) => ({
-    value: r.interface,
-    label: r.interface
-      ? `${r.label || r.name} — ${r.address}${r.ready ? '' : ' (…)'}`
-      : `${r.label || r.name} — ${t('pages.inbounds.form.openvpnExitThisServer')}`,
-  }));
+  const { options: relays } = useRelayOptions();
+  // A Psiphon country is an Xray TUN named after its exit, so OpenVPN routes into it
+  // like a relay's tunnel; the countries follow the exit servers under their own heading.
+  const exitOptions = useMemo(() => {
+    const pending = (r: RelayOption) => (r.ready ? '' : ' (…)');
+    const servers = relays
+      .filter((r) => r.kind !== 'psiphon')
+      .map((r) => ({
+        value: r.interface,
+        label: r.interface
+          ? `${r.label || r.name} — ${r.address}${pending(r)}`
+          : `${r.label || r.name} — ${t('pages.inbounds.form.openvpnExitThisServer')}`,
+      }));
+    const psiphon = relays
+      .filter((r) => r.kind === 'psiphon')
+      .map((r) => ({ value: r.interface, label: `${r.label || r.name}${pending(r)}` }));
+    return psiphon.length ? [...servers, { label: 'Psiphon', options: psiphon }] : servers;
+  }, [relays, t]);
 
   return (
     <>
@@ -56,7 +67,7 @@ export default function OpenVPNFields() {
           options={exitOptions}
           placeholder={t('pages.inbounds.form.openvpnExitThisServer')}
           filterOption={(input, option) =>
-            String(option?.value ?? '')
+            String(option && 'value' in option ? option.value : '')
               .toLowerCase()
               .includes(input.toLowerCase()) ||
             String(option?.label ?? '')

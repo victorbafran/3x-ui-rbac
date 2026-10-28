@@ -1322,6 +1322,11 @@ func (s *InboundService) AddInbound(inbound *model.Inbound) (*model.Inbound, boo
 			return inbound, false, err
 		}
 	}
+	if !s.FromNodeSync {
+		if err := checkSidecarPsiphonExits(database.GetDB(), inbound); err != nil {
+			return inbound, false, err
+		}
+	}
 	inbound.SubSortIndex = normalizeSubSortIndex(inbound.SubSortIndex)
 	if err := normalizeInboundShareAddressStrict(inbound); err != nil {
 		return inbound, false, err
@@ -1599,6 +1604,10 @@ func (s *InboundService) AddInbound(inbound *model.Inbound) (*model.Inbound, boo
 	if mtprotoRoutesThroughXray(inbound) {
 		needRestart = true
 	}
+	// Likewise a cisco or OpenVPN pool leaving through Psiphon: its TUN is Xray's.
+	if len(psiphonTunExits(inbound)) > 0 {
+		needRestart = true
+	}
 
 	return inbound, needRestart, err
 }
@@ -1717,6 +1726,10 @@ func (s *InboundService) delInbound(id int) (bool, func(), error) {
 	}
 	// Drop the egress SOCKS bridge a routed mtproto inbound left in the config.
 	if mtprotoRoutesThroughXray(&ib) {
+		needRestart = true
+	}
+	// And the Psiphon TUNs only this cisco or OpenVPN inbound's pools used.
+	if len(psiphonTunExits(&ib)) > 0 {
 		needRestart = true
 	}
 	return needRestart, nodePush, nil
@@ -1895,6 +1908,11 @@ func (s *InboundService) SetInboundEnable(id int, enable bool) (bool, error) {
 	if mtprotoRoutesThroughXray(inbound) {
 		needRestart = true
 	}
+	was := *inbound
+	was.Enable = !enable
+	if !slices.Equal(psiphonTunExits(&was), psiphonTunExits(inbound)) {
+		needRestart = true
+	}
 
 	if !push {
 		return true, nil
@@ -2022,6 +2040,11 @@ func (s *InboundService) UpdateInbound(inbound *model.Inbound) (*model.Inbound, 
 	// introduce one; a row adopted from a node keeps the protocol it arrived with.
 	if inbound.NodeID != nil && inbound.Protocol != oldInbound.Protocol {
 		if err := checkNodeCanHostProtocol(database.GetDB(), *inbound.NodeID, inbound.Protocol); err != nil {
+			return inbound, false, err
+		}
+	}
+	if !s.FromNodeSync {
+		if err := checkSidecarPsiphonExits(database.GetDB(), inbound); err != nil {
 			return inbound, false, err
 		}
 	}
@@ -2273,6 +2296,10 @@ func (s *InboundService) UpdateInbound(inbound *model.Inbound) (*model.Inbound, 
 
 		if err := tx.Save(oldInbound).Error; err != nil {
 			return err
+		}
+		// A cisco or OpenVPN pool's Psiphon TUN is Xray's, which a sidecar save never reloads.
+		if !slices.Equal(psiphonTunExits(&running), psiphonTunExits(oldInbound)) {
+			needRestart = true
 		}
 		// A master's running fallback was built from this child's listen, port and PROXY flag;
 		// re-adding only the child would leave the master pointing at the old ones.

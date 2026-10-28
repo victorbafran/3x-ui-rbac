@@ -146,8 +146,8 @@ export const RelayOptionSchema = z.object({
   country: z.string().default(''),
   countryCode: z.string().default(''),
   ready: z.boolean().default(false),
-  // "psiphon" is a country Psiphon carries out of this panel: an Xray exit with
-  // no interface, so cisco and OpenVPN, which route by interface, cannot use it.
+  // "psiphon" is a country Psiphon carries out of this panel; cisco and OpenVPN reach
+  // it through an Xray TUN named after its interface, and the forms list it apart.
   kind: z.string().default('relay'),
 });
 export type RelayOption = z.infer<typeof RelayOptionSchema>;

@@ -5,9 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"maps"
+	"net"
+	"runtime"
 	"slices"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -15,6 +18,8 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
+	"github.com/mhsanaei/3x-ui/v3/internal/ocserv"
+	"github.com/mhsanaei/3x-ui/v3/internal/openvpn"
 	"github.com/mhsanaei/3x-ui/v3/internal/relay"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/json_util"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/entity"
@@ -156,6 +161,26 @@ func exitDefaultRoute(tx *gorm.DB, exit string) (string, error) {
 	return strconv.Itoa(id), nil
 }
 
+// checkSidecarPsiphonExits refuses a cisco or OpenVPN psi- exit that is no enabled
+// Psiphon country, or one on a node, whose pools never reach this server's Psiphon.
+func checkSidecarPsiphonExits(db *gorm.DB, ib *model.Inbound) error {
+	if ib.Protocol != model.Cisco && ib.Protocol != model.OpenVPN {
+		return nil
+	}
+	for _, exit := range settingsExits(ib.Settings) {
+		if !strings.HasPrefix(exit, psiphonExitPrefix) {
+			continue
+		}
+		if ib.NodeID != nil {
+			return fmt.Errorf("%s runs on a node, whose pools never reach this server's Psiphon", inboundName(ib))
+		}
+		if _, err := exitDefaultRoute(db, exit); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func inboundName(ib *model.Inbound) string {
 	if ib.Remark != "" {
 		return ib.Remark
@@ -249,10 +274,112 @@ func refuseUnroutableHysteriaAuths(inbound *model.Inbound, clients []model.Clien
 // last, so the operator's rules, private and bittorrent blocks too, decide first.
 func injectExitRoutes(cfg *xray.Config, inbounds []*model.Inbound, hosts []*model.Host) {
 	var psi psiphonExits
-	if slices.ContainsFunc(hosts, func(h *model.Host) bool { return strings.HasPrefix(h.Exit, psiphonExitPrefix) }) {
+	if len(sidecarPsiphonExits(inbounds)) > 0 ||
+		slices.ContainsFunc(hosts, func(h *model.Host) bool { return strings.HasPrefix(h.Exit, psiphonExitPrefix) }) {
 		psi = loadPsiphonExits()
 	}
 	injectExitRoutesWith(cfg, inbounds, hosts, psi)
+}
+
+// psiphonTunExits is the Psiphon countries one inbound's pools leave through: a cisco
+// inbound's locations or OpenVPN's exit, none while it is disabled or on a node.
+func psiphonTunExits(ib *model.Inbound) []string {
+	if ib == nil || !ib.Enable || ib.NodeID != nil || (ib.Protocol != model.Cisco && ib.Protocol != model.OpenVPN) {
+		return nil
+	}
+	var out []string
+	for _, exit := range settingsExits(ib.Settings) {
+		if _, ok := psiphonCode(exit); ok && !slices.Contains(out, exit) {
+			out = append(out, exit)
+		}
+	}
+	slices.Sort(out)
+	return out
+}
+
+// sidecarPsiphonExits is every Psiphon country a cisco or OpenVPN pool leaves through.
+func sidecarPsiphonExits(inbounds []*model.Inbound) []string {
+	var out []string
+	for _, ib := range inbounds {
+		for _, exit := range psiphonTunExits(ib) {
+			if !slices.Contains(out, exit) {
+				out = append(out, exit)
+			}
+		}
+	}
+	slices.Sort(out)
+	return out
+}
+
+// No gateway and no autoSystem* field: the TUN touches no route or resolver of the
+// host. routeOnly off, so a sniffed name is what Psiphon dials, as measured.
+const psiphonTunSniffing = `{"enabled":true,"destOverride":["http","tls"],"routeOnly":false}`
+
+// psiphonTunInbound is the TUN a country's cisco and OpenVPN pools are routed into; the
+// device takes the exit's own name, so the sidecars' `dev <exit>` routes find it.
+func psiphonTunInbound(exit string) xray.InboundConfig {
+	return xray.InboundConfig{
+		Listen:   json_util.RawMessage(`"0.0.0.0"`),
+		Protocol: "tun",
+		Settings: json_util.RawMessage(`{"name":"` + exit + `","MTU":1500}`),
+		Sniffing: json_util.RawMessage(psiphonTunSniffing),
+		Tag:      xray.PsiphonTunTag(exit),
+	}
+}
+
+// psiphonTunDevices is the Psiphon TUNs a config opens, by device name.
+func psiphonTunDevices(cfg *xray.Config) []string {
+	if cfg == nil {
+		return nil
+	}
+	var devices []string
+	for i := range cfg.InboundConfigs {
+		if exit, ok := xray.PsiphonTunExit(&cfg.InboundConfigs[i]); ok {
+			devices = append(devices, exit)
+		}
+	}
+	return devices
+}
+
+// psiphonTunWait bounds how long a start waits for its TUNs before the cisco and
+// OpenVPN routes are put back on them.
+const psiphonTunWait = 10 * time.Second
+
+// What the reassert after a start touches, as variables so a test can stand in.
+var (
+	psiphonTunsHere   = runtime.GOOS == "linux"
+	psiphonTunsUp     = devicesUp
+	reassertSidecars  = func() { ocserv.GetManager().ReassertRoutes(); openvpn.GetManager().ReassertRoutes() }
+	psiphonTunPollGap = 200 * time.Millisecond
+)
+
+// reassertSidecarExits puts the pools' routes back on the TUNs a start made: the
+// devices the previous core held went with it, and their routes with them.
+func reassertSidecarExits(cfg *xray.Config) {
+	devices := psiphonTunDevices(cfg)
+	if !psiphonTunsHere || len(devices) == 0 {
+		return
+	}
+	go reassertWhenUp(devices, psiphonTunWait)
+}
+
+// reassertWhenUp waits up to wait for devices, then puts the routes back either way:
+// a device still missing leaves its pools held, and the ten-second jobs retry it.
+func reassertWhenUp(devices []string, wait time.Duration) {
+	for deadline := time.Now().Add(wait); !psiphonTunsUp(devices) && time.Now().Before(deadline); {
+		time.Sleep(psiphonTunPollGap)
+	}
+	reassertSidecars()
+}
+
+func devicesUp(names []string) bool {
+	for _, name := range names {
+		ifc, err := net.InterfaceByName(name)
+		if err != nil || ifc.Flags&net.FlagUp == 0 {
+			return false
+		}
+	}
+	return true
 }
 
 func injectExitRoutesWith(cfg *xray.Config, inbounds []*model.Inbound, hosts []*model.Host, psi psiphonExits) {
@@ -309,6 +436,33 @@ func injectExitRoutesWith(cfg *xray.Config, inbounds []*model.Inbound, hosts []*
 		if !slices.Contains(exits, h.Exit) {
 			exits = append(exits, h.Exit)
 		}
+	}
+	var tuns []xray.InboundConfig
+	for _, exit := range sidecarPsiphonExits(inbounds) {
+		code, _ := psiphonCode(exit)
+		tag := xray.PsiphonTunTag(exit)
+		// No TUN leaves the pools' tables with their blackhole alone: held closed.
+		switch {
+		case psi.socks[code] == 0:
+			logger.Warning("exit routes: Psiphon ", code, " is not enabled, so the cisco and OpenVPN pools leaving through it are held closed")
+			continue
+		case !psi.tuns:
+			logger.Warning("exit routes: Xray cannot open a TUN on this server, so the cisco and OpenVPN pools leaving through Psiphon ", code, " are held closed")
+			continue
+		case inboundTagTaken(cfg, tag):
+			logger.Warning("exit routes: an inbound is already tagged ", tag, ", so the cisco and OpenVPN pools leaving through Psiphon ", code, " are held closed")
+			continue
+		}
+		rules, warp := psi.routeRules(map[string]any{"type": "field", "inboundTag": []any{tag}}, exit)
+		for _, r := range rules {
+			newRules = append(newRules, r)
+		}
+		warped[exit] = warped[exit] || warp
+		if !slices.Contains(exits, exit) {
+			exits = append(exits, exit)
+		}
+		psiphonRouted = true
+		tuns = append(tuns, psiphonTunInbound(exit))
 	}
 	if len(newRules) == 0 {
 		return
@@ -397,6 +551,12 @@ func injectExitRoutesWith(cfg *xray.Config, inbounds []*model.Inbound, hosts []*
 	}
 	cfg.OutboundConfigs = json_util.RawMessage(newOutbounds)
 	cfg.RouterConfig = json_util.RawMessage(newRouting)
+	// Only now: a TUN without its rules would send its pools out of the default outbound.
+	cfg.InboundConfigs = append(cfg.InboundConfigs, tuns...)
+}
+
+func inboundTagTaken(cfg *xray.Config, tag string) bool {
+	return slices.ContainsFunc(cfg.InboundConfigs, func(ib xray.InboundConfig) bool { return ib.Tag == tag })
 }
 
 // ruleFrom is a routing rule matching what match matches, with fields of its own.
@@ -421,7 +581,12 @@ type psiphonExits struct {
 	warpMode  string
 	warpSites []string
 	warp      *psiphonWarpReg
+	// tuns: the core can open a TUN here, so cisco and OpenVPN pools can be routed in.
+	tuns bool
 }
+
+// psiphonTunPossible is xray.TunInboundPossible; a variable so a test can say yes.
+var psiphonTunPossible = xray.TunInboundPossible
 
 // routeRules is one Psiphon route's rules in order: DNS leaves from here, other UDP
 // is refused so QUIC falls back to TCP, then the WARP sites, then everything else.

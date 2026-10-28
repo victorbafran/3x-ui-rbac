@@ -32,10 +32,10 @@ import (
 // A Psiphon country is an exit with no server of ours behind it: one client per
 // country runs on this panel, and a host's exit "psi-<CC>" sends its route there.
 
-const psiphonExitPrefix = "psi-"
+const psiphonExitPrefix = relay.PsiphonExitPrefix
 
-// The RelayOption kinds, so the cisco and OpenVPN forms can leave out what only
-// Xray can route into.
+// The RelayOption kinds, so the forms can list Psiphon countries apart from the
+// exit servers.
 const (
 	RelayOptionRelay   = "relay"
 	RelayOptionPsiphon = "psiphon"
@@ -195,6 +195,16 @@ func psiphonCountryName(code string) string {
 
 func psiphonLabel(code string) string { return relay.LabelFor(psiphonCountryName(code), code) }
 
+// PsiphonExitLabel is the flag and country a psi-<CC> exit leaves from, for the
+// subscription's country labels; false for any other exit.
+func PsiphonExitLabel(exit string) (string, bool) {
+	code, ok := psiphonCode(strings.TrimSpace(exit))
+	if !ok {
+		return "", false
+	}
+	return psiphonLabel(code), true
+}
+
 // State reads the client, the offered countries and WARP as they are now.
 func (s *PsiphonService) State() (*PsiphonState, error) {
 	st := &PsiphonState{
@@ -353,8 +363,8 @@ func normalizePsiphonCodes(codes []string) ([]string, error) {
 	return out, nil
 }
 
-// SetCountries makes codes the enabled countries. One still leaving a host's
-// customers is not turned off: their configs would keep its name and go nowhere.
+// SetCountries makes codes the enabled countries. One still leaving customers, by a
+// host, a cisco location or OpenVPN, is not turned off: they would go nowhere.
 func (s *PsiphonService) SetCountries(codes []string) error {
 	if global.IsStandby() {
 		return global.ErrStandby
@@ -432,12 +442,22 @@ func (s *PsiphonService) SetCountries(codes []string) error {
 	return nil
 }
 
-// psiphonCountryUsers names the inbounds whose hosts leave through a country.
+// psiphonCountryUsers names the inbounds leaving through a country: by a host, a
+// cisco location or OpenVPN's exit, read from the settings as relay usage reads them.
 func psiphonCountryUsers(tx *gorm.DB, code string) ([]string, error) {
 	var ids []int
 	if err := tx.Model(&model.Host{}).Where("exit_iface = ?", psiphonExit(code)).
 		Distinct().Pluck("inbound_id", &ids).Error; err != nil {
 		return nil, err
+	}
+	var sidecars []model.Inbound
+	if err := tx.Where("protocol IN ?", []model.Protocol{model.Cisco, model.OpenVPN}).Find(&sidecars).Error; err != nil {
+		return nil, err
+	}
+	for _, ib := range sidecars {
+		if slices.Contains(settingsExits(ib.Settings), psiphonExit(code)) && !slices.Contains(ids, ib.Id) {
+			ids = append(ids, ib.Id)
+		}
 	}
 	if len(ids) == 0 {
 		return nil, nil
@@ -777,7 +797,7 @@ func warpSiteRule(line string) (string, error) {
 
 // loadPsiphonExits reads what the Xray config needs of the countries and WARP.
 func loadPsiphonExits() psiphonExits {
-	psi := psiphonExits{socks: map[string]int{}}
+	psi := psiphonExits{socks: map[string]int{}, tuns: psiphonTunPossible()}
 	var rows []model.PsiphonCountry
 	if err := database.GetDB().Where("enabled = ?", true).Find(&rows).Error; err != nil {
 		logger.Warning("exit routes: could not read the Psiphon countries:", err)

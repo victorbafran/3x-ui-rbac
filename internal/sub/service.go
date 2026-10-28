@@ -3525,11 +3525,14 @@ func (s *SubService) openvpnProfileFor(inbound *model.Inbound, client model.Clie
 }
 
 // openvpnCountry is where an inbound's traffic leaves: its exit's label, this
-// server's own, or nothing for an exit that is not one of the panel's relays.
+// server's own, or nothing for an exit that is neither a relay nor Psiphon.
 func openvpnCountry(inbound *model.Inbound) string {
 	exit := openvpn.ExitOf(inbound)
 	if exit == "" {
 		return localCountryLabel()
+	}
+	if label, ok := service.PsiphonExitLabel(exit); ok {
+		return label
 	}
 	id, ok := relay.InterfaceID(exit)
 	if !ok {

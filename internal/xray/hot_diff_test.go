@@ -436,6 +436,49 @@ func TestComputeHotDiff_NewTproxyInboundNeedsRestart(t *testing.T) {
 	}
 }
 
+// A hot apply adds inbounds before it swaps the routing: a Psiphon TUN added that way
+// would send a cisco pool's first connections out of this server. Removal is safe hot.
+func TestComputeHotDiff_TunNeedsRestartExceptToRemove(t *testing.T) {
+	tun := InboundConfig{
+		Listen:   json_util.RawMessage(`"0.0.0.0"`),
+		Protocol: "tun",
+		Tag:      "tun-psi-AT",
+		Settings: json_util.RawMessage(`{"name":"psi-AT","MTU":1500}`),
+	}
+	changed := tun
+	changed.Sniffing = json_util.RawMessage(`{"enabled":true}`)
+	with := func(ib *InboundConfig) *Config {
+		cfg := makeHotConfig()
+		if ib != nil {
+			cfg.InboundConfigs = append(cfg.InboundConfigs, *ib)
+		}
+		return cfg
+	}
+	if _, ok := ComputeHotDiff(with(nil), with(&tun)); ok {
+		t.Error("a new TUN was hot-added")
+	}
+	if _, ok := ComputeHotDiff(with(&tun), with(&changed)); ok {
+		t.Error("a changed TUN was hot-swapped")
+	}
+	diff, ok := ComputeHotDiff(with(&tun), with(nil))
+	if !ok || len(diff.RemovedInboundTags) != 1 || diff.RemovedInboundTags[0] != "tun-psi-AT" {
+		t.Errorf("removing a TUN: ok=%v diff=%+v, want a hot removal", ok, diff)
+	}
+
+	// A TUN the operator saved is not one of these: it was applied hot before, and a
+	// restart for it would reconnect every Xray customer.
+	own := tun
+	own.Tag = "inbound-tun"
+	ownChanged := changed
+	ownChanged.Tag = own.Tag
+	if _, ok := ComputeHotDiff(with(nil), with(&own)); !ok {
+		t.Error("an operator's own new TUN forced a restart")
+	}
+	if _, ok := ComputeHotDiff(with(&own), with(&ownChanged)); !ok {
+		t.Error("an operator's own changed TUN forced a restart")
+	}
+}
+
 // TestComputeHotDiff_TproxyStreamChangeNeedsRestart mirrors the REALITY
 // stream-change test above: an existing TPROXY bridge whose port changed
 // (e.g. the AmneziaWG inbound's own id-derived egress port shifted) must not

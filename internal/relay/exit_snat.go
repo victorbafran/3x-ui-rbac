@@ -57,26 +57,41 @@ func exitSNATRulesFor(listing, cidr string) [][]string {
 	return out
 }
 
+// exitNeedsSNAT: an exit's WireGuard peer takes exitPools only, while a Psiphon
+// exit is Xray's own TUN, which takes a pool from any source.
+func exitNeedsSNAT(cidr, iface string) bool {
+	return !IsPsiphonExit(iface) && !PoolInsideExitPools(cidr)
+}
+
 // EnsureExitSNAT rewrites a pool outside exitPools to its exit's source on the
-// way in; a pool inside needs nothing, and a stale rewrite to another exit goes.
+// way in; a pool needing none gets none, and a stale rewrite to another exit goes.
 func EnsureExitSNAT(cidr, iface string) error {
 	if runtime.GOOS != "linux" {
 		return nil
 	}
-	if PoolInsideExitPools(cidr) {
-		RemoveExitSNAT(cidr)
+	return ensureExitSNAT(cidr, iface, localIPTables)
+}
+
+// ipTables runs iptables with args and returns what it printed.
+type ipTables func(args ...string) (string, error)
+
+var localIPTables ipTables = func(args ...string) (string, error) { return runLocalOut("iptables", args...) }
+
+func ensureExitSNAT(cidr, iface string, ipt ipTables) error {
+	if !exitNeedsSNAT(cidr, iface) {
+		removeExitSNAT(cidr, ipt)
 		return nil
 	}
 	check, err := exitSNATArgs("-C", cidr, iface)
 	if err != nil {
 		return err
 	}
-	if runLocal("iptables", check...) == nil {
+	if _, err := ipt(check...); err == nil {
 		return nil
 	}
-	RemoveExitSNAT(cidr)
+	removeExitSNAT(cidr, ipt)
 	add, _ := exitSNATArgs("-A", cidr, iface)
-	if out, err := runLocalOut("iptables", add...); err != nil {
+	if out, err := ipt(add...); err != nil {
 		return fmt.Errorf("rewrite %s into %s: %w: %s", cidr, iface, err, firstLines(out, 1))
 	}
 	return nil
@@ -84,14 +99,21 @@ func EnsureExitSNAT(cidr, iface string) error {
 
 // RemoveExitSNAT takes away every exit rewrite of cidr.
 func RemoveExitSNAT(cidr string) {
-	if runtime.GOOS != "linux" || strings.TrimSpace(cidr) == "" {
+	if runtime.GOOS != "linux" {
 		return
 	}
-	listing, err := runLocalOut("iptables", "-t", "nat", "-S", "POSTROUTING")
+	removeExitSNAT(cidr, localIPTables)
+}
+
+func removeExitSNAT(cidr string, ipt ipTables) {
+	if strings.TrimSpace(cidr) == "" {
+		return
+	}
+	listing, err := ipt("-t", "nat", "-S", "POSTROUTING")
 	if err != nil {
 		return
 	}
 	for _, args := range exitSNATRulesFor(listing, cidr) {
-		_ = runLocal("iptables", args...)
+		_, _ = ipt(args...)
 	}
 }

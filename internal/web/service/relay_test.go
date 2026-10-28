@@ -1,8 +1,12 @@
 package service
 
 import (
+	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/mhsanaei/3x-ui/v3/internal/database"
+	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 )
 
 // A relay's name becomes a group in a VPN server's config, a filename, and a
@@ -211,5 +215,72 @@ func TestAFrontWithAnUnknownTransportIsRefused(t *testing.T) {
 	}, nil)
 	if err == nil {
 		t.Fatal("an unknown transport was accepted")
+	}
+}
+
+// udp as a front's main tunnel cuts every TCP inbound off, so a new choice of
+// it is refused; a front saved on it before must still take other edits.
+func TestUDPCannotBeChosenButAStoredUDPFrontKeepsSaving(t *testing.T) {
+	s := &RelayService{}
+	for _, tool := range []string{"backhaul", "backpack"} {
+		_, err := s.rowFrom(RelayRequest{Name: "ir", Address: "185.0.0.1", Role: "front", Tool: tool, Transport: "udp"}, nil)
+		if err == nil || !strings.Contains(err.Error(), "carries only UDP") {
+			t.Errorf("%s: a new udp front was not refused for the reason: %v", tool, err)
+		}
+	}
+
+	base, err := s.rowFrom(RelayRequest{Name: "ir", Address: "185.0.0.1", Role: "front"}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.rowFrom(RelayRequest{Name: "ir", Address: "185.0.0.1", Role: "front", Transport: "udp"}, base); err == nil {
+		t.Error("a tcp front was moved onto udp")
+	}
+
+	base.Transport = "udp"
+	edited, err := s.rowFrom(RelayRequest{Name: "ir", Address: "185.0.0.2", Role: "front", Transport: "udp"}, base)
+	if err != nil {
+		t.Fatalf("a front stored on udp can no longer be edited: %v", err)
+	}
+	if edited.Transport != "udp" {
+		t.Errorf("transport = %q, want the stored udp", edited.Transport)
+	}
+}
+
+// The minute reconcile and a save's own provisioning on one front interleave
+// their steps on it; two runs once left a key from one and a certificate from
+// the other. The reconcile stands aside while the save's run is going.
+func TestTheReconcileStandsAsideWhileASaveProvisionsTheFront(t *testing.T) {
+	setupRelayDB(t)
+	// A key that is not there stops the reconcile before any SSH, with an
+	// error the row shows, which is how the test sees whether it ran.
+	seedRelays(t, model.Relay{
+		Name: "iran-front", Address: "203.0.113.9", Role: model.RelayFront, Tunnel: "backhaul", Enabled: true,
+		KeyPath: filepath.Join(t.TempDir(), "gone"), TunnelToken: "a-token", Status: RelayWorking,
+	})
+	var r model.Relay
+	if err := database.GetDB().First(&r).Error; err != nil {
+		t.Fatal(err)
+	}
+	status := func() string {
+		t.Helper()
+		var got model.Relay
+		if err := database.GetDB().First(&got, r.Id).Error; err != nil {
+			t.Fatal(err)
+		}
+		return got.Status
+	}
+
+	relayRunning.Store(r.Id, true)
+	t.Cleanup(func() { relayRunning.Delete(r.Id) })
+	(&RelayService{}).reconcileFront(r)
+	if got := status(); got != RelayWorking {
+		t.Errorf("the reconcile ran beside a save's provisioning: status %q", got)
+	}
+
+	relayRunning.Delete(r.Id)
+	(&RelayService{}).reconcileFront(r)
+	if got := status(); got != RelayError {
+		t.Errorf("with nothing in flight the reconcile did not run: status %q", got)
 	}
 }

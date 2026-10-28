@@ -51,6 +51,8 @@ import {
   TUNNEL_TOOLS,
   TUNNEL_TRANSPORTS,
   toolOf,
+  transportChoices,
+  transportEncrypted,
   udpLegPort,
 } from '@/schemas/relay';
 import type { IPFamily, Reachability, Relay, RelayFormValues } from '@/schemas/relay';
@@ -741,11 +743,25 @@ export default function RelaysPage() {
                   name="transport"
                   label={t('pages.relays.fields.transport')}
                   tooltip={t('pages.relays.fields.transportHint')}
+                  extra={
+                    !transportEncrypted(tool, transport) ? (
+                      <Typography.Text type="warning">
+                        {t('pages.relays.fields.transportPlain')}
+                      </Typography.Text>
+                    ) : udpPort ? (
+                      // Backhaul's UDP tunnel beside it rides udp, which encrypts nothing.
+                      <Typography.Text type="warning">
+                        {t('pages.relays.fields.transportUdpPlain', { port: udpPort })}
+                      </Typography.Text>
+                    ) : undefined
+                  }
                 >
                   <Select
-                    options={(TUNNEL_TRANSPORTS[toolOf(tool)] ?? []).map((v) => ({
+                    options={transportChoices(toolOf(tool), editing?.transport).map((v) => ({
                       value: v,
-                      label: v,
+                      label: transportEncrypted(tool, v)
+                        ? t('pages.relays.fields.transportEncrypted', { transport: v })
+                        : v,
                     }))}
                   />
                 </Form.Item>

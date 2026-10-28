@@ -83,11 +83,32 @@ func TestPortsAreSplitByWhetherTheServiceWantsTheHeader(t *testing.T) {
 
 type call struct{ name, unit, mode string }
 
-type fakeRemote struct{ calls []call }
+// fakeRemote records every call in order; Run answers runOut, and every
+// command line and script argument is kept to check what crossed in the clear.
+type fakeRemote struct {
+	calls    []call
+	runOut   string
+	cmdLines []string
+	uploaded map[string][]byte
+}
 
-func (f *fakeRemote) Run(context.Context, string) (string, error)  { return "", nil }
-func (f *fakeRemote) Upload(context.Context, string, []byte) error { return nil }
+func (f *fakeRemote) Run(_ context.Context, command string) (string, error) {
+	f.calls = append(f.calls, call{name: "run", mode: "run"})
+	f.cmdLines = append(f.cmdLines, command)
+	return f.runOut, nil
+}
+
+func (f *fakeRemote) Upload(_ context.Context, path string, data []byte) error {
+	f.calls = append(f.calls, call{name: "upload", unit: path, mode: "upload"})
+	if f.uploaded == nil {
+		f.uploaded = map[string][]byte{}
+	}
+	f.uploaded[path] = data
+	return nil
+}
+
 func (f *fakeRemote) RunScript(_ context.Context, name, _ string, args ...string) (string, error) {
+	f.cmdLines = append(f.cmdLines, strings.Join(args, " "))
 	c := call{name: name, unit: args[1]}
 	switch name {
 	case "x-ui-backpack.sh":
@@ -104,7 +125,7 @@ func (f *fakeRemote) RunScript(_ context.Context, name, _ string, args ...string
 func (f *fakeRemote) order() string {
 	var parts []string
 	for _, c := range f.calls {
-		parts = append(parts, c.mode+" "+c.unit)
+		parts = append(parts, strings.TrimSpace(c.mode+" "+c.unit))
 	}
 	return strings.Join(parts, ", ")
 }

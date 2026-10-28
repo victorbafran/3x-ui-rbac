@@ -467,7 +467,12 @@ func (s *RelayService) fillFront(r *model.Relay, req RelayRequest, base *model.R
 	if transport == "" {
 		transport = string(tunnel.TransportTCP)
 	}
-	if err := tunnel.ValidTransportFor(tool, tunnel.Transport(transport)); err != nil {
+	check := tunnel.ValidChoiceFor
+	if base != nil && base.Transport == transport {
+		// A front saved on a transport no longer offered keeps it through other edits.
+		check = tunnel.ValidTransportFor
+	}
+	if err := check(tool, tunnel.Transport(transport)); err != nil {
 		return err
 	}
 	r.Transport = transport
@@ -952,6 +957,11 @@ func (s *RelayService) downOrphans() {
 // that produces the same tunnel does not drop the customers on it.
 func (s *RelayService) reconcileFront(r model.Relay) {
 	if r.KeyPath == "" || r.TunnelToken == "" {
+		return
+	}
+	// A save's own provisioning is running on this front: it does all of this,
+	// from the newer row, and two runs at once interleave their steps there.
+	if _, busy := relayRunning.Load(r.Id); busy {
 		return
 	}
 	token, err := decryptRelaySecret(r.Id, r.TunnelToken)

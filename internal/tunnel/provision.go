@@ -186,7 +186,7 @@ if [ ! -e "/etc/systemd/system/${UNIT}.service" ] && [ ! -e "$CONF_PATH" ]; then
   exit 0
 fi
 systemctl disable -q --now "$UNIT" 2>/dev/null || true
-rm -f "/etc/systemd/system/${UNIT}.service" "$CONF_PATH"
+rm -f "/etc/systemd/system/${UNIT}.service" "$CONF_PATH" "${CONF_PATH%.toml}.crt" "${CONF_PATH%.toml}.key"
 systemctl daemon-reload 2>/dev/null || true
 # The binary stays only if another tunnel is still using it.
 if ! ls /etc/systemd/system/backhaul-x-ui-*.service >/dev/null 2>&1; then
@@ -277,6 +277,9 @@ func provisionLegs(ctx context.Context, r remote, p Pair, uploaded string) error
 		return err
 	}
 	for i, leg := range legs {
+		if err := ensureTLSPair(ctx, r, leg); err != nil {
+			return fmt.Errorf("set up the tunnel: %w", err)
+		}
 		out, err := runLeg(ctx, r, leg, configs[i], "", "apply")
 		if err != nil {
 			return fmt.Errorf("set up the tunnel: %w: %s", err, lastLine(out))

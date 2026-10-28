@@ -100,10 +100,29 @@ export const TUNNEL_TOOLS: readonly TunnelTool[] = ['backhaul', 'backpack'];
 // own lists in internal/tunnel/tool.go; a transport the binary does not know
 // is refused at startup and reads as a tunnel that never comes up.
 export const TUNNEL_TRANSPORTS: Record<TunnelTool, readonly string[]> = {
-  backhaul: ['tcp', 'tcpmux', 'ws', 'wsmux', 'wss', 'wssmux', 'udp', 'udpovertcp'],
-  backpack: ['stealth', 'tcp', 'tcpmux', 'ws', 'wsmux', 'wss', 'wssmux', 'kcp', 'quic', 'udp'],
+  backhaul: ['tcp', 'tcpmux', 'ws', 'wsmux', 'wss', 'wssmux', 'udpovertcp'],
+  backpack: ['stealth', 'tcp', 'tcpmux', 'ws', 'wsmux', 'wss', 'wssmux', 'kcp', 'quic'],
 };
 export const DEFAULT_TUNNEL_PORT = 3080;
+
+// udp left the list because it cuts every TCP inbound off, but a front saved on
+// it keeps it on offer, so an unrelated edit does not have to change it.
+export function transportChoices(tool: TunnelTool, stored = ''): readonly string[] {
+  const offered = TUNNEL_TRANSPORTS[tool];
+  return stored && !offered.includes(stored) ? [...offered, stored] : offered;
+}
+
+// The transports that encrypt the tunnel; on the rest its token and anything
+// not encrypted on its own cross the network readable. A Backhaul front's UDP
+// tunnel, one port up, rides udp whatever is chosen here: it has a token of its
+// own, but what crosses it is not encrypted.
+const ENCRYPTED_TRANSPORTS: Record<TunnelTool, ReadonlySet<string>> = {
+  backhaul: new Set(['wss', 'wssmux']),
+  backpack: new Set(['stealth', 'wss', 'wssmux', 'kcp', 'quic']),
+};
+export function transportEncrypted(tool: string, transport: string): boolean {
+  return ENCRYPTED_TRANSPORTS[toolOf(tool)].has(transport);
+}
 
 // Backhaul carries a front's UDP on a second tunnel one port up; BackPack
 // carries it on the one. The operator has to open that port on the front's

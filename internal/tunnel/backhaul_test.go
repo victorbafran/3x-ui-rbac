@@ -1,6 +1,7 @@
 package tunnel
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 )
@@ -162,5 +163,97 @@ func TestTwoTunnelsShareNoFileAndNoUnit(t *testing.T) {
 	}
 	if !strings.Contains(RemoteConfigPath(7), "7") || !strings.Contains(UnitName(7), "7") {
 		t.Error("the tunnel's own id is not in its file or unit name")
+	}
+}
+
+// Backhaul v0.7.2's wss server calls ListenAndServeTLS with the paths its config
+// names; given none, the Iran front died "open : no such file" and restarted for ever.
+func TestABackhaulWSSServerNamesItsOwnCertificate(t *testing.T) {
+	for _, tr := range []Transport{TransportWSS, TransportWSSMux} {
+		for _, id := range []int{2, 9} {
+			p := goodPair()
+			p.Transport, p.Id = tr, id
+			server, err := ServerConfig(p)
+			if err != nil {
+				t.Fatalf("%s: %v", tr, err)
+			}
+			for _, want := range []string{
+				fmt.Sprintf(`tls_cert = "/etc/backhaul/x-ui-%d.crt"`, id),
+				fmt.Sprintf(`tls_key = "/etc/backhaul/x-ui-%d.key"`, id),
+			} {
+				if !strings.Contains(server, want) {
+					t.Errorf("%s tunnel %d lacks %s:\n%s", tr, id, want, server)
+				}
+			}
+		}
+	}
+
+	// BackPack makes its own when given none, and the rest carry no TLS.
+	plain := map[string]Pair{}
+	for _, tr := range []Transport{TransportTCP, TransportWS} {
+		p := goodPair()
+		p.Transport = tr
+		plain["backhaul "+string(tr)] = p
+	}
+	for _, tr := range []Transport{TransportWSS, TransportWSSMux} {
+		p := backpackPair()
+		p.Transport = tr
+		plain["backpack "+string(tr)] = p
+	}
+	for name, p := range plain {
+		server, err := ServerConfig(p)
+		if err != nil {
+			t.Fatalf("%s: %v", name, err)
+		}
+		if strings.Contains(server, "tls_") {
+			t.Errorf("%s names a certificate nothing puts there:\n%s", name, server)
+		}
+	}
+}
+
+// Backhaul has no transport called udpovertcp and refuses to start on one; what
+// the panel means by it is tcp whose server also forwards UDP.
+func TestUDPOverTCPIsWrittenAsTCPThatAcceptsUDP(t *testing.T) {
+	p := goodPair()
+	p.Transport = TransportUDPoTCP
+	server, err := ServerConfig(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	client, err := ClientConfig(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(server, `transport = "tcp"`) || !strings.Contains(server, "accept_udp = true") {
+		t.Errorf("the server is not tcp that accepts UDP:\n%s", server)
+	}
+	if !strings.Contains(client, `transport = "tcp"`) {
+		t.Errorf("the client does not dial tcp:\n%s", client)
+	}
+	for _, conf := range []string{server, client} {
+		if strings.Contains(conf, "udpovertcp") {
+			t.Errorf("a name Backhaul refuses reached its config:\n%s", conf)
+		}
+	}
+
+	plainTCP, err := ServerConfig(goodPair())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(plainTCP, "accept_udp") {
+		t.Errorf("a plain tcp front forwards UDP too, beside its own UDP tunnel:\n%s", plainTCP)
+	}
+}
+
+// "host:port" with an IPv6 literal is not an address Backhaul can dial.
+func TestThePanelDialsAnIPv6FrontInBrackets(t *testing.T) {
+	p := goodPair()
+	p.FrontAddress = " 2001:db8::7 "
+	client, err := ClientConfig(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(client, `remote_addr = "[2001:db8::7]:3080"`) {
+		t.Errorf("the IPv6 front is not dialled as [addr]:port:\n%s", client)
 	}
 }

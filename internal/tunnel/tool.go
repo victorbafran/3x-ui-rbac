@@ -51,10 +51,11 @@ const (
 	TransportStealth Transport = "stealth"
 )
 
-// backhaulTransports are the eight Backhaul accepts, offered unchanged.
+// backhaulTransports are what a Backhaul front may be set to. udpovertcp is the
+// panel's name for tcp with accept_udp; Backhaul itself has no such transport.
 var backhaulTransports = []Transport{
 	TransportTCP, TransportTCPMux, TransportWS, TransportWSMux,
-	TransportWSS, TransportWSSMux, TransportUDP, TransportUDPoTCP,
+	TransportWSS, TransportWSSMux, TransportUDPoTCP,
 }
 
 // backpackTransports are the carriers BackPack runs with nothing but a token,
@@ -63,10 +64,11 @@ var backhaulTransports = []Transport{
 // pck, xdi and spoof need raw sockets or forged packets and wait to be measured.
 var backpackTransports = []Transport{
 	TransportStealth, TransportTCP, TransportTCPMux, TransportWS, TransportWSMux,
-	TransportWSS, TransportWSSMux, TransportKCP, TransportQUIC, TransportUDP,
+	TransportWSS, TransportWSSMux, TransportKCP, TransportQUIC,
 }
 
-// TransportsFor lists what a tool accepts, in the order worth trying.
+// TransportsFor lists what an operator may choose for a tool's main tunnel, in
+// the order worth trying.
 func TransportsFor(tool Tool) []Transport {
 	if tool.norm() == ToolBackPack {
 		return append([]Transport(nil), backpackTransports...)
@@ -81,12 +83,25 @@ func ValidTransportFor(tool Tool, t Transport) error {
 	if t == "" {
 		return fmt.Errorf("no transport chosen")
 	}
-	for _, known := range TransportsFor(tool) {
-		if known == t {
-			return nil
-		}
+	// udp is no longer offered but both binaries run it: Backhaul's UDP leg
+	// rides it, and a front saved on it before must keep provisioning.
+	if t == TransportUDP || slices.Contains(TransportsFor(tool), t) {
+		return nil
 	}
 	return fmt.Errorf("%q is not a transport %s knows", t, tool.norm())
+}
+
+// ValidChoiceFor is what saving a front accepts: a transport the tool knows
+// that also carries the customers' TCP, which udp as the main tunnel does not.
+func ValidChoiceFor(tool Tool, t Transport) error {
+	if err := ValidTransportFor(tool, t); err != nil {
+		return err
+	}
+	if t == TransportUDP {
+		return fmt.Errorf("udp carries only UDP, so every TCP inbound behind this front would be cut off; " +
+			"pick tcp: Backhaul adds a UDP tunnel beside it, and BackPack carries UDP on every transport")
+	}
+	return nil
 }
 
 // tcpCarried is whether a transport keeps TCP connections open to the front,
@@ -146,6 +161,8 @@ func Legs(p Pair) []Pair {
 	udp.Leg = LegUDP
 	udp.Transport = TransportUDP
 	udp.TunnelPort = p.TunnelPort + 1
+	// Its own token: this leg sends it readable whatever the main one rides.
+	udp.Token = legToken(p.Token, LegUDP)
 	return []Pair{p, udp}
 }
 
@@ -204,6 +221,17 @@ func (p Pair) remoteConfigPath() string {
 	}
 	return "/etc/backhaul/x-ui-" + p.Key() + ".toml"
 }
+
+// needsTLSPair is a Backhaul wss leg: its server will not listen without a
+// certificate, while BackPack makes its own when given none.
+func (p Pair) needsTLSPair() bool {
+	return p.Tool.norm() == ToolBackhaul && (p.Transport == TransportWSS || p.Transport == TransportWSSMux)
+}
+
+// remoteCertPath and remoteKeyPath sit beside a Backhaul leg's config, named
+// as teardownScript derives them from it.
+func (p Pair) remoteCertPath() string { return "/etc/backhaul/x-ui-" + p.Key() + ".crt" }
+func (p Pair) remoteKeyPath() string  { return "/etc/backhaul/x-ui-" + p.Key() + ".key" }
 
 // localConfigPath is where the panel keeps its own end's config.
 func (p Pair) localConfigPath() string {

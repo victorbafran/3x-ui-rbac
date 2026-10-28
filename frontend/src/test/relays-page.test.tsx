@@ -174,6 +174,20 @@ vi.mock('@/api/queries/usePsiphon', () => ({
 
 const { default: RelaysPage } = await import('@/pages/relays/RelaysPage');
 
+// The transport options, read by toggling the select: listSelectOptions closes
+// it with Escape, which closes the whole modal and freezes what it shows.
+function transportOptions(): string[] {
+  const select = document.querySelector('#transport')?.closest('.ant-select') as HTMLElement;
+  fireEvent.mouseDown(select);
+  const shown = Array.from(
+    document.querySelectorAll(
+      '.ant-select-dropdown:not(.ant-select-dropdown-hidden) .ant-select-item-option',
+    ),
+  ).map((o) => (o.getAttribute('title') ?? o.textContent ?? '').trim());
+  fireEvent.mouseDown(select);
+  return shown;
+}
+
 describe('the exit servers page', () => {
   beforeEach(() => {
     rows = relays;
@@ -439,10 +453,112 @@ describe('the exit servers page', () => {
     expect(shown()).toBe('tcp');
     fireEvent.click(screen.getByText('BackPack'));
     await act(async () => {});
-    expect(shown()).toBe('stealth');
+    expect(shown()).toBe('stealth — encrypted');
     fireEvent.click(screen.getByText('Backhaul'));
     await act(async () => {});
     expect(shown()).toBe('tcp');
+    cleanup();
+  });
+
+  // udp as the main tunnel turns every customer port into a UDP-only listener,
+  // so a new entry server is not offered it; one saved on it keeps it on edit.
+  it('offers udp only to an entry server already on it', async () => {
+    rows = [{ ...front, transport: 'udp' }];
+    renderWithProviders(
+      <MemoryRouter>
+        <RelaysPage />
+      </MemoryRouter>,
+    );
+    fireEvent.click(screen.getByText('Add a server'));
+    await act(async () => {});
+    fireEvent.click(screen.getByText('Entry for customers'));
+    await act(async () => {});
+    let options = transportOptions();
+    expect(options).toContain('udpovertcp');
+    expect(options).not.toContain('udp');
+    fireEvent.click(screen.getByText('BackPack'));
+    await act(async () => {});
+    options = transportOptions();
+    expect(options).toContain('stealth — encrypted');
+    expect(options).not.toContain('udp');
+    cleanup();
+
+    renderWithProviders(
+      <MemoryRouter>
+        <RelaysPage />
+      </MemoryRouter>,
+    );
+    fireEvent.click(
+      document.querySelector('[aria-label="edit"]')?.closest('button') as HTMLElement,
+    );
+    await act(async () => {});
+    expect(transportOptions()).toContain('udp');
+    cleanup();
+  });
+
+  // The owner asked whether the tunnel is secure: only the marked transports
+  // encrypt it, and the form says so while an unencrypted one is chosen.
+  it('marks the encrypted transports and warns while an unencrypted one is chosen', async () => {
+    rows = relays;
+    renderWithProviders(
+      <MemoryRouter>
+        <RelaysPage />
+      </MemoryRouter>,
+    );
+    fireEvent.click(screen.getByText('Add a server'));
+    await act(async () => {});
+    fireEvent.click(screen.getByText('Entry for customers'));
+    await act(async () => {});
+    // Every transport, in order: the spec measured the token readable on each
+    // unmarked one, so marking one more would tell the owner a lie.
+    expect(transportOptions()).toEqual([
+      'tcp',
+      'tcpmux',
+      'ws',
+      'wsmux',
+      'wss — encrypted',
+      'wssmux — encrypted',
+      'udpovertcp',
+    ]);
+    const warning = 'Not encrypted: the tunnel token';
+    const udpNote = 'The UDP tunnel on port 3081 is not encrypted';
+    expect(document.body.textContent).toContain(warning);
+    for (const plain of ['tcpmux', 'ws', 'wsmux', 'udpovertcp']) {
+      chooseSelectOption('transport', plain);
+      await act(async () => {});
+      expect(document.body.textContent, plain).toContain(warning);
+    }
+    // Backhaul's wss carries UDP on a udp tunnel beside it, which the page names.
+    chooseSelectOption('transport', 'wssmux — encrypted');
+    await act(async () => {});
+    expect(document.body.textContent).not.toContain(warning);
+    expect(document.body.textContent).toContain(udpNote);
+
+    fireEvent.click(screen.getByText('BackPack'));
+    await act(async () => {});
+    expect(transportOptions()).toEqual([
+      'stealth — encrypted',
+      'tcp',
+      'tcpmux',
+      'ws',
+      'wsmux',
+      'wss — encrypted',
+      'wssmux — encrypted',
+      'kcp — encrypted',
+      'quic — encrypted',
+    ]);
+    // BackPack carries UDP on the one tunnel, so stealth leaves nothing readable.
+    expect(document.body.textContent).not.toContain(warning);
+    expect(document.body.textContent).not.toContain('The UDP tunnel on port');
+    for (const plain of ['tcp', 'tcpmux', 'ws', 'wsmux']) {
+      chooseSelectOption('transport', plain);
+      await act(async () => {});
+      expect(document.body.textContent, plain).toContain(warning);
+    }
+    chooseSelectOption('transport', 'wss — encrypted');
+    await act(async () => {});
+    expect(document.body.textContent).not.toContain(warning);
+    expect(document.body.textContent).not.toContain('The UDP tunnel on port');
     cleanup();
   });
 

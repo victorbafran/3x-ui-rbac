@@ -127,6 +127,9 @@ export const RelayOptionSchema = z.object({
   country: z.string().default(''),
   countryCode: z.string().default(''),
   ready: z.boolean().default(false),
+  // "psiphon" is a country Psiphon carries out of this panel: an Xray exit with
+  // no interface, so cisco and OpenVPN, which route by interface, cannot use it.
+  kind: z.string().default('relay'),
 });
 export type RelayOption = z.infer<typeof RelayOptionSchema>;
 // An entry server as the inbound form offers it for the address customers'

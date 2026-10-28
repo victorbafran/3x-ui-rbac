@@ -2919,6 +2919,75 @@
           "swap": "Prepnúť aktívnu IP",
           "release": "Uvoľniť IP"
         }
+      },
+      "psiphon": {
+        "title": "Výstupy podľa krajín cez Psiphon",
+        "intro": "Zákazníci môžu vychádzať cez Psiphon v krajine, ktorú vyberiete",
+        "introHint": "Psiphon beží iba na serveri tohto panela. Zákazníci, ktorí prichádzajú cez vstupný server, sa jeho tunelom dostanú do tých istých krajín, takže jedna sada krajín slúži všetkým.",
+        "status": {
+          "unsupported": "Nepodporované",
+          "notInstalled": "Nenainštalované",
+          "installed": "Nainštalované",
+          "connected": "Pripojené {connected} z {enabled}"
+        },
+        "unsupported": "Psiphon potrebuje linuxový server x86_64 (amd64)",
+        "unsupportedHint": "Psiphon nevydáva zostavu pre procesor tohto servera, preto tu nepobeží.",
+        "install": "Nainštalovať Psiphon",
+        "installHint": "Stiahne Psiphon a načíta jeho aktuálny zoznam krajín; trvá to až tri minúty. Nič nebeží, kým nezapnete krajinu, a každá zapnutá krajina zaberie asi {mb} MB pamäte.",
+        "installing": "Inštaluje sa a načítava sa zoznam krajín…",
+        "phase": {
+          "off": "Vypnuté",
+          "connecting": "Pripája sa",
+          "connected": "Pripojené",
+          "error": "Zlyhalo"
+        },
+        "countries": {
+          "title": "Krajiny",
+          "hint": "Zaškrtnite krajiny, ktoré majú bežať. Vstupu možno priradiť iba krajinu zaškrtnutú tu.",
+          "refresh": "Obnoviť zoznam",
+          "listedAt": "Zoznam načítaný {time}",
+          "save": "Uložiť krajiny",
+          "memory": "Asi {mb} MB pamäte pre {count} krajín"
+        },
+        "inbounds": {
+          "title": "Krajiny podľa vstupu",
+          "hint": "Každá krajina vybraná pre vstup sa stane ďalšou konfiguráciou v predplatnom tohto vstupu, s vlajkou a názvom krajiny. Vlastná konfigurácia vstupu zostáva.",
+          "wireguardHint": "Vstup WireGuard prijme jednu krajinu a celá jeho prevádzka vychádza cez ňu.",
+          "inbound": "Vstup",
+          "countries": "Krajiny",
+          "pick": "Vyberte krajiny",
+          "pickOne": "Vyberte krajinu",
+          "noCountries": "Najprv vyššie zaškrtnite a uložte krajinu.",
+          "empty": "Na tomto serveri nie je žiadny vstup VLESS, Hysteria ani WireGuard",
+          "save": "Uložiť"
+        },
+        "warp": {
+          "title": "WARP za Psiphonom",
+          "hint": "Niektoré stránky, napríklad Gemini, odmietajú adresy Psiphonu. WARP pošle takú prevádzku ďalej cez Cloudflare: krajina zostane rovnaká, ale stránka uvidí adresu Cloudflare a rýchlosť trochu klesne.",
+          "mode": "Posielať cez WARP",
+          "modes": {
+            "off": "Vypnuté",
+            "sites": "Iba stránky zo zoznamu",
+            "all": "Všetka prevádzka"
+          },
+          "sites": "Stránky",
+          "sitesHint": "Jedno pravidlo na riadok, napríklad domain:gemini.google.com. Fungujú aj samotná doména, full:, keyword:, regexp: a geosite:.",
+          "registered": "Účet WARP je pripravený",
+          "registerOnSave": "Uložením sa pre tento panel zaregistruje bezplatný účet WARP.",
+          "save": "Uložiť WARP"
+        },
+        "errors": {
+          "siteRule": "Každý riadok musí byť doména alebo domain:, full:, keyword:, regexp: či geosite: a za ním hodnota."
+        },
+        "toasts": {
+          "state": "Načítanie stavu Psiphonu",
+          "install": "Inštalácia Psiphonu",
+          "regions": "Obnovenie krajín Psiphonu",
+          "countries": "Uloženie krajín Psiphonu",
+          "inbounds": "Načítanie vstupov pre Psiphon",
+          "inbound": "Uloženie krajín Psiphonu pre vstup",
+          "warp": "Uloženie WARP za Psiphonom"
+        }
       }
     },
     "standby": {

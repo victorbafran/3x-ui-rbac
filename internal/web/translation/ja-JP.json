@@ -2919,6 +2919,75 @@
           "swap": "アクティブな IP の切り替え",
           "release": "IP の解放"
         }
+      },
+      "psiphon": {
+        "title": "Psiphon による国別の出口",
+        "intro": "選んだ国から Psiphon 経由で顧客の通信を出せます",
+        "introHint": "Psiphon はこのパネルのサーバーでのみ動きます。入口サーバーから入る顧客もそのトンネルを通って同じ国に届くため、1 組の国ですべての顧客に対応できます。",
+        "status": {
+          "unsupported": "非対応",
+          "notInstalled": "未インストール",
+          "installed": "インストール済み",
+          "connected": "{enabled} 件中 {connected} 件接続"
+        },
+        "unsupported": "Psiphon には x86_64 (amd64) の Linux サーバーが必要です",
+        "unsupportedHint": "このサーバーのプロセッサ向けの Psiphon は公開されていないため、ここでは動きません。",
+        "install": "Psiphon をインストール",
+        "installHint": "Psiphon をダウンロードし、現在の国の一覧を読み込みます。最大 3 分かかります。国を有効にするまで何も動かず、有効にした国ごとに約 {mb} MB のメモリを使います。",
+        "installing": "インストールして国の一覧を読み込んでいます…",
+        "phase": {
+          "off": "停止",
+          "connecting": "接続中",
+          "connected": "接続済み",
+          "error": "失敗"
+        },
+        "countries": {
+          "title": "国",
+          "hint": "動かす国にチェックを入れてください。インバウンドに割り当てられるのは、ここでチェックした国だけです。",
+          "refresh": "一覧を更新",
+          "listedAt": "一覧の取得: {time}",
+          "save": "国を保存",
+          "memory": "{count} か国で約 {mb} MB のメモリ"
+        },
+        "inbounds": {
+          "title": "インバウンドごとの国",
+          "hint": "インバウンドに選んだ国はそれぞれ、そのインバウンドのサブスクリプションに国旗と国名付きの設定として 1 つずつ追加されます。インバウンド自体の設定はそのまま残ります。",
+          "wireguardHint": "WireGuard のインバウンドは 1 か国だけを受け付け、すべての通信がその国から出ます。",
+          "inbound": "インバウンド",
+          "countries": "国",
+          "pick": "国を選択",
+          "pickOne": "国を 1 つ選択",
+          "noCountries": "先に上で国にチェックを入れて保存してください。",
+          "empty": "このサーバーには VLESS、Hysteria、WireGuard のインバウンドがありません",
+          "save": "保存"
+        },
+        "warp": {
+          "title": "Psiphon の後ろの WARP",
+          "hint": "Gemini など一部のサイトは Psiphon のアドレスを拒否します。WARP はその通信を Cloudflare 経由で先へ送ります。国は変わりませんが、サイトには Cloudflare のアドレスが見え、速度が少し落ちます。",
+          "mode": "WARP 経由で送る",
+          "modes": {
+            "off": "停止",
+            "sites": "一覧のサイトのみ",
+            "all": "すべての通信"
+          },
+          "sites": "サイト",
+          "sitesHint": "1 行に 1 つのルール。例: domain:gemini.google.com。接頭辞なしのドメイン、full:、keyword:、regexp:、geosite: も使えます。",
+          "registered": "WARP アカウント準備完了",
+          "registerOnSave": "保存すると、このパネル用の無料 WARP アカウントが登録されます。",
+          "save": "WARP を保存"
+        },
+        "errors": {
+          "siteRule": "各行はドメイン、または domain:、full:、keyword:、regexp:、geosite: のあとに値を続けたものにしてください。"
+        },
+        "toasts": {
+          "state": "Psiphon の状態を読み込む",
+          "install": "Psiphon をインストール",
+          "regions": "Psiphon の国を更新",
+          "countries": "Psiphon の国を保存",
+          "inbounds": "Psiphon 用のインバウンドを読み込む",
+          "inbound": "インバウンドの Psiphon の国を保存",
+          "warp": "Psiphon の後ろの WARP を保存"
+        }
       }
     },
     "standby": {

@@ -17,6 +17,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 	"github.com/mhsanaei/3x-ui/v3/internal/ocserv"
+	"github.com/mhsanaei/3x-ui/v3/internal/psiphon"
 	"github.com/mhsanaei/3x-ui/v3/internal/relay"
 	"github.com/mhsanaei/3x-ui/v3/internal/tunnel"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/global"
@@ -918,13 +919,14 @@ func (s *RelayService) ensureXrayExit(r model.Relay) {
 	}
 }
 
-// StandDown takes this panel's own end of every tunnel down, here only: the far
-// ends stay as they are, serving the main panel, which dials the same fronts and exits.
+// StandDown takes this panel's own end of every tunnel down, and its Psiphon
+// countries, which run on the main panel only; the far ends keep serving the main panel.
 func (s *RelayService) StandDown() {
 	tunnel.GetManager().Reconcile(nil)
 	for _, id := range relay.LocalInterfaceIDs() {
 		relay.DownOrphan(id)
 	}
+	psiphon.GetManager().StopAll()
 }
 
 // downOrphans takes down any tunnel this panel brought up for a relay that no
@@ -1071,6 +1073,9 @@ type RelayOption struct {
 	Country     string `json:"country"`
 	CountryCode string `json:"countryCode"`
 	Ready       bool   `json:"ready"`
+	// Kind is RelayOptionRelay or RelayOptionPsiphon; a Psiphon country is an
+	// Xray outbound, which cisco and OpenVPN cannot route into.
+	Kind string `json:"kind"`
 }
 
 func (s *RelayService) Options() ([]RelayOption, error) {
@@ -1078,7 +1083,11 @@ func (s *RelayService) Options() ([]RelayOption, error) {
 	if err != nil {
 		return nil, err
 	}
-	return s.withThisServer(out), nil
+	psiphonOptions, err := (&PsiphonService{}).exitOptions()
+	if err != nil {
+		return nil, err
+	}
+	return append(s.withThisServer(out), psiphonOptions...), nil
 }
 
 // exitOptions is the enrolled exit servers, the part of Options that comes
@@ -1104,6 +1113,7 @@ func (s *RelayService) exitOptions() ([]RelayOption, error) {
 			Country:     r.Country,
 			CountryCode: r.CountryCode,
 			Ready:       r.Status == RelayReady,
+			Kind:        RelayOptionRelay,
 		})
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Name < out[j].Name })
@@ -1129,6 +1139,7 @@ func (s *RelayService) withThisServer(out []RelayOption) []RelayOption {
 			Country:     h.Country,
 			CountryCode: h.CountryCode,
 			Ready:       true,
+			Kind:        RelayOptionRelay,
 		}}, out...)
 	}
 	return out

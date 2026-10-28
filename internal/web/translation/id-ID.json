@@ -2919,6 +2919,75 @@
           "swap": "Tukar IP aktif",
           "release": "Lepas IP"
         }
+      },
+      "psiphon": {
+        "title": "Keluar per negara lewat Psiphon",
+        "intro": "Pelanggan bisa keluar lewat Psiphon di negara yang Anda pilih",
+        "introHint": "Psiphon hanya berjalan di server panel ini. Pelanggan yang masuk lewat server masuk mencapai negara yang sama melalui tunelnya, jadi satu set negara melayani semua orang.",
+        "status": {
+          "unsupported": "Tidak didukung",
+          "notInstalled": "Belum terpasang",
+          "installed": "Terpasang",
+          "connected": "{connected} dari {enabled} terhubung"
+        },
+        "unsupported": "Psiphon memerlukan server Linux x86_64 (amd64)",
+        "unsupportedHint": "Psiphon tidak merilis build untuk prosesor server ini, jadi tidak bisa berjalan di sini.",
+        "install": "Pasang Psiphon",
+        "installHint": "Mengunduh Psiphon dan membaca daftar negaranya saat ini; butuh hingga tiga menit. Tidak ada yang berjalan sampai Anda mengaktifkan sebuah negara, dan setiap negara yang aktif memakai sekitar {mb} MB memori.",
+        "installing": "Memasang dan membaca daftar negara…",
+        "phase": {
+          "off": "Mati",
+          "connecting": "Menghubungkan",
+          "connected": "Terhubung",
+          "error": "Gagal"
+        },
+        "countries": {
+          "title": "Negara",
+          "hint": "Centang negara yang dijalankan. Inbound hanya bisa diberi negara yang dicentang di sini.",
+          "refresh": "Segarkan daftar",
+          "listedAt": "Daftar dibaca {time}",
+          "save": "Simpan negara",
+          "memory": "Sekitar {mb} MB memori untuk {count} negara"
+        },
+        "inbounds": {
+          "title": "Negara per inbound",
+          "hint": "Setiap negara yang dipilih untuk sebuah inbound menjadi satu config tambahan di langganan inbound itu, dinamai dengan bendera dan nama negaranya. Config milik inbound itu sendiri tetap ada.",
+          "wireguardHint": "Inbound WireGuard hanya menerima satu negara, dan semua lalu lintasnya keluar dari sana.",
+          "inbound": "Inbound",
+          "countries": "Negara",
+          "pick": "Pilih negara",
+          "pickOne": "Pilih satu negara",
+          "noCountries": "Centang dan simpan sebuah negara di atas terlebih dahulu.",
+          "empty": "Tidak ada inbound VLESS, Hysteria, atau WireGuard di server ini",
+          "save": "Simpan"
+        },
+        "warp": {
+          "title": "WARP di belakang Psiphon",
+          "hint": "Beberapa situs, seperti Gemini, menolak alamat Psiphon. WARP meneruskan lalu lintas itu melalui Cloudflare: negaranya tetap sama, tetapi situs melihat alamat Cloudflare, dan kecepatannya sedikit berkurang.",
+          "mode": "Kirim lewat WARP",
+          "modes": {
+            "off": "Mati",
+            "sites": "Hanya situs dalam daftar",
+            "all": "Semua lalu lintas"
+          },
+          "sites": "Situs",
+          "sitesHint": "Satu aturan per baris, seperti domain:gemini.google.com. Domain polos, full:, keyword:, regexp:, dan geosite: juga bisa.",
+          "registered": "Akun WARP siap",
+          "registerOnSave": "Menyimpan akan mendaftarkan akun WARP gratis untuk panel ini.",
+          "save": "Simpan WARP"
+        },
+        "errors": {
+          "siteRule": "Setiap baris harus berupa domain, atau domain:, full:, keyword:, regexp:, atau geosite: diikuti sebuah nilai."
+        },
+        "toasts": {
+          "state": "Baca status Psiphon",
+          "install": "Pasang Psiphon",
+          "regions": "Segarkan negara Psiphon",
+          "countries": "Simpan negara Psiphon",
+          "inbounds": "Baca inbound untuk Psiphon",
+          "inbound": "Simpan negara Psiphon untuk inbound",
+          "warp": "Simpan WARP di belakang Psiphon"
+        }
       }
     },
     "standby": {

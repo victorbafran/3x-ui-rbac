@@ -55,6 +55,7 @@ import {
 } from '@/schemas/relay';
 import type { IPFamily, Reachability, Relay, RelayFormValues } from '@/schemas/relay';
 import ArvanFrontModal from './ArvanFrontModal';
+import PsiphonCard from './PsiphonCard';
 
 // A relay is a plain server the panel reaches over SSH once. An exit sits in
 // another country: WireGuard and one forwarding rule go on it, and a cisco
@@ -188,7 +189,7 @@ function bytes(n: number): string {
 
 export default function RelaysPage() {
   const { t } = useTranslation();
-  const { antdThemeConfig } = useTheme();
+  const { isDark, isUltra, antdThemeConfig } = useTheme();
   const { isMobile } = useMediaQuery();
   const [modal, modalContextHolder] = Modal.useModal();
   const [messageApi, messageContextHolder] = message.useMessage();
@@ -222,6 +223,13 @@ export default function RelaysPage() {
     }),
     [relays],
   );
+
+  const pageClass = useMemo(() => {
+    const classes = ['relays-page'];
+    if (isDark) classes.push('is-dark');
+    if (isUltra) classes.push('is-ultra');
+    return classes.join(' ');
+  }, [isDark, isUltra]);
 
   const onAdd = useCallback(() => {
     setEditing(null);
@@ -462,7 +470,7 @@ export default function RelaysPage() {
     <ConfigProvider theme={antdThemeConfig}>
       {messageContextHolder}
       {modalContextHolder}
-      <Layout>
+      <Layout className={pageClass}>
         <AppSidebar />
         <Layout className="content-shell">
           <Layout.Content id="content-layout" className="content-area">
@@ -538,9 +546,13 @@ export default function RelaysPage() {
                         dataSource={relays}
                         columns={columns}
                         pagination={false}
+                        scroll={{ x: 'max-content' }}
                         locale={{ emptyText: t('pages.relays.empty') }}
                       />
                     </Card>
+                  </Col>
+                  <Col span={24}>
+                    <PsiphonCard />
                   </Col>
                 </Row>
               )}

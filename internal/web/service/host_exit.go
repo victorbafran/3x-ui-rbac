@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
 	"slices"
 	"strconv"
 	"strings"
@@ -67,15 +68,8 @@ func settleHostExit(tx *gorm.DB, groupId string, req *entity.HostGroup) error {
 		}
 		return oneCountryPerWireGuardInbound(tx, groupId, wireguard, "")
 	}
-	id, ok := relay.InterfaceID(req.Exit)
-	if !ok {
-		return fmt.Errorf("%q is not an exit server", req.Exit)
-	}
-	var exit model.Relay
-	if err := tx.Where("id = ? AND role = ?", id, model.RelayExit).First(&exit).Error; err != nil {
-		return fmt.Errorf("there is no exit server %s", req.Exit)
-	}
-	if _, err := relay.XrayExitSource(id); err != nil {
+	defaultRoute, err := exitDefaultRoute(tx, req.Exit)
+	if err != nil {
 		return err
 	}
 
@@ -105,7 +99,7 @@ func settleHostExit(tx *gorm.DB, groupId string, req *entity.HostGroup) error {
 
 	req.VlessRoute = strings.TrimSpace(req.VlessRoute)
 	if req.VlessRoute == "" && len(routed) > 0 {
-		req.VlessRoute = strconv.Itoa(id)
+		req.VlessRoute = defaultRoute
 	}
 	if req.VlessRoute != "" {
 		if n, err := strconv.Atoi(req.VlessRoute); err != nil || n < 0 || n > 65535 {
@@ -132,6 +126,34 @@ func settleHostExit(tx *gorm.DB, groupId string, req *entity.HostGroup) error {
 		}
 	}
 	return nil
+}
+
+// exitDefaultRoute checks that an exit exists and returns the route its hosts take
+// unless one is typed: a relay's id, or a Psiphon country's letters (psiphonRoute).
+func exitDefaultRoute(tx *gorm.DB, exit string) (string, error) {
+	if strings.HasPrefix(exit, psiphonExitPrefix) {
+		code, ok := psiphonCode(exit)
+		if !ok {
+			return "", fmt.Errorf("%q is not a Psiphon country", exit)
+		}
+		var country model.PsiphonCountry
+		if err := tx.Where("code = ? AND enabled = ?", code, true).First(&country).Error; err != nil {
+			return "", fmt.Errorf("there is no enabled Psiphon country %s", code)
+		}
+		return psiphonRoute(code), nil
+	}
+	id, ok := relay.InterfaceID(exit)
+	if !ok {
+		return "", fmt.Errorf("%q is not an exit server", exit)
+	}
+	var server model.Relay
+	if err := tx.Where("id = ? AND role = ?", id, model.RelayExit).First(&server).Error; err != nil {
+		return "", fmt.Errorf("there is no exit server %s", exit)
+	}
+	if _, err := relay.XrayExitSource(id); err != nil {
+		return "", err
+	}
+	return strconv.Itoa(id), nil
 }
 
 func inboundName(ib *model.Inbound) string {
@@ -226,6 +248,14 @@ func refuseUnroutableHysteriaAuths(inbound *model.Inbound, clients []model.Clien
 // injectExitRoutes adds an outbound per exit and a rule per inbound and route,
 // last, so the operator's rules, private and bittorrent blocks too, decide first.
 func injectExitRoutes(cfg *xray.Config, inbounds []*model.Inbound, hosts []*model.Host) {
+	var psi psiphonExits
+	if slices.ContainsFunc(hosts, func(h *model.Host) bool { return strings.HasPrefix(h.Exit, psiphonExitPrefix) }) {
+		psi = loadPsiphonExits()
+	}
+	injectExitRoutesWith(cfg, inbounds, hosts, psi)
+}
+
+func injectExitRoutesWith(cfg *xray.Config, inbounds []*model.Inbound, hosts []*model.Host, psi psiphonExits) {
 	local := make(map[int]*model.Inbound, len(inbounds))
 	for _, ib := range inbounds {
 		if ib.Enable && ib.NodeID == nil && exitKindOf(ib.Protocol) != exitNone {
@@ -236,29 +266,46 @@ func injectExitRoutes(cfg *xray.Config, inbounds []*model.Inbound, hosts []*mode
 	seen := map[key]bool{}
 	var newRules []any
 	var exits []string
+	warped := map[string]bool{}
+	psiphonRouted := false
 	for _, h := range hosts {
 		ib := local[h.InboundId]
 		if ib == nil || h.IsDisabled || h.Exit == "" {
 			continue
 		}
-		rule := map[string]any{
-			"type":        "field",
-			"inboundTag":  []any{ib.Tag},
-			"outboundTag": ExitOutboundTag(h.Exit),
-		}
+		match := map[string]any{"type": "field", "inboundTag": []any{ib.Tag}}
 		k := key{tag: ib.Tag}
 		if exitKindOf(ib.Protocol) == exitByRoute {
 			if h.VlessRoute == "" {
 				continue
 			}
 			k.route = h.VlessRoute
-			rule["vlessRoute"] = h.VlessRoute
+			match["vlessRoute"] = h.VlessRoute
 		}
 		if seen[k] {
 			continue
 		}
+		var rules []map[string]any
+		if code, ok := psiphonCode(h.Exit); ok {
+			psiphonRouted = true
+			if psi.socks[code] == 0 {
+				// Blocked, not skipped: with no rule the route falls to the default
+				// outbound and leaves from this server's own address.
+				logger.Warning("exit routes: Psiphon ", code, " is not enabled, so host ", h.Remark, "'s route is blocked")
+				seen[k] = true
+				newRules = append(newRules, ruleFrom(match, map[string]any{"outboundTag": psiphonBlockedTag}))
+				continue
+			}
+			var warp bool
+			rules, warp = psi.routeRules(match, h.Exit)
+			warped[h.Exit] = warped[h.Exit] || warp
+		} else {
+			rules = []map[string]any{ruleFrom(match, map[string]any{"outboundTag": ExitOutboundTag(h.Exit)})}
+		}
 		seen[k] = true
-		newRules = append(newRules, rule)
+		for _, r := range rules {
+			newRules = append(newRules, r)
+		}
 		if !slices.Contains(exits, h.Exit) {
 			exits = append(exits, h.Exit)
 		}
@@ -289,7 +336,23 @@ func injectExitRoutes(cfg *xray.Config, inbounds []*model.Inbound, hosts []*mode
 			}
 		}
 	}
+	addOutbound := func(o map[string]any) {
+		tag, _ := o["tag"].(string)
+		if taken[tag] {
+			logger.Warning("exit routes: the template already has an outbound tagged ", tag, "; its routes use that one")
+			return
+		}
+		taken[tag] = true
+		outbounds = append(outbounds, o)
+	}
 	for _, iface := range exits {
+		if code, ok := psiphonCode(iface); ok {
+			addOutbound(psiphonSocksOutbound(ExitOutboundTag(iface), psi.socks[code]))
+			if warped[iface] {
+				addOutbound(psi.warpOutbound(ExitOutboundTag(iface)))
+			}
+			continue
+		}
 		if taken[ExitOutboundTag(iface)] {
 			logger.Warning("exit routes: the template already has an outbound tagged ", ExitOutboundTag(iface), "; its routes use that one")
 			continue
@@ -309,6 +372,16 @@ func injectExitRoutes(cfg *xray.Config, inbounds []*model.Inbound, hosts []*mode
 			"settings":    map[string]any{"targetStrategy": "ForceIPv4"},
 		})
 	}
+	// A Psiphon route's own UDP rules name these two; a template that renamed
+	// them would otherwise fail to load.
+	if psiphonRouted {
+		if !taken[psiphonDirectTag] {
+			addOutbound(map[string]any{"tag": psiphonDirectTag, "protocol": "freedom"})
+		}
+		if !taken[psiphonBlockedTag] {
+			addOutbound(map[string]any{"tag": psiphonBlockedTag, "protocol": "blackhole"})
+		}
+	}
 	rules, _ := routing["rules"].([]any)
 	routing["rules"] = append(rules, newRules...)
 
@@ -324,6 +397,84 @@ func injectExitRoutes(cfg *xray.Config, inbounds []*model.Inbound, hosts []*mode
 	}
 	cfg.OutboundConfigs = json_util.RawMessage(newOutbounds)
 	cfg.RouterConfig = json_util.RawMessage(newRouting)
+}
+
+// ruleFrom is a routing rule matching what match matches, with fields of its own.
+func ruleFrom(match, fields map[string]any) map[string]any {
+	rule := maps.Clone(match)
+	maps.Copy(rule, fields)
+	return rule
+}
+
+const (
+	psiphonDirectTag  = "direct"
+	psiphonBlockedTag = "blocked"
+	// WARP over MASQUE answers behind this name; HTTP/2, since QUIC is UDP and a
+	// Psiphon tunnel carries TCP only.
+	warpMasqueSNI = "consumer-masque.cloudflareclient.com"
+)
+
+// psiphonExits is what the generator needs of the Psiphon countries: each enabled
+// one's SOCKS port, and the WARP device that may ride behind them (nil: none).
+type psiphonExits struct {
+	socks     map[string]int
+	warpMode  string
+	warpSites []string
+	warp      *psiphonWarpReg
+}
+
+// routeRules is one Psiphon route's rules in order: DNS leaves from here, other UDP
+// is refused so QUIC falls back to TCP, then the WARP sites, then everything else.
+func (p psiphonExits) routeRules(match map[string]any, exit string) (rules []map[string]any, warp bool) {
+	tag := ExitOutboundTag(exit)
+	rules = []map[string]any{
+		ruleFrom(match, map[string]any{"network": "udp", "port": "53", "outboundTag": psiphonDirectTag}),
+		ruleFrom(match, map[string]any{"network": "udp", "outboundTag": psiphonBlockedTag}),
+	}
+	last := tag
+	if p.warp != nil {
+		switch p.warpMode {
+		case psiphonWarpSites:
+			if len(p.warpSites) > 0 {
+				rules = append(rules, ruleFrom(match, map[string]any{"domain": p.warpSites, "outboundTag": warpOutboundTag(tag)}))
+				warp = true
+			}
+		case psiphonWarpAll:
+			last, warp = warpOutboundTag(tag), true
+		}
+	}
+	return append(rules, ruleFrom(match, map[string]any{"outboundTag": last})), warp
+}
+
+func warpOutboundTag(exitTag string) string { return exitTag + "-warp" }
+
+func psiphonSocksOutbound(tag string, port int) map[string]any {
+	return map[string]any{
+		"tag":      tag,
+		"protocol": "socks",
+		"settings": map[string]any{"servers": []any{map[string]any{"address": "127.0.0.1", "port": port}}},
+	}
+}
+
+// warpOutbound is WARP dialled through one country's Psiphon outbound, so the
+// sites it carries still see that country.
+func (p psiphonExits) warpOutbound(exitTag string) map[string]any {
+	return map[string]any{
+		"tag":      warpOutboundTag(exitTag),
+		"protocol": "masque",
+		"settings": map[string]any{"address": p.warp.Endpoint, "port": 443},
+		"streamSettings": map[string]any{
+			"network":     "masque",
+			"security":    "tls",
+			"tlsSettings": map[string]any{"serverName": warpMasqueSNI, "alpn": []any{"h2"}},
+			"masqueSettings": map[string]any{"warp": map[string]any{
+				"privateKey": p.warp.PrivateKey,
+				"publicKey":  p.warp.PublicKey,
+				"address":    p.warp.Address,
+			}},
+			"sockopt": map[string]any{"dialerProxy": exitTag},
+		},
+	}
 }
 
 // HostsUseExit reports whether any of the given host groups leaves through an

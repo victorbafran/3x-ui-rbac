@@ -2919,6 +2919,75 @@
           "swap": "Chuyển IP hoạt động",
           "release": "Trả lại IP"
         }
+      },
+      "psiphon": {
+        "title": "Lối ra theo quốc gia qua Psiphon",
+        "intro": "Khách hàng có thể ra ngoài qua Psiphon ở quốc gia bạn chọn",
+        "introHint": "Psiphon chỉ chạy trên máy chủ của panel này. Khách hàng vào qua máy chủ lối vào cũng đến được các quốc gia đó qua đường hầm của nó, nên một bộ quốc gia phục vụ được tất cả.",
+        "status": {
+          "unsupported": "Không hỗ trợ",
+          "notInstalled": "Chưa cài đặt",
+          "installed": "Đã cài đặt",
+          "connected": "{connected}/{enabled} đã kết nối"
+        },
+        "unsupported": "Psiphon cần máy chủ Linux x86_64 (amd64)",
+        "unsupportedHint": "Psiphon không phát hành bản cho bộ xử lý của máy chủ này, nên không thể chạy ở đây.",
+        "install": "Cài đặt Psiphon",
+        "installHint": "Tải Psiphon về và đọc danh sách quốc gia hiện tại của nó; mất tối đa ba phút. Không có gì chạy cho đến khi bạn bật một quốc gia, và mỗi quốc gia được bật dùng khoảng {mb} MB bộ nhớ.",
+        "installing": "Đang cài đặt và đọc danh sách quốc gia…",
+        "phase": {
+          "off": "Tắt",
+          "connecting": "Đang kết nối",
+          "connected": "Đã kết nối",
+          "error": "Thất bại"
+        },
+        "countries": {
+          "title": "Quốc gia",
+          "hint": "Đánh dấu các quốc gia cần chạy. Một inbound chỉ có thể nhận quốc gia được đánh dấu ở đây.",
+          "refresh": "Làm mới danh sách",
+          "listedAt": "Đọc danh sách lúc {time}",
+          "save": "Lưu quốc gia",
+          "memory": "Khoảng {mb} MB bộ nhớ cho {count} quốc gia"
+        },
+        "inbounds": {
+          "title": "Quốc gia theo inbound",
+          "hint": "Mỗi quốc gia được chọn cho một inbound trở thành thêm một cấu hình trong gói đăng ký của inbound đó, mang cờ và tên quốc gia. Cấu hình riêng của inbound vẫn được giữ.",
+          "wireguardHint": "Một inbound WireGuard chỉ nhận một quốc gia, và toàn bộ lưu lượng của nó ra từ đó.",
+          "inbound": "Inbound",
+          "countries": "Quốc gia",
+          "pick": "Chọn quốc gia",
+          "pickOne": "Chọn một quốc gia",
+          "noCountries": "Trước hết hãy đánh dấu và lưu một quốc gia ở trên.",
+          "empty": "Máy chủ này không có inbound VLESS, Hysteria hay WireGuard",
+          "save": "Lưu"
+        },
+        "warp": {
+          "title": "WARP phía sau Psiphon",
+          "hint": "Một số trang, như Gemini, từ chối địa chỉ của Psiphon. WARP chuyển tiếp lưu lượng đó qua Cloudflare: quốc gia vẫn giữ nguyên, nhưng trang thấy một địa chỉ Cloudflare, và tốc độ giảm đi một chút.",
+          "mode": "Gửi qua WARP",
+          "modes": {
+            "off": "Tắt",
+            "sites": "Chỉ các trang trong danh sách",
+            "all": "Toàn bộ lưu lượng"
+          },
+          "sites": "Trang",
+          "sitesHint": "Mỗi dòng một quy tắc, ví dụ domain:gemini.google.com. Tên miền không có tiền tố, full:, keyword:, regexp: và geosite: cũng dùng được.",
+          "registered": "Tài khoản WARP đã sẵn sàng",
+          "registerOnSave": "Khi lưu, một tài khoản WARP miễn phí sẽ được đăng ký cho panel này.",
+          "save": "Lưu WARP"
+        },
+        "errors": {
+          "siteRule": "Mỗi dòng phải là một tên miền, hoặc domain:, full:, keyword:, regexp: hay geosite: kèm theo một giá trị."
+        },
+        "toasts": {
+          "state": "Đọc trạng thái Psiphon",
+          "install": "Cài đặt Psiphon",
+          "regions": "Làm mới quốc gia Psiphon",
+          "countries": "Lưu quốc gia Psiphon",
+          "inbounds": "Đọc inbound cho Psiphon",
+          "inbound": "Lưu quốc gia Psiphon của inbound",
+          "warp": "Lưu WARP phía sau Psiphon"
+        }
       }
     },
     "standby": {

@@ -20,7 +20,9 @@ export default function OpenVPNFields() {
   // The exit servers already enrolled, offered by the country the panel found
   // them in. A reseller who cannot read the relay routes simply gets no
   // suggestions and can still type an interface of their own.
-  const { options: relays } = useRelayOptions();
+  const { options: relayOptions } = useRelayOptions();
+  // A Psiphon country is an Xray exit, not an interface OpenVPN can route into.
+  const relays = relayOptions.filter((r) => r.kind !== 'psiphon');
   const exitOptions = relays.map((r) => ({
     value: r.interface,
     label: r.interface

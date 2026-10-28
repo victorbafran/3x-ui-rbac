@@ -45,6 +45,7 @@ func migrationModels() []any {
 		&model.ArvanFront{},
 		&model.ArvanIP{},
 		&model.PanelClone{},
+		&model.PsiphonCountry{},
 		&model.ApiToken{},
 		&model.Inbound{},
 		&model.AdminInbound{},

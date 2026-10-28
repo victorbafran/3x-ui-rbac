@@ -23,6 +23,11 @@ export const keys = {
       key: () => ['relays', 'arvan', 'key'] as const,
       front: (relayId: number) => ['relays', 'arvan', 'front', relayId] as const,
     },
+    psiphon: {
+      root: () => ['relays', 'psiphon'] as const,
+      state: () => ['relays', 'psiphon', 'state'] as const,
+      inbounds: () => ['relays', 'psiphon', 'inbounds'] as const,
+    },
   },
   admins: {
     root: () => ['admins'] as const,

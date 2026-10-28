@@ -33,7 +33,9 @@ function LocationList() {
   // AutoComplete rather than a Select: an operator with a tunnel of their own
   // can type its interface, and a reseller who cannot read the relay routes
   // simply gets no suggestions instead of an empty, broken dropdown.
-  const { options: relays } = useRelayOptions();
+  const { options: relayOptions } = useRelayOptions();
+  // A Psiphon country is an Xray exit, not an interface ocserv can route into.
+  const relays = relayOptions.filter((r) => r.kind !== 'psiphon');
   const exitOptions = relays.map((r) => ({
     value: r.interface,
     label: `${r.label || r.name} — ${r.address}${r.ready ? '' : ' (…)'}`,

@@ -24,6 +24,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 	"github.com/mhsanaei/3x-ui/v3/internal/mtproto"
 	"github.com/mhsanaei/3x-ui/v3/internal/ocserv"
+	"github.com/mhsanaei/3x-ui/v3/internal/psiphon"
 	"github.com/mhsanaei/3x-ui/v3/internal/tuic"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/certreload"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
@@ -339,6 +340,9 @@ const (
 	// BackPack rewrites each front's counters every 30s; reading as often keeps
 	// the speed shown on the relays page within a minute of the truth.
 	cadenceFrontTraffic = "@every 30s"
+	// A dead Psiphon client is a country whose customers go nowhere; a tick
+	// with every client up costs a query, and exits are checked ten minutes apart.
+	cadencePsiphon = "@every 30s"
 )
 
 // mainOnlyJob skips its job while this panel is on standby, where it would
@@ -406,6 +410,12 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 
 	// Count the customer traffic through each BackPack front.
 	_, _ = s.cron.AddJob(cadenceFrontTraffic, mainOnlyJob{job.NewFrontTrafficJob()})
+
+	// Keep a Psiphon client up per enabled country; at start too, so a restart
+	// does not leave the countries down for a tick.
+	psiphonJob := mainOnlyJob{job.NewPsiphonJob()}
+	_, _ = s.cron.AddJob(cadencePsiphon, psiphonJob)
+	go psiphonJob.Run()
 
 	// Renew the certificates the panel issued for its inbounds. Run once at
 	// start as well: a panel restarted more often than the cadence would
@@ -887,6 +897,7 @@ func (s *Server) stop(stopXray bool, stopTgBot bool) error {
 		job.NewAmneziaWGJob().FlushKernelTraffic()
 		amneziawgkern.GetManager().StopAll()
 		amneziawgnet.GetOutboundManager().StopAll()
+		psiphon.GetManager().StopAll()
 	}
 	if stopXray {
 		if err := s.xrayService.StopXray(); err != nil && !errors.Is(err, service.ErrXrayNotRunning) {

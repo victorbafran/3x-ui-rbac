@@ -3,7 +3,8 @@ import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-libra
 import { MemoryRouter } from 'react-router';
 
 import type { Relay } from '@/schemas/relay';
-import { fieldLabels, renderWithProviders } from './test-utils';
+import { psiphonRefetchMs, type PsiphonInbound, type PsiphonState } from '@/schemas/psiphon';
+import { chooseSelectOption, fieldLabels, renderWithProviders } from './test-utils';
 
 // The page carries the app sidebar, which needs a router and the settings
 // query; neither is what these tests are about.
@@ -145,11 +146,38 @@ vi.mock('@/api/queries/useRelayMutations', () => ({
   }),
 }));
 
+let psiphonState: PsiphonState | undefined;
+let psiphonInbounds: PsiphonInbound[] = [];
+const installMut = { mutate: vi.fn(), isPending: false };
+const saved = async (_payload: unknown) => ({ success: true });
+const saveCountriesMut = { mutateAsync: vi.fn(saved), isPending: false };
+const saveInboundMut = { mutateAsync: vi.fn(saved), isPending: false, variables: undefined };
+const saveWarpMut = { mutateAsync: vi.fn(saved), isPending: false };
+
+vi.mock('@/api/queries/usePsiphon', () => ({
+  usePsiphonState: () => ({
+    data: psiphonState,
+    isLoading: false,
+    isFetching: false,
+    error: null,
+    refetch: vi.fn(),
+  }),
+  usePsiphonInbounds: () => ({ data: psiphonInbounds, isLoading: false, error: null }),
+  usePsiphonMutations: () => ({
+    installMut,
+    refreshRegionsMut: { mutate: vi.fn(), isPending: false },
+    saveCountriesMut,
+    saveInboundMut,
+    saveWarpMut,
+  }),
+}));
+
 const { default: RelaysPage } = await import('@/pages/relays/RelaysPage');
 
 describe('the exit servers page', () => {
   beforeEach(() => {
     rows = relays;
+    psiphonState = undefined;
   });
 
   // The operator has to be able to tell a working country from a broken one at
@@ -717,6 +745,20 @@ describe('the exit servers page', () => {
     cleanup();
   });
 
+  // On a phone the table spilled past its card, the page grew to 735 px and the
+  // browser zoomed out to fit, leaving the cards in the left half of the screen.
+  it('scrolls the server table sideways inside its card', () => {
+    rows = [...relays, front];
+    renderWithProviders(
+      <MemoryRouter>
+        <RelaysPage />
+      </MemoryRouter>,
+    );
+    const table = document.querySelector('.ant-table') as HTMLElement;
+    expect(table.classList.contains('ant-table-scroll-horizontal')).toBe(true);
+    cleanup();
+  });
+
   // When the panel found no IPv6 on the server it says why; the row is the only
   // place that reason can reach the operator who picked IPv6.
   it('tells why an entry server set to IPv6 still has no IPv6 address', async () => {
@@ -735,6 +777,187 @@ describe('the exit servers page', () => {
       expect(document.body.textContent).toContain('the server has no public IPv6 address'),
     );
     cleanup();
+  });
+});
+
+const psiphonCountry = (code: string, name: string, flag: string) => ({
+  code,
+  name,
+  flag,
+  enabled: true,
+  running: true,
+  connected: false,
+  region: '',
+  exitIp: '',
+  exitLoc: '',
+  lastError: '',
+  socksPort: 0,
+});
+
+// Measured on the live box: DE answered through Psiphon from 164.92.130.120.
+const psiphonReady: PsiphonState = {
+  supported: true,
+  installed: true,
+  regions: ['AT', 'DE', 'GB', 'US'],
+  regionsAt: 0,
+  countries: [
+    {
+      ...psiphonCountry('DE', 'Germany', '🇩🇪'),
+      connected: true,
+      region: 'DE',
+      exitIp: '164.92.130.120',
+      exitLoc: 'DE',
+      socksPort: 11181,
+    },
+    psiphonCountry('US', 'United States', '🇺🇸'),
+    {
+      ...psiphonCountry('GB', 'United Kingdom', '🇬🇧'),
+      running: false,
+      lastError: 'psiphon GB exited: no tunnel within 120 s',
+    },
+  ],
+  warp: { mode: 'off', sites: '', registered: false },
+};
+
+function renderPage() {
+  renderWithProviders(
+    <MemoryRouter>
+      <RelaysPage />
+    </MemoryRouter>,
+  );
+  return screen.getByText('Psiphon country exits').closest('.ant-card') as HTMLElement;
+}
+
+function fieldIdOf(label: string): string {
+  return screen.getByText(label).closest('label')?.getAttribute('for') ?? '';
+}
+
+describe('the Psiphon card', () => {
+  beforeEach(() => {
+    rows = relays;
+    psiphonState = psiphonReady;
+    psiphonInbounds = [];
+  });
+
+  // Before the binary is on the server there is nothing to pick, only the one
+  // button, and the operator is told what each country will cost in memory.
+  it('offers the install with its memory cost before Psiphon is installed', () => {
+    psiphonState = { ...psiphonReady, installed: false, countries: [] };
+    installMut.mutate.mockClear();
+    const card = renderPage();
+    expect(card.textContent).toContain('each country you enable takes about 36 MB of memory');
+    expect(card.textContent).not.toContain('Countries per inbound');
+    fireEvent.click(within(card).getByText('Install Psiphon').closest('button') as HTMLElement);
+    expect(installMut.mutate).toHaveBeenCalledTimes(1);
+    cleanup();
+  });
+
+  // Psiphon ships x86_64 only; an ARM panel must say so instead of offering a
+  // download that would fetch a binary it cannot run.
+  it('says why it cannot run on a server Psiphon has no build for', () => {
+    psiphonState = { ...psiphonReady, supported: false, installed: false, countries: [] };
+    const card = renderPage();
+    expect(card.textContent).toContain('Psiphon needs an x86_64 (amd64) Linux server');
+    expect(within(card).queryByText('Install Psiphon')).toBeNull();
+    cleanup();
+  });
+
+  // The tick shows what the operator wants; the tag beside it what is running,
+  // and a connected country says where its traffic really comes out.
+  it('shows each country as off, connecting, connected with its exit, or failed with why', () => {
+    const card = renderPage();
+    const cell = (label: string) =>
+      within(card).getByText(label).closest('.ant-col') as HTMLElement;
+    expect(cell('🇦🇹 Austria').textContent).toContain('Off');
+    expect(cell('🇩🇪 Germany').textContent).toContain('Connected');
+    expect(cell('🇩🇪 Germany').textContent).toContain('164.92.130.120 · DE');
+    expect(cell('🇺🇸 United States').textContent).toContain('Connecting');
+    expect(cell('🇬🇧 United Kingdom').textContent).toContain('Failed');
+    expect(cell('🇬🇧 United Kingdom').textContent).toContain('psiphon GB exited');
+    expect(card.textContent).toContain('1 of 3 connected');
+    cleanup();
+  });
+
+  // Ticking a country and saving sends the whole set the operator now wants,
+  // the ones already running included, or saving would switch those off.
+  it('saves the ticked countries together with the ones already running', async () => {
+    saveCountriesMut.mutateAsync.mockClear();
+    const card = renderPage();
+    const save = within(card).getByText('Save countries').closest('button') as HTMLButtonElement;
+    expect(save.disabled).toBe(true);
+    const austria = within(card).getByText('🇦🇹 Austria').closest('label') as HTMLElement;
+    fireEvent.click(austria.querySelector('input') as HTMLInputElement);
+    await act(async () => {});
+    expect(card.textContent).toContain('About 144 MB of memory for 4 countries');
+    fireEvent.click(save);
+    await waitFor(() => expect(saveCountriesMut.mutateAsync).toHaveBeenCalledTimes(1));
+    const sent = saveCountriesMut.mutateAsync.mock.calls[0][0] as string[];
+    expect([...sent].sort()).toEqual(['AT', 'DE', 'GB', 'US']);
+    cleanup();
+  });
+
+  // WireGuard cannot tell countries apart inside one inbound, so its row takes
+  // one; a VLESS row takes several, each a config of its own in the subscription.
+  it('gives a WireGuard inbound one country and saves what was picked for it', async () => {
+    psiphonInbounds = [
+      { inboundId: 11, remark: 'vless-ws', protocol: 'vless', countries: ['DE'] },
+      { inboundId: 12, remark: 'wg-home', protocol: 'wireguard', countries: [] },
+    ];
+    saveInboundMut.mutateAsync.mockClear();
+    const card = renderPage();
+    const row = (id: number) => card.querySelector(`tr[data-row-key="${id}"]`) as HTMLElement;
+    expect(row(11).querySelector('.ant-select-multiple')).not.toBeNull();
+    expect(row(11).textContent).toContain('🇩🇪 Germany');
+    expect(row(12).querySelector('.ant-select-multiple')).toBeNull();
+    const select = row(12).querySelector('.ant-select') as HTMLElement;
+    fireEvent.mouseDown((select.querySelector('.ant-select-selector') ?? select) as HTMLElement);
+    const option = Array.from(document.querySelectorAll('.ant-select-item-option')).find(
+      (o) => (o.getAttribute('title') ?? o.textContent ?? '').trim() === '🇺🇸 United States',
+    );
+    fireEvent.click(option as HTMLElement);
+    await act(async () => {});
+    fireEvent.click(within(row(12)).getByText('Save').closest('button') as HTMLElement);
+    await waitFor(() =>
+      expect(saveInboundMut.mutateAsync).toHaveBeenCalledWith({ inboundId: 12, codes: ['US'] }),
+    );
+    cleanup();
+  });
+
+  // A line Xray cannot read as a domain rule would only fail when Xray
+  // restarts; the form stops it where the operator typed it.
+  it('refuses a WARP site line that is not a domain rule', async () => {
+    saveWarpMut.mutateAsync.mockClear();
+    const card = renderPage();
+    chooseSelectOption(fieldIdOf('Send through WARP'), 'Only the sites listed');
+    await act(async () => {});
+    const sites = document.getElementById(fieldIdOf('Sites')) as HTMLTextAreaElement;
+    fireEvent.change(sites, { target: { value: 'gemini.google.com\nnot a rule' } });
+    await act(async () => {});
+    const save = within(card).getByText('Save WARP').closest('button') as HTMLElement;
+    fireEvent.click(save);
+    await waitFor(() => expect(card.textContent).toContain('Each line must be a domain'));
+    expect(saveWarpMut.mutateAsync).not.toHaveBeenCalled();
+    fireEvent.change(sites, { target: { value: 'gemini.google.com\nkeyword:openai' } });
+    await act(async () => {});
+    fireEvent.click(save);
+    await waitFor(() =>
+      expect(saveWarpMut.mutateAsync).toHaveBeenCalledWith({
+        mode: 'sites',
+        sites: 'gemini.google.com\nkeyword:openai',
+      }),
+    );
+    cleanup();
+  });
+
+  // A country connects within seconds, so the card asks often only while one
+  // is still on its way; a failed one waits for the slow round like the rest.
+  it('polls quickly only while a country is still connecting', () => {
+    expect(psiphonRefetchMs(psiphonReady)).toBe(5000);
+    const settled = {
+      ...psiphonReady,
+      countries: psiphonReady.countries.filter((c) => c.code !== 'US'),
+    };
+    expect(psiphonRefetchMs(settled)).toBe(30000);
   });
 });
 

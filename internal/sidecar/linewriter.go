@@ -40,6 +40,7 @@ type LineWriter struct {
 	folding *NoiseRule
 	folded  map[string]int
 	since   time.Time
+	onLine  func(line string)
 }
 
 // NewLineWriter prefixes every line with label, and folds lines matching noise.
@@ -53,10 +54,16 @@ func (w *LineWriter) setNoise(noise []NoiseRule) {
 	w.noise = noise
 }
 
-func (w *LineWriter) Write(p []byte) (int, error) {
+func (w *LineWriter) setOnLine(fn func(line string)) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
+	w.onLine = fn
+}
+
+func (w *LineWriter) Write(p []byte) (int, error) {
+	w.mu.Lock()
 	w.buf += string(p)
+	var seen []string
 	for {
 		i := strings.IndexByte(w.buf, '\n')
 		if i < 0 {
@@ -64,8 +71,13 @@ func (w *LineWriter) Write(p []byte) (int, error) {
 		}
 		line := w.buf[:i]
 		w.buf = w.buf[i+1:]
-		w.emitLocked(line)
+		if line = w.emitLocked(line); line != "" && w.onLine != nil {
+			seen = append(seen, line)
+		}
 	}
+	onLine := w.onLine
+	w.mu.Unlock()
+	tell(onLine, seen)
 	return len(p), nil
 }
 
@@ -73,27 +85,46 @@ func (w *LineWriter) Write(p []byte) (int, error) {
 // that dies mid-sentence still says what went wrong, then the pending count.
 func (w *LineWriter) Flush() {
 	w.mu.Lock()
-	defer w.mu.Unlock()
+	var seen []string
 	if w.buf != "" {
 		line := w.buf
 		w.buf = ""
-		w.emitLocked(line)
+		if line = w.emitLocked(line); line != "" {
+			seen = append(seen, line)
+		}
 	}
 	w.reportFoldedLocked(w.now(), true)
+	onLine := w.onLine
+	w.mu.Unlock()
+	tell(onLine, seen)
 }
 
-func (w *LineWriter) emitLocked(line string) {
+// tell runs outside the writer's lock, so a callback may read LastLine or the
+// process's Result without wedging the child's output.
+func tell(onLine func(string), lines []string) {
+	if onLine == nil {
+		return
+	}
+	for _, line := range lines {
+		onLine(line)
+	}
+}
+
+// emitLocked logs one line unless it is noise, and returns it cleaned of
+// colour codes, or empty for a blank line.
+func (w *LineWriter) emitLocked(line string) string {
 	line = strings.TrimSpace(ansiColour.ReplaceAllString(strings.TrimRight(line, "\r"), ""))
 	if line == "" {
-		return
+		return ""
 	}
 	now := w.now()
 	w.reportFoldedLocked(now, false)
 	if w.foldLocked(line, now) {
-		return
+		return line
 	}
 	w.lastLine = line
 	logger.Infof("%s | %s", w.label, line)
+	return line
 }
 
 func (w *LineWriter) foldLocked(line string, now time.Time) bool {

@@ -13,8 +13,9 @@ import (
 // hands the panel root on somebody else's machine, so these routes are
 // registered super-admin only in the authz registry, like the node routes.
 type RelayController struct {
-	relayService service.RelayService
-	arvanService service.ArvanService
+	relayService   service.RelayService
+	arvanService   service.ArvanService
+	psiphonService service.PsiphonService
 }
 
 func NewRelayController(g *gin.RouterGroup) *RelayController {
@@ -35,6 +36,7 @@ func (a *RelayController) initRouter(g *gin.RouterGroup) {
 	g.POST("/probe/:id", a.probe)
 
 	a.initArvanRouter(g)
+	a.initPsiphonRouter(g)
 }
 
 func (a *RelayController) list(c *gin.Context) {

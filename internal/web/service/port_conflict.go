@@ -347,6 +347,14 @@ func checkPortConflictTx(db *gorm.DB, inbound *model.Inbound, ignoreId int) (*po
 		}, nil
 	}
 
+	// A Psiphon country's client holds its two loopback ports; an inbound taking
+	// one later would stop Xray, or that country, from binding.
+	if inbound.NodeID == nil && newBits&transportTCP != 0 && listenOverlaps(loopbackBind, inboundBindAddr(inbound)) {
+		if conflict, err := psiphonPortConflict(db, inbound.Port); conflict != nil || err != nil {
+			return conflict, err
+		}
+	}
+
 	// Local embedded inbounds reserve an automatically assigned Xray SOCKS relay port.
 	if inbound.NodeID == nil && listenOverlaps(loopbackBind, inboundBindAddr(inbound)) {
 		conflict, err := checkAmneziawgnetSocksConflict(db, inbound, ignoreId, newBits)

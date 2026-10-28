@@ -1745,7 +1745,7 @@ export const sections: readonly Section[] = [
     id: 'relays',
     title: 'Exit and entry servers',
     description:
-      'Plain servers the panel reaches over SSH once. An exit (role "exit", the default) sits in another country: WireGuard and a single forwarding rule go on it, and a cisco inbound can send one of its countries out through it. An entry server (role "front") works the other way round: customers connect to its address, and the panel\u2019s own inbounds reach it through a Backhaul tunnel that the panel dials. Nothing else is installed on either: no panel and no accounts. Super admin only. All endpoints under /panel/api/relays.',
+      'Plain servers the panel reaches over SSH once. An exit (role "exit", the default) sits in another country: WireGuard and a single forwarding rule go on it, and a cisco inbound can send one of its countries out through it. An entry server (role "front") works the other way round: customers connect to its address, and the panel\u2019s own inbounds reach it through a Backhaul tunnel that the panel dials. Nothing else is installed on either: no panel and no accounts. The psiphon routes run Psiphon on this panel’s own server instead and offer its countries as exits for hosts. Super admin only. All endpoints under /panel/api/relays.',
     endpoints: [
       {
         method: 'GET',
@@ -1757,7 +1757,7 @@ export const sections: readonly Section[] = [
         method: 'GET',
         path: '/panel/api/relays/options',
         summary:
-          'The smaller list a cisco inbound form needs: the interface to store and a name the operator recognises. Exit servers only; an entry server has no interface to leave through.',
+          'The smaller list a cisco inbound form needs: the interface to store and a name the operator recognises. Exit servers only; an entry server has no interface to leave through. Each option carries kind: "relay" for an exit server, or "psiphon" for an enabled Psiphon country (interface psi-<CC>, labelled with its flag and English name), which a host can take as its exit but a cisco or OpenVPN inbound cannot.',
       },
       {
         method: 'GET',
@@ -1865,6 +1865,51 @@ export const sections: readonly Section[] = [
         summary:
           'Give a reserve IP back to ArvanCloud for good. The active IP is refused. Returns at once.',
         body: '{\n  "ip": "203.0.113.20"\n}',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/relays/psiphon/state',
+        summary:
+          'Psiphon on this panel’s own server: whether it can run here (supported is false on anything but x86_64 Linux), whether the binary is installed, the countries Psiphon offers (regions, ISO codes, read at regionsAt), every country with its state (code, name, flag, enabled, running, connected, the region it connected through, the exitIp and exitLoc its last check saw, lastError and its local socksPort), and the WARP setting (mode "off", "sites" or "all", the site rules one per line, and whether a WARP account is registered). Customers who enter through an entry server reach the same countries, because their traffic lands on this panel’s inbounds.',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/relays/psiphon/install',
+        summary:
+          'Download the pinned Psiphon build (checked against its SHA-256) and read the live list of countries by starting it once. Returns when done, within about three minutes. Nothing keeps running until a country is enabled; each enabled country runs its own process of about 36 MB.',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/relays/psiphon/regions/refresh',
+        summary:
+          'Read the list of countries Psiphon offers again. When it cannot be read, the fixed list of 26 countries is kept.',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/relays/psiphon/countries',
+        summary:
+          'Set which countries run: each code must be one Psiphon offers. A country still given to an inbound cannot be switched off; the refusal names those inbounds. Xray restarts so the exits follow.',
+        body: '{\n  "codes": ["DE", "US"]\n}',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/relays/psiphon/inbounds',
+        summary:
+          'The inbounds that can take a Psiphon country: every VLESS, Hysteria and WireGuard inbound of this panel (not a node’s), with inboundId, remark, protocol and the countries its hosts carry now.',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/relays/psiphon/inbound/:id',
+        summary:
+          'Set the Psiphon countries an inbound offers. Each country becomes one host on the inbound, a copy of its first host that has no Psiphon exit, named with the country’s flag and name, so the subscription carries one more config per country; an inbound with no host first gets a plain one, so its own config stays. Hosts of countries left out are removed. Every code must be enabled, and a WireGuard inbound takes at most one, which all its traffic leaves through. A Hysteria inbound whose clients’ auths cannot carry a route is refused.',
+        body: '{\n  "codes": ["DE", "US"]\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/relays/psiphon/warp',
+        summary:
+          'Put Cloudflare WARP behind the Psiphon countries, for sites that refuse Psiphon’s addresses: the country stays, the site sees a Cloudflare address. mode "off" turns it off, "sites" sends only the sites listed (one Xray domain rule per line: a bare domain, or domain:, full:, keyword:, regexp: or geosite: and a value) and "all" sends everything. A WARP account is registered on the first save that turns it on.',
+        body: '{\n  "mode": "sites",\n  "sites": "domain:gemini.google.com\\ndomain:chatgpt.com"\n}',
       },
     ],
   },

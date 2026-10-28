@@ -2919,6 +2919,75 @@
           "swap": "切换活动 IP",
           "release": "释放 IP"
         }
+      },
+      "psiphon": {
+        "title": "Psiphon 国家出口",
+        "intro": "客户可以通过 Psiphon 从您选择的国家出去",
+        "introHint": "Psiphon 只在本面板的服务器上运行。通过入口服务器进来的客户也经由其隧道到达相同的国家，因此一组国家即可服务所有人。",
+        "status": {
+          "unsupported": "不支持",
+          "notInstalled": "未安装",
+          "installed": "已安装",
+          "connected": "已连接 {connected}/{enabled}"
+        },
+        "unsupported": "Psiphon 需要 x86_64 (amd64) Linux 服务器",
+        "unsupportedHint": "Psiphon 没有为此服务器的处理器发布版本，因此无法在这里运行。",
+        "install": "安装 Psiphon",
+        "installHint": "下载 Psiphon 并读取其当前的国家列表，最多需要三分钟。在您启用某个国家之前不会运行任何内容，每启用一个国家约占用 {mb} MB 内存。",
+        "installing": "正在安装并读取国家列表…",
+        "phase": {
+          "off": "已关闭",
+          "connecting": "连接中",
+          "connected": "已连接",
+          "error": "失败"
+        },
+        "countries": {
+          "title": "国家",
+          "hint": "勾选要运行的国家。入站只能分配在这里勾选的国家。",
+          "refresh": "刷新列表",
+          "listedAt": "列表读取于 {time}",
+          "save": "保存国家",
+          "memory": "{count} 个国家约占 {mb} MB 内存"
+        },
+        "inbounds": {
+          "title": "每个入站的国家",
+          "hint": "为入站选择的每个国家都会在该入站的订阅中多出一个配置，以国旗和国家名称命名。入站自身的配置会保留。",
+          "wireguardHint": "WireGuard 入站只能选择一个国家，其所有流量都从该国家出去。",
+          "inbound": "入站",
+          "countries": "国家",
+          "pick": "选择国家",
+          "pickOne": "选择一个国家",
+          "noCountries": "请先在上方勾选并保存一个国家。",
+          "empty": "此服务器上没有 VLESS、Hysteria 或 WireGuard 入站",
+          "save": "保存"
+        },
+        "warp": {
+          "title": "Psiphon 后的 WARP",
+          "hint": "有些网站（如 Gemini）会拒绝 Psiphon 的地址。WARP 会通过 Cloudflare 继续转发这些流量：国家保持不变，但网站看到的是 Cloudflare 的地址，速度会稍有下降。",
+          "mode": "通过 WARP 发送",
+          "modes": {
+            "off": "关闭",
+            "sites": "仅列表中的网站",
+            "all": "所有流量"
+          },
+          "sites": "网站",
+          "sitesHint": "每行一条规则，例如 domain:gemini.google.com。也可以使用不带前缀的域名，以及 full:、keyword:、regexp: 和 geosite:。",
+          "registered": "WARP 账户已就绪",
+          "registerOnSave": "保存时会为此面板注册一个免费的 WARP 账户。",
+          "save": "保存 WARP"
+        },
+        "errors": {
+          "siteRule": "每行必须是一个域名，或在 domain:、full:、keyword:、regexp:、geosite: 后跟一个值。"
+        },
+        "toasts": {
+          "state": "读取 Psiphon 状态",
+          "install": "安装 Psiphon",
+          "regions": "刷新 Psiphon 国家",
+          "countries": "保存 Psiphon 国家",
+          "inbounds": "读取 Psiphon 可用的入站",
+          "inbound": "保存入站的 Psiphon 国家",
+          "warp": "保存 Psiphon 后的 WARP"
+        }
       }
     },
     "standby": {

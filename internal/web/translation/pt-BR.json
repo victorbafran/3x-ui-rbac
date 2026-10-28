@@ -2919,6 +2919,75 @@
           "swap": "Trocar IP ativo",
           "release": "Liberar IP"
         }
+      },
+      "psiphon": {
+        "title": "Saídas por país com Psiphon",
+        "intro": "Os clientes podem sair pelo Psiphon no país que você escolher",
+        "introHint": "O Psiphon roda só no servidor deste painel. Os clientes que entram por um servidor de entrada chegam aos mesmos países pelo túnel dele, então um único conjunto de países atende a todos.",
+        "status": {
+          "unsupported": "Não suportado",
+          "notInstalled": "Não instalado",
+          "installed": "Instalado",
+          "connected": "{connected} de {enabled} conectados"
+        },
+        "unsupported": "O Psiphon precisa de um servidor Linux x86_64 (amd64)",
+        "unsupportedHint": "O Psiphon não publica versão para o processador deste servidor, então ele não roda aqui.",
+        "install": "Instalar Psiphon",
+        "installHint": "Baixa o Psiphon e lê a lista atual de países dele; leva até três minutos. Nada roda até você ativar um país, e cada país ativado usa cerca de {mb} MB de memória.",
+        "installing": "Instalando e lendo a lista de países…",
+        "phase": {
+          "off": "Desligado",
+          "connecting": "Conectando",
+          "connected": "Conectado",
+          "error": "Falhou"
+        },
+        "countries": {
+          "title": "Países",
+          "hint": "Marque os países que devem rodar. Um inbound só pode receber um país marcado aqui.",
+          "refresh": "Atualizar lista",
+          "listedAt": "Lista lida {time}",
+          "save": "Salvar países",
+          "memory": "Cerca de {mb} MB de memória para {count} países"
+        },
+        "inbounds": {
+          "title": "Países por inbound",
+          "hint": "Cada país escolhido para um inbound vira mais uma configuração na assinatura desse inbound, com a bandeira e o nome do país. A configuração própria do inbound é mantida.",
+          "wireguardHint": "Um inbound WireGuard aceita um só país, e todo o tráfego dele sai por lá.",
+          "inbound": "Inbound",
+          "countries": "Países",
+          "pick": "Escolher países",
+          "pickOne": "Escolher um país",
+          "noCountries": "Primeiro marque e salve um país acima.",
+          "empty": "Nenhum inbound VLESS, Hysteria ou WireGuard neste servidor",
+          "save": "Salvar"
+        },
+        "warp": {
+          "title": "WARP atrás do Psiphon",
+          "hint": "Alguns sites, como o Gemini, recusam os endereços do Psiphon. O WARP leva esse tráfego adiante pela Cloudflare: o país continua o mesmo, mas o site vê um endereço da Cloudflare, e isso custa um pouco de velocidade.",
+          "mode": "Enviar pelo WARP",
+          "modes": {
+            "off": "Desligado",
+            "sites": "Só os sites da lista",
+            "all": "Todo o tráfego"
+          },
+          "sites": "Sites",
+          "sitesHint": "Uma regra por linha, como domain:gemini.google.com. Um domínio sozinho, full:, keyword:, regexp: e geosite: também funcionam.",
+          "registered": "Conta WARP pronta",
+          "registerOnSave": "Ao salvar, uma conta WARP gratuita é registrada para este painel.",
+          "save": "Salvar WARP"
+        },
+        "errors": {
+          "siteRule": "Cada linha deve ser um domínio, ou domain:, full:, keyword:, regexp: ou geosite: seguido de um valor."
+        },
+        "toasts": {
+          "state": "Ler o estado do Psiphon",
+          "install": "Instalar Psiphon",
+          "regions": "Atualizar os países do Psiphon",
+          "countries": "Salvar os países do Psiphon",
+          "inbounds": "Ler os inbounds para o Psiphon",
+          "inbound": "Salvar os países do Psiphon do inbound",
+          "warp": "Salvar WARP atrás do Psiphon"
+        }
       }
     },
     "standby": {

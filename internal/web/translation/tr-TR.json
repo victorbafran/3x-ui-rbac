@@ -2919,6 +2919,75 @@
           "swap": "Etkin IP'yi değiştirme",
           "release": "IP'yi bırakma"
         }
+      },
+      "psiphon": {
+        "title": "Psiphon ile ülke çıkışları",
+        "intro": "Müşteriler seçtiğiniz ülkeden Psiphon üzerinden çıkabilir",
+        "introHint": "Psiphon yalnızca bu panelin sunucusunda çalışır. Giriş sunucusu üzerinden gelen müşteriler de onun tüneliyle aynı ülkelere ulaşır, yani tek bir ülke seti herkese hizmet verir.",
+        "status": {
+          "unsupported": "Desteklenmiyor",
+          "notInstalled": "Kurulu değil",
+          "installed": "Kurulu",
+          "connected": "{enabled} içinden {connected} bağlı"
+        },
+        "unsupported": "Psiphon bir x86_64 (amd64) Linux sunucusu gerektirir",
+        "unsupportedHint": "Psiphon bu sunucunun işlemcisi için bir sürüm yayınlamıyor, bu yüzden burada çalışamaz.",
+        "install": "Psiphon'u kur",
+        "installHint": "Psiphon'u indirir ve güncel ülke listesini okur; bu üç dakikaya kadar sürer. Bir ülkeyi etkinleştirene kadar hiçbir şey çalışmaz ve etkinleştirdiğiniz her ülke yaklaşık {mb} MB bellek kullanır.",
+        "installing": "Kuruluyor ve ülke listesi okunuyor…",
+        "phase": {
+          "off": "Kapalı",
+          "connecting": "Bağlanıyor",
+          "connected": "Bağlı",
+          "error": "Başarısız"
+        },
+        "countries": {
+          "title": "Ülkeler",
+          "hint": "Çalıştırılacak ülkeleri işaretleyin. Bir gelen bağlantıya yalnızca burada işaretli bir ülke verilebilir.",
+          "refresh": "Listeyi yenile",
+          "listedAt": "Liste okundu: {time}",
+          "save": "Ülkeleri kaydet",
+          "memory": "{count} ülke için yaklaşık {mb} MB bellek"
+        },
+        "inbounds": {
+          "title": "Gelen bağlantı başına ülkeler",
+          "hint": "Bir gelen bağlantı için seçilen her ülke, o bağlantının aboneliğinde ülkenin bayrağı ve adıyla bir yapılandırma daha olur. Gelen bağlantının kendi yapılandırması korunur.",
+          "wireguardHint": "Bir WireGuard gelen bağlantısı tek bir ülke alır ve tüm trafiği oradan çıkar.",
+          "inbound": "Gelen bağlantı",
+          "countries": "Ülkeler",
+          "pick": "Ülke seçin",
+          "pickOne": "Bir ülke seçin",
+          "noCountries": "Önce yukarıda bir ülkeyi işaretleyip kaydedin.",
+          "empty": "Bu sunucuda VLESS, Hysteria veya WireGuard gelen bağlantısı yok",
+          "save": "Kaydet"
+        },
+        "warp": {
+          "title": "Psiphon'un arkasında WARP",
+          "hint": "Gemini gibi bazı siteler Psiphon'un adreslerini reddeder. WARP bu trafiği Cloudflare üzerinden devam ettirir: ülke aynı kalır ama site bir Cloudflare adresi görür ve hızdan biraz kaybedilir.",
+          "mode": "WARP üzerinden gönder",
+          "modes": {
+            "off": "Kapalı",
+            "sites": "Yalnızca listedeki siteler",
+            "all": "Tüm trafik"
+          },
+          "sites": "Siteler",
+          "sitesHint": "Her satıra bir kural, örneğin domain:gemini.google.com. Öneksiz bir alan adı, full:, keyword:, regexp: ve geosite: da çalışır.",
+          "registered": "WARP hesabı hazır",
+          "registerOnSave": "Kaydetmek bu panel için ücretsiz bir WARP hesabı kaydeder.",
+          "save": "WARP'ı kaydet"
+        },
+        "errors": {
+          "siteRule": "Her satır bir alan adı ya da ardından bir değer gelen domain:, full:, keyword:, regexp: veya geosite: olmalıdır."
+        },
+        "toasts": {
+          "state": "Psiphon durumunu oku",
+          "install": "Psiphon'u kur",
+          "regions": "Psiphon ülkelerini yenile",
+          "countries": "Psiphon ülkelerini kaydet",
+          "inbounds": "Psiphon için gelen bağlantıları oku",
+          "inbound": "Gelen bağlantının Psiphon ülkelerini kaydet",
+          "warp": "Psiphon'un arkasındaki WARP'ı kaydet"
+        }
       }
     },
     "standby": {

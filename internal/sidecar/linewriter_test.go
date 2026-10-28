@@ -126,6 +126,30 @@ func TestFlushReportsThePendingCount(t *testing.T) {
 	sameLines(t, logged(label), []string{"suppressed 2 probe messages in 3m: error decoding 2"})
 }
 
+// Psiphon's state lives in lines folded out of the log, so the callback sees
+// those too, a last line cut off by the exit, and may read the writer back.
+func TestOnLineSeesFoldedLinesAndMayReadTheWriter(t *testing.T) {
+	w, label, _ := writerAt(t, handshakeNoise)
+	var got []string
+	w.setOnLine(func(line string) {
+		_ = w.LastLine()
+		got = append(got, line)
+	})
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		_, _ = w.Write([]byte(certIsBad + "\n  \n" + unterminated + "\n" + timedOut))
+		w.Flush()
+	}()
+	select {
+	case <-done:
+	case <-time.After(5 * time.Second):
+		t.Fatal("a callback reading the writer back wedged it")
+	}
+	sameLines(t, got, []string{certIsBad, unterminated, timedOut})
+	sameLines(t, logged(label), []string{certIsBad, timedOut, "suppressed 1 probe messages in 0s: non-properly terminated 1"})
+}
+
 // A folded error takes its five explanation lines with it; the same block for
 // another port stays whole and uncoloured, as there an inbound is down.
 func TestAFoldedErrorTakesItsExplanationAndNothingElse(t *testing.T) {

@@ -2919,6 +2919,75 @@
           "swap": "تبديل العنوان النشط",
           "release": "تحرير العنوان"
         }
+      },
+      "psiphon": {
+        "title": "الخروج عبر Psiphon حسب الدولة",
+        "intro": "يمكن للعملاء الخروج عبر Psiphon من دولة تختارها",
+        "introHint": "يعمل Psiphon على خادم هذه اللوحة فقط. العملاء الذين يدخلون عبر خادم دخول يصلون إلى الدول نفسها عبر نفقه، فمجموعة واحدة من الدول تخدم الجميع.",
+        "status": {
+          "unsupported": "غير مدعوم",
+          "notInstalled": "غير مثبّت",
+          "installed": "مثبّت",
+          "connected": "{connected} من {enabled} متصل"
+        },
+        "unsupported": "يحتاج Psiphon إلى خادم Linux بمعالج x86_64 (amd64)",
+        "unsupportedHint": "لا ينشر Psiphon إصدارًا لمعالج هذا الخادم، لذا لا يمكن تشغيله هنا.",
+        "install": "تثبيت Psiphon",
+        "installHint": "ينزّل Psiphon ويقرأ قائمة دوله الحالية؛ يستغرق ذلك حتى ثلاث دقائق. لا يعمل شيء حتى تفعّل دولة، وكل دولة تفعّلها تأخذ نحو {mb} ميغابايت من الذاكرة.",
+        "installing": "جارٍ التثبيت وقراءة قائمة الدول…",
+        "phase": {
+          "off": "متوقف",
+          "connecting": "جارٍ الاتصال",
+          "connected": "متصل",
+          "error": "فشل"
+        },
+        "countries": {
+          "title": "الدول",
+          "hint": "ضع علامة على الدول التي تريد تشغيلها. لا يمكن إعطاء inbound إلا دولة عليها علامة هنا.",
+          "refresh": "تحديث القائمة",
+          "listedAt": "قُرئت القائمة في {time}",
+          "save": "حفظ الدول",
+          "memory": "نحو {mb} ميغابايت من الذاكرة لـ {count} دولة"
+        },
+        "inbounds": {
+          "title": "الدول لكل inbound",
+          "hint": "كل دولة تختارها لـ inbound تصبح إعدادًا إضافيًا في اشتراك ذلك الـ inbound، باسم الدولة وعلمها. ويبقى إعداد الـ inbound نفسه.",
+          "wireguardHint": "يأخذ inbound من نوع WireGuard دولة واحدة، ويخرج كل حركته منها.",
+          "inbound": "Inbound",
+          "countries": "الدول",
+          "pick": "اختر الدول",
+          "pickOne": "اختر دولة",
+          "noCountries": "ضع علامة على دولة في الأعلى واحفظها أولًا.",
+          "empty": "لا يوجد inbound من نوع VLESS أو Hysteria أو WireGuard على هذا الخادم",
+          "save": "حفظ"
+        },
+        "warp": {
+          "title": "WARP خلف Psiphon",
+          "hint": "بعض المواقع، مثل Gemini، ترفض عناوين Psiphon. يمرّر WARP هذه الحركة عبر Cloudflare: تبقى الدولة نفسها، لكن الموقع يرى عنوانًا من Cloudflare، ويكلّف ذلك قليلًا من السرعة.",
+          "mode": "الإرسال عبر WARP",
+          "modes": {
+            "off": "متوقف",
+            "sites": "المواقع المدرجة فقط",
+            "all": "كل الحركة"
+          },
+          "sites": "المواقع",
+          "sitesHint": "قاعدة واحدة في كل سطر، مثل domain:gemini.google.com. يعمل أيضًا نطاق بلا بادئة، وfull: وkeyword: وregexp: وgeosite:.",
+          "registered": "حساب WARP جاهز",
+          "registerOnSave": "عند الحفظ يُسجَّل حساب WARP مجاني لهذه اللوحة.",
+          "save": "حفظ WARP"
+        },
+        "errors": {
+          "siteRule": "يجب أن يكون كل سطر نطاقًا، أو domain: أو full: أو keyword: أو regexp: أو geosite: متبوعًا بقيمة."
+        },
+        "toasts": {
+          "state": "قراءة حالة Psiphon",
+          "install": "تثبيت Psiphon",
+          "regions": "تحديث دول Psiphon",
+          "countries": "حفظ دول Psiphon",
+          "inbounds": "قراءة الـ inbound لـ Psiphon",
+          "inbound": "حفظ دول Psiphon للـ inbound",
+          "warp": "حفظ WARP خلف Psiphon"
+        }
       }
     },
     "standby": {

@@ -4,6 +4,7 @@ import { Button, Tag } from 'antd';
 import { CopyOutlined } from '@ant-design/icons';
 
 import ConfigBlock from '@/components/clients/ConfigBlock';
+import { wireguardTunnelName } from '@/lib/inbounds/label';
 import {
   amneziawgConfigFromLink,
   isPostQuantumLink,
@@ -36,6 +37,7 @@ export default function SubConfigsTab({ links, onCopy }: SubConfigsTabProps) {
         const isWireguardLink = link.startsWith('wireguard://') || link.startsWith('wg://');
         const wireguardConfig = isWireguardLink ? wireguardConfigFromLink(link, rowTitle) : '';
         const amneziawgConfig = link.startsWith('vpn://') ? amneziawgConfigFromLink(link) : '';
+        const fileName = `${wireguardTunnelName(rowTitle, links.length > 1 ? idx + 1 : undefined)}.conf`;
         return (
           <Fragment key={link}>
             <div className="sub-row">
@@ -59,7 +61,7 @@ export default function SubConfigsTab({ links, onCopy }: SubConfigsTabProps) {
               <ConfigBlock
                 label={t('pages.clients.wireguardConfig')}
                 text={wireguardConfig}
-                fileName={`${rowTitle || 'peer'}.conf`}
+                fileName={fileName}
                 qrRemark={rowTitle}
                 tagColor="cyan"
               />
@@ -68,7 +70,7 @@ export default function SubConfigsTab({ links, onCopy }: SubConfigsTabProps) {
               <ConfigBlock
                 label={t('pages.clients.amneziaWgConfig')}
                 text={amneziawgConfig}
-                fileName={`${rowTitle || 'peer'}.conf`}
+                fileName={fileName}
                 qrRemark={rowTitle}
                 tagColor="purple"
               />

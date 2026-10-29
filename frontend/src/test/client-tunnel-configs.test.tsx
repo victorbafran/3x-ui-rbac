@@ -116,13 +116,9 @@ describe('ClientQrModal tunnel configs from the backend', () => {
       [
         'WireGuard configUS · New York - edge.example.com:443',
         'US · New York - edge.example.com:443 - WG-CLIENT',
-        'WG-CLIENT-US_New_York-edge.example.com_443.conf',
+        'WG-CLIENT-1.conf',
       ],
-      [
-        'WireGuard configEU · Frankfurt',
-        'EU · Frankfurt - WG-CLIENT',
-        'WG-CLIENT-EU_Frankfurt.conf',
-      ],
+      ['WireGuard configEU · Frankfurt', 'EU · Frankfurt - WG-CLIENT', 'WG-CLIENT-2.conf'],
       ['AmneziaWG config', 'WG-CLIENT', 'WG-CLIENT.conf'],
     ]);
   });
@@ -151,13 +147,13 @@ describe('ClientQrModal tunnel configs from the backend', () => {
         header: 'WireGuard configIPv6US · New York - [2001:db8::1]:51820',
         value: '# US · New York - alice · IPv6',
         remark: 'US · New York - [2001:db8::1]:51820 - alice',
-        download: 'alice-US_New_York-_2001_db8_1_51820.conf',
+        download: 'alice-1.conf',
       },
       {
         header: 'WireGuard configIPv4US · New York - 203.0.113.5:51820',
         value: '# US · New York - alice · IPv4',
         remark: 'US · New York - 203.0.113.5:51820 - alice',
-        download: 'alice-US_New_York-203.0.113.5_51820.conf',
+        download: 'alice-2.conf',
       },
     ]);
   });
@@ -288,16 +284,8 @@ describe('ClientInfoModal tunnel configs from the backend', () => {
     renderInfo('NSK-RT-01');
 
     expect(await downloads()).toEqual([
-      [
-        'DE · Kelsterbach - [2001:db8::1]:52716 · IPv6',
-        'AWG6',
-        'NSK-RT-01-DE_Kelsterbach-_2001_db8_1_52716.conf',
-      ],
-      [
-        'DE · Kelsterbach - 203.0.113.5:52716 · IPv4',
-        'AWG4',
-        'NSK-RT-01-DE_Kelsterbach-203.0.113.5_52716.conf',
-      ],
+      ['DE · Kelsterbach - [2001:db8::1]:52716 · IPv6', 'AWG6', 'NSK-RT-01-1.conf'],
+      ['DE · Kelsterbach - 203.0.113.5:52716 · IPv4', 'AWG4', 'NSK-RT-01-2.conf'],
     ]);
   });
 });

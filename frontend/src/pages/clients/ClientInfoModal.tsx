@@ -196,7 +196,7 @@ export default function ClientInfoModal({
 
   function tunnelConfigBlock(cfg: TunnelConfig, idx: number, all: TunnelConfig[], color: string) {
     const inbound = inboundsById[cfg.inboundId] ?? { id: cfg.inboundId };
-    const meta = formatTunnelConfigMeta(inbound, client?.email, all.length, cfg.endpoint);
+    const meta = formatTunnelConfigMeta(inbound, client?.email, all.length, cfg.endpoint, idx);
     const label = [meta.label || t('pages.clients.config'), tunnelFamilyLabel(cfg.family)]
       .filter(Boolean)
       .join(' · ');

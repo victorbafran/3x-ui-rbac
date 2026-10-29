@@ -435,6 +435,7 @@ function ClientQrModalContent({
           client?.email,
           section.configs.length,
           endpoint,
+          idx,
         );
         const label = (
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>

@@ -48,7 +48,7 @@ const usedByte =
   Number(subData.usedByte || 0) ||
   Number(subData.downloadByte || 0) + Number(subData.uploadByte || 0);
 const expireMs = Number(subData.expire || 0) * 1000;
-const clientEmail = [
+const clientNames = [
   ...new Set(
     [
       ...linkEmails,
@@ -56,7 +56,8 @@ const clientEmail = [
       ...openvpnProfiles.map((p) => p.email ?? ''),
     ].filter(Boolean),
   ),
-].join(', ');
+];
+const clientEmail = clientNames.join(', ');
 const loadedAt = Date.now();
 
 const heroData = {
@@ -148,7 +149,7 @@ export default function SubPage() {
             <span className="sub-tab-count">{links.length}</span>
           </>
         ),
-        children: <SubConfigsTab links={links} onCopy={copy} />,
+        children: <SubConfigsTab links={links} clientNames={clientNames} onCopy={copy} />,
       });
     }
     return items;

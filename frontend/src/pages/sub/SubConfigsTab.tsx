@@ -4,7 +4,7 @@ import { Button, Tag } from 'antd';
 import { CopyOutlined } from '@ant-design/icons';
 
 import ConfigBlock from '@/components/clients/ConfigBlock';
-import { wireguardTunnelName } from '@/lib/inbounds/label';
+import { clientNameInRemark, wireguardFileNames } from '@/lib/inbounds/label';
 import {
   amneziawgConfigFromLink,
   isPostQuantumLink,
@@ -15,11 +15,32 @@ import SubQrButton from './SubQrButton';
 
 interface SubConfigsTabProps {
   links: string[];
+  // Every client named on the page. A link's paired email is not always its owner's (a cisco
+  // client's takes its place), so a file takes a name only from the link's own remark.
+  clientNames: string[];
   onCopy: (value: string, toast?: string) => void;
 }
 
-export default function SubConfigsTab({ links, onCopy }: SubConfigsTabProps) {
+export default function SubConfigsTab({ links, clientNames, onCopy }: SubConfigsTabProps) {
   const { t } = useTranslation();
+  const rows = links.map((link, idx) => {
+    const parts = parseLinkParts(link);
+    const rowTitle = parts?.remark || `Link ${idx + 1}`;
+    const isWireguardLink = link.startsWith('wireguard://') || link.startsWith('wg://');
+    return {
+      link,
+      parts,
+      rowTitle,
+      wireguardConfig: isWireguardLink ? wireguardConfigFromLink(link, rowTitle) : '',
+      amneziawgConfig: link.startsWith('vpn://') ? amneziawgConfigFromLink(link) : '',
+    };
+  });
+  const tunnelRows = rows.filter((row) => row.wireguardConfig || row.amneziawgConfig);
+  const fileNames = wireguardFileNames(
+    tunnelRows.map((row) => row.rowTitle),
+    tunnelRows.map((row) => clientNameInRemark(row.rowTitle, clientNames)),
+  );
+  const fileNameOf = new Map(tunnelRows.map((row, i) => [row, fileNames[i]]));
 
   return (
     <div className="sub-rows">
@@ -31,13 +52,9 @@ export default function SubConfigsTab({ links, onCopy }: SubConfigsTabProps) {
           {t('subscription.copyAllConfigs')}
         </Button>
       </div>
-      {links.map((link, idx) => {
-        const parts = parseLinkParts(link);
-        const rowTitle = parts?.remark || `Link ${idx + 1}`;
-        const isWireguardLink = link.startsWith('wireguard://') || link.startsWith('wg://');
-        const wireguardConfig = isWireguardLink ? wireguardConfigFromLink(link, rowTitle) : '';
-        const amneziawgConfig = link.startsWith('vpn://') ? amneziawgConfigFromLink(link) : '';
-        const fileName = `${wireguardTunnelName(rowTitle, links.length > 1 ? idx + 1 : undefined)}.conf`;
+      {rows.map((row) => {
+        const { link, parts, rowTitle, wireguardConfig, amneziawgConfig } = row;
+        const fileName = fileNameOf.get(row) ?? '';
         return (
           <Fragment key={link}>
             <div className="sub-row">

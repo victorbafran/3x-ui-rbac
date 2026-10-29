@@ -436,16 +436,18 @@ func TestComputeHotDiff_NewTproxyInboundNeedsRestart(t *testing.T) {
 	}
 }
 
-// A hot apply adds inbounds before it swaps the routing: a Psiphon TUN added that way
+// A hot apply adds inbounds before it swaps the routing: a Psiphon redirect added that way
 // would send a cisco pool's first connections out of this server. Removal is safe hot.
-func TestComputeHotDiff_TunNeedsRestartExceptToRemove(t *testing.T) {
-	tun := InboundConfig{
-		Listen:   json_util.RawMessage(`"0.0.0.0"`),
-		Protocol: "tun",
-		Tag:      "tun-psi-AT",
-		Settings: json_util.RawMessage(`{"name":"psi-AT","MTU":1500}`),
+func TestComputeHotDiff_PsiphonRedirectNeedsRestartExceptToRemove(t *testing.T) {
+	redirect := InboundConfig{
+		Listen:      json_util.RawMessage(`"0.0.0.0"`),
+		Port:        11581,
+		Protocol:    "dokodemo-door",
+		Tag:         "redir-psi-AT",
+		Settings:    json_util.RawMessage(`{"network":"tcp","followRedirect":true}`),
+		PsiphonExit: "psi-AT",
 	}
-	changed := tun
+	changed := redirect
 	changed.Sniffing = json_util.RawMessage(`{"enabled":true}`)
 	with := func(ib *InboundConfig) *Config {
 		cfg := makeHotConfig()
@@ -454,28 +456,26 @@ func TestComputeHotDiff_TunNeedsRestartExceptToRemove(t *testing.T) {
 		}
 		return cfg
 	}
-	if _, ok := ComputeHotDiff(with(nil), with(&tun)); ok {
-		t.Error("a new TUN was hot-added")
+	if _, ok := ComputeHotDiff(with(nil), with(&redirect)); ok {
+		t.Error("a new redirect was hot-added")
 	}
-	if _, ok := ComputeHotDiff(with(&tun), with(&changed)); ok {
-		t.Error("a changed TUN was hot-swapped")
+	if _, ok := ComputeHotDiff(with(&redirect), with(&changed)); ok {
+		t.Error("a changed redirect was hot-swapped")
 	}
-	diff, ok := ComputeHotDiff(with(&tun), with(nil))
-	if !ok || len(diff.RemovedInboundTags) != 1 || diff.RemovedInboundTags[0] != "tun-psi-AT" {
-		t.Errorf("removing a TUN: ok=%v diff=%+v, want a hot removal", ok, diff)
+	diff, ok := ComputeHotDiff(with(&redirect), with(nil))
+	if !ok || len(diff.RemovedInboundTags) != 1 || diff.RemovedInboundTags[0] != "redir-psi-AT" {
+		t.Errorf("removing a redirect: ok=%v diff=%+v, want a hot removal", ok, diff)
 	}
 
-	// A TUN the operator saved is not one of these: it was applied hot before, and a
+	// The operator's own inbound of that very shape and tag was applied hot before, and a
 	// restart for it would reconnect every Xray customer.
-	own := tun
-	own.Tag = "inbound-tun"
-	ownChanged := changed
-	ownChanged.Tag = own.Tag
+	own, ownChanged := redirect, changed
+	own.PsiphonExit, ownChanged.PsiphonExit = "", ""
 	if _, ok := ComputeHotDiff(with(nil), with(&own)); !ok {
-		t.Error("an operator's own new TUN forced a restart")
+		t.Error("an operator's own new inbound forced a restart")
 	}
 	if _, ok := ComputeHotDiff(with(&own), with(&ownChanged)); !ok {
-		t.Error("an operator's own changed TUN forced a restart")
+		t.Error("an operator's own changed inbound forced a restart")
 	}
 }
 

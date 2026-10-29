@@ -316,9 +316,13 @@ func TestAnInboundGetsOneHostPerPickedCountry(t *testing.T) {
 // gets ports no other country holds and no inbound claims.
 func TestTurningCountriesOnAndOff(t *testing.T) {
 	ids := seedPsiphonWorld(t)
-	busy := &model.Inbound{Tag: "on-11184", Port: 11184, Protocol: model.VLESS, Enable: true}
-	if err := database.GetDB().Create(busy).Error; err != nil {
-		t.Fatal(err)
+	for _, busy := range []*model.Inbound{
+		{Tag: "on-11184", Port: 11184, Protocol: model.VLESS, Enable: true},
+		{Tag: "on-11586", Listen: "10.0.0.1", Port: 11586, Protocol: model.VLESS, Enable: true},
+	} {
+		if err := database.GetDB().Create(busy).Error; err != nil {
+			t.Fatal(err)
+		}
 	}
 	if _, err := (&HostService{}).AddHostGroup(exitHost("DE", ids["hysteria"], "psi-DE", "")); err != nil {
 		t.Fatal(err)
@@ -349,16 +353,16 @@ func TestTurningCountriesOnAndOff(t *testing.T) {
 		{"DE", true, 11181, 11381},
 		{"FR", false, 11182, 11382},
 		{"NL", true, 11185, 11385},
-		{"SE", true, 11186, 11386},
+		{"SE", true, 11187, 11387},
 		{"US", false, 11183, 11383},
 	}
 	if !reflect.DeepEqual(got, want) {
-		t.Errorf("countries %v\nwant %v: new ones skip the ports others hold and 11184, which an inbound claims", got, want)
+		t.Errorf("countries %v\nwant %v: new ones skip the ports others hold, 11184 an inbound claims and 11186, whose redirect port 11586 one does", got, want)
 	}
 }
 
-// A country's two loopback ports stay its own: an inbound added later on one
-// would stop Xray or the country from binding. A disabled country keeps its pair.
+// A country's two loopback ports, and on every address its redirect port, stay its own:
+// an inbound added later on one would stop Xray or the country binding. Disabled ones too.
 func TestAnInboundCannotTakeAPsiphonCountrysPort(t *testing.T) {
 	seedPsiphonWorld(t)
 	svc := &InboundService{}
@@ -372,6 +376,10 @@ func TestAnInboundCannotTakeAPsiphonCountrysPort(t *testing.T) {
 		{"another address than loopback", &model.Inbound{Tag: "c", Listen: "10.0.0.1", Port: 11181, Protocol: model.VLESS}, ""},
 		{"UDP only", &model.Inbound{Tag: "d", Port: 11183, Protocol: model.Hysteria}, ""},
 		{"a port no country holds", &model.Inbound{Tag: "e", Port: 11184, Protocol: model.VLESS}, ""},
+		{"a redirect port, on any address", &model.Inbound{Tag: "f", Listen: "10.0.0.1", Port: 11581, Protocol: model.VLESS}, "redir-psi-DE"},
+		{"a disabled country's redirect port", &model.Inbound{Tag: "g", Port: 11582, Protocol: model.VLESS}, "redir-psi-FR"},
+		{"a redirect port, UDP only", &model.Inbound{Tag: "h", Port: 11583, Protocol: model.Hysteria}, ""},
+		{"a redirect port no country holds", &model.Inbound{Tag: "i", Port: 11584, Protocol: model.VLESS}, ""},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			got, err := svc.checkPortConflict(tc.ib, 0)

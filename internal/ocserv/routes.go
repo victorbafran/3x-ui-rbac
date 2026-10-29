@@ -45,6 +45,8 @@ var (
 	onLinux        = runtime.GOOS == "linux"
 	steerPool      = relay.SteerPool
 	reassertPool   = relay.ReassertPool
+	releasePool    = relay.ReleasePool
+	reassertGuards = relay.ReassertPsiphonGuards
 	ensureExitSNAT = relay.EnsureExitSNAT
 	removeExitSNAT = relay.RemoveExitSNAT
 )
@@ -98,8 +100,8 @@ func (r locationRoute) poolExit() relay.PoolExit {
 	return relay.PoolExit{CIDR: r.CIDR, Exit: strings.TrimSpace(r.Exit), Table: r.Table}
 }
 
-// ReassertRoutes puts back what a recreated exit device took with it (an Xray restart
-// remakes every psi- TUN, relay.Up every wgrN), without restarting anything.
+// ReassertRoutes puts back what a recreated device (relay.Up remakes every wgrN) or a
+// flushed iptables took from the pools, without restarting anything.
 func (m *Manager) ReassertRoutes() {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -120,6 +122,11 @@ func (m *Manager) ReassertRoutes() {
 			}
 		}
 	}
+	if wrote, err := reassertGuards(); err != nil {
+		logger.Debugf("ocserv: could not reassert the Psiphon redirect guards: %v", err)
+	} else if wrote {
+		logger.Info("ocserv: the Psiphon redirect ports are guarded again")
+	}
 }
 
 // removeLocationRoute takes a country's pool back off the wire. A rule left
@@ -137,6 +144,9 @@ func removeLocationRoute(r locationRoute, wanted []locationRoute) {
 	tableKept := slices.ContainsFunc(wanted, func(w locationRoute) bool { return w.Table == r.Table })
 	if !poolKept {
 		removeExitSNAT(r.CIDR)
+		if err := releasePool(r.CIDR); err != nil {
+			logger.Warningf("ocserv: could not take every rule off %s: %v", r.CIDR, err)
+		}
 	}
 	table := strconv.Itoa(r.Table)
 	for ipRuleExists(r.CIDR, r.Table) {

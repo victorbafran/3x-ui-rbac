@@ -25,9 +25,8 @@ func (f *fakeSidecars[I, T]) CollectTraffic() ([]T, []string) {
 	return nil, nil
 }
 
-// A device recreated under a running server (an Xray restart remakes every psi- TUN,
-// a relay brought back up its wgrN) takes its route with it, and nothing restarts
-// ocserv or OpenVPN to write it again. Each tick puts it back after its reconcile.
+// A relay brought back up takes its route with it, a flushed iptables a Psiphon redirect,
+// and nothing restarts ocserv or OpenVPN to write them again: each tick puts them back.
 func TestEveryTickPutsTheExitRoutesBack(t *testing.T) {
 	xuilogger.InitLogger(logging.ERROR)
 	dbtest.InitDB(t, filepath.Join(t.TempDir(), "x-ui.db"))

@@ -59,6 +59,12 @@ const (
 	psiphonHTTPBase  = 11381
 )
 
+// psiphonRedirectOffset puts the port Xray takes a country's redirected cisco and OpenVPN
+// pools on 400 above its SOCKS port: 11581 up, past every HTTP port.
+const psiphonRedirectOffset = 400
+
+func psiphonRedirectPort(socksPort int) int { return socksPort + psiphonRedirectOffset }
+
 const (
 	psiphonCheckEvery   = 10 * time.Minute
 	psiphonRetryEvery   = time.Minute
@@ -492,7 +498,7 @@ func freePsiphonPorts(tx *gorm.DB, rows []model.PsiphonCountry, n int) ([][2]int
 	var out [][2]int
 	for socks := psiphonSocksBase; socks < psiphonHTTPBase && len(out) < n; socks++ {
 		httpPort := socks - psiphonSocksBase + psiphonHTTPBase
-		if !taken[socks] && !taken[httpPort] {
+		if !taken[socks] && !taken[httpPort] && !taken[psiphonRedirectPort(socks)] {
 			out = append(out, [2]int{socks, httpPort})
 		}
 	}
@@ -502,11 +508,25 @@ func freePsiphonPorts(tx *gorm.DB, rows []model.PsiphonCountry, n int) ([][2]int
 	return out, nil
 }
 
-// psiphonPortConflict names the country holding port; a disabled one keeps its
-// pair for when it is turned back on, so it counts too.
-func psiphonPortConflict(db *gorm.DB, port int) (*portConflictDetail, error) {
+// psiphonPortConflict names the country holding a TCP port: its two loopback ports when
+// loopback, and on every address its redirect port. A disabled one keeps them all.
+func psiphonPortConflict(db *gorm.DB, port int, loopback bool, ignoreId int) (*portConflictDetail, error) {
 	var row model.PsiphonCountry
-	err := db.Where("socks_port = ? OR http_port = ?", port, port).First(&row).Error
+	err := db.Where("socks_port = ?", port-psiphonRedirectOffset).First(&row).Error
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, err
+	}
+	if err == nil {
+		kept, err := tcpPortStored(db, ignoreId, port)
+		if err != nil || kept {
+			return nil, err
+		}
+		return &portConflictDetail{Tag: psiphonRedirectTag(psiphonExit(row.Code)), Listen: "0.0.0.0", Port: port, Transports: transportTCP}, nil
+	}
+	if !loopback {
+		return nil, nil
+	}
+	err = db.Where("socks_port = ? OR http_port = ?", port, port).First(&row).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, nil
 	}
@@ -514,6 +534,23 @@ func psiphonPortConflict(db *gorm.DB, port int) (*portConflictDetail, error) {
 		return nil, err
 	}
 	return &portConflictDetail{Tag: "psiphon-" + row.Code, Listen: "127.0.0.1", Port: port, Transports: transportTCP}, nil
+}
+
+// tcpPortStored reports whether stored row id already takes TCP on port. One saved there
+// before redirect ports existed keeps it; its country's pools are held instead.
+func tcpPortStored(db *gorm.DB, id, port int) (bool, error) {
+	if id <= 0 {
+		return false, nil
+	}
+	var stored model.Inbound
+	err := db.Where("id = ?", id).First(&stored).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return stored.NodeID == nil && claimedOn(portClaims(&stored), port)&transportTCP != 0, nil
 }
 
 // Wanted is the clients that should run: the enabled countries, once the client
@@ -797,7 +834,16 @@ func warpSiteRule(line string) (string, error) {
 
 // loadPsiphonExits reads what the Xray config needs of the countries and WARP.
 func loadPsiphonExits() psiphonExits {
-	psi := psiphonExits{socks: map[string]int{}, tuns: psiphonTunPossible()}
+	psi := psiphonExits{socks: map[string]int{}}
+	var settings SettingService
+	if port, err := settings.GetPort(); err == nil && port > 0 {
+		psi.panelPorts = append(psi.panelPorts, port)
+	}
+	if on, _ := settings.GetSubEnable(); on {
+		if port, err := settings.GetSubPort(); err == nil && port > 0 {
+			psi.panelPorts = append(psi.panelPorts, port)
+		}
+	}
 	var rows []model.PsiphonCountry
 	if err := database.GetDB().Where("enabled = ?", true).Find(&rows).Error; err != nil {
 		logger.Warning("exit routes: could not read the Psiphon countries:", err)

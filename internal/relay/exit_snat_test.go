@@ -23,9 +23,8 @@ func TestOnlyAPoolInsideTheExitsBlockGoesInAsItIs(t *testing.T) {
 	}
 }
 
-// OpenVPN's 10.1.x pool on a Psiphon exit was refused as "not one of this panel's
-// exits" and logged on every start; Xray's TUN takes any source as it is. A rewrite
-// the pool kept from a relay it left goes, or its packets reach Xray as the relay's.
+// OpenVPN's 10.1.x pool on a Psiphon exit was refused and logged on every start, yet a
+// redirect into Xray takes any source; a rewrite kept from a relay it left goes with it.
 func TestAPsiphonExitNeedsNoRewrite(t *testing.T) {
 	var ran []string
 	ipt := func(args ...string) (string, error) {

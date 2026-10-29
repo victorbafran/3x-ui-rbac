@@ -58,7 +58,7 @@ func exitSNATRulesFor(listing, cidr string) [][]string {
 }
 
 // exitNeedsSNAT: an exit's WireGuard peer takes exitPools only, while a Psiphon
-// exit is Xray's own TUN, which takes a pool from any source.
+// exit's pool is redirected into Xray on this server, from any source.
 func exitNeedsSNAT(cidr, iface string) bool {
 	return !IsPsiphonExit(iface) && !PoolInsideExitPools(cidr)
 }

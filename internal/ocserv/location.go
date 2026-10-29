@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/mhsanaei/3x-ui/v3/internal/relay"
 )
 
 // Location is one country an inbound offers. The customer picks it from the
@@ -47,11 +49,6 @@ type Location struct {
 // inbound id: raising it would renumber every location on every other inbound.
 const locationsPerInbound = 16
 
-// routeTableBase is where this package's routing tables start. Linux reserves
-// 253-255 and most hand-written rules sit in the low hundreds, so starting
-// well clear of both keeps the panel out of an operator's own tables.
-const routeTableBase = 7000
-
 // LocationPool derives the /24 a location hands out.
 //
 // DefaultPool walks 10.8.x.0 through 10.247.x.0 for the inbounds themselves,
@@ -69,13 +66,9 @@ func LocationPool(inboundID, index int) string {
 }
 
 // routeTableFor is the routing table one location's pool is steered into. Each
-// location gets its own so removing one country never disturbs another.
+// location gets its own, and no OpenVPN inbound shares it (relay.CiscoPoolTable).
 func routeTableFor(inboundID, index int) int {
-	n := inboundID*locationsPerInbound + index
-	if n < 0 {
-		n = -n
-	}
-	return routeTableBase + n
+	return relay.CiscoPoolTable(inboundID*locationsPerInbound + index)
 }
 
 // ValidLocationName reports whether a name can be written to both files that

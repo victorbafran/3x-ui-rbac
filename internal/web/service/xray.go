@@ -1521,13 +1521,12 @@ func (s *XrayService) RestartXray(isForce bool) error {
 			return fmt.Errorf("xray %s", refused)
 		}
 		if !isForce && !configUnchanged {
-			applied, err := s.tryHotApply(process, xrayConfig)
+			applied, err := runWithPsiphonRedirects(xrayConfig, func() (bool, error) { return s.tryHotApply(process, xrayConfig) })
 			if err != nil {
 				return err
 			}
 			if applied {
 				logger.Info("Xray config changes applied through the core API, no restart needed")
-				reassertSidecarExits(xrayConfig)
 				return nil
 			}
 		}
@@ -1544,13 +1543,10 @@ func (s *XrayService) RestartXray(isForce bool) error {
 	process = xray.NewProcess(xrayConfig)
 	xrayState.replace(process)
 	s.xrayAPI.StatsLastValues = nil
-	err = process.Start()
-	if err != nil {
+	// Before the TUIC readiness, whose failure returns: the core runs this config either way.
+	if _, err := runWithPsiphonRedirects(xrayConfig, func() (bool, error) { return true, process.Start() }); err != nil {
 		return err
 	}
-
-	// Before the TUIC readiness, whose failure returns: the TUNs are up either way.
-	reassertSidecarExits(xrayConfig)
 	if err := publishTuicRelayReadiness(xrayConfig); err != nil {
 		return err
 	}

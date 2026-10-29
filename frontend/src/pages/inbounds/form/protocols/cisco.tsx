@@ -34,21 +34,24 @@ function LocationList() {
   // can type its interface, and a reseller who cannot read the relay routes
   // simply gets no suggestions instead of an empty, broken dropdown.
   const { options: relays } = useRelayOptions();
-  // A Psiphon country is an Xray TUN named after its exit, so ocserv routes into it
-  // like a relay's tunnel; the countries follow the exit servers under their own heading.
-  const exitOptions = useMemo(() => {
+  // An exit used on one row is offered on no other, so the operator sees what is
+  // taken. Psiphon countries follow the exit servers under their own heading.
+  const exitOptionsFor = (index: number) => {
+    const own = exitOf(rows?.[index]);
+    const taken = new Set(rows?.map((row, j) => (j === index ? undefined : exitOf(row))));
+    const free = relays.filter((r) => r.interface === own || !taken.has(r.interface));
     const pending = (r: RelayOption) => (r.ready ? '' : ' (…)');
-    const servers = relays
+    const servers = free
       .filter((r) => r.kind !== 'psiphon')
       .map((r) => ({
         value: r.interface,
         label: `${r.label || r.name} — ${r.address}${pending(r)}`,
       }));
-    const psiphon = relays
+    const psiphon = free
       .filter((r) => r.kind === 'psiphon')
       .map((r) => ({ value: r.interface, label: `${r.label || r.name}${pending(r)}` }));
     return psiphon.length ? [...servers, { label: 'Psiphon', options: psiphon }] : servers;
-  }, [relays]);
+  };
 
   // A country that leaves through an enrolled exit takes that server's own
   // country and flag, and the two name boxes are hidden for it: the panel
@@ -128,7 +131,7 @@ function LocationList() {
           <FormField name={['settings', 'locations', i, 'exit']} noStyle>
             <AutoComplete
               aria-label={t('pages.inbounds.form.ciscoLocationExit')}
-              options={exitOptions}
+              options={exitOptionsFor(i)}
               onSelect={(value: string) => fillFromRelay(i, value)}
               placeholder={t('pages.inbounds.form.ciscoLocationExit')}
               filterOption={(input, option) =>
@@ -157,6 +160,12 @@ function LocationList() {
       ))}
     </Form.Item>
   );
+}
+
+// An empty exit is this server once the row is named; a fresh row has none yet.
+function exitOf(row: { name?: string; exit?: string } | undefined): string | undefined {
+  if (row?.exit) return row.exit;
+  return row?.name?.trim() ? '' : undefined;
 }
 
 function flagOf(code: string): string {

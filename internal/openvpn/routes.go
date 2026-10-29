@@ -12,29 +12,14 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/relay"
 )
 
-// An inbound only becomes a country once its pool actually leaves through
-// that country. The server hands the client an address and stops there;
-// steering the pool is the host's job.
-//
-// internal/ocserv/routes.go does the same for cisco locations. The two are
-// kept apart deliberately for now: that one is serving live customers and its
-// table numbers are already allocated, so sharing the code means renumbering
-// something that is running. The numbering here is chosen so the two can
-// never collide.
+// An inbound only becomes a country once its pool leaves through that country: the
+// server hands out an address, and steering the pool is the host's job, as for cisco.
 
 const commandTimeout = 10 * time.Second
 
-// routeTableBase sits above the block cisco locations use (7000 upward, one
-// per location). An OpenVPN inbound takes one table each from 7600, which is
-// clear of both that range and of anything an operator is likely to have.
-const routeTableBase = 7600
-
-func routeTableFor(id int) int {
-	if id < 0 {
-		id = -id
-	}
-	return routeTableBase + id%300
-}
+// routeTableFor is the table an inbound's pool is steered into: its own, which no cisco
+// location shares (relay.OpenVPNPoolTable). 7600 + id%300 once met cisco's at id 38.
+func routeTableFor(id int) int { return relay.OpenVPNPoolTable(id) }
 
 var run = func(name string, args ...string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), commandTimeout)
@@ -55,6 +40,8 @@ var (
 	onLinux        = runtime.GOOS == "linux"
 	steerPool      = relay.SteerPool
 	reassertPool   = relay.ReassertPool
+	releasePool    = relay.ReleasePool
+	reassertGuards = relay.ReassertPsiphonGuards
 	ensureExitSNAT = relay.EnsureExitSNAT
 	removeExitSNAT = relay.RemoveExitSNAT
 )
@@ -134,8 +121,8 @@ func ensureExit(cidr, exit string, table int) {
 	logger.Infof("openvpn: %s now leaves through %s", cidr, exit)
 }
 
-// ReassertRoutes puts back what a recreated exit device took with it (an Xray restart
-// remakes every psi- TUN, relay.Up every wgrN), without restarting anything.
+// ReassertRoutes puts back what a recreated device (relay.Up remakes every wgrN) or a
+// flushed iptables took from the pools, without restarting anything.
 func (m *Manager) ReassertRoutes() {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -155,6 +142,11 @@ func (m *Manager) ReassertRoutes() {
 			logger.Infof("openvpn: %s is held closed until %s is back", cur.cidr, exit)
 		}
 	}
+	if wrote, err := reassertGuards(); err != nil {
+		logger.Debugf("openvpn: could not reassert the Psiphon redirect guards: %v", err)
+	} else if wrote {
+		logger.Info("openvpn: the Psiphon redirect ports are guarded again")
+	}
 }
 
 // removeExit takes a pool back off the wire. A rule left behind keeps sending
@@ -165,6 +157,9 @@ func removeExit(cidr string, table int) {
 		return
 	}
 	removeExitSNAT(cidr)
+	if err := releasePool(cidr); err != nil {
+		logger.Warningf("openvpn: could not take every rule off %s: %v", cidr, err)
+	}
 	t := strconv.Itoa(table)
 	for ipRuleExists(cidr, table) {
 		if err := run("ip", "rule", "del", "from", cidr, "lookup", t); err != nil {

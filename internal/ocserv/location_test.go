@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/mhsanaei/3x-ui/v3/internal/relay"
 )
 
 // The dropdown is the whole feature: before asking for a password, ocserv
@@ -84,18 +86,22 @@ func TestEveryDerivedPoolIsItsOwn(t *testing.T) {
 	}
 }
 
-// Every location also needs a routing table nothing else is using, or removing
-// one country would flush another country's route.
+// Every location needs a table nothing else uses, an OpenVPN inbound's or an Xray exit's
+// too: 7000 + id*16 + index met OpenVPN's at inbound 38 and the Xray exits' at 3313.
 func TestEveryCountryGetsItsOwnRoutingTable(t *testing.T) {
+	const ids = 4000
 	seen := make(map[int]struct{})
-	for id := 0; id < 64; id++ {
+	for id := range ids {
+		seen[relay.OpenVPNPoolTable(id)] = struct{}{}
+	}
+	for id := range ids {
 		for index := 0; index < locationsPerInbound; index++ {
 			table := routeTableFor(id, index)
 			if _, clash := seen[table]; clash {
 				t.Fatalf("location %d of inbound %d reuses routing table %d", index, id, table)
 			}
-			if table < 256 {
-				t.Fatalf("routing table %d is inside the range Linux and hand-written rules use", table)
+			if table < 256 || (table > 60000 && table <= 60254) {
+				t.Fatalf("routing table %d is Linux's own, a hand-written one's or an Xray exit's", table)
 			}
 			seen[table] = struct{}{}
 		}

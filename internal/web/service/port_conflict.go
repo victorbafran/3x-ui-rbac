@@ -347,10 +347,11 @@ func checkPortConflictTx(db *gorm.DB, inbound *model.Inbound, ignoreId int) (*po
 		}, nil
 	}
 
-	// A Psiphon country's client holds its two loopback ports; an inbound taking
-	// one later would stop Xray, or that country, from binding.
-	if inbound.NodeID == nil && newBits&transportTCP != 0 && listenOverlaps(loopbackBind, inboundBindAddr(inbound)) {
-		if conflict, err := psiphonPortConflict(db, inbound.Port); conflict != nil || err != nil {
+	// A Psiphon country's client holds its two loopback ports, and Xray its redirect port on
+	// every address; an inbound taking one later would stop Xray, or that country, binding.
+	if inbound.NodeID == nil && newBits&transportTCP != 0 {
+		loopback := listenOverlaps(loopbackBind, inboundBindAddr(inbound))
+		if conflict, err := psiphonPortConflict(db, inbound.Port, loopback, ignoreId); conflict != nil || err != nil {
 			return conflict, err
 		}
 	}

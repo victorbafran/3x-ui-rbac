@@ -1604,8 +1604,8 @@ func (s *InboundService) AddInbound(inbound *model.Inbound) (*model.Inbound, boo
 	if mtprotoRoutesThroughXray(inbound) {
 		needRestart = true
 	}
-	// Likewise a cisco or OpenVPN pool leaving through Psiphon: its TUN is Xray's.
-	if len(psiphonTunExits(inbound)) > 0 {
+	// Likewise a cisco or OpenVPN pool leaving through Psiphon: Xray takes its TCP.
+	if len(psiphonPoolExits(inbound)) > 0 {
 		needRestart = true
 	}
 
@@ -1728,8 +1728,8 @@ func (s *InboundService) delInbound(id int) (bool, func(), error) {
 	if mtprotoRoutesThroughXray(&ib) {
 		needRestart = true
 	}
-	// And the Psiphon TUNs only this cisco or OpenVPN inbound's pools used.
-	if len(psiphonTunExits(&ib)) > 0 {
+	// And the Psiphon redirects only this cisco or OpenVPN inbound's pools used.
+	if len(psiphonPoolExits(&ib)) > 0 {
 		needRestart = true
 	}
 	return needRestart, nodePush, nil
@@ -1910,7 +1910,7 @@ func (s *InboundService) SetInboundEnable(id int, enable bool) (bool, error) {
 	}
 	was := *inbound
 	was.Enable = !enable
-	if !slices.Equal(psiphonTunExits(&was), psiphonTunExits(inbound)) {
+	if !slices.Equal(psiphonPoolExits(&was), psiphonPoolExits(inbound)) {
 		needRestart = true
 	}
 
@@ -2297,8 +2297,8 @@ func (s *InboundService) UpdateInbound(inbound *model.Inbound) (*model.Inbound, 
 		if err := tx.Save(oldInbound).Error; err != nil {
 			return err
 		}
-		// A cisco or OpenVPN pool's Psiphon TUN is Xray's, which a sidecar save never reloads.
-		if !slices.Equal(psiphonTunExits(&running), psiphonTunExits(oldInbound)) {
+		// A cisco or OpenVPN pool's Psiphon redirect is Xray's, which a sidecar save never reloads.
+		if !slices.Equal(psiphonPoolExits(&running), psiphonPoolExits(oldInbound)) {
 			needRestart = true
 		}
 		// A master's running fallback was built from this child's listen, port and PROXY flag;

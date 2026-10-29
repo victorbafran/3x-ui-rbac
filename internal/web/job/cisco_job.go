@@ -56,8 +56,8 @@ func (j *CiscoJob) Run() {
 	}
 
 	mgr.Reconcile(desired)
-	// A device recreated under a running server (an Xray restart, a relay brought
-	// back up) took its route with it; nothing restarts the server to put it back.
+	// A relay brought back up took its route with it, a flushed iptables a Psiphon
+	// redirect; nothing restarts the server to put them back.
 	mgr.ReassertRoutes()
 
 	deltas, onlineEmails := mgr.CollectTraffic()

@@ -1870,7 +1870,7 @@ export const sections: readonly Section[] = [
         method: 'GET',
         path: '/panel/api/relays/psiphon/state',
         summary:
-          'Psiphon on this panel’s own server: whether it can run here (supported is false on anything but x86_64 Linux), whether the binary is installed, the countries Psiphon offers (regions, ISO codes, read at regionsAt), every country with its state (code, name, flag, enabled, running, connected, the region it connected through, the exitIp and exitLoc its last check saw, lastError and its local socksPort), and the WARP setting (mode "off", "sites" or "all", the site rules one per line, and whether a WARP account is registered). Customers who enter through an entry server reach the same countries, because their traffic lands on this panel’s inbounds.',
+          'Psiphon on this panel’s own server: whether it can run here (supported is false on anything but x86_64 Linux), whether the binary is installed, the countries Psiphon offers (regions, ISO codes, read at regionsAt), every country with its state (code, name, flag, enabled, running, connected, the region it connected through, the exitIp and exitLoc its last check saw, lastError, its local socksPort, and trafficDown and trafficUp: the bytes customers downloaded and uploaded through it since the last reset, saved every 30 seconds and kept while the country is off), and the WARP setting (mode "off", "sites" or "all", the site rules one per line, and whether a WARP account is registered). Customers who enter through an entry server reach the same countries, because their traffic lands on this panel’s inbounds.',
       },
       {
         method: 'POST',
@@ -1910,6 +1910,13 @@ export const sections: readonly Section[] = [
         summary:
           'Put Cloudflare WARP behind the Psiphon countries, for sites that refuse Psiphon’s addresses: the country stays, the site sees a Cloudflare address. mode "off" turns it off, "sites" sends only the sites listed (one Xray domain rule per line: a bare domain, or domain:, full:, keyword:, regexp: or geosite: and a value) and "all" sends everything. A WARP account is registered on the first save that turns it on.',
         body: '{\n  "mode": "sites",\n  "sites": "domain:gemini.google.com\\ndomain:chatgpt.com"\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/relays/psiphon/traffic/reset',
+        summary:
+          'Set the traffic counters (trafficDown, trafficUp) of one Psiphon country back to zero, or of every country with "all": true. Bytes counted but not yet saved are dropped with them. A code with no country, and a body naming neither a code nor all, are refused.',
+        body: '{\n  "code": "DE"\n}',
       },
     ],
   },

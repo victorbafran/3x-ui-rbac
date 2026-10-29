@@ -2935,6 +2935,7 @@
         },
         "unsupported": "Psiphon 需要 x86_64 (amd64) Linux 伺服器",
         "unsupportedHint": "Psiphon 沒有為此伺服器的處理器發布版本，因此無法在這裡執行。",
+        "missingClient": "已開啟：{countries}。此伺服器上還沒有 Psiphon 用戶端，經由這些國家出去的客戶什麼也收不到。面板會自行下載，失敗時每十分鐘重試一次；按下「安裝 Psiphon」可立即下載。",
         "install": "安裝 Psiphon",
         "installHint": "下載 Psiphon 並讀取其目前的國家清單，最多需要三分鐘。在您啟用某個國家之前不會執行任何內容，每啟用一個國家約佔用 {mb} MB 記憶體。",
         "installing": "正在安裝並讀取國家清單…",
@@ -2982,6 +2983,13 @@
         "errors": {
           "siteRule": "每行必須是一個網域，或在 domain:、full:、keyword:、regexp:、geosite: 後接一個值。"
         },
+        "traffic": {
+          "total": "經由 Psiphon：{traffic}",
+          "hint": "自上次重置以來客戶經由 Psiphon 傳輸的流量：↓ 下載，↑ 上傳。每個國家在名稱下方顯示各自的流量；每 30 秒儲存一次。",
+          "reset": "重置流量",
+          "resetConfirm": "重置所有國家的流量？",
+          "resetHint": "每個國家的計數都會歸零，且無法復原。"
+        },
         "toasts": {
           "state": "讀取 Psiphon 狀態",
           "install": "安裝 Psiphon",
@@ -2989,7 +2997,8 @@
           "countries": "儲存 Psiphon 國家",
           "inbounds": "讀取 Psiphon 可用的入站",
           "inbound": "儲存入站的 Psiphon 國家",
-          "warp": "儲存 Psiphon 後的 WARP"
+          "warp": "儲存 Psiphon 後的 WARP",
+          "traffic": "重置 Psiphon 流量"
         }
       }
     },

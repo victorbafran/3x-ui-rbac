@@ -2,8 +2,10 @@ package psiphon
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -40,8 +42,9 @@ func fakeClient(scenario string, args []string) int {
 		}
 	}
 	var cfg struct {
-		EgressRegion        string
-		LocalSocksProxyPort int
+		EgressRegion         string
+		LocalSocksProxyPort  int
+		EmitBytesTransferred bool
 	}
 	raw, err := os.ReadFile(cfgPath)
 	if err == nil {
@@ -55,6 +58,12 @@ func fakeClient(scenario string, args []string) int {
 	case "tunnel":
 		fmt.Println(notice("ListeningSocksProxyPort", fmt.Sprintf(`{"port":%d}`, cfg.LocalSocksProxyPort)))
 		fmt.Println(notice("ConnectedServerRegion", fmt.Sprintf(`{"serverRegion":%q}`, cfg.EgressRegion)))
+		// Like the real client, counts only when asked to; before Tunnels, so a
+		// test that saw the tunnel come up has seen these too.
+		if cfg.EmitBytesTransferred {
+			fmt.Println(notice("BytesTransferred", `{"diagnosticID":"NrH6n4lc","received":2524300,"sent":722}`))
+			fmt.Println(notice("BytesTransferred", `{"diagnosticID":"NrH6n4lc","received":1048576,"sent":4096}`))
+		}
 		fmt.Println(notice("Tunnels", `{"count":1}`))
 	case "probe":
 		if cfg.EgressRegion != "" {
@@ -232,6 +241,129 @@ func TestReconcileRefusesWhatCannotBeAClient(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(filepath.Dir(Root()), "x")); !os.IsNotExist(err) {
 		t.Fatalf("a code with a path in it wrote outside the psiphon root: %v", err)
+	}
+}
+
+// oneStart is what the stand-in reports carrying each time it starts.
+var oneStart = Traffic{Down: 2524300 + 1048576, Up: 722 + 4096}
+
+func times(n int64, t Traffic) Traffic { return Traffic{Down: n * t.Down, Up: n * t.Up} }
+
+// collect flushes m into saved, as the job's save adds to each country's row.
+func collect(t *testing.T, m *Manager, saved map[string]Traffic) {
+	t.Helper()
+	err := m.FlushTraffic(func(moved map[string]Traffic) error {
+		for code, by := range moved {
+			sum := saved[code]
+			saved[code] = Traffic{Down: sum.Down + by.Down, Up: sum.Up + by.Up}
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("flush: %v", err)
+	}
+}
+
+// The notices are the only count of what customers moved through a country, so
+// a client restarting or switched off, or a save that fails, must not lose them.
+func TestTrafficOutlivesItsClientAndAFailedSave(t *testing.T) {
+	useFakeClient(t, "tunnel")
+	m := newManager()
+	t.Cleanup(m.StopAll)
+	de, us := Country{"DE", 11181, 11381}, Country{"US", 11182, 11382}
+	if err := m.Reconcile([]Country{de, us}); err != nil {
+		t.Fatalf("reconcile: %v", err)
+	}
+	waitFor(t, "DE to connect", connectedTo(m, "DE"))
+	waitFor(t, "US to connect", connectedTo(m, "US"))
+
+	first := m.procOf("DE")
+	de.SocksPort = 11183
+	if err := m.Reconcile([]Country{de, us}); err != nil {
+		t.Fatalf("reconcile with DE on a new port: %v", err)
+	}
+	if m.procOf("DE") == first {
+		t.Fatal("DE was not restarted")
+	}
+	waitFor(t, "DE to reconnect", connectedTo(m, "DE"))
+	if err := m.Reconcile([]Country{de}); err != nil {
+		t.Fatalf("reconcile without US: %v", err)
+	}
+
+	err := m.FlushTraffic(func(map[string]Traffic) error { return errors.New("database is locked") })
+	if err == nil || err.Error() != "database is locked" {
+		t.Fatalf("a failed save returned %v", err)
+	}
+	saved := map[string]Traffic{}
+	collect(t, m, saved)
+	want := map[string]Traffic{"DE": times(2, oneStart), "US": oneStart}
+	if !maps.Equal(saved, want) {
+		t.Fatalf("saved %v, want %v: both DE processes and the switched-off US", saved, want)
+	}
+	collect(t, m, saved)
+	if !maps.Equal(saved, want) {
+		t.Fatalf("a second flush with nothing new saved %v, want still %v", saved, want)
+	}
+}
+
+// A reset starts the count from that moment: bytes counted before it but not
+// yet saved are dropped, for the countries it names only, once the zeroing held.
+func TestAResetDropsWhatItsCountriesCountedBeforeIt(t *testing.T) {
+	m := newManager()
+	both := func() {
+		m.traffic.add("DE", oneStart)
+		m.traffic.add("US", oneStart)
+	}
+	saved := map[string]Traffic{}
+
+	both()
+	if err := m.ResetTraffic([]string{"DE"}, func() error { return errors.New("database is locked") }); err == nil {
+		t.Fatal("a reset whose zeroing failed reported success")
+	}
+	collect(t, m, saved)
+	if want := map[string]Traffic{"DE": oneStart, "US": oneStart}; !maps.Equal(saved, want) {
+		t.Fatalf("after a failed reset saved %v, want %v", saved, want)
+	}
+
+	clear(saved)
+	both()
+	if err := m.ResetTraffic([]string{"DE"}, func() error { return nil }); err != nil {
+		t.Fatal(err)
+	}
+	collect(t, m, saved)
+	if want := map[string]Traffic{"US": oneStart}; !maps.Equal(saved, want) {
+		t.Fatalf("after resetting DE saved %v, want %v", saved, want)
+	}
+
+	clear(saved)
+	both()
+	if err := m.ResetTraffic(nil, func() error { return nil }); err != nil {
+		t.Fatal(err)
+	}
+	collect(t, m, saved)
+	if len(saved) != 0 {
+		t.Fatalf("after resetting every country saved %v, want nothing", saved)
+	}
+
+	// A reset pressed while the job saves waits for it, or the bytes the
+	// save took from before the reset would land after the zeroing.
+	db := map[string]Traffic{}
+	resetDone := make(chan error, 1)
+	m.traffic.add("DE", oneStart)
+	err := m.FlushTraffic(func(moved map[string]Traffic) error {
+		go func() { resetDone <- m.ResetTraffic(nil, func() error { clear(db); return nil }) }()
+		time.Sleep(100 * time.Millisecond)
+		maps.Copy(db, moved)
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := <-resetDone; err != nil {
+		t.Fatal(err)
+	}
+	if len(db) != 0 {
+		t.Fatalf("a reset during a save left %v counted", db)
 	}
 }
 

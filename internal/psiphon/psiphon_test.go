@@ -2,9 +2,14 @@ package psiphon
 
 import (
 	"encoding/json"
+	"fmt"
 	"slices"
 	"strings"
 	"testing"
+	"time"
+
+	"github.com/mhsanaei/3x-ui/v3/internal/logger"
+	"github.com/mhsanaei/3x-ui/v3/internal/sidecar"
 )
 
 // Lines as the client printed them on the panel box (2026-10-28).
@@ -14,6 +19,9 @@ const (
 	tunnelUpLine     = `{"data":{"count":1},"noticeType":"Tunnels","timestamp":"2026-10-28T15:04:07.311Z"}`
 	tunnelDownLine   = `{"data":{"count":0},"noticeType":"Tunnels","timestamp":"2026-10-28T15:09:12.500Z"}`
 	serverRegionLine = `{"data":{"serverRegion":"DE"},"noticeType":"ConnectedServerRegion","timestamp":"2026-10-28T15:04:07.309Z"}`
+	// Printed about once a second with EmitBytesTransferred (2026-10-29): what
+	// moved since the previous notice; a 5 MB download summed to 5.01 MB.
+	bytesLine = `{"data":{"diagnosticID":"NrH6n4lc","received":2524300,"sent":722},"noticeType":"BytesTransferred","timestamp":"2026-10-29T09:12:44.871Z"}`
 )
 
 // With ListenInterface set at all the client exits 0 at once and loops, and
@@ -36,7 +44,7 @@ func TestConfigIsTheMeasuredShapeAndNeverSetsListenInterface(t *testing.T) {
 	}
 	slices.Sort(keys)
 	want := []string{
-		"EgressRegion", "LocalHttpProxyPort", "LocalSocksProxyPort", "PropagationChannelId", "RemoteServerListDownloadFilename",
+		"EgressRegion", "EmitBytesTransferred", "LocalHttpProxyPort", "LocalSocksProxyPort", "PropagationChannelId", "RemoteServerListDownloadFilename",
 		"RemoteServerListSignaturePublicKey", "RemoteServerListUrl", "SponsorId", "UseIndistinguishableTLS",
 	}
 	if !slices.Equal(keys, want) {
@@ -44,7 +52,8 @@ func TestConfigIsTheMeasuredShapeAndNeverSetsListenInterface(t *testing.T) {
 	}
 	for key, value := range map[string]any{
 		"EgressRegion": "DE", "LocalSocksProxyPort": 11181.0, "LocalHttpProxyPort": 11381.0, "UseIndistinguishableTLS": true,
-		"RemoteServerListUrl": "https://s3.amazonaws.com//psiphon/web/mjr4-p23r-puwl/server_list_compressed",
+		"EmitBytesTransferred": true,
+		"RemoteServerListUrl":  "https://s3.amazonaws.com//psiphon/web/mjr4-p23r-puwl/server_list_compressed",
 	} {
 		if cfg[key] != value {
 			t.Errorf("%s = %v, want %v", key, cfg[key], value)
@@ -126,6 +135,14 @@ func TestNoticesAreReadFromTheClientsOwnLines(t *testing.T) {
 	if got := serverRegion(region); got != "DE" {
 		t.Fatalf("serverRegion = %q", got)
 	}
+
+	moved, _ := ParseNotice(bytesLine)
+	if got, ok := bytesTransferred(moved); !ok || got != (Traffic{Down: 2524300, Up: 722}) {
+		t.Fatalf("bytesTransferred = %+v, %v; want received as down, sent as up", got, ok)
+	}
+	if got, ok := bytesTransferred(up); ok {
+		t.Fatalf("a Tunnels notice read as traffic %+v", got)
+	}
 }
 
 // Every handshake repeats a dozen notices; the tunnel count, the region, a
@@ -140,7 +157,7 @@ func TestOnlyTheChattyNoticesAreFolded(t *testing.T) {
 		return false
 	}
 	for _, line := range []string{
-		regionsLine,
+		regionsLine, bytesLine,
 		`{"data":{"timestamp":"2026-10-28T15:04:07Z"},"noticeType":"ServerTimestamp","timestamp":"2026-10-28T15:04:07.400Z"}`,
 		`{"data":{"ApplicationParameters":{}},"noticeType":"ApplicationParameters","timestamp":"2026-10-28T15:04:07.401Z"}`,
 	} {
@@ -156,6 +173,24 @@ func TestOnlyTheChattyNoticesAreFolded(t *testing.T) {
 	} {
 		if folded(line) {
 			t.Errorf("folded out of the log: %s", line)
+		}
+	}
+}
+
+// A busy country prints BytesTransferred every second; folded, that was a count line
+// per country every ten minutes, 1,440 a day in the panel log for ten countries.
+func TestTrafficNoticesLeaveNoLineInThePanelLog(t *testing.T) {
+	label := fmt.Sprintf("psiphon %s %d", t.Name(), time.Now().UnixNano())
+	w := sidecar.NewLineWriter(label, noticeNoise...)
+	for range 3600 {
+		if _, err := w.Write([]byte(bytesLine + "\n")); err != nil {
+			t.Fatal(err)
+		}
+	}
+	w.Flush()
+	for _, line := range logger.GetLogs(10000, "debug") {
+		if strings.Contains(line, label+" | ") {
+			t.Fatalf("the panel log got %q", line)
 		}
 	}
 }

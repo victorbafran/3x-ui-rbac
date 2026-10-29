@@ -9,6 +9,7 @@ import {
   Col,
   Form,
   Input,
+  Popconfirm,
   Row,
   Select,
   Space,
@@ -37,6 +38,7 @@ import {
   type PsiphonWarpFormValues,
 } from '@/schemas/psiphon';
 import { IntlUtil } from '@/utils';
+import { bytes } from './bytes';
 
 type PsiphonMutations = ReturnType<typeof usePsiphonMutations>;
 
@@ -79,6 +81,72 @@ function countryDetail(country: PsiphonCountry | undefined) {
         ? clipped(country.lastError, phase === 'error' ? 'danger' : 'warning')
         : null}
     </>
+  );
+}
+
+function trafficText(down: number, up: number): string {
+  return `↓ ${bytes(down)} · ↑ ${bytes(up)}`;
+}
+
+// What customers moved through the country since the last reset; a country
+// switched off keeps its count, so it shows here too.
+function countryTraffic(country: PsiphonCountry | undefined) {
+  if (!country || (!country.trafficDown && !country.trafficUp)) return null;
+  return (
+    <span style={{ fontSize: 12, opacity: 0.7 }}>
+      {trafficText(country.trafficDown, country.trafficUp)}
+    </span>
+  );
+}
+
+function TrafficTotal({
+  countries,
+  mutations,
+}: {
+  countries: PsiphonCountry[];
+  mutations: PsiphonMutations;
+}) {
+  const { t } = useTranslation();
+  const { resetTrafficMut } = mutations;
+  const down = countries.reduce((sum, c) => sum + c.trafficDown, 0);
+  const up = countries.reduce((sum, c) => sum + c.trafficUp, 0);
+  return (
+    <Space wrap style={{ display: 'flex', marginBottom: 12 }}>
+      <Tooltip title={t('pages.relays.psiphon.traffic.hint')}>
+        <span style={{ cursor: 'help' }}>
+          {t('pages.relays.psiphon.traffic.total', { traffic: trafficText(down, up) })}
+        </span>
+      </Tooltip>
+      <Popconfirm
+        title={t('pages.relays.psiphon.traffic.resetConfirm')}
+        description={t('pages.relays.psiphon.traffic.resetHint')}
+        okType="danger"
+        okText={t('reset')}
+        cancelText={t('cancel')}
+        onConfirm={() => resetTrafficMut.mutateAsync({ all: true })}
+      >
+        <Button size="small" loading={resetTrafficMut.isPending}>
+          {t('pages.relays.psiphon.traffic.reset')}
+        </Button>
+      </Popconfirm>
+    </Space>
+  );
+}
+
+// A restore or a promoted copy brings the countries back but not the client: say they are
+// down until the panel's own download lands, rather than look as if none was ever set up.
+function MissingClientAlert({ state }: { state: PsiphonState }) {
+  const { t } = useTranslation();
+  const enabled = state.countries.filter((c) => c.enabled);
+  if (!enabled.length) return null;
+  return (
+    <Alert
+      type="warning"
+      showIcon
+      title={t('pages.relays.psiphon.missingClient', {
+        countries: enabled.map((c) => psiphonCountryLabel(c.code, c)).join(', '),
+      })}
+    />
   );
 }
 
@@ -186,6 +254,7 @@ function CountriesSection({
                           {phaseTag(country, t)}
                         </Space>
                         {countryDetail(country)}
+                        {countryTraffic(country)}
                       </Space>
                     </Col>
                   );
@@ -193,6 +262,7 @@ function CountriesSection({
               </Row>
             </Checkbox.Group>
           </FormField>
+          <TrafficTotal countries={state.countries} mutations={mutations} />
           <Space wrap>
             <Button
               type="primary"
@@ -504,6 +574,7 @@ export default function PsiphonCard() {
 
         {state?.supported && !state.installed ? (
           <Space orientation="vertical" size={8}>
+            <MissingClientAlert state={state} />
             <Typography.Text>
               {t('pages.relays.psiphon.installHint', { mb: PSIPHON_MB_PER_COUNTRY })}
             </Typography.Text>

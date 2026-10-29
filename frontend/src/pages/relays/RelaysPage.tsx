@@ -58,6 +58,7 @@ import {
 import type { IPFamily, Reachability, Relay, RelayFormValues } from '@/schemas/relay';
 import ArvanFrontModal from './ArvanFrontModal';
 import PsiphonCard from './PsiphonCard';
+import { bytes } from './bytes';
 
 // A relay is a plain server the panel reaches over SSH once. An exit sits in
 // another country: WireGuard and one forwarding rule go on it, and a cisco
@@ -175,18 +176,6 @@ function frontAddress6(r: Relay, t: TFunction) {
       ) : null}
     </>
   );
-}
-
-function bytes(n: number): string {
-  if (!n) return '0';
-  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-  let v = n;
-  let i = 0;
-  while (v >= 1024 && i < units.length - 1) {
-    v /= 1024;
-    i++;
-  }
-  return `${v.toFixed(v >= 10 || i === 0 ? 0 : 1)} ${units[i]}`;
 }
 
 export default function RelaysPage() {

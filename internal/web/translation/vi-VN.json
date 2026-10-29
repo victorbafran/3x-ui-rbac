@@ -2935,6 +2935,7 @@
         },
         "unsupported": "Psiphon cần máy chủ Linux x86_64 (amd64)",
         "unsupportedHint": "Psiphon không phát hành bản cho bộ xử lý của máy chủ này, nên không thể chạy ở đây.",
+        "missingClient": "Đang bật: {countries}. Client Psiphon chưa có trên máy chủ này nên khách hàng đi ra qua các nước đó không nhận được gì. Bảng điều khiển tự tải xuống và, nếu thất bại, thử lại mỗi mười phút; Cài đặt Psiphon sẽ tải ngay bây giờ.",
         "install": "Cài đặt Psiphon",
         "installHint": "Tải Psiphon về và đọc danh sách quốc gia hiện tại của nó; mất tối đa ba phút. Không có gì chạy cho đến khi bạn bật một quốc gia, và mỗi quốc gia được bật dùng khoảng {mb} MB bộ nhớ.",
         "installing": "Đang cài đặt và đọc danh sách quốc gia…",
@@ -2982,6 +2983,13 @@
         "errors": {
           "siteRule": "Mỗi dòng phải là một tên miền, hoặc domain:, full:, keyword:, regexp: hay geosite: kèm theo một giá trị."
         },
+        "traffic": {
+          "total": "Qua Psiphon: {traffic}",
+          "hint": "Lưu lượng khách đã truyền qua Psiphon kể từ lần đặt lại gần nhất: ↓ lượng tải xuống, ↑ lượng tải lên. Mỗi quốc gia hiện lưu lượng của mình dưới tên; lưu sau mỗi 30 giây.",
+          "reset": "Đặt lại lưu lượng",
+          "resetConfirm": "Đặt lại lưu lượng của mọi quốc gia?",
+          "resetHint": "Bộ đếm của mọi quốc gia trở về 0. Không thể hoàn tác."
+        },
         "toasts": {
           "state": "Đọc trạng thái Psiphon",
           "install": "Cài đặt Psiphon",
@@ -2989,7 +2997,8 @@
           "countries": "Lưu quốc gia Psiphon",
           "inbounds": "Đọc inbound cho Psiphon",
           "inbound": "Lưu quốc gia Psiphon của inbound",
-          "warp": "Lưu WARP phía sau Psiphon"
+          "warp": "Lưu WARP phía sau Psiphon",
+          "traffic": "Đặt lại lưu lượng Psiphon"
         }
       }
     },

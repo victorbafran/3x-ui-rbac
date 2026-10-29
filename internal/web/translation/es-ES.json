@@ -2935,6 +2935,7 @@
         },
         "unsupported": "Psiphon necesita un servidor Linux x86_64 (amd64)",
         "unsupportedHint": "Psiphon no publica ninguna versión para el procesador de este servidor, así que no puede ejecutarse aquí.",
+        "missingClient": "Activados: {countries}. El cliente de Psiphon aún no está en este servidor, así que los clientes que salen por ellos no reciben nada. El panel lo descarga por sí mismo y, si falla, lo reintenta cada diez minutos; «Instalar Psiphon» lo descarga ahora.",
         "install": "Instalar Psiphon",
         "installHint": "Descarga Psiphon y lee su lista actual de países; tarda hasta tres minutos. No se ejecuta nada hasta que activas un país, y cada país activado ocupa unos {mb} MB de memoria.",
         "installing": "Instalando y leyendo la lista de países…",
@@ -2982,6 +2983,13 @@
         "errors": {
           "siteRule": "Cada línea debe ser un dominio, o domain:, full:, keyword:, regexp: o geosite: seguido de un valor."
         },
+        "traffic": {
+          "total": "A través de Psiphon: {traffic}",
+          "hint": "Lo que los clientes movieron a través de Psiphon desde el último restablecimiento: ↓ lo que descargaron, ↑ lo que subieron. Cada país muestra el suyo bajo su nombre; se guarda cada 30 segundos.",
+          "reset": "Restablecer tráfico",
+          "resetConfirm": "¿Restablecer el tráfico de todos los países?",
+          "resetHint": "El contador de cada país vuelve a cero. No se puede deshacer."
+        },
         "toasts": {
           "state": "Leer el estado de Psiphon",
           "install": "Instalar Psiphon",
@@ -2989,7 +2997,8 @@
           "countries": "Guardar los países de Psiphon",
           "inbounds": "Leer los inbounds para Psiphon",
           "inbound": "Guardar los países de Psiphon del inbound",
-          "warp": "Guardar WARP detrás de Psiphon"
+          "warp": "Guardar WARP detrás de Psiphon",
+          "traffic": "Restablecer el tráfico de Psiphon"
         }
       }
     },

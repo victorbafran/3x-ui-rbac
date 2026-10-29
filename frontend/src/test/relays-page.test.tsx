@@ -153,6 +153,7 @@ const saved = async (_payload: unknown) => ({ success: true });
 const saveCountriesMut = { mutateAsync: vi.fn(saved), isPending: false };
 const saveInboundMut = { mutateAsync: vi.fn(saved), isPending: false, variables: undefined };
 const saveWarpMut = { mutateAsync: vi.fn(saved), isPending: false };
+const resetTrafficMut = { mutateAsync: vi.fn(saved), isPending: false };
 
 vi.mock('@/api/queries/usePsiphon', () => ({
   usePsiphonState: () => ({
@@ -169,6 +170,7 @@ vi.mock('@/api/queries/usePsiphon', () => ({
     saveCountriesMut,
     saveInboundMut,
     saveWarpMut,
+    resetTrafficMut,
   }),
 }));
 
@@ -299,8 +301,8 @@ describe('the exit servers page', () => {
     cleanup();
   });
 
-  // What customers moved through a BackPack front, with the speed under it only
-  // while it has one; a Backhaul front counts nothing, so its row stays ports only.
+  // What customers moved through a front, with the speed under it only while it
+  // has one; a front with nothing counted yet keeps its row to the ports.
   it('shows what customers moved through an entry server, and how fast right now', async () => {
     rows = [
       {
@@ -908,6 +910,8 @@ const psiphonCountry = (code: string, name: string, flag: string) => ({
   exitLoc: '',
   lastError: '',
   socksPort: 0,
+  trafficDown: 0,
+  trafficUp: 0,
 });
 
 // Measured on the live box: DE answered through Psiphon from 164.92.130.120.
@@ -965,6 +969,28 @@ describe('the Psiphon card', () => {
     expect(card.textContent).not.toContain('Countries per inbound');
     fireEvent.click(within(card).getByText('Install Psiphon').closest('button') as HTMLElement);
     expect(installMut.mutate).toHaveBeenCalledTimes(1);
+    cleanup();
+  });
+
+  // A restore or a promoted copy has the countries on and no client yet: the card says they
+  // are down instead of looking as if Psiphon was never set up, and still offers the install.
+  it('says which countries are down while the client is not on the server', () => {
+    psiphonState = {
+      ...psiphonReady,
+      installed: false,
+      countries: [
+        { ...psiphonReady.countries[0], running: false, connected: false },
+        { ...psiphonCountry('AT', 'Austria', '🇦🇹'), enabled: false, running: false },
+        { ...psiphonReady.countries[1], running: false },
+      ],
+    };
+    const card = renderPage();
+    const alert = card.querySelector('.ant-alert-warning') as HTMLElement;
+    expect(alert.textContent).toContain(
+      'Switched on: 🇩🇪 Germany, 🇺🇸 United States. The Psiphon client is not on this server yet',
+    );
+    expect(alert.textContent).not.toContain('Austria');
+    expect(within(card).getByText('Install Psiphon')).toBeTruthy();
     cleanup();
   });
 
@@ -1062,6 +1088,45 @@ describe('the Psiphon card', () => {
         sites: 'gemini.google.com\nkeyword:openai',
       }),
     );
+    cleanup();
+  });
+
+  // What customers moved through each country, one switched off included, and
+  // in all; the reset clears every country, so it waits for a confirm.
+  it('shows each country’s traffic and the total, and resets only once confirmed', async () => {
+    psiphonState = {
+      ...psiphonReady,
+      countries: [
+        { ...psiphonReady.countries[0], trafficDown: 699355553, trafficUp: 75264133 },
+        psiphonReady.countries[1],
+        { ...psiphonReady.countries[2], trafficDown: 1073741824 },
+        {
+          ...psiphonCountry('AT', 'Austria', '🇦🇹'),
+          enabled: false,
+          running: false,
+          trafficDown: 536870912,
+        },
+      ],
+    };
+    resetTrafficMut.mutateAsync.mockClear();
+    const card = renderPage();
+    const cell = (label: string) =>
+      within(card).getByText(label).closest('.ant-col') as HTMLElement;
+    expect(cell('🇩🇪 Germany').textContent).toContain('↓ 667 MB · ↑ 72 MB');
+    expect(cell('🇬🇧 United Kingdom').textContent).toContain('↓ 1.0 GB · ↑ 0');
+    expect(cell('🇦🇹 Austria').textContent).toContain('Off');
+    expect(cell('🇦🇹 Austria').textContent).toContain('↓ 512 MB · ↑ 0');
+    expect(cell('🇺🇸 United States').textContent).not.toContain('↓');
+    expect(card.textContent).toContain('Through Psiphon: ↓ 2.2 GB · ↑ 72 MB');
+
+    fireEvent.click(within(card).getByText('Reset traffic').closest('button') as HTMLElement);
+    await waitFor(() =>
+      expect(document.body.textContent).toContain('Reset the traffic of every country?'),
+    );
+    expect(resetTrafficMut.mutateAsync).not.toHaveBeenCalled();
+    const confirm = document.querySelector('.ant-popconfirm') as HTMLElement;
+    fireEvent.click(within(confirm).getByText('Reset').closest('button') as HTMLElement);
+    await waitFor(() => expect(resetTrafficMut.mutateAsync).toHaveBeenCalledWith({ all: true }));
     cleanup();
   });
 

@@ -25,6 +25,9 @@ type NoiseRule struct {
 	// Continuation matches the lines that belong to a folded one, and is only
 	// tried on the lines straight after it.
 	Continuation *regexp.Regexp
+	// Silent keeps the line out of the count too: one the caller reads many times
+	// a second, whose count would be a log line of its own every window.
+	Silent bool
 }
 
 // LineWriter forwards a child's output into the panel log line by line, and
@@ -136,6 +139,9 @@ func (w *LineWriter) foldLocked(line string, now time.Time) bool {
 		r := &w.noise[i]
 		if !r.Line.MatchString(line) {
 			continue
+		}
+		if r.Silent {
+			return true
 		}
 		if len(w.folded) == 0 {
 			w.since = now

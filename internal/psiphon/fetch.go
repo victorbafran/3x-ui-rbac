@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -61,6 +62,35 @@ func Fetch(ctx context.Context) (string, error) {
 		return "", fmt.Errorf("could not put %s in place: %w", bin, err)
 	}
 	return bin, nil
+}
+
+// fetchRetry is how long the job's ticks wait after a failed download: each try may pull the
+// whole 36 MB build, and a box that cannot keep it would pull it every 30 s.
+const fetchRetry = 10 * time.Minute
+
+// ErrFetchWaiting is what a tick between a failed download and the next try gets; the failure
+// itself was returned once, so the job need not log it again every tick.
+var ErrFetchWaiting = errors.New("waiting to download psiphon again")
+
+var fetchPause struct {
+	sync.Mutex
+	until time.Time
+	err   error
+}
+
+// fetchPaced is Fetch for the manager, which every job tick asks for the client; Install calls
+// Fetch itself, so an operator is never held back.
+func fetchPaced(ctx context.Context) (string, error) {
+	fetchPause.Lock()
+	defer fetchPause.Unlock()
+	if !Installed() && time.Now().Before(fetchPause.until) {
+		return "", fmt.Errorf("%w: %w", ErrFetchWaiting, fetchPause.err)
+	}
+	bin, err := Fetch(ctx)
+	if err != nil {
+		fetchPause.until, fetchPause.err = time.Now().Add(fetchRetry), err
+	}
+	return bin, err
 }
 
 // download writes the build to dest and refuses it unless the checksum holds.

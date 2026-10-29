@@ -3,6 +3,7 @@ package psiphon
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -10,6 +11,7 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
+	"time"
 )
 
 func serveBuild(t *testing.T, build []byte, want string) *atomic.Int32 {
@@ -62,5 +64,35 @@ func TestFetchCachesTheBuildPerCommit(t *testing.T) {
 	}
 	if again, err := Fetch(t.Context()); err != nil || again != bin || hits.Load() != 1 {
 		t.Fatalf("second Fetch = %s, %v after %d downloads; want the cache and one download", again, err, hits.Load())
+	}
+}
+
+// The job asks for the client every 30 s, and each try may pull the whole build: one that
+// failed waits ten minutes, but a build installed meanwhile is taken at once.
+func TestAFailedFetchIsNotTriedAgainOnEveryTick(t *testing.T) {
+	served := []byte("the build being served")
+	hits := serveBuild(t, served, sumOf([]byte("the pinned build")))
+	t.Cleanup(func() { fetchPause.until, fetchPause.err = time.Time{}, nil })
+	for i := range 3 {
+		_, err := fetchPaced(t.Context())
+		if err == nil || !strings.Contains(err.Error(), "refusing to install") || errors.Is(err, ErrFetchWaiting) != (i > 0) {
+			t.Fatalf("try %d: %v", i+1, err)
+		}
+	}
+	if hits.Load() != 1 {
+		t.Fatalf("three ticks downloaded %d times, want once", hits.Load())
+	}
+
+	fetchPause.until = time.Now()
+	if _, err := fetchPaced(t.Context()); err == nil || errors.Is(err, ErrFetchWaiting) || hits.Load() != 2 {
+		t.Fatalf("once the wait is over: %v after %d downloads, want a second try", err, hits.Load())
+	}
+
+	wantSHA256 = sumOf(served)
+	if _, err := Fetch(t.Context()); err != nil {
+		t.Fatalf("an install during the wait: %v", err)
+	}
+	if bin, err := fetchPaced(t.Context()); err != nil || bin != binaryPath() || hits.Load() != 3 {
+		t.Fatalf("after the install the tick got %q, %v after %d downloads; want the installed build", bin, err, hits.Load())
 	}
 }

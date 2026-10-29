@@ -2935,6 +2935,7 @@
         },
         "unsupported": "Psiphon memerlukan server Linux x86_64 (amd64)",
         "unsupportedHint": "Psiphon tidak merilis build untuk prosesor server ini, jadi tidak bisa berjalan di sini.",
+        "missingClient": "Aktif: {countries}. Klien Psiphon belum ada di server ini, jadi pelanggan yang keluar lewat negara itu tidak mendapat apa pun. Panel mengunduhnya sendiri dan, jika gagal, mencoba lagi setiap sepuluh menit; Pasang Psiphon mengunduhnya sekarang.",
         "install": "Pasang Psiphon",
         "installHint": "Mengunduh Psiphon dan membaca daftar negaranya saat ini; butuh hingga tiga menit. Tidak ada yang berjalan sampai Anda mengaktifkan sebuah negara, dan setiap negara yang aktif memakai sekitar {mb} MB memori.",
         "installing": "Memasang dan membaca daftar negara…",
@@ -2982,6 +2983,13 @@
         "errors": {
           "siteRule": "Setiap baris harus berupa domain, atau domain:, full:, keyword:, regexp:, atau geosite: diikuti sebuah nilai."
         },
+        "traffic": {
+          "total": "Melalui Psiphon: {traffic}",
+          "hint": "Yang dipindahkan pelanggan melalui Psiphon sejak reset terakhir: ↓ yang mereka unduh, ↑ yang mereka unggah. Tiap negara menampilkan miliknya di bawah namanya; disimpan setiap 30 detik.",
+          "reset": "Reset lalu lintas",
+          "resetConfirm": "Reset lalu lintas semua negara?",
+          "resetHint": "Penghitung tiap negara kembali ke nol. Ini tidak dapat dibatalkan."
+        },
         "toasts": {
           "state": "Baca status Psiphon",
           "install": "Pasang Psiphon",
@@ -2989,7 +2997,8 @@
           "countries": "Simpan negara Psiphon",
           "inbounds": "Baca inbound untuk Psiphon",
           "inbound": "Simpan negara Psiphon untuk inbound",
-          "warp": "Simpan WARP di belakang Psiphon"
+          "warp": "Simpan WARP di belakang Psiphon",
+          "traffic": "Reset lalu lintas Psiphon"
         }
       }
     },

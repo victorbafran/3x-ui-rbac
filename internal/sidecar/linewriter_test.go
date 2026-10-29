@@ -169,3 +169,25 @@ func TestAFoldedErrorTakesItsExplanationAndNothingElse(t *testing.T) {
 		t.Fatalf("LastLine = %q, want the kept block's last line", got)
 	}
 }
+
+// Psiphon prints what a busy country carried every second: the callback reads each
+// one, and the log gets none of them, not even a count every window.
+func TestASilentLineReachesTheCallbackButNeverTheLog(t *testing.T) {
+	silent := NoiseRule{Kind: "bytes", Line: regexp.MustCompile(`"noticeType":"BytesTransferred"`), Silent: true}
+	w, label, advance := writerAt(t, append([]NoiseRule{silent}, handshakeNoise...))
+	seen := 0
+	w.setOnLine(func(string) { seen++ })
+	const moved = `{"data":{"diagnosticID":"NrH6n4lc","received":2524300,"sent":722},"noticeType":"BytesTransferred"}`
+	for i := range 3600 {
+		write(t, w, moved)
+		if i == 1800 {
+			write(t, w, unterminated)
+		}
+		advance(time.Second)
+	}
+	w.Flush()
+	if seen != 3601 {
+		t.Fatalf("the callback saw %d lines, want all 3601", seen)
+	}
+	sameLines(t, logged(label), []string{"suppressed 1 probe messages in 10m: non-properly terminated 1"})
+}

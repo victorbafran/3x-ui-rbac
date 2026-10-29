@@ -2935,6 +2935,7 @@
         },
         "unsupported": "Psiphon bir x86_64 (amd64) Linux sunucusu gerektirir",
         "unsupportedHint": "Psiphon bu sunucunun işlemcisi için bir sürüm yayınlamıyor, bu yüzden burada çalışamaz.",
+        "missingClient": "Açık: {countries}. Psiphon istemcisi henüz bu sunucuda değil, bu yüzden bunlar üzerinden çıkan müşteriler hiçbir şey alamıyor. Panel onu kendisi indirir, başarısız olursa her on dakikada bir yeniden dener; «Psiphon'u kur» onu hemen indirir.",
         "install": "Psiphon'u kur",
         "installHint": "Psiphon'u indirir ve güncel ülke listesini okur; bu üç dakikaya kadar sürer. Bir ülkeyi etkinleştirene kadar hiçbir şey çalışmaz ve etkinleştirdiğiniz her ülke yaklaşık {mb} MB bellek kullanır.",
         "installing": "Kuruluyor ve ülke listesi okunuyor…",
@@ -2982,6 +2983,13 @@
         "errors": {
           "siteRule": "Her satır bir alan adı ya da ardından bir değer gelen domain:, full:, keyword:, regexp: veya geosite: olmalıdır."
         },
+        "traffic": {
+          "total": "Psiphon üzerinden: {traffic}",
+          "hint": "Son sıfırlamadan beri müşterilerin Psiphon üzerinden taşıdığı trafik: ↓ indirdikleri, ↑ yükledikleri. Her ülke kendi trafiğini adının altında gösterir; 30 saniyede bir kaydedilir.",
+          "reset": "Trafiği sıfırla",
+          "resetConfirm": "Tüm ülkelerin trafiği sıfırlansın mı?",
+          "resetHint": "Her ülkenin sayacı sıfıra döner. Bu geri alınamaz."
+        },
         "toasts": {
           "state": "Psiphon durumunu oku",
           "install": "Psiphon'u kur",
@@ -2989,7 +2997,8 @@
           "countries": "Psiphon ülkelerini kaydet",
           "inbounds": "Psiphon için gelen bağlantıları oku",
           "inbound": "Gelen bağlantının Psiphon ülkelerini kaydet",
-          "warp": "Psiphon'un arkasındaki WARP'ı kaydet"
+          "warp": "Psiphon'un arkasındaki WARP'ı kaydet",
+          "traffic": "Psiphon trafiğini sıfırla"
         }
       }
     },

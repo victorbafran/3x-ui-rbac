@@ -45,11 +45,17 @@ type liveState struct {
 	since     time.Time
 	connected bool
 	region    string
+	code      string
+	meter     *trafficMeter
 }
 
 func (s *liveState) observe(line string) {
 	n, ok := ParseNotice(line)
 	if !ok {
+		return
+	}
+	if moved, ok := bytesTransferred(n); ok {
+		s.meter.add(s.code, moved)
 		return
 	}
 	s.mu.Lock()
@@ -62,6 +68,47 @@ func (s *liveState) observe(line string) {
 	}
 }
 
+// Traffic is what a country's client carried: Down to customers, Up from them.
+type Traffic struct{ Down, Up int64 }
+
+// trafficMeter holds each country's bytes until they are flushed. It sits
+// beside the clients, not in one, so a restart or a switch-off loses nothing.
+type trafficMeter struct {
+	mu      sync.Mutex
+	pending map[string]Traffic
+}
+
+func (t *trafficMeter) add(code string, moved Traffic) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if t.pending == nil {
+		t.pending = map[string]Traffic{}
+	}
+	sum := t.pending[code]
+	t.pending[code] = Traffic{Down: sum.Down + moved.Down, Up: sum.Up + moved.Up}
+}
+
+func (t *trafficMeter) take() map[string]Traffic {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	taken := t.pending
+	t.pending = nil
+	return taken
+}
+
+// forget drops what codes counted, every country's when codes is empty.
+func (t *trafficMeter) forget(codes []string) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if len(codes) == 0 {
+		t.pending = nil
+		return
+	}
+	for _, code := range codes {
+		delete(t.pending, code)
+	}
+}
+
 // Manager holds one client per country.
 type Manager struct {
 	// reconcileMu keeps the job's pass and an operator's save from restarting
@@ -69,6 +116,10 @@ type Manager struct {
 	reconcileMu sync.Mutex
 	mu          sync.Mutex
 	procs       map[string]*managed
+	// flushMu keeps a reset from landing between a flush's take and its save;
+	// the meter's own lock is held only briefly, as the clients' pipes wait on it.
+	flushMu sync.Mutex
+	traffic trafficMeter
 }
 
 var (
@@ -93,7 +144,7 @@ var resolveBinary = func() (string, error) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
-	return Fetch(ctx)
+	return fetchPaced(ctx)
 }
 
 // Reconcile starts what is wanted, restarts a client whose binary or config
@@ -175,7 +226,7 @@ func (m *Manager) ensure(bin string, c Country, cfg []byte) error {
 		_ = cur.proc.Stop()
 	}
 
-	live := &liveState{since: time.Now()}
+	live := &liveState{since: time.Now(), code: c.Code, meter: &m.traffic}
 	proc := sidecar.New(bin, "psiphon "+c.Code, "-config", path, "-dataRootDirectory", dir)
 	proc.SetNoise(noticeNoise...)
 	proc.OnLine(live.observe)
@@ -249,6 +300,36 @@ func (m *Manager) HasRunning() bool {
 		}
 	}
 	return false
+}
+
+// FlushTraffic hands save what each country carried since the last flush; what
+// save could not keep is counted again in the next one.
+func (m *Manager) FlushTraffic(save func(map[string]Traffic) error) error {
+	m.flushMu.Lock()
+	defer m.flushMu.Unlock()
+	taken := m.traffic.take()
+	if len(taken) == 0 {
+		return nil
+	}
+	if err := save(taken); err != nil {
+		for code, moved := range taken {
+			m.traffic.add(code, moved)
+		}
+		return err
+	}
+	return nil
+}
+
+// ResetTraffic runs zero, then forgets what codes (every country when empty)
+// counted since the last flush, so no flush can bring bytes from before it back.
+func (m *Manager) ResetTraffic(codes []string, zero func() error) error {
+	m.flushMu.Lock()
+	defer m.flushMu.Unlock()
+	if err := zero(); err != nil {
+		return err
+	}
+	m.traffic.forget(codes)
+	return nil
 }
 
 // StopAll takes every client down, for a panel that is shutting down.

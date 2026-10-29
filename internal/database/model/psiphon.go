@@ -12,4 +12,8 @@ type PsiphonCountry struct {
 	LastCheck int64  `json:"lastCheck"`
 	LastError string `json:"lastError" gorm:"not null;default:''"`
 	CreatedAt int64  `json:"createdAt" gorm:"autoCreateTime"`
+	// What customers moved through the country since the last reset: down is
+	// what they downloaded. Switching it off keeps them.
+	TrafficDown int64 `json:"trafficDown" gorm:"column:traffic_down;not null;default:0"`
+	TrafficUp   int64 `json:"trafficUp" gorm:"column:traffic_up;not null;default:0"`
 }

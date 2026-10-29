@@ -439,3 +439,47 @@ func TestAnInboundOnARedirectPortFromBeforeKeepsIt(t *testing.T) {
 		t.Errorf("a cisco location on NL, whose port is free: %v", err)
 	}
 }
+
+// redir-psi- tags are the Psiphon redirects': an inbound given one, a reseller's too, held
+// the owner's cisco and OpenVPN pools on that country closed with nothing on screen to say why.
+func TestNoInboundIsGivenAPsiphonRedirectsTag(t *testing.T) {
+	svc := setupSidecarSaveTest(t)
+	vless := `{"clients":[],"decryption":"none"}`
+	added, _, err := svc.AddInbound(&model.Inbound{Tag: "redir-psi-AT", Port: 2001, Protocol: model.VLESS, Enable: true, StreamSettings: "{}", Settings: vless})
+	if err != nil {
+		t.Fatalf("add: %v", err)
+	}
+	seedInboundConflict(t, "mine", "0.0.0.0", 2002, model.VLESS, "{}", vless)
+	renamed := loadInboundByTag(t, "mine")
+	renamed.Tag = "redir-psi-NL"
+	if _, _, err := svc.UpdateInbound(renamed); err != nil {
+		t.Fatalf("rename: %v", err)
+	}
+	for _, id := range []int{added.Id, renamed.Id} {
+		var row model.Inbound
+		if err := database.GetDB().First(&row, id).Error; err != nil {
+			t.Fatal(err)
+		}
+		if strings.HasPrefix(row.Tag, "redir-psi-") {
+			t.Errorf("inbound %d was saved as %s", id, row.Tag)
+		}
+	}
+
+	// A row stored with one before keeps it, and a pool sent to that country is refused by name.
+	seedInboundConflict(t, "redir-psi-AT", "0.0.0.0", 2003, model.VLESS, "{}", vless)
+	legacy := loadInboundByTag(t, "redir-psi-AT")
+	legacy.Remark = "older"
+	if _, _, err := svc.UpdateInbound(legacy); err != nil {
+		t.Fatalf("an edit of the older row: %v", err)
+	}
+	loadInboundByTag(t, "redir-psi-AT")
+	cisco := func(exit string) *model.Inbound {
+		return &model.Inbound{Tag: "cisco-" + exit, Port: 4443, Protocol: model.Cisco, Enable: true, StreamSettings: "{}", Settings: ciscoSettings(exit)}
+	}
+	if _, _, err := svc.AddInbound(cisco("psi-AT")); err == nil || !strings.Contains(err.Error(), "tagged redir-psi-AT, which older already holds") {
+		t.Errorf("a cisco location on AT: %v, want the inbound holding its tag named", err)
+	}
+	if _, _, err := svc.AddInbound(cisco("psi-NL")); err != nil {
+		t.Errorf("a cisco location on NL, whose tag is free: %v", err)
+	}
+}

@@ -2,12 +2,14 @@ package service
 
 import (
 	"encoding/json"
+	"errors"
 	"reflect"
 	"strings"
 	"testing"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
+	"github.com/mhsanaei/3x-ui/v3/internal/psiphon"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/json_util"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/entity"
 	"github.com/mhsanaei/3x-ui/v3/internal/xray"
@@ -393,5 +395,30 @@ func TestAnInboundCannotTakeAPsiphonCountrysPort(t *testing.T) {
 				t.Errorf("got %+v; want a conflict with %s", got, tc.want)
 			}
 		})
+	}
+}
+
+// A restore or a promoted copy brings the countries back on but not the client; wanting none
+// until someone pressed Install left every customer on them cut off with nothing to say why.
+func TestEnabledCountriesAreWantedBeforeTheClientIsThere(t *testing.T) {
+	setupRelayDB(t)
+	seedPsiphonCountries(t,
+		model.PsiphonCountry{Code: "AT", Enabled: true, SocksPort: 11181, HTTPPort: 11381},
+		model.PsiphonCountry{Code: "FR", Enabled: false, SocksPort: 11182, HTTPPort: 11382},
+	)
+	saved := psiphonRunsHere
+	t.Cleanup(func() { psiphonRunsHere = saved })
+	psiphonRunsHere = func() error { return nil }
+	if psiphon.Installed() {
+		t.Fatal("the test's DB folder already holds a client")
+	}
+	got, err := (&PsiphonService{}).Wanted()
+	if want := []psiphon.Country{{Code: "AT", SocksPort: 11181, HTTPPort: 11381}}; err != nil || !reflect.DeepEqual(got, want) {
+		t.Fatalf("wanted %v, %v; want %v, for the job to fetch the client and start it", got, err, want)
+	}
+
+	psiphonRunsHere = func() error { return errors.New("psiphon publishes its client for linux/amd64 only") }
+	if got, err := (&PsiphonService{}).Wanted(); err != nil || len(got) != 0 {
+		t.Fatalf("a panel the client cannot run on wants %v, %v", got, err)
 	}
 }

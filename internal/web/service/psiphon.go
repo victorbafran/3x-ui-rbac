@@ -141,6 +141,9 @@ type PsiphonCountryView struct {
 	ExitLoc   string `json:"exitLoc"`
 	LastError string `json:"lastError"`
 	SocksPort int    `json:"socksPort"`
+	// Saved every 30 s, so up to that much behind what the client counted.
+	TrafficDown int64 `json:"trafficDown"`
+	TrafficUp   int64 `json:"trafficUp"`
 }
 
 type PsiphonWarpView struct {
@@ -246,17 +249,19 @@ func (s *PsiphonService) State() (*PsiphonState, error) {
 		row := byCode[code]
 		live := mgr.Status(code)
 		view := PsiphonCountryView{
-			Code:      code,
-			Name:      psiphonCountryName(code),
-			Flag:      relay.FlagFor(code),
-			Enabled:   row.Enabled,
-			Running:   live.Running,
-			Connected: live.Connected,
-			Region:    live.Region,
-			ExitIP:    row.ExitIP,
-			ExitLoc:   row.ExitLoc,
-			LastError: row.LastError,
-			SocksPort: row.SocksPort,
+			Code:        code,
+			Name:        psiphonCountryName(code),
+			Flag:        relay.FlagFor(code),
+			Enabled:     row.Enabled,
+			Running:     live.Running,
+			Connected:   live.Connected,
+			Region:      live.Region,
+			ExitIP:      row.ExitIP,
+			ExitLoc:     row.ExitLoc,
+			LastError:   row.LastError,
+			SocksPort:   row.SocksPort,
+			TrafficDown: row.TrafficDown,
+			TrafficUp:   row.TrafficUp,
 		}
 		// A client that exited says why; that is the error that matters now.
 		if row.Enabled && !live.Running && live.Detail != "" {
@@ -553,10 +558,13 @@ func tcpPortStored(db *gorm.DB, id, port int) (bool, error) {
 	return stored.NodeID == nil && claimedOn(portClaims(&stored), port)&transportTCP != 0, nil
 }
 
-// Wanted is the clients that should run: the enabled countries, once the client
-// is on this server; nothing where it cannot run.
+// psiphonRunsHere is a variable so a test can want countries on any system.
+var psiphonRunsHere = psiphon.Supported
+
+// Wanted is the clients that should run, the client fetched first where it is missing (a restore,
+// a promoted copy, a newly pinned build); nothing where it cannot run.
 func (s *PsiphonService) Wanted() ([]psiphon.Country, error) {
-	if psiphon.Supported() != nil || !psiphon.Installed() {
+	if psiphonRunsHere() != nil {
 		return nil, nil
 	}
 	var rows []model.PsiphonCountry
@@ -991,4 +999,55 @@ func recordPsiphonCheck(code, ip, loc string, err error, at time.Time) {
 	if dbErr := database.GetDB().Model(&model.PsiphonCountry{}).Where("code = ?", code).Updates(fields).Error; dbErr != nil {
 		logger.Warning("psiphon: could not record ", code, "'s exit:", dbErr)
 	}
+}
+
+// FlushTraffic adds what each country carried since the last flush to its row,
+// a country switched off since then included.
+func (s *PsiphonService) FlushTraffic() error {
+	return psiphon.GetManager().FlushTraffic(addPsiphonTraffic)
+}
+
+func addPsiphonTraffic(moved map[string]psiphon.Traffic) error {
+	return database.GetDB().Transaction(func(tx *gorm.DB) error {
+		for code, by := range moved {
+			err := tx.Model(&model.PsiphonCountry{}).Where("code = ?", code).Updates(map[string]any{
+				"traffic_down": gorm.Expr("traffic_down + ?", by.Down),
+				"traffic_up":   gorm.Expr("traffic_up + ?", by.Up),
+			}).Error
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
+// ResetTraffic sets one country's counts back to zero, or every country's with all; a request
+// naming neither is refused, so a misspelt field never wipes every count.
+func (s *PsiphonService) ResetTraffic(code string, all bool) error {
+	if global.IsStandby() {
+		return global.ErrStandby
+	}
+	named := strings.TrimSpace(code) != ""
+	if named == all {
+		return errors.New("name one Psiphon country to reset, or all of them")
+	}
+	var codes []string
+	if named {
+		var err error
+		if codes, err = normalizePsiphonCodes([]string{code}); err != nil {
+			return err
+		}
+	}
+	return psiphon.GetManager().ResetTraffic(codes, func() error {
+		q := database.GetDB().Model(&model.PsiphonCountry{}).Where("1 = 1")
+		if len(codes) > 0 {
+			q = q.Where("code IN ?", codes)
+		}
+		res := q.Updates(map[string]any{"traffic_down": 0, "traffic_up": 0})
+		if res.Error == nil && len(codes) > 0 && res.RowsAffected == 0 {
+			return fmt.Errorf("there is no Psiphon country %s", codes[0])
+		}
+		return res.Error
+	})
 }

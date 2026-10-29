@@ -54,6 +54,9 @@ type clientConfig struct {
 	EgressRegion                       string `json:"EgressRegion,omitempty"`
 	LocalSocksProxyPort                int    `json:"LocalSocksProxyPort"`
 	LocalHTTPProxyPort                 int    `json:"LocalHttpProxyPort"`
+	// EmitBytesTransferred makes the client print what it carried about once a
+	// second while traffic flows: the only count there is, as Xray's is off.
+	EmitBytesTransferred bool `json:"EmitBytesTransferred"`
 }
 
 const serverListSigningKey = "MIICIDANBgkqhkiG9w0BAQEFAAOCAg0AMIICCAKCAgEAt7Ls+/39r+T6zNW7GiVpJfzq/xvL9SBH5rIFnk0RXYEYavax3WS6HOD35eTAqn8AniOwiH+DOkvgSKF2caqk/y1dfq47Pdymtwzp9ikpB1C5OfAysXzBiwVJlCdajBKvBZDerV1cMvRzCKvKwRmvDmHgphQQ7WfXIGbRbmmk6opMBh3roE42KcotLFtqp0RRwLtcBRNtCdsrVsjiI1Lqz/lH+T61sGjSjQ3CHMuZYSQJZo/KrvzgQXpkaCTdbObxHqb6/+i1qaVOfEsvjoiyzTxJADvSytVtcTjijhPEV6XskJVHE1Zgl+7rATr/pDQkw6DPCNBS1+Y6fy7GstZALQXwEDN/qhQI9kWkHijT8ns+i1vGg00Mk/6J75arLhqcodWsdeG/M/moWgqQAnlZAGVtJI1OgeF5fsPpXu4kctOfuZlGjVZXQNW34aOzm8r8S0eVZitPlbhcPiR4gT/aSMz/wd8lZlzZYsje/Jr8u/YtlwjjreZrGRmG8KMOzukV3lLmMppXFMvl4bxv6YFEmIuTsOhbLTwFgh7KYNjodLj/LsqRVfwz31PgWQFTEPICV7GCvgVlPRxnofqKSjgTWI4mxDhBpVcATvaoBl1L/6WLbFvBsoAUBItWwctO2xalKxF5szhGm8lccoc5MZr8kfE0uxMgsxz4er68iCID+rsCAQM="
@@ -85,6 +88,7 @@ func ConfigJSON(region string, socksPort, httpPort int) ([]byte, error) {
 		EgressRegion:            region,
 		LocalSocksProxyPort:     socksPort,
 		LocalHTTPProxyPort:      httpPort,
+		EmitBytesTransferred:    true,
 	})
 }
 
@@ -162,19 +166,39 @@ func serverRegion(n Notice) string {
 	return data.ServerRegion
 }
 
+// bytesTransferred reads a BytesTransferred notice: what the client carried
+// since its previous one, received being what customers downloaded.
+func bytesTransferred(n Notice) (Traffic, bool) {
+	if n.Type != "BytesTransferred" {
+		return Traffic{}, false
+	}
+	var data struct {
+		Received int64 `json:"received"`
+		Sent     int64 `json:"sent"`
+	}
+	if json.Unmarshal(n.Data, &data) != nil {
+		return Traffic{}, false
+	}
+	return Traffic{Down: data.Received, Up: data.Sent}, true
+}
+
 // chattyNotices repeat on every handshake and say nothing an operator acts
 // on; Tunnels, the region, port and proxy errors and exits stay visible.
 var chattyNotices = []string{
 	"ApplicationParameters", "ServerTimestamp", "ActiveAuthorizationIDs", "TrafficRateLimits",
 	"ClientRegion", "ClientAddress", "NetworkID", "Homepage", "ClientUpgradeAvailable",
 	"ClientIsLatestVersion", "AvailableEgressRegions", "SplitTunnelRegions", "SkipServerEntry",
-	"BytesTransferred", "LightProxyAvailable", "DSLAccessTokenAvailable",
+	"LightProxyAvailable", "DSLAccessTokenAvailable",
 }
 
+// noticeNoise folds the chatty notices and drops BytesTransferred outright: a busy
+// country prints it every second, read for its traffic and never worth a line.
 var noticeNoise = func() []sidecar.NoiseRule {
-	rules := make([]sidecar.NoiseRule, 0, len(chattyNotices))
+	rules := make([]sidecar.NoiseRule, 0, len(chattyNotices)+1)
 	for _, kind := range chattyNotices {
-		rules = append(rules, sidecar.NoiseRule{Kind: kind, Line: regexp.MustCompile(`"noticeType":"` + kind + `"`)})
+		rules = append(rules, sidecar.NoiseRule{Kind: kind, Line: noticeOf(kind)})
 	}
-	return rules
+	return append(rules, sidecar.NoiseRule{Kind: "BytesTransferred", Line: noticeOf("BytesTransferred"), Silent: true})
 }()
+
+func noticeOf(kind string) *regexp.Regexp { return regexp.MustCompile(`"noticeType":"` + kind + `"`) }

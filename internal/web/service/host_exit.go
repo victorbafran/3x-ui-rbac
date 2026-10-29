@@ -181,13 +181,23 @@ func checkSidecarPsiphonExits(db *gorm.DB, ib *model.Inbound) error {
 	return nil
 }
 
-// psiphonRedirectFree refuses exit while an inbound here, ib or a stored one, takes TCP on
-// the port Xray would take ib's pools on: the core could not bind it, and they stay held.
+// psiphonRedirectFree refuses exit while an inbound here, ib or a stored one, takes TCP on the port
+// Xray would take ib's pools on, or another holds the redirect's tag: either way they stay held.
 func psiphonRedirectFree(db *gorm.DB, ib *model.Inbound, exit string) error {
 	code, _ := psiphonCode(exit)
 	var country model.PsiphonCountry
 	if err := db.Where("code = ?", code).First(&country).Error; err != nil {
 		return err
+	}
+	tag := psiphonRedirectTag(exit)
+	var holders []*model.Inbound
+	held := db.Where("tag = ? AND node_id IS NULL AND id != ?", tag, ib.Id)
+	if err := held.Limit(1).Find(&holders).Error; err != nil {
+		return err
+	}
+	if len(holders) > 0 {
+		return fmt.Errorf("%s leaves through Psiphon %s, whose cisco and OpenVPN pools Xray takes on an inbound tagged %s, which %s already holds: give that inbound another tag",
+			inboundName(ib), code, tag, inboundName(holders[0]))
 	}
 	port := psiphonRedirectPort(country.SocksPort)
 	var others []*model.Inbound

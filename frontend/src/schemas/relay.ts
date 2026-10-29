@@ -82,8 +82,8 @@ export const RelaySchema = z.object({
     .array(z.number())
     .nullish()
     .transform((v) => v ?? []),
-  // A BackPack front's customer bytes since it was added (out = what customers
-  // downloaded), and the speed of the last sample in bytes/s; Backhaul counts none.
+  // A front's customer bytes since it was counted (out = what customers downloaded),
+  // and the speed of the last sample in bytes/s; Backhaul's include the tunnel's framing.
   trafficIn: z.number().default(0),
   trafficOut: z.number().default(0),
   rateIn: z.number().default(0),

@@ -86,5 +86,19 @@ export function usePsiphonMutations() {
     onSettled: refresh,
   });
 
-  return { installMut, refreshRegionsMut, saveCountriesMut, saveInboundMut, saveWarpMut };
+  // All is said outright: a body naming no country is refused, not read as every one.
+  const resetTrafficMut = useMutation({
+    mutationFn: (target: { code: string } | { all: true }) =>
+      HttpUtil.post(`${BASE}/traffic/reset`, target, JSON_HEADERS),
+    onSettled: refresh,
+  });
+
+  return {
+    installMut,
+    refreshRegionsMut,
+    saveCountriesMut,
+    saveInboundMut,
+    saveWarpMut,
+    resetTrafficMut,
+  };
 }

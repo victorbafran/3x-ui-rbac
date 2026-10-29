@@ -28,6 +28,9 @@ export const PsiphonCountrySchema = z.object({
   exitLoc: z.string().default(''),
   lastError: z.string().default(''),
   socksPort: z.number().default(0),
+  // Bytes customers moved through the country since the last reset, saved every 30 s.
+  trafficDown: z.number().default(0),
+  trafficUp: z.number().default(0),
 });
 export type PsiphonCountry = z.infer<typeof PsiphonCountrySchema>;
 

@@ -1,6 +1,7 @@
 package job
 
 import (
+	"errors"
 	"sync"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
@@ -8,8 +9,8 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 )
 
-// PsiphonJob keeps one client up per enabled Psiphon country, restarting any
-// that died, and checks where each leaves from; with none enabled it does nothing.
+// PsiphonJob saves the countries' traffic and keeps one client up per enabled country, fetching
+// the client where it is missing and restarting any that died, and checks where each leaves from.
 type PsiphonJob struct {
 	psiphonService service.PsiphonService
 	// busy skips a tick while the last one still runs: a first start fetches
@@ -24,6 +25,11 @@ func (j *PsiphonJob) Run() {
 		return
 	}
 	defer j.busy.Unlock()
+	// First, and with no country enabled too: one just switched off still
+	// has bytes waiting.
+	if err := j.psiphonService.FlushTraffic(); err != nil {
+		logger.Warning("psiphon job: could not save the traffic:", err)
+	}
 	wanted, err := j.psiphonService.Wanted()
 	if err != nil {
 		logger.Warning("psiphon job:", err)
@@ -38,7 +44,8 @@ func (j *PsiphonJob) Run() {
 		}
 		return
 	}
-	if err := mgr.Reconcile(wanted); err != nil {
+	// A download that failed was logged when it did; the ticks until the next try say nothing new.
+	if err := mgr.Reconcile(wanted); err != nil && !errors.Is(err, psiphon.ErrFetchWaiting) {
 		logger.Warning("psiphon job:", err)
 	}
 	j.psiphonService.CheckExits()

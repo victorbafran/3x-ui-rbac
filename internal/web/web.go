@@ -408,7 +408,7 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 	// Watch the fronts on ArvanCloud; no run at start, the first tick is soon enough.
 	_, _ = s.cron.AddJob(cadenceArvan, mainOnlyJob{job.NewArvanJob()})
 
-	// Count the customer traffic through each BackPack front.
+	// Count the customer traffic through each front, BackPack's and Backhaul's.
 	_, _ = s.cron.AddJob(cadenceFrontTraffic, mainOnlyJob{job.NewFrontTrafficJob()})
 
 	// Keep a Psiphon client up per enabled country; at start too, so a restart
@@ -898,6 +898,9 @@ func (s *Server) stop(stopXray bool, stopTgBot bool) error {
 		amneziawgkern.GetManager().StopAll()
 		amneziawgnet.GetOutboundManager().StopAll()
 		psiphon.GetManager().StopAll()
+		if err := (&service.PsiphonService{}).FlushTraffic(); err != nil {
+			logger.Warning("persist final Psiphon traffic on shutdown failed:", err)
+		}
 	}
 	if stopXray {
 		if err := s.xrayService.StopXray(); err != nil && !errors.Is(err, service.ErrXrayNotRunning) {

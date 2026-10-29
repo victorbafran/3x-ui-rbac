@@ -2935,6 +2935,7 @@
         },
         "unsupported": "Psiphon には x86_64 (amd64) の Linux サーバーが必要です",
         "unsupportedHint": "このサーバーのプロセッサ向けの Psiphon は公開されていないため、ここでは動きません。",
+        "missingClient": "有効: {countries}。Psiphon クライアントがまだこのサーバーにないため、そこから出る顧客には何も届きません。パネルが自動でダウンロードし、失敗したら 10 分ごとに再試行します。「Psiphon をインストール」を押すと今すぐダウンロードします。",
         "install": "Psiphon をインストール",
         "installHint": "Psiphon をダウンロードし、現在の国の一覧を読み込みます。最大 3 分かかります。国を有効にするまで何も動かず、有効にした国ごとに約 {mb} MB のメモリを使います。",
         "installing": "インストールして国の一覧を読み込んでいます…",
@@ -2982,6 +2983,13 @@
         "errors": {
           "siteRule": "各行はドメイン、または domain:、full:、keyword:、regexp:、geosite: のあとに値を続けたものにしてください。"
         },
+        "traffic": {
+          "total": "Psiphon 経由: {traffic}",
+          "hint": "前回のリセット以降に顧客が Psiphon 経由で転送した量です：↓ ダウンロード、↑ アップロード。各国の量は国名の下に表示され、30 秒ごとに保存されます。",
+          "reset": "トラフィックをリセット",
+          "resetConfirm": "すべての国のトラフィックをリセットしますか？",
+          "resetHint": "すべての国のカウンターが 0 に戻ります。元に戻せません。"
+        },
         "toasts": {
           "state": "Psiphon の状態を読み込む",
           "install": "Psiphon をインストール",
@@ -2989,7 +2997,8 @@
           "countries": "Psiphon の国を保存",
           "inbounds": "Psiphon 用のインバウンドを読み込む",
           "inbound": "インバウンドの Psiphon の国を保存",
-          "warp": "Psiphon の後ろの WARP を保存"
+          "warp": "Psiphon の後ろの WARP を保存",
+          "traffic": "Psiphon のトラフィックをリセット"
         }
       }
     },

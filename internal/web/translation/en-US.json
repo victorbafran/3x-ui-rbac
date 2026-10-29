@@ -2935,6 +2935,7 @@
         },
         "unsupported": "Psiphon needs an x86_64 (amd64) Linux server",
         "unsupportedHint": "Psiphon publishes no build for this server’s processor, so it cannot run here.",
+        "missingClient": "Switched on: {countries}. The Psiphon client is not on this server yet, so customers leaving through them get nothing. The panel downloads it by itself and, if that fails, tries again every ten minutes; Install Psiphon downloads it now.",
         "install": "Install Psiphon",
         "installHint": "Downloads Psiphon and reads its live list of countries; this takes up to three minutes. Nothing runs until you enable a country, and each country you enable takes about {mb} MB of memory.",
         "installing": "Installing and reading the list of countries…",
@@ -2982,6 +2983,13 @@
         "errors": {
           "siteRule": "Each line must be a domain, or domain:, full:, keyword:, regexp: or geosite: followed by a value."
         },
+        "traffic": {
+          "total": "Through Psiphon: {traffic}",
+          "hint": "What customers moved through Psiphon since the last reset: ↓ what they downloaded, ↑ what they uploaded. Each country shows its own under its name; saved every 30 seconds.",
+          "reset": "Reset traffic",
+          "resetConfirm": "Reset the traffic of every country?",
+          "resetHint": "Every country’s count goes back to zero. This cannot be undone."
+        },
         "toasts": {
           "state": "Read Psiphon state",
           "install": "Install Psiphon",
@@ -2989,7 +2997,8 @@
           "countries": "Save Psiphon countries",
           "inbounds": "Read inbounds for Psiphon",
           "inbound": "Save the inbound’s Psiphon countries",
-          "warp": "Save WARP behind Psiphon"
+          "warp": "Save WARP behind Psiphon",
+          "traffic": "Reset Psiphon traffic"
         }
       }
     },

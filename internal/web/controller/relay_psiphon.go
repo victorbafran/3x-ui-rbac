@@ -19,6 +19,12 @@ type psiphonCodesRequest struct {
 	Codes []string `json:"codes"`
 }
 
+// psiphonTrafficResetRequest names the country to reset, or sets all for every country.
+type psiphonTrafficResetRequest struct {
+	Code string `json:"code"`
+	All  bool   `json:"all"`
+}
+
 type psiphonWarpRequest struct {
 	Mode  string `json:"mode"`
 	Sites string `json:"sites"`
@@ -35,6 +41,7 @@ func (a *RelayController) initPsiphonRouter(g *gin.RouterGroup) {
 	g.GET("/psiphon/inbounds", a.psiphonInbounds)
 	g.POST("/psiphon/inbound/:id", a.psiphonInbound)
 	g.POST("/psiphon/warp", a.psiphonWarp)
+	g.POST("/psiphon/traffic/reset", a.psiphonResetTraffic)
 }
 
 // psiphonWriteLimit lets an action outlive the server's 30-second write limit;
@@ -110,4 +117,12 @@ func (a *RelayController) psiphonWarp(c *gin.Context) {
 	psiphonWriteLimit(c, time.Minute)
 	warp := &integration.WarpService{}
 	jsonMsg(c, I18nWeb(c, "pages.relays.psiphon.toasts.warp"), a.psiphonService.SetWarp(req.Mode, req.Sites, warp.RegWarpMasque))
+}
+
+func (a *RelayController) psiphonResetTraffic(c *gin.Context) {
+	req, ok := middleware.BindJSONAndValidate[psiphonTrafficResetRequest](c)
+	if !ok {
+		return
+	}
+	jsonMsg(c, I18nWeb(c, "pages.relays.psiphon.toasts.traffic"), a.psiphonService.ResetTraffic(req.Code, req.All))
 }

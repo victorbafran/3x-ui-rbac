@@ -472,8 +472,14 @@ func (s *PsiphonService) SetCountries(codes []string) error {
 	if err != nil {
 		return err
 	}
+	// Only a country being switched on must be on offer: one already on that a later list
+	// left out would otherwise refuse every save, whatever it changed.
+	var on []string
+	if err := database.GetDB().Model(&model.PsiphonCountry{}).Where("enabled = ?", true).Pluck("code", &on).Error; err != nil {
+		return err
+	}
 	for _, code := range want {
-		if !slices.Contains(saved.Regions, code) && !slices.Contains(psiphon.FallbackRegions, code) {
+		if !slices.Contains(on, code) && !slices.Contains(saved.Regions, code) && !slices.Contains(psiphon.FallbackRegions, code) {
 			return fmt.Errorf("Psiphon does not offer %s", code)
 		}
 	}

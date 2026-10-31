@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/config"
+	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/psiphon"
 )
 
@@ -37,5 +38,24 @@ func TestTheKnownCountriesStayOfferedWhateverTheProbeSaw(t *testing.T) {
 	}
 	if !slices.IsSorted(st.Regions) {
 		t.Errorf("the countries are not in order: %v", st.Regions)
+	}
+}
+
+// A country already on that a later list left out must not refuse a save that does not
+// touch it; a new one still has to be on offer.
+func TestASaveIsNotRefusedForACountryAlreadyOn(t *testing.T) {
+	setupRelayDB(t)
+	seedPsiphonCountries(t,
+		model.PsiphonCountry{Code: "AT", Enabled: true, SocksPort: 11181, HTTPPort: 11381},
+		model.PsiphonCountry{Code: "BG", Enabled: true, SocksPort: 11182, HTTPPort: 11382},
+	)
+	if err := (&SettingService{}).setString(psiphonRegionsKey, `{"regions":["AT"],"at":1}`); err != nil {
+		t.Fatal(err)
+	}
+	if err := (&PsiphonService{}).SetCountries([]string{"BG"}); err != nil {
+		t.Fatalf("switching AT off was refused because BG, already on, is off the list: %v", err)
+	}
+	if err := (&PsiphonService{}).SetCountries([]string{"BG", "HK"}); err == nil {
+		t.Fatal("HK, on no list, was switched on")
 	}
 }

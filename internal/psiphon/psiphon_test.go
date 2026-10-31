@@ -101,7 +101,8 @@ func TestNoticesAreReadFromTheClientsOwnLines(t *testing.T) {
 	if !ok || n.Type != "AvailableEgressRegions" {
 		t.Fatalf("ParseNotice(regions) = %+v, %v", n, ok)
 	}
-	if got := Regions(n); !slices.Equal(got, FallbackRegions) {
+	listed := []string{"AT", "AU", "BE", "BR", "CA", "CH", "CZ", "DE", "DK", "ES", "FR", "GB", "ID", "IE", "IN", "IT", "JP", "LT", "NL", "NO", "PL", "RO", "RS", "SE", "SG", "US"}
+	if got := Regions(n); !slices.Equal(got, listed) {
 		t.Fatalf("Regions = %v, want the 26 listed", got)
 	}
 	first, _ := ParseNotice(firstStartLine)

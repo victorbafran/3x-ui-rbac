@@ -2963,6 +2963,27 @@
           "save": "Ülkeleri kaydet",
           "memory": "{count} ülke için yaklaşık {mb} MB bellek"
         },
+        "check": {
+          "title": "Test ve tarama",
+          "hint": "Test, zaten çalışan ülkeleri kendi istemcileri üzerinden ölçer: nereden çıktıkları, bir isteğin ne kadar sürdüğü ve 2 MB indirmenin ne hızda gittiği. Tarama, açık olsun olmasın her ülkeyi kendine ait geçici bir istemciyle, üçer üçer dener ve çalışanlara dokunmaz; birkaç dakika sürer ve çalışırken yaklaşık {mb} MB daha fazla bellek kullanır.",
+          "test": "Açık ülkeleri test et",
+          "scan": "Tüm ülkeleri tara",
+          "scanning": "Taranıyor: {total} ülkeden {done} tanesi denendi",
+          "scanned": "Son tarama {time}: {total} ülkeden {works} tanesi çalışıyor",
+          "stopped": "Son tarama, {total} ülkeden {done} tanesinden sonra yeniden başlatma veya yedek modu nedeniyle yarıda kaldı",
+          "country": "Ülke",
+          "result": "Sonuç",
+          "exit": "Çıkış",
+          "latency": "Gecikme",
+          "speed": "Hız",
+          "works": "Çalışıyor",
+          "noTest": "Bağlandı, test başarısız",
+          "noConnect": "Bağlanmadı",
+          "enable": "Aç",
+          "enabled": "Açık",
+          "measured": "⏱ {latency} ms · ↓ {speed}/s",
+          "testedAt": "Test edildi {time}"
+        },
         "inbounds": {
           "title": "Gelen bağlantı başına ülkeler",
           "hint": "Bir gelen bağlantı için seçilen her ülke, o bağlantının aboneliğinde ülkenin bayrağı ve adıyla bir yapılandırma daha olur. Gelen bağlantının kendi yapılandırması korunur.",
@@ -3008,7 +3029,9 @@
           "inbounds": "Psiphon için gelen bağlantıları oku",
           "inbound": "Gelen bağlantının Psiphon ülkelerini kaydet",
           "warp": "Psiphon'un arkasındaki WARP'ı kaydet",
-          "traffic": "Psiphon trafiğini sıfırla"
+          "traffic": "Psiphon trafiğini sıfırla",
+          "test": "Psiphon ülkelerini test et",
+          "scan": "Psiphon ülkelerini tara"
         }
       }
     },

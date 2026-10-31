@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"io"
 	"maps"
+	"net"
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -16,7 +18,13 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/sidecar"
 )
 
-const fakeEnv = "XUI_FAKE_PSIPHON"
+const (
+	fakeEnv = "XUI_FAKE_PSIPHON"
+	// fakeUpEnv lists the countries the "regions" stand-in connects to; fakeLogEnv
+	// is a file each start appends its country, ports and data directory to.
+	fakeUpEnv  = "XUI_FAKE_PSIPHON_UP"
+	fakeLogEnv = "XUI_FAKE_PSIPHON_LOG"
+)
 
 // TestMain lets the test binary stand in for Psiphon's client: with
 // XUI_FAKE_PSIPHON set it reads its config and prints notices like the real one.
@@ -44,6 +52,7 @@ func fakeClient(scenario string, args []string) int {
 	var cfg struct {
 		EgressRegion         string
 		LocalSocksProxyPort  int
+		LocalHTTPProxyPort   int `json:"LocalHttpProxyPort"`
 		EmitBytesTransferred bool
 	}
 	raw, err := os.ReadFile(cfgPath)
@@ -97,6 +106,27 @@ func fakeClient(scenario string, args []string) int {
 		_ = os.WriteFile(list, []byte("servers"), 0o600)
 	case "silent":
 		fmt.Println(notice("AvailableEgressRegions", `{"regions":[]}`))
+	case "regions":
+		logFakeStart(cfg.EgressRegion, cfg.LocalSocksProxyPort, cfg.LocalHTTPProxyPort, dataDir)
+		// The HTTP port is held either way, so a test can tell the process is gone.
+		if err := listenFake(cfg.LocalHTTPProxyPort, nil); err != nil {
+			fmt.Println("fake psiphon:", err)
+			return 1
+		}
+		if !slices.Contains(strings.Split(os.Getenv(fakeUpEnv), ","), cfg.EgressRegion) {
+			fmt.Println(notice("Tunnels", `{"count":0}`))
+			break
+		}
+		if err := listenFake(cfg.LocalSocksProxyPort, func(c net.Conn) { fakeExit(c, cfg.EgressRegion) }); err != nil {
+			fmt.Println("fake psiphon:", err)
+			return 1
+		}
+		fmt.Println(notice("ConnectedServerRegion", fmt.Sprintf(`{"serverRegion":%q}`, cfg.EgressRegion)))
+		if cfg.EmitBytesTransferred {
+			fmt.Println(notice("BytesTransferred", `{"diagnosticID":"NrH6n4lc","received":2524300,"sent":722}`))
+			fmt.Println(notice("BytesTransferred", `{"diagnosticID":"NrH6n4lc","received":1048576,"sent":4096}`))
+		}
+		fmt.Println(notice("Tunnels", `{"count":1}`))
 	}
 	time.Sleep(time.Minute)
 	return 0

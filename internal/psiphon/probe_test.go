@@ -51,7 +51,7 @@ func TestDiscoverRegionsFallsBackWhenNothingIsListed(t *testing.T) {
 
 	got, err := DiscoverRegions(t.Context())
 	if err != nil || !slices.Equal(got, FallbackRegions) {
-		t.Fatalf("DiscoverRegions = %v, %v; want the 26 known countries", got, err)
+		t.Fatalf("DiscoverRegions = %v, %v; want the known countries", got, err)
 	}
 	got[0] = "XX"
 	if FallbackRegions[0] != "AT" {

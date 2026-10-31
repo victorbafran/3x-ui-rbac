@@ -55,7 +55,10 @@ func (s *liveState) observe(line string) {
 		return
 	}
 	if moved, ok := bytesTransferred(n); ok {
-		s.meter.add(s.code, moved)
+		// A scan's client has no meter: what it moves is the test, not customers.
+		if s.meter != nil {
+			s.meter.add(s.code, moved)
+		}
 		return
 	}
 	s.mu.Lock()
@@ -120,6 +123,7 @@ type Manager struct {
 	// the meter's own lock is held only briefly, as the clients' pipes wait on it.
 	flushMu sync.Mutex
 	traffic trafficMeter
+	scan    scanner
 }
 
 var (
@@ -332,8 +336,10 @@ func (m *Manager) ResetTraffic(codes []string, zero func() error) error {
 	return nil
 }
 
-// StopAll takes every client down, for a panel that is shutting down.
+// StopAll takes every client down, a scan's too, for a panel that is shutting
+// down or going on standby.
 func (m *Manager) StopAll() {
+	m.StopScan()
 	m.reconcileMu.Lock()
 	defer m.reconcileMu.Unlock()
 	m.drop(func(string) bool { return true })

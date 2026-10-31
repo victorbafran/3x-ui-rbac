@@ -15,6 +15,25 @@ const codeList = z
   .nullish()
   .transform((v) => v ?? []);
 
+// One country measured, by the card's test through its running client or by a
+// scan through a client of its own: speed is the download in bytes a second.
+export const PsiphonExitTestSchema = z.object({
+  code: z.string(),
+  connected: z.boolean().default(false),
+  exitIp: z.string().default(''),
+  exitLoc: z.string().default(''),
+  latencyMs: z.number().default(0),
+  speed: z.number().default(0),
+  error: z.string().default(''),
+  at: z.number().default(0),
+});
+export type PsiphonExitTest = z.infer<typeof PsiphonExitTestSchema>;
+
+// The trace answered and the download moved bytes.
+export function psiphonExitWorks(test: PsiphonExitTest): boolean {
+  return test.exitIp !== '' && test.error === '';
+}
+
 export const PsiphonCountrySchema = z.object({
   code: z.string(),
   name: z.string().default(''),
@@ -31,8 +50,24 @@ export const PsiphonCountrySchema = z.object({
   // Bytes customers moved through the country since the last reset, saved every 30 s.
   trafficDown: z.number().default(0),
   trafficUp: z.number().default(0),
+  test: PsiphonExitTestSchema.nullish().transform((v) => v ?? null),
 });
 export type PsiphonCountry = z.infer<typeof PsiphonCountrySchema>;
+
+// The running or last scan; results grow in the order countries finish, and
+// stopped marks one a shutdown or standby cut short.
+export const PsiphonScanSchema = z.object({
+  running: z.boolean().default(false),
+  stopped: z.boolean().default(false),
+  startedAt: z.number().default(0),
+  finishedAt: z.number().default(0),
+  total: z.number().default(0),
+  results: z
+    .array(PsiphonExitTestSchema)
+    .nullish()
+    .transform((v) => v ?? []),
+});
+export type PsiphonScan = z.infer<typeof PsiphonScanSchema>;
 
 export const PsiphonWarpSchema = z.object({
   mode: z.enum(PSIPHON_WARP_MODES).catch('off'),
@@ -52,6 +87,7 @@ export const PsiphonStateSchema = z.object({
     .nullish()
     .transform((v) => v ?? []),
   warp: PsiphonWarpSchema.nullish().transform((v) => v ?? PsiphonWarpSchema.parse({})),
+  scan: PsiphonScanSchema.nullish().transform((v) => v ?? PsiphonScanSchema.parse({})),
 });
 export type PsiphonState = z.infer<typeof PsiphonStateSchema>;
 
@@ -94,8 +130,9 @@ export function psiphonPhase(country: PsiphonCountry | undefined): PsiphonPhase 
 }
 
 // A country connects within seconds of starting, so the card looks often while
-// one is on its way and only now and then once all have settled.
+// one is on its way or a scan reports, and only now and then once all have settled.
 export function psiphonRefetchMs(state: PsiphonState | undefined): number {
+  if (state?.scan.running) return 3000;
   return state?.countries.some((c) => psiphonPhase(c) === 'connecting') ? 5000 : 30000;
 }
 

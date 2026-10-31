@@ -2963,6 +2963,27 @@
           "save": "Lưu quốc gia",
           "memory": "Khoảng {mb} MB bộ nhớ cho {count} quốc gia"
         },
+        "check": {
+          "title": "Kiểm tra và quét",
+          "hint": "Kiểm tra đo các quốc gia đang chạy, qua chính máy khách của chúng: lưu lượng đi ra từ đâu, một yêu cầu mất bao lâu và tải 2 MB nhanh đến đâu. Quét thử mọi quốc gia, bật hay chưa, mỗi nước bằng một máy khách tạm riêng, ba nước một lúc, và không đụng đến các nước đang chạy; mất vài phút và tốn thêm khoảng {mb} MB bộ nhớ trong lúc chạy.",
+          "test": "Kiểm tra các quốc gia đang bật",
+          "scan": "Quét tất cả quốc gia",
+          "scanning": "Đang quét: đã thử {done} trên {total} quốc gia",
+          "scanned": "Lần quét gần nhất {time}: {works} trên {total} quốc gia hoạt động",
+          "stopped": "Lần quét gần nhất bị ngắt do khởi động lại hoặc chế độ dự phòng sau {done} trên {total} quốc gia",
+          "country": "Quốc gia",
+          "result": "Kết quả",
+          "exit": "Lối ra",
+          "latency": "Độ trễ",
+          "speed": "Tốc độ",
+          "works": "Hoạt động",
+          "noTest": "Đã kết nối, kiểm tra thất bại",
+          "noConnect": "Không kết nối được",
+          "enable": "Bật",
+          "enabled": "Đã bật",
+          "measured": "⏱ {latency} ms · ↓ {speed}/s",
+          "testedAt": "Đã kiểm tra {time}"
+        },
         "inbounds": {
           "title": "Quốc gia theo inbound",
           "hint": "Mỗi quốc gia được chọn cho một inbound trở thành thêm một cấu hình trong gói đăng ký của inbound đó, mang cờ và tên quốc gia. Cấu hình riêng của inbound vẫn được giữ.",
@@ -3008,7 +3029,9 @@
           "inbounds": "Đọc inbound cho Psiphon",
           "inbound": "Lưu quốc gia Psiphon của inbound",
           "warp": "Lưu WARP phía sau Psiphon",
-          "traffic": "Đặt lại lưu lượng Psiphon"
+          "traffic": "Đặt lại lưu lượng Psiphon",
+          "test": "Kiểm tra quốc gia Psiphon",
+          "scan": "Quét quốc gia Psiphon"
         }
       }
     },

@@ -2963,6 +2963,27 @@
           "save": "Salvar países",
           "memory": "Cerca de {mb} MB de memória para {count} países"
         },
+        "check": {
+          "title": "Testar e varrer",
+          "hint": "Testar mede os países que já estão rodando, pelos próprios clientes: por onde saem, quanto demora uma requisição e a que velocidade vai um download de 2 MB. Varrer tenta todos os países, ligados ou não, cada um com um cliente temporário próprio, três por vez, sem mexer nos que estão rodando; leva alguns minutos e usa cerca de {mb} MB a mais de memória enquanto roda.",
+          "test": "Testar países ligados",
+          "scan": "Varrer todos os países",
+          "scanning": "Varrendo: {done} de {total} países tentados",
+          "scanned": "Última varredura {time}: {works} de {total} países funcionam",
+          "stopped": "A última varredura foi interrompida por um reinício ou pelo modo reserva após {done} de {total} países",
+          "country": "País",
+          "result": "Resultado",
+          "exit": "Saída",
+          "latency": "Latência",
+          "speed": "Velocidade",
+          "works": "Funciona",
+          "noTest": "Conectado, teste falhou",
+          "noConnect": "Não conectou",
+          "enable": "Ligar",
+          "enabled": "Ligado",
+          "measured": "⏱ {latency} ms · ↓ {speed}/s",
+          "testedAt": "Testado {time}"
+        },
         "inbounds": {
           "title": "Países por inbound",
           "hint": "Cada país escolhido para um inbound vira mais uma configuração na assinatura desse inbound, com a bandeira e o nome do país. A configuração própria do inbound é mantida.",
@@ -3008,7 +3029,9 @@
           "inbounds": "Ler os inbounds para o Psiphon",
           "inbound": "Salvar os países do Psiphon do inbound",
           "warp": "Salvar WARP atrás do Psiphon",
-          "traffic": "Redefinir o tráfego do Psiphon"
+          "traffic": "Redefinir o tráfego do Psiphon",
+          "test": "Testar países do Psiphon",
+          "scan": "Varrer países do Psiphon"
         }
       }
     },

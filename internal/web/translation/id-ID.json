@@ -2963,6 +2963,27 @@
           "save": "Simpan negara",
           "memory": "Sekitar {mb} MB memori untuk {count} negara"
         },
+        "check": {
+          "title": "Uji dan pindai",
+          "hint": "Uji mengukur negara yang sudah berjalan, melalui klien masing-masing: dari mana keluarnya, berapa lama satu permintaan, dan seberapa cepat unduhan 2 MB. Pindai mencoba setiap negara, aktif atau tidak, masing-masing dengan klien sementara sendiri, tiga sekaligus, tanpa menyentuh yang sedang berjalan; butuh beberapa menit dan sekitar {mb} MB memori tambahan selama berjalan.",
+          "test": "Uji negara yang aktif",
+          "scan": "Pindai semua negara",
+          "scanning": "Memindai: {done} dari {total} negara dicoba",
+          "scanned": "Pindaian terakhir {time}: {works} dari {total} negara berfungsi",
+          "stopped": "Pindaian terakhir terhenti karena mulai ulang atau mode siaga setelah {done} dari {total} negara",
+          "country": "Negara",
+          "result": "Hasil",
+          "exit": "Keluar",
+          "latency": "Latensi",
+          "speed": "Kecepatan",
+          "works": "Berfungsi",
+          "noTest": "Terhubung, uji gagal",
+          "noConnect": "Tidak terhubung",
+          "enable": "Aktifkan",
+          "enabled": "Aktif",
+          "measured": "⏱ {latency} md · ↓ {speed}/s",
+          "testedAt": "Diuji {time}"
+        },
         "inbounds": {
           "title": "Negara per inbound",
           "hint": "Setiap negara yang dipilih untuk sebuah inbound menjadi satu config tambahan di langganan inbound itu, dinamai dengan bendera dan nama negaranya. Config milik inbound itu sendiri tetap ada.",
@@ -3008,7 +3029,9 @@
           "inbounds": "Baca inbound untuk Psiphon",
           "inbound": "Simpan negara Psiphon untuk inbound",
           "warp": "Simpan WARP di belakang Psiphon",
-          "traffic": "Reset lalu lintas Psiphon"
+          "traffic": "Reset lalu lintas Psiphon",
+          "test": "Uji negara Psiphon",
+          "scan": "Pindai negara Psiphon"
         }
       }
     },

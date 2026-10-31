@@ -192,11 +192,17 @@ _openapi:
         last check saw, lastError, its local socksPort, and trafficDown and
         trafficUp: the bytes customers downloaded and uploaded through it since
         the last reset, saved every 30 seconds and kept while the country is
-        off), and the WARP setting (mode "off", "sites" or "all", the site rules
-        one per line, and whether a WARP account is registered). Customers who
-        enter through an entry server reach the same countries, because their
-        traffic lands on this panel’s inbounds.'
-      url: '#psiphon-on-this-panels-own-server-whether-it-can-run-here-supported-is-false-on-anything-but-x86_64-linux-whether-the-binary-is-installed-the-countries-psiphon-offers-regions-iso-codes-read-at-regionsat-every-country-with-its-state-code-name-flag-enabled-running-connected-the-region-it-connected-through-the-exitip-and-exitloc-its-last-check-saw-lasterror-its-local-socksport-and-trafficdown-and-trafficup-the-bytes-customers-downloaded-and-uploaded-through-it-since-the-last-reset-saved-every-30-seconds-and-kept-while-the-country-is-off-and-the-warp-setting-mode-off-sites-or-all-the-site-rules-one-per-line-and-whether-a-warp-account-is-registered-customers-who-enter-through-an-entry-server-reach-the-same-countries-because-their-traffic-lands-on-this-panels-inbounds'
+        off, and test: its last test from the card, absent until one ran), the
+        WARP setting (mode "off", "sites" or "all", the site rules one per line,
+        and whether a WARP account is registered), and scan: the running or last
+        scan of every country (running, stopped when a shutdown or standby cut
+        it short, startedAt, finishedAt, total, and results in the order the
+        countries finished). A test or scan result has code, connected, exitIp,
+        exitLoc, latencyMs (the trace request’s round trip), speed (the download
+        in bytes per second), error and at. Customers who enter through an entry
+        server reach the same countries, because their traffic lands on this
+        panel’s inbounds.'
+      url: '#psiphon-on-this-panels-own-server-whether-it-can-run-here-supported-is-false-on-anything-but-x86_64-linux-whether-the-binary-is-installed-the-countries-psiphon-offers-regions-iso-codes-read-at-regionsat-every-country-with-its-state-code-name-flag-enabled-running-connected-the-region-it-connected-through-the-exitip-and-exitloc-its-last-check-saw-lasterror-its-local-socksport-and-trafficdown-and-trafficup-the-bytes-customers-downloaded-and-uploaded-through-it-since-the-last-reset-saved-every-30-seconds-and-kept-while-the-country-is-off-and-test-its-last-test-from-the-card-absent-until-one-ran-the-warp-setting-mode-off-sites-or-all-the-site-rules-one-per-line-and-whether-a-warp-account-is-registered-and-scan-the-running-or-last-scan-of-every-country-running-stopped-when-a-shutdown-or-standby-cut-it-short-startedat-finishedat-total-and-results-in-the-order-the-countries-finished-a-test-or-scan-result-has-code-connected-exitip-exitloc-latencyms-the-trace-requests-round-trip-speed-the-download-in-bytes-per-second-error-and-at-customers-who-enter-through-an-entry-server-reach-the-same-countries-because-their-traffic-lands-on-this-panels-inbounds'
     - depth: 2
       title: Download the pinned Psiphon build (checked against its SHA-256) and read
         the live list of countries by starting it once. Returns when done,
@@ -205,8 +211,8 @@ _openapi:
       url: '#download-the-pinned-psiphon-build-checked-against-its-sha-256-and-read-the-live-list-of-countries-by-starting-it-once-returns-when-done-within-about-three-minutes-nothing-keeps-running-until-a-country-is-enabled-each-enabled-country-runs-its-own-process-of-about-36-mb'
     - depth: 2
       title: Read the list of countries Psiphon offers again. When it cannot be read,
-        the fixed list of 26 countries is kept.
-      url: '#read-the-list-of-countries-psiphon-offers-again-when-it-cannot-be-read-the-fixed-list-of-26-countries-is-kept'
+        the fixed list of 27 countries is kept.
+      url: '#read-the-list-of-countries-psiphon-offers-again-when-it-cannot-be-read-the-fixed-list-of-27-countries-is-kept'
     - depth: 2
       title: 'Set which countries run: each code must be one Psiphon offers. A country
         still given to an inbound cannot be switched off; the refusal names
@@ -241,6 +247,26 @@ _openapi:
         not yet saved are dropped with them. A code with no country, and a body
         naming neither a code nor all, are refused.'
       url: '#set-the-traffic-counters-trafficdown-trafficup-of-one-psiphon-country-back-to-zero-or-of-every-country-with-all-true-bytes-counted-but-not-yet-saved-are-dropped-with-them-a-code-with-no-country-and-a-body-naming-neither-a-code-nor-all-are-refused'
+    - depth: 2
+      title: 'Test every enabled country now through the client already running for
+        it, four at a time: Cloudflare’s trace for the exit address and country
+        and the request’s round trip, then a 2 MB download for the speed. A
+        country with no running client is left out. Returns the results within
+        about 30 seconds; the exit each found is saved like the regular check,
+        and the card keeps each result in memory until the panel restarts.
+        Refused on a standby copy.'
+      url: '#test-every-enabled-country-now-through-the-client-already-running-for-it-four-at-a-time-cloudflares-trace-for-the-exit-address-and-country-and-the-requests-round-trip-then-a-2-mb-download-for-the-speed-a-country-with-no-running-client-is-left-out-returns-the-results-within-about-30-seconds-the-exit-each-found-is-saved-like-the-regular-check-and-the-card-keeps-each-result-in-memory-until-the-panel-restarts-refused-on-a-standby-copy'
+    - depth: 2
+      title: Try every country Psiphon offers (the fixed 27 and any the country list
+        read), enabled or not, in the background. Each gets a temporary client
+        of its own in a fresh directory on loopback ports from 11781 up, three
+        at a time, 90 seconds to connect, then the same trace and download as
+        the test; it is then stopped and its directory removed. Running
+        countries and their customers are not touched. Returns at once; follow
+        it in scan in the state. A second scan while one runs is refused, and so
+        is a scan on a standby copy. Results are kept in memory until the next
+        scan.
+      url: '#try-every-country-psiphon-offers-the-fixed-27-and-any-the-country-list-read-enabled-or-not-in-the-background-each-gets-a-temporary-client-of-its-own-in-a-fresh-directory-on-loopback-ports-from-11781-up-three-at-a-time-90-seconds-to-connect-then-the-same-trace-and-download-as-the-test-it-is-then-stopped-and-its-directory-removed-running-countries-and-their-customers-are-not-touched-returns-at-once-follow-it-in-scan-in-the-state-a-second-scan-while-one-runs-is-refused-and-so-is-a-scan-on-a-standby-copy-results-are-kept-in-memory-until-the-next-scan'
   structuredData:
     headings:
       - content: 'Every server with the live state of its tunnel. An exit carries which
@@ -403,11 +429,17 @@ _openapi:
           exitLoc its last check saw, lastError, its local socksPort, and
           trafficDown and trafficUp: the bytes customers downloaded and uploaded
           through it since the last reset, saved every 30 seconds and kept while
-          the country is off), and the WARP setting (mode "off", "sites" or
-          "all", the site rules one per line, and whether a WARP account is
-          registered). Customers who enter through an entry server reach the
-          same countries, because their traffic lands on this panel’s inbounds.'
-        id: psiphon-on-this-panels-own-server-whether-it-can-run-here-supported-is-false-on-anything-but-x86_64-linux-whether-the-binary-is-installed-the-countries-psiphon-offers-regions-iso-codes-read-at-regionsat-every-country-with-its-state-code-name-flag-enabled-running-connected-the-region-it-connected-through-the-exitip-and-exitloc-its-last-check-saw-lasterror-its-local-socksport-and-trafficdown-and-trafficup-the-bytes-customers-downloaded-and-uploaded-through-it-since-the-last-reset-saved-every-30-seconds-and-kept-while-the-country-is-off-and-the-warp-setting-mode-off-sites-or-all-the-site-rules-one-per-line-and-whether-a-warp-account-is-registered-customers-who-enter-through-an-entry-server-reach-the-same-countries-because-their-traffic-lands-on-this-panels-inbounds
+          the country is off, and test: its last test from the card, absent
+          until one ran), the WARP setting (mode "off", "sites" or "all", the
+          site rules one per line, and whether a WARP account is registered),
+          and scan: the running or last scan of every country (running, stopped
+          when a shutdown or standby cut it short, startedAt, finishedAt, total,
+          and results in the order the countries finished). A test or scan
+          result has code, connected, exitIp, exitLoc, latencyMs (the trace
+          request’s round trip), speed (the download in bytes per second), error
+          and at. Customers who enter through an entry server reach the same
+          countries, because their traffic lands on this panel’s inbounds.'
+        id: psiphon-on-this-panels-own-server-whether-it-can-run-here-supported-is-false-on-anything-but-x86_64-linux-whether-the-binary-is-installed-the-countries-psiphon-offers-regions-iso-codes-read-at-regionsat-every-country-with-its-state-code-name-flag-enabled-running-connected-the-region-it-connected-through-the-exitip-and-exitloc-its-last-check-saw-lasterror-its-local-socksport-and-trafficdown-and-trafficup-the-bytes-customers-downloaded-and-uploaded-through-it-since-the-last-reset-saved-every-30-seconds-and-kept-while-the-country-is-off-and-test-its-last-test-from-the-card-absent-until-one-ran-the-warp-setting-mode-off-sites-or-all-the-site-rules-one-per-line-and-whether-a-warp-account-is-registered-and-scan-the-running-or-last-scan-of-every-country-running-stopped-when-a-shutdown-or-standby-cut-it-short-startedat-finishedat-total-and-results-in-the-order-the-countries-finished-a-test-or-scan-result-has-code-connected-exitip-exitloc-latencyms-the-trace-requests-round-trip-speed-the-download-in-bytes-per-second-error-and-at-customers-who-enter-through-an-entry-server-reach-the-same-countries-because-their-traffic-lands-on-this-panels-inbounds
       - content: Download the pinned Psiphon build (checked against its SHA-256) and
           read the live list of countries by starting it once. Returns when
           done, within about three minutes. Nothing keeps running until a
@@ -415,8 +447,8 @@ _openapi:
           36 MB.
         id: download-the-pinned-psiphon-build-checked-against-its-sha-256-and-read-the-live-list-of-countries-by-starting-it-once-returns-when-done-within-about-three-minutes-nothing-keeps-running-until-a-country-is-enabled-each-enabled-country-runs-its-own-process-of-about-36-mb
       - content: Read the list of countries Psiphon offers again. When it cannot be
-          read, the fixed list of 26 countries is kept.
-        id: read-the-list-of-countries-psiphon-offers-again-when-it-cannot-be-read-the-fixed-list-of-26-countries-is-kept
+          read, the fixed list of 27 countries is kept.
+        id: read-the-list-of-countries-psiphon-offers-again-when-it-cannot-be-read-the-fixed-list-of-27-countries-is-kept
       - content: 'Set which countries run: each code must be one Psiphon offers. A
           country still given to an inbound cannot be switched off; the refusal
           names those inbounds. Xray restarts so the exits follow.'
@@ -447,6 +479,24 @@ _openapi:
           counted but not yet saved are dropped with them. A code with no
           country, and a body naming neither a code nor all, are refused.'
         id: set-the-traffic-counters-trafficdown-trafficup-of-one-psiphon-country-back-to-zero-or-of-every-country-with-all-true-bytes-counted-but-not-yet-saved-are-dropped-with-them-a-code-with-no-country-and-a-body-naming-neither-a-code-nor-all-are-refused
+      - content: 'Test every enabled country now through the client already running for
+          it, four at a time: Cloudflare’s trace for the exit address and
+          country and the request’s round trip, then a 2 MB download for the
+          speed. A country with no running client is left out. Returns the
+          results within about 30 seconds; the exit each found is saved like the
+          regular check, and the card keeps each result in memory until the
+          panel restarts. Refused on a standby copy.'
+        id: test-every-enabled-country-now-through-the-client-already-running-for-it-four-at-a-time-cloudflares-trace-for-the-exit-address-and-country-and-the-requests-round-trip-then-a-2-mb-download-for-the-speed-a-country-with-no-running-client-is-left-out-returns-the-results-within-about-30-seconds-the-exit-each-found-is-saved-like-the-regular-check-and-the-card-keeps-each-result-in-memory-until-the-panel-restarts-refused-on-a-standby-copy
+      - content: Try every country Psiphon offers (the fixed 27 and any the country list
+          read), enabled or not, in the background. Each gets a temporary client
+          of its own in a fresh directory on loopback ports from 11781 up, three
+          at a time, 90 seconds to connect, then the same trace and download as
+          the test; it is then stopped and its directory removed. Running
+          countries and their customers are not touched. Returns at once; follow
+          it in scan in the state. A second scan while one runs is refused, and
+          so is a scan on a standby copy. Results are kept in memory until the
+          next scan.
+        id: try-every-country-psiphon-offers-the-fixed-27-and-any-the-country-list-read-enabled-or-not-in-the-background-each-gets-a-temporary-client-of-its-own-in-a-fresh-directory-on-loopback-ports-from-11781-up-three-at-a-time-90-seconds-to-connect-then-the-same-trace-and-download-as-the-test-it-is-then-stopped-and-its-directory-removed-running-countries-and-their-customers-are-not-touched-returns-at-once-follow-it-in-scan-in-the-state-a-second-scan-while-one-runs-is-refused-and-so-is-a-scan-on-a-standby-copy-results-are-kept-in-memory-until-the-next-scan
     contents: []
 ---
 
@@ -457,7 +507,7 @@ export default function Layout(props) {
   return (
     <>
       {props.children}
-      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/relays/list","method":"get"},{"path":"/panel/api/relays/options","method":"get"},{"path":"/panel/api/relays/fronts","method":"get"},{"path":"/panel/api/relays/add","method":"post"},{"path":"/panel/api/relays/update/{id}","method":"post"},{"path":"/panel/api/relays/del/{id}","method":"post"},{"path":"/panel/api/relays/setEnable/{id}","method":"post"},{"path":"/panel/api/relays/probe/{id}","method":"post"},{"path":"/panel/api/relays/arvan/key","method":"get"},{"path":"/panel/api/relays/arvan/key","method":"post"},{"path":"/panel/api/relays/arvan/key/clear","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}","method":"get"},{"path":"/panel/api/relays/arvan/front/{id}/detect","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/save","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/prepare","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/refill","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/test","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/swap","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/release","method":"post"},{"path":"/panel/api/relays/psiphon/state","method":"get"},{"path":"/panel/api/relays/psiphon/install","method":"post"},{"path":"/panel/api/relays/psiphon/regions/refresh","method":"post"},{"path":"/panel/api/relays/psiphon/countries","method":"post"},{"path":"/panel/api/relays/psiphon/inbounds","method":"get"},{"path":"/panel/api/relays/psiphon/inbound/{id}","method":"post"},{"path":"/panel/api/relays/psiphon/warp","method":"post"},{"path":"/panel/api/relays/psiphon/traffic/reset","method":"post"}]} showTitle />
+      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/relays/list","method":"get"},{"path":"/panel/api/relays/options","method":"get"},{"path":"/panel/api/relays/fronts","method":"get"},{"path":"/panel/api/relays/add","method":"post"},{"path":"/panel/api/relays/update/{id}","method":"post"},{"path":"/panel/api/relays/del/{id}","method":"post"},{"path":"/panel/api/relays/setEnable/{id}","method":"post"},{"path":"/panel/api/relays/probe/{id}","method":"post"},{"path":"/panel/api/relays/arvan/key","method":"get"},{"path":"/panel/api/relays/arvan/key","method":"post"},{"path":"/panel/api/relays/arvan/key/clear","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}","method":"get"},{"path":"/panel/api/relays/arvan/front/{id}/detect","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/save","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/prepare","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/refill","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/test","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/swap","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/release","method":"post"},{"path":"/panel/api/relays/psiphon/state","method":"get"},{"path":"/panel/api/relays/psiphon/install","method":"post"},{"path":"/panel/api/relays/psiphon/regions/refresh","method":"post"},{"path":"/panel/api/relays/psiphon/countries","method":"post"},{"path":"/panel/api/relays/psiphon/inbounds","method":"get"},{"path":"/panel/api/relays/psiphon/inbound/{id}","method":"post"},{"path":"/panel/api/relays/psiphon/warp","method":"post"},{"path":"/panel/api/relays/psiphon/traffic/reset","method":"post"},{"path":"/panel/api/relays/psiphon/test","method":"post"},{"path":"/panel/api/relays/psiphon/scan","method":"post"}]} showTitle />
     </>
   );
 }

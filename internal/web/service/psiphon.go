@@ -5,10 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"net"
-	"net/http"
-	"net/url"
+	"maps"
 	"regexp"
 	"slices"
 	"strconv"
@@ -70,10 +67,10 @@ const (
 	psiphonRetryEvery   = time.Minute
 	psiphonWarmup       = 90 * time.Second
 	psiphonTraceTimeout = 20 * time.Second
+	// PsiphonTestLimit bounds the card's test of the enabled countries, the
+	// downloads of the slowest included.
+	PsiphonTestLimit = 30 * time.Second
 )
-
-// psiphonTraceURL is a variable so a test can answer it.
-var psiphonTraceURL = "https://www.cloudflare.com/cdn-cgi/trace"
 
 var defaultPsiphonWarpSites = []string{
 	"domain:gemini.google.com",
@@ -112,7 +109,15 @@ func init() {
 var (
 	psiphonInstalling sync.Mutex
 	psiphonChecking   sync.Mutex
+	psiphonTesting    sync.Mutex
 )
+
+// psiphonTests is each country's last test from the card, kept in memory: it
+// is a moment's reading, and the exit it found is saved like the job's check.
+var psiphonTests = struct {
+	sync.Mutex
+	byCode map[string]PsiphonExitTest
+}{byCode: map[string]PsiphonExitTest{}}
 
 type PsiphonService struct {
 	settings SettingService
@@ -127,6 +132,7 @@ type PsiphonState struct {
 	RegionsAt int64                `json:"regionsAt"`
 	Countries []PsiphonCountryView `json:"countries"`
 	Warp      PsiphonWarpView      `json:"warp"`
+	Scan      PsiphonScanView      `json:"scan"`
 }
 
 type PsiphonCountryView struct {
@@ -144,6 +150,32 @@ type PsiphonCountryView struct {
 	// Saved every 30 s, so up to that much behind what the client counted.
 	TrafficDown int64 `json:"trafficDown"`
 	TrafficUp   int64 `json:"trafficUp"`
+	// Test is the card's last test of the country, nil until one ran.
+	Test *PsiphonExitTest `json:"test,omitempty"`
+}
+
+// PsiphonExitTest is one country measured: whether its tunnel was up, where it
+// came out, the trace's round trip and the download's speed in bytes a second.
+type PsiphonExitTest struct {
+	Code      string `json:"code"`
+	Connected bool   `json:"connected"`
+	ExitIP    string `json:"exitIp"`
+	ExitLoc   string `json:"exitLoc"`
+	LatencyMs int64  `json:"latencyMs"`
+	Speed     int64  `json:"speed"`
+	Error     string `json:"error"`
+	At        int64  `json:"at"`
+}
+
+// PsiphonScanView is the running or last scan of every offered country, each
+// tried with a throwaway client; results grow as countries finish.
+type PsiphonScanView struct {
+	Running    bool              `json:"running"`
+	Stopped    bool              `json:"stopped"`
+	StartedAt  int64             `json:"startedAt"`
+	FinishedAt int64             `json:"finishedAt"`
+	Total      int               `json:"total"`
+	Results    []PsiphonExitTest `json:"results"`
 }
 
 type PsiphonWarpView struct {
@@ -227,16 +259,8 @@ func (s *PsiphonService) State() (*PsiphonState, error) {
 		return nil, err
 	}
 	st.Regions, st.RegionsAt = append(st.Regions, saved.Regions...), saved.At
-	// A client lists only the countries of the servers it was handed, and that set
-	// changes run to run: measured, Poland, Singapore and Canada were missing from a
-	// probe's list and each still connected when picked. So the known ones stay offered.
 	if st.Installed {
-		for _, code := range psiphon.FallbackRegions {
-			if !slices.Contains(st.Regions, code) {
-				st.Regions = append(st.Regions, code)
-			}
-		}
-		slices.Sort(st.Regions)
+		st.Regions = psiphonOffered(saved.Regions)
 	}
 
 	var rows []model.PsiphonCountry
@@ -244,15 +268,14 @@ func (s *PsiphonService) State() (*PsiphonState, error) {
 		return nil, err
 	}
 	byCode := make(map[string]model.PsiphonCountry, len(rows))
-	codes := slices.Clone(st.Regions)
 	for _, r := range rows {
 		byCode[r.Code] = r
-		if !slices.Contains(codes, r.Code) {
-			codes = append(codes, r.Code)
-		}
 	}
-	slices.Sort(codes)
+	codes := psiphonListedCodes(st.Regions, rows)
 	mgr := psiphon.GetManager()
+	psiphonTests.Lock()
+	tests := maps.Clone(psiphonTests.byCode)
+	psiphonTests.Unlock()
 	for _, code := range codes {
 		row := byCode[code]
 		live := mgr.Status(code)
@@ -275,8 +298,12 @@ func (s *PsiphonService) State() (*PsiphonState, error) {
 		if row.Enabled && !live.Running && live.Detail != "" {
 			view.LastError = live.Detail
 		}
+		if test, ok := tests[code]; ok {
+			view.Test = &test
+		}
 		st.Countries = append(st.Countries, view)
 	}
+	st.Scan = psiphonScanView(mgr.ScanState())
 
 	warp, err := s.warpSetting()
 	if err != nil {
@@ -290,6 +317,19 @@ func (s *PsiphonService) State() (*PsiphonState, error) {
 		st.Warp.Sites = strings.Join(defaultPsiphonWarpSites, "\n")
 	}
 	return st, nil
+}
+
+// psiphonListedCodes is every country the card lists: those offered, and those
+// with a row that a refresh no longer offers.
+func psiphonListedCodes(offered []string, rows []model.PsiphonCountry) []string {
+	codes := slices.Clone(offered)
+	for _, r := range rows {
+		if !slices.Contains(codes, r.Code) {
+			codes = append(codes, r.Code)
+		}
+	}
+	slices.Sort(codes)
+	return codes
 }
 
 // Install fetches the pinned client and reads the countries it serves.
@@ -327,6 +367,19 @@ func (s *PsiphonService) RefreshRegions(ctx context.Context) error {
 	}
 	defer psiphonInstalling.Unlock()
 	return s.discoverRegions(ctx)
+}
+
+// psiphonOffered is the probe's countries and the known ones. A client lists only the countries
+// of the servers it was handed: Poland, Singapore and Canada, missing from one, still connected.
+func psiphonOffered(probed []string) []string {
+	out := slices.Clone(probed)
+	for _, code := range psiphon.FallbackRegions {
+		if !slices.Contains(out, code) {
+			out = append(out, code)
+		}
+	}
+	slices.Sort(out)
+	return out
 }
 
 func (s *PsiphonService) discoverRegions(ctx context.Context) error {
@@ -492,12 +545,12 @@ func psiphonCountryUsers(tx *gorm.DB, code string) ([]string, error) {
 	return names, nil
 }
 
-// freePsiphonPorts finds n pairs no other country holds and no local inbound
-// claims, so a client never fails to bind behind a country that looks enabled.
-func freePsiphonPorts(tx *gorm.DB, rows []model.PsiphonCountry, n int) ([][2]int, error) {
+// psiphonTakenPorts is every port a country holds, its redirect port too, and
+// every port a local inbound claims.
+func psiphonTakenPorts(tx *gorm.DB, rows []model.PsiphonCountry) (map[int]bool, error) {
 	taken := map[int]bool{}
 	for _, r := range rows {
-		taken[r.SocksPort], taken[r.HTTPPort] = true, true
+		taken[r.SocksPort], taken[r.HTTPPort], taken[psiphonRedirectPort(r.SocksPort)] = true, true, true
 	}
 	var inbounds []*model.Inbound
 	if err := tx.Where("node_id IS NULL").Find(&inbounds).Error; err != nil {
@@ -507,6 +560,16 @@ func freePsiphonPorts(tx *gorm.DB, rows []model.PsiphonCountry, n int) ([][2]int
 		for _, c := range portClaims(ib) {
 			taken[c.port] = true
 		}
+	}
+	return taken, nil
+}
+
+// freePsiphonPorts finds n pairs no other country holds and no local inbound
+// claims, so a client never fails to bind behind a country that looks enabled.
+func freePsiphonPorts(tx *gorm.DB, rows []model.PsiphonCountry, n int) ([][2]int, error) {
+	taken, err := psiphonTakenPorts(tx, rows)
+	if err != nil {
+		return nil, err
 	}
 	var out [][2]int
 	for socks := psiphonSocksBase; socks < psiphonHTTPBase && len(out) < n; socks++ {
@@ -538,6 +601,9 @@ func psiphonPortConflict(db *gorm.DB, port int, loopback bool, ignoreId int) (*p
 	}
 	if !loopback {
 		return nil, nil
+	}
+	if psiphon.GetManager().ScanHolds(port) {
+		return &portConflictDetail{Tag: "psiphon-scan", Listen: "127.0.0.1", Port: port, Transports: transportTCP}, nil
 	}
 	err = db.Where("socks_port = ? OR http_port = ?", port, port).First(&row).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -936,7 +1002,7 @@ func (s *PsiphonService) CheckExits() {
 		wg.Go(func() {
 			ctx, cancel := context.WithTimeout(context.Background(), psiphonTraceTimeout)
 			defer cancel()
-			ip, loc, err := psiphonTrace(ctx, r.SocksPort)
+			ip, loc, _, err := psiphon.Trace(ctx, r.SocksPort)
 			if err != nil && young {
 				return
 			}
@@ -961,42 +1027,6 @@ func psiphonCheckDue(r model.PsiphonCountry, live psiphon.Status, now time.Time)
 	return now.Sub(last) >= psiphonCheckEvery
 }
 
-// psiphonTrace reads Cloudflare's trace through a country's SOCKS port: the
-// address and country the far end sees.
-func psiphonTrace(ctx context.Context, socksPort int) (ip, loc string, err error) {
-	proxy := &url.URL{Scheme: "socks5", Host: net.JoinHostPort("127.0.0.1", strconv.Itoa(socksPort))}
-	client := &http.Client{Transport: &http.Transport{Proxy: http.ProxyURL(proxy), DisableKeepAlives: true}}
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, psiphonTraceURL, nil)
-	if err != nil {
-		return "", "", err
-	}
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", "", err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return "", "", fmt.Errorf("the trace through Psiphon answered %s", resp.Status)
-	}
-	body, err := io.ReadAll(io.LimitReader(resp.Body, 8<<10))
-	if err != nil {
-		return "", "", err
-	}
-	for line := range strings.SplitSeq(string(body), "\n") {
-		key, value, _ := strings.Cut(strings.TrimSpace(line), "=")
-		switch key {
-		case "ip":
-			ip = value
-		case "loc":
-			loc = value
-		}
-	}
-	if ip == "" {
-		return "", "", errors.New("the trace through Psiphon named no address")
-	}
-	return ip, loc, nil
-}
-
 func recordPsiphonCheck(code, ip, loc string, err error, at time.Time) {
 	fields := map[string]any{"last_check": at.Unix(), "last_error": ""}
 	if err != nil {
@@ -1007,6 +1037,108 @@ func recordPsiphonCheck(code, ip, loc string, err error, at time.Time) {
 	if dbErr := database.GetDB().Model(&model.PsiphonCountry{}).Where("code = ?", code).Updates(fields).Error; dbErr != nil {
 		logger.Warning("psiphon: could not record ", code, "'s exit:", dbErr)
 	}
+}
+
+// TestEnabled measures every enabled country now, through the client already running
+// for it; the exit each found is saved as the job's check saves it.
+func (s *PsiphonService) TestEnabled(ctx context.Context) ([]PsiphonExitTest, error) {
+	if global.IsStandby() {
+		return nil, global.ErrStandby
+	}
+	if !psiphonTesting.TryLock() {
+		return nil, errors.New("the Psiphon countries are already being tested")
+	}
+	defer psiphonTesting.Unlock()
+	wanted, err := s.Wanted()
+	if err != nil {
+		return nil, err
+	}
+	return recordPsiphonTests(psiphon.GetManager().TestCountries(ctx, wanted), time.Now()), nil
+}
+
+// recordPsiphonTests keeps each test for the card and saves its exit like the job's
+// check: a trace that answered is the exit even when the download then failed.
+func recordPsiphonTests(tested []psiphon.CountryTest, now time.Time) []PsiphonExitTest {
+	out := make([]PsiphonExitTest, 0, len(tested))
+	for _, t := range tested {
+		var traceErr error
+		if t.Exit.IP == "" {
+			traceErr = t.Exit.Err
+		}
+		if !errors.Is(t.Exit.Err, psiphon.ErrNotReached) {
+			recordPsiphonCheck(t.Code, t.Exit.IP, t.Exit.Loc, traceErr, now)
+		}
+		out = append(out, psiphonExitTest(t.Code, t.Connected, t.Exit, "", now))
+	}
+	psiphonTests.Lock()
+	for _, view := range out {
+		psiphonTests.byCode[view.Code] = view
+	}
+	psiphonTests.Unlock()
+	return out
+}
+
+func psiphonExitTest(code string, connected bool, exit psiphon.Exit, detail string, at time.Time) PsiphonExitTest {
+	view := PsiphonExitTest{
+		Code: code, Connected: connected, ExitIP: exit.IP, ExitLoc: exit.Loc,
+		LatencyMs: exit.Latency.Milliseconds(), Speed: exit.BytesPerSec, Error: detail, At: at.Unix(),
+	}
+	if exit.Err != nil {
+		view.Error = exit.Err.Error()
+	}
+	return view
+}
+
+func psiphonScanView(st psiphon.ScanState) PsiphonScanView {
+	view := PsiphonScanView{Running: st.Running, Stopped: st.Stopped, Total: st.Total, Results: []PsiphonExitTest{}}
+	if !st.Started.IsZero() {
+		view.StartedAt = st.Started.Unix()
+	}
+	if !st.Finished.IsZero() {
+		view.FinishedAt = st.Finished.Unix()
+	}
+	for _, r := range st.Results {
+		view.Results = append(view.Results, psiphonExitTest(r.Code, r.Connected, r.Exit, r.Detail, st.Started))
+	}
+	return view
+}
+
+// StartScan tries every country the card lists, enabled or not, each with a throwaway
+// client on ports of its own; it runs in the background and answers at once.
+func (s *PsiphonService) StartScan() error {
+	if global.IsStandby() {
+		return global.ErrStandby
+	}
+	if err := psiphonRunsHere(); err != nil {
+		return err
+	}
+	if !psiphon.Installed() {
+		return errors.New("install Psiphon first")
+	}
+	saved, err := s.savedRegions()
+	if err != nil {
+		return err
+	}
+	var rows []model.PsiphonCountry
+	if err := database.GetDB().Find(&rows).Error; err != nil {
+		return err
+	}
+	taken, err := psiphonTakenPorts(database.GetDB(), rows)
+	if err != nil {
+		return err
+	}
+	mgr := psiphon.GetManager()
+	codes := psiphonListedCodes(psiphonOffered(saved.Regions), rows)
+	if err := mgr.StartScan(codes, func(port int) bool { return taken[port] }); err != nil {
+		return err
+	}
+	// Standby set after the check above stood down before the scan existed, so the
+	// scan is stopped here instead.
+	if global.IsStandby() {
+		mgr.StopScan()
+		return global.ErrStandby
+	}
+	return nil
 }
 
 // FlushTraffic adds what each country carried since the last flush to its row,

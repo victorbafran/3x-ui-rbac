@@ -2963,6 +2963,27 @@
           "save": "Uložiť krajiny",
           "memory": "Asi {mb} MB pamäte pre {count} krajín"
         },
+        "check": {
+          "title": "Test a sken",
+          "hint": "Test zmeria krajiny, ktoré už bežia, cez ich vlastných klientov: kde vychádzajú, ako dlho trvá požiadavka a ako rýchlo ide sťahovanie 2 MB. Sken vyskúša každú krajinu, zapnutú aj nie, každú s vlastným dočasným klientom, po troch naraz, a bežiace nechá na pokoji; trvá niekoľko minút a počas behu zaberie asi o {mb} MB pamäte viac.",
+          "test": "Otestovať zapnuté krajiny",
+          "scan": "Skenovať všetky krajiny",
+          "scanning": "Skenuje sa: vyskúšaných {done} z {total} krajín",
+          "scanned": "Posledný sken {time}: funguje {works} z {total} krajín",
+          "stopped": "Posledný sken prerušil reštart alebo pohotovostný režim po {done} z {total} krajín",
+          "country": "Krajina",
+          "result": "Výsledok",
+          "exit": "Výstup",
+          "latency": "Odozva",
+          "speed": "Rýchlosť",
+          "works": "Funguje",
+          "noTest": "Pripojená, test zlyhal",
+          "noConnect": "Nepripojila sa",
+          "enable": "Zapnúť",
+          "enabled": "Zapnutá",
+          "measured": "⏱ {latency} ms · ↓ {speed}/s",
+          "testedAt": "Otestované {time}"
+        },
         "inbounds": {
           "title": "Krajiny podľa vstupu",
           "hint": "Každá krajina vybraná pre vstup sa stane ďalšou konfiguráciou v predplatnom tohto vstupu, s vlajkou a názvom krajiny. Vlastná konfigurácia vstupu zostáva.",
@@ -3008,7 +3029,9 @@
           "inbounds": "Načítanie vstupov pre Psiphon",
           "inbound": "Uloženie krajín Psiphonu pre vstup",
           "warp": "Uloženie WARP za Psiphonom",
-          "traffic": "Vynulovanie prenosu Psiphon"
+          "traffic": "Vynulovanie prenosu Psiphon",
+          "test": "Test krajín Psiphon",
+          "scan": "Sken krajín Psiphon"
         }
       }
     },

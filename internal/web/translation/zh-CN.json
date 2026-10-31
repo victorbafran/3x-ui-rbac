@@ -2963,6 +2963,27 @@
           "save": "保存国家",
           "memory": "{count} 个国家约占 {mb} MB 内存"
         },
+        "check": {
+          "title": "测试与扫描",
+          "hint": "测试通过各自的客户端测量已在运行的国家：从哪里出口、一次请求耗时多久、下载 2 MB 有多快。扫描会尝试所有国家，无论是否已启用，每个国家使用单独的临时客户端，每次三个，不会动正在运行的国家；需要几分钟，运行期间多占约 {mb} MB 内存。",
+          "test": "测试已启用的国家",
+          "scan": "扫描所有国家",
+          "scanning": "正在扫描：已尝试 {done}/{total} 个国家",
+          "scanned": "上次扫描 {time}：{total} 个国家中 {works} 个可用",
+          "stopped": "上次扫描在尝试 {done}/{total} 个国家后因重启或待机而中断",
+          "country": "国家",
+          "result": "结果",
+          "exit": "出口",
+          "latency": "延迟",
+          "speed": "速度",
+          "works": "可用",
+          "noTest": "已连接，测试失败",
+          "noConnect": "未连接",
+          "enable": "启用",
+          "enabled": "已启用",
+          "measured": "⏱ {latency} ms · ↓ {speed}/s",
+          "testedAt": "测试于 {time}"
+        },
         "inbounds": {
           "title": "每个入站的国家",
           "hint": "为入站选择的每个国家都会在该入站的订阅中多出一个配置，以国旗和国家名称命名。入站自身的配置会保留。",
@@ -3008,7 +3029,9 @@
           "inbounds": "读取 Psiphon 可用的入站",
           "inbound": "保存入站的 Psiphon 国家",
           "warp": "保存 Psiphon 后的 WARP",
-          "traffic": "重置 Psiphon 流量"
+          "traffic": "重置 Psiphon 流量",
+          "test": "测试 Psiphon 国家",
+          "scan": "扫描 Psiphon 国家"
         }
       }
     },

@@ -10,6 +10,7 @@ import {
   Form,
   Input,
   Popconfirm,
+  Progress,
   Row,
   Select,
   Space,
@@ -19,7 +20,12 @@ import {
   Tooltip,
   Typography,
 } from 'antd';
-import { CloudDownloadOutlined, ReloadOutlined } from '@ant-design/icons';
+import {
+  CloudDownloadOutlined,
+  DashboardOutlined,
+  RadarChartOutlined,
+  ReloadOutlined,
+} from '@ant-design/icons';
 import { FormProvider, useForm, useWatch } from 'react-hook-form';
 
 import { FormField, rhfZodValidate } from '@/components/form/rhf';
@@ -29,8 +35,10 @@ import {
   PSIPHON_WARP_MODES,
   PsiphonWarpFormSchema,
   psiphonCountryLabel,
+  psiphonExitWorks,
   psiphonPhase,
   type PsiphonCountry,
+  type PsiphonExitTest,
   type PsiphonInbound,
   type PsiphonPhase,
   type PsiphonState,
@@ -81,6 +89,30 @@ function countryDetail(country: PsiphonCountry | undefined) {
         ? clipped(country.lastError, phase === 'error' ? 'danger' : 'warning')
         : null}
     </>
+  );
+}
+
+function measuredText(test: PsiphonExitTest, t: TFunction): string {
+  return t('pages.relays.psiphon.check.measured', {
+    latency: test.latencyMs,
+    speed: bytes(test.speed),
+  });
+}
+
+// The card's last test of a running country: its round trip and download speed,
+// or why the test failed.
+function countryTest(country: PsiphonCountry | undefined, t: TFunction) {
+  const test = country?.enabled ? country.test : null;
+  if (!test) return null;
+  const when = t('pages.relays.psiphon.check.testedAt', {
+    time: IntlUtil.formatDate(test.at * 1000),
+  });
+  return psiphonExitWorks(test) ? (
+    <Tooltip title={when}>
+      <span style={{ fontSize: 12, opacity: 0.7, cursor: 'help' }}>{measuredText(test, t)}</span>
+    </Tooltip>
+  ) : (
+    clipped(test.error || t('pages.relays.psiphon.check.noTest'), 'danger')
   );
 }
 
@@ -254,6 +286,7 @@ function CountriesSection({
                           {phaseTag(country, t)}
                         </Space>
                         {countryDetail(country)}
+                        {countryTest(country, t)}
                         {countryTraffic(country)}
                       </Space>
                     </Col>
@@ -281,6 +314,167 @@ function CountriesSection({
           </Space>
         </Form>
       </FormProvider>
+    </Card>
+  );
+}
+
+// Three temporary clients run at once while a scan goes, each about one country's worth.
+const SCAN_PARALLEL = 3;
+
+function resultTag(test: PsiphonExitTest, t: TFunction) {
+  if (psiphonExitWorks(test)) {
+    return <Tag color="success">{t('pages.relays.psiphon.check.works')}</Tag>;
+  }
+  const tag = test.connected ? (
+    <Tag color="warning">{t('pages.relays.psiphon.check.noTest')}</Tag>
+  ) : (
+    <Tag>{t('pages.relays.psiphon.check.noConnect')}</Tag>
+  );
+  return test.error ? (
+    <Tooltip title={test.error}>
+      <span style={{ cursor: 'help' }}>{tag}</span>
+    </Tooltip>
+  ) : (
+    tag
+  );
+}
+
+function scanSummary(state: PsiphonState, t: TFunction): string | null {
+  const { scan } = state;
+  const done = scan.results.length;
+  if (scan.running) return t('pages.relays.psiphon.check.scanning', { done, total: scan.total });
+  if (!scan.startedAt) return null;
+  if (scan.stopped) return t('pages.relays.psiphon.check.stopped', { done, total: scan.total });
+  return t('pages.relays.psiphon.check.scanned', {
+    time: IntlUtil.formatDate(scan.finishedAt * 1000),
+    works: scan.results.filter(psiphonExitWorks).length,
+    total: scan.total,
+  });
+}
+
+// Test measures the running countries through their own clients; scan tries every
+// country with a temporary client, and a working one is switched on from its row.
+function CheckSection({ state, mutations }: { state: PsiphonState; mutations: PsiphonMutations }) {
+  const { t } = useTranslation();
+  const { testMut, scanMut, saveCountriesMut } = mutations;
+  const [enabling, setEnabling] = useState('');
+  const byCode = useMemo(() => new Map(state.countries.map((c) => [c.code, c])), [state.countries]);
+  const enabledCodes = enabledCodesOf(state);
+  const { scan } = state;
+  const summary = scanSummary(state, t);
+
+  const onEnable = async (code: string) => {
+    setEnabling(code);
+    try {
+      await saveCountriesMut.mutateAsync([...enabledCodes, code]);
+    } finally {
+      setEnabling('');
+    }
+  };
+
+  const columns = [
+    {
+      title: t('pages.relays.psiphon.check.country'),
+      key: 'country',
+      render: (_: unknown, row: PsiphonExitTest) =>
+        psiphonCountryLabel(row.code, byCode.get(row.code)),
+    },
+    {
+      title: t('pages.relays.psiphon.check.result'),
+      key: 'result',
+      render: (_: unknown, row: PsiphonExitTest) => resultTag(row, t),
+    },
+    {
+      title: t('pages.relays.psiphon.check.exit'),
+      key: 'exit',
+      render: (_: unknown, row: PsiphonExitTest) =>
+        row.exitIp ? (
+          <span>
+            <bdi>{row.exitIp}</bdi>
+            {row.exitLoc ? ` · ${row.exitLoc}` : ''}
+          </span>
+        ) : null,
+    },
+    {
+      title: t('pages.relays.psiphon.check.latency'),
+      key: 'latency',
+      sorter: (a: PsiphonExitTest, b: PsiphonExitTest) =>
+        (a.latencyMs || Infinity) - (b.latencyMs || Infinity),
+      render: (_: unknown, row: PsiphonExitTest) => (row.latencyMs ? `${row.latencyMs} ms` : null),
+    },
+    {
+      title: t('pages.relays.psiphon.check.speed'),
+      key: 'speed',
+      sorter: (a: PsiphonExitTest, b: PsiphonExitTest) => a.speed - b.speed,
+      render: (_: unknown, row: PsiphonExitTest) => (row.speed ? `${bytes(row.speed)}/s` : null),
+    },
+    {
+      title: '',
+      key: 'actions',
+      render: (_: unknown, row: PsiphonExitTest) => {
+        if (enabledCodes.includes(row.code)) {
+          return <Tag color="blue">{t('pages.relays.psiphon.check.enabled')}</Tag>;
+        }
+        if (!psiphonExitWorks(row)) return null;
+        return (
+          <Button
+            size="small"
+            loading={enabling === row.code}
+            disabled={saveCountriesMut.isPending && enabling !== row.code}
+            onClick={() => onEnable(row.code)}
+          >
+            {t('pages.relays.psiphon.check.enable')}
+          </Button>
+        );
+      },
+    },
+  ];
+
+  return (
+    <Card size="small" title={t('pages.relays.psiphon.check.title')}>
+      <Typography.Paragraph type="secondary">
+        {t('pages.relays.psiphon.check.hint', { mb: SCAN_PARALLEL * PSIPHON_MB_PER_COUNTRY })}
+      </Typography.Paragraph>
+      <Space wrap style={{ marginBottom: 12 }}>
+        <Button
+          icon={<DashboardOutlined aria-hidden />}
+          disabled={!state.countries.some((c) => c.enabled && c.running)}
+          loading={testMut.isPending}
+          onClick={() => testMut.mutate()}
+        >
+          {t('pages.relays.psiphon.check.test')}
+        </Button>
+        <Button
+          icon={<RadarChartOutlined aria-hidden />}
+          disabled={scan.running}
+          loading={scanMut.isPending}
+          onClick={() => scanMut.mutate()}
+        >
+          {t('pages.relays.psiphon.check.scan')}
+        </Button>
+      </Space>
+      {summary ? (
+        <Typography.Paragraph type={scan.stopped && !scan.running ? 'warning' : undefined}>
+          {summary}
+        </Typography.Paragraph>
+      ) : null}
+      {scan.running ? (
+        <Progress
+          percent={scan.total ? Math.round((scan.results.length / scan.total) * 100) : 0}
+          status="active"
+          style={{ marginBottom: 12 }}
+        />
+      ) : null}
+      {scan.results.length ? (
+        <Table
+          rowKey="code"
+          size="small"
+          dataSource={scan.results}
+          columns={columns}
+          pagination={false}
+          scroll={{ x: 'max-content' }}
+        />
+      ) : null}
     </Card>
   );
 }
@@ -599,6 +793,7 @@ export default function PsiphonCard() {
         {state && ready ? (
           <>
             <CountriesSection state={state} mutations={mutations} />
+            <CheckSection state={state} mutations={mutations} />
             <InboundsSection
               state={state}
               inbounds={inboundsQuery.data ?? []}

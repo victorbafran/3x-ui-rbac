@@ -2963,6 +2963,27 @@
           "save": "Save countries",
           "memory": "About {mb} MB of memory for {count} countries"
         },
+        "check": {
+          "title": "Test and scan",
+          "hint": "Test measures the countries already running, through their own clients: where they come out, how long a request takes and how fast a 2 MB download goes. Scan tries every country, switched on or not, each with a temporary client of its own, three at a time, and leaves the running ones alone; it takes a few minutes and about {mb} MB more memory while it runs.",
+          "test": "Test enabled countries",
+          "scan": "Scan all countries",
+          "scanning": "Scanning: {done} of {total} countries tried",
+          "scanned": "Last scan {time}: {works} of {total} countries work",
+          "stopped": "The last scan was cut short by a restart or standby after {done} of {total} countries",
+          "country": "Country",
+          "result": "Result",
+          "exit": "Exit",
+          "latency": "Latency",
+          "speed": "Speed",
+          "works": "Works",
+          "noTest": "Connected, test failed",
+          "noConnect": "Did not connect",
+          "enable": "Enable",
+          "enabled": "Enabled",
+          "measured": "⏱ {latency} ms · ↓ {speed}/s",
+          "testedAt": "Tested {time}"
+        },
         "inbounds": {
           "title": "Countries per inbound",
           "hint": "Each country picked for an inbound becomes one more config in that inbound’s subscription, named with the country’s flag and name. The inbound’s own config is kept.",
@@ -3008,7 +3029,9 @@
           "inbounds": "Read inbounds for Psiphon",
           "inbound": "Save the inbound’s Psiphon countries",
           "warp": "Save WARP behind Psiphon",
-          "traffic": "Reset Psiphon traffic"
+          "traffic": "Reset Psiphon traffic",
+          "test": "Test Psiphon countries",
+          "scan": "Scan Psiphon countries"
         }
       }
     },

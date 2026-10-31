@@ -3,7 +3,12 @@ import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-libra
 import { MemoryRouter } from 'react-router';
 
 import type { Relay } from '@/schemas/relay';
-import { psiphonRefetchMs, type PsiphonInbound, type PsiphonState } from '@/schemas/psiphon';
+import {
+  psiphonRefetchMs,
+  type PsiphonExitTest,
+  type PsiphonInbound,
+  type PsiphonState,
+} from '@/schemas/psiphon';
 import { chooseSelectOption, fieldLabels, renderWithProviders } from './test-utils';
 
 // The page carries the app sidebar, which needs a router and the settings
@@ -154,6 +159,8 @@ const saveCountriesMut = { mutateAsync: vi.fn(saved), isPending: false };
 const saveInboundMut = { mutateAsync: vi.fn(saved), isPending: false, variables: undefined };
 const saveWarpMut = { mutateAsync: vi.fn(saved), isPending: false };
 const resetTrafficMut = { mutateAsync: vi.fn(saved), isPending: false };
+const testMut = { mutate: vi.fn(), isPending: false };
+const scanMut = { mutate: vi.fn(), isPending: false };
 
 vi.mock('@/api/queries/usePsiphon', () => ({
   usePsiphonState: () => ({
@@ -171,6 +178,8 @@ vi.mock('@/api/queries/usePsiphon', () => ({
     saveInboundMut,
     saveWarpMut,
     resetTrafficMut,
+    testMut,
+    scanMut,
   }),
 }));
 
@@ -912,6 +921,28 @@ const psiphonCountry = (code: string, name: string, flag: string) => ({
   socksPort: 0,
   trafficDown: 0,
   trafficUp: 0,
+  test: null,
+});
+
+const noScan = {
+  running: false,
+  stopped: false,
+  startedAt: 0,
+  finishedAt: 0,
+  total: 0,
+  results: [],
+};
+
+const exitTest = (code: string, fields: Partial<PsiphonExitTest> = {}): PsiphonExitTest => ({
+  code,
+  connected: false,
+  exitIp: '',
+  exitLoc: '',
+  latencyMs: 0,
+  speed: 0,
+  error: '',
+  at: 1793450000,
+  ...fields,
 });
 
 // Measured on the live box: DE answered through Psiphon from 164.92.130.120.
@@ -937,6 +968,7 @@ const psiphonReady: PsiphonState = {
     },
   ],
   warp: { mode: 'off', sites: '', registered: false },
+  scan: noScan,
 };
 
 function renderPage() {
@@ -1131,14 +1163,179 @@ describe('the Psiphon card', () => {
   });
 
   // A country connects within seconds, so the card asks often only while one
-  // is still on its way; a failed one waits for the slow round like the rest.
-  it('polls quickly only while a country is still connecting', () => {
+  // is still on its way or a scan reports; a failed one waits for the slow round.
+  it('polls quickly only while a country is still connecting or a scan runs', () => {
     expect(psiphonRefetchMs(psiphonReady)).toBe(5000);
     const settled = {
       ...psiphonReady,
       countries: psiphonReady.countries.filter((c) => c.code !== 'US'),
     };
     expect(psiphonRefetchMs(settled)).toBe(30000);
+    expect(psiphonRefetchMs({ ...settled, scan: { ...noScan, running: true, total: 27 } })).toBe(
+      3000,
+    );
+  });
+
+  // The test reads the running countries through their own clients; each shows how
+  // long a request took and how fast the download went, or why the test failed.
+  it('tests the running countries and shows each one’s speed or failure', () => {
+    testMut.mutate.mockClear();
+    psiphonState = {
+      ...psiphonReady,
+      countries: [
+        {
+          ...psiphonReady.countries[0],
+          test: exitTest('DE', {
+            connected: true,
+            exitIp: '164.92.130.120',
+            exitLoc: 'DE',
+            latencyMs: 412,
+            speed: 1258291,
+          }),
+        },
+        {
+          ...psiphonReady.countries[1],
+          test: exitTest('US', { error: 'socks connect tcp 127.0.0.1:11182: connection refused' }),
+        },
+        psiphonReady.countries[2],
+      ],
+    };
+    const card = renderPage();
+    const cell = (label: string) =>
+      within(card).getByText(label).closest('.ant-col') as HTMLElement;
+    expect(cell('🇩🇪 Germany').textContent).toContain('⏱ 412 ms · ↓ 1.2 MB/s');
+    expect(cell('🇺🇸 United States').textContent).toContain('socks connect tcp 127.0.0.1:11182');
+    expect(cell('🇬🇧 United Kingdom').textContent).not.toContain('⏱');
+    fireEvent.click(
+      within(card).getByText('Test enabled countries').closest('button') as HTMLElement,
+    );
+    expect(testMut.mutate).toHaveBeenCalledTimes(1);
+    cleanup();
+
+    // With no country running there is nothing to test through.
+    psiphonState = {
+      ...psiphonReady,
+      countries: psiphonReady.countries.map((c) => ({ ...c, running: false })),
+    };
+    const idle = renderPage();
+    const button = within(idle)
+      .getByText('Test enabled countries')
+      .closest('button') as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
+    cleanup();
+  });
+
+  // A scan reports each country as it lands, and the button waits until it is done
+  // rather than sending a second scan the panel would refuse.
+  it('follows a running scan country by country', () => {
+    scanMut.mutate.mockClear();
+    psiphonState = {
+      ...psiphonReady,
+      scan: {
+        ...noScan,
+        running: true,
+        startedAt: 1793450000,
+        total: 27,
+        results: [
+          exitTest('FI', {
+            connected: true,
+            exitIp: '65.21.0.10',
+            exitLoc: 'FI',
+            latencyMs: 380,
+            speed: 2097152,
+          }),
+          exitTest('IT'),
+        ],
+      },
+    };
+    const card = renderPage();
+    expect(card.textContent).toContain('Scanning: 2 of 27 countries tried');
+    const scan = within(card)
+      .getByText('Scan all countries')
+      .closest('button') as HTMLButtonElement;
+    expect(scan.disabled).toBe(true);
+    const row = (code: string) => card.querySelector(`tr[data-row-key="${code}"]`) as HTMLElement;
+    expect(row('FI').textContent).toContain('Works');
+    expect(row('FI').textContent).toContain('65.21.0.10 · FI');
+    expect(row('FI').textContent).toContain('380 ms');
+    expect(row('FI').textContent).toContain('2.0 MB/s');
+    expect(row('IT').textContent).toContain('Did not connect');
+    expect(row('IT').textContent).not.toContain('Enable');
+    cleanup();
+
+    psiphonState = { ...psiphonReady, scan: noScan };
+    const fresh = renderPage();
+    fireEvent.click(within(fresh).getByText('Scan all countries').closest('button') as HTMLElement);
+    expect(scanMut.mutate).toHaveBeenCalledTimes(1);
+    cleanup();
+  });
+
+  // A finished scan says how many countries work; one that works and is not on yet is
+  // switched on from its row, together with the ones already running.
+  it('switches on a country the last scan found working', async () => {
+    saveCountriesMut.mutateAsync.mockClear();
+    psiphonState = {
+      ...psiphonReady,
+      scan: {
+        ...noScan,
+        startedAt: 1793450000,
+        finishedAt: 1793450600,
+        total: 3,
+        results: [
+          exitTest('FI', {
+            connected: true,
+            exitIp: '65.21.0.10',
+            exitLoc: 'FI',
+            latencyMs: 380,
+            speed: 2097152,
+          }),
+          exitTest('DE', {
+            connected: true,
+            exitIp: '164.92.130.120',
+            exitLoc: 'DE',
+            latencyMs: 300,
+            speed: 1048576,
+          }),
+          exitTest('PT', {
+            connected: true,
+            exitIp: '198.51.100.4',
+            error: 'the download through Psiphon answered 403 Forbidden',
+          }),
+        ],
+      },
+    };
+    const card = renderPage();
+    expect(card.textContent).toMatch(/Last scan .+: 2 of 3 countries work/);
+    const row = (code: string) => card.querySelector(`tr[data-row-key="${code}"]`) as HTMLElement;
+    expect(row('DE').textContent).toContain('Enabled');
+    expect(row('PT').textContent).toContain('Connected, test failed');
+    expect(within(row('PT')).queryByText('Enable')).toBeNull();
+    fireEvent.click(within(row('FI')).getByText('Enable').closest('button') as HTMLElement);
+    await waitFor(() => expect(saveCountriesMut.mutateAsync).toHaveBeenCalledTimes(1));
+    const sent = saveCountriesMut.mutateAsync.mock.calls[0][0] as string[];
+    expect([...sent].sort()).toEqual(['DE', 'FI', 'GB', 'US']);
+    cleanup();
+  });
+
+  // A restart or standby stops a scan midway; the card says so instead of passing the
+  // countries it never reached off as tried.
+  it('says when the last scan was cut short', () => {
+    psiphonState = {
+      ...psiphonReady,
+      scan: {
+        ...noScan,
+        stopped: true,
+        startedAt: 1793450000,
+        finishedAt: 1793450100,
+        total: 27,
+        results: [exitTest('AT')],
+      },
+    };
+    const card = renderPage();
+    expect(card.textContent).toContain(
+      'The last scan was cut short by a restart or standby after 1 of 27 countries',
+    );
+    cleanup();
   });
 });
 

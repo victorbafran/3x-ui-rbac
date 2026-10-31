@@ -2963,6 +2963,27 @@
           "save": "Guardar países",
           "memory": "Unos {mb} MB de memoria para {count} países"
         },
+        "check": {
+          "title": "Probar y explorar",
+          "hint": "Probar mide los países que ya están en marcha, a través de sus propios clientes: por dónde salen, cuánto tarda una petición y a qué velocidad va una descarga de 2 MB. Explorar prueba todos los países, activados o no, cada uno con un cliente temporal propio, de tres en tres, sin tocar los que están en marcha; tarda unos minutos y usa unos {mb} MB más de memoria mientras dura.",
+          "test": "Probar países activados",
+          "scan": "Explorar todos los países",
+          "scanning": "Explorando: {done} de {total} países probados",
+          "scanned": "Última exploración {time}: funcionan {works} de {total} países",
+          "stopped": "La última exploración se cortó por un reinicio o el modo de reserva tras {done} de {total} países",
+          "country": "País",
+          "result": "Resultado",
+          "exit": "Salida",
+          "latency": "Latencia",
+          "speed": "Velocidad",
+          "works": "Funciona",
+          "noTest": "Conectado, prueba fallida",
+          "noConnect": "No conectó",
+          "enable": "Activar",
+          "enabled": "Activado",
+          "measured": "⏱ {latency} ms · ↓ {speed}/s",
+          "testedAt": "Probado {time}"
+        },
         "inbounds": {
           "title": "Países por inbound",
           "hint": "Cada país elegido para un inbound se convierte en una configuración más en la suscripción de ese inbound, con la bandera y el nombre del país. La configuración propia del inbound se conserva.",
@@ -3008,7 +3029,9 @@
           "inbounds": "Leer los inbounds para Psiphon",
           "inbound": "Guardar los países de Psiphon del inbound",
           "warp": "Guardar WARP detrás de Psiphon",
-          "traffic": "Restablecer el tráfico de Psiphon"
+          "traffic": "Restablecer el tráfico de Psiphon",
+          "test": "Probar países de Psiphon",
+          "scan": "Explorar países de Psiphon"
         }
       }
     },

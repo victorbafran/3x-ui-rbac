@@ -23,9 +23,9 @@ const (
 	BinarySHA256 = "d83dcaa632b265536852e2d97c45eb4831960f8dbcb2d8638293d5958483705b"
 )
 
-// FallbackRegions is what Psiphon announced on 2026-10-28, used when a probe
-// cannot read the live list.
-var FallbackRegions = []string{"AT", "AU", "BE", "BR", "CA", "CH", "CZ", "DE", "DK", "ES", "FR", "GB", "ID", "IE", "IN", "IT", "JP", "LT", "NL", "NO", "PL", "RO", "RS", "SE", "SG", "US"}
+// FallbackRegions is what Psiphon announced on 2026-10-28, plus Finland, which no
+// list carried but which connected and left from Finland on 2026-10-31.
+var FallbackRegions = []string{"AT", "AU", "BE", "BR", "CA", "CH", "CZ", "DE", "DK", "ES", "FI", "FR", "GB", "ID", "IE", "IN", "IT", "JP", "LT", "NL", "NO", "PL", "RO", "RS", "SE", "SG", "US"}
 
 // Supported is nil where Psiphon publishes a client: it builds for linux/amd64
 // only, and an arm64 build from source was never measured.

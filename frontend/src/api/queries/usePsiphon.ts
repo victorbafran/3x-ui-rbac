@@ -93,6 +93,18 @@ export function usePsiphonMutations() {
     onSettled: refresh,
   });
 
+  // Answers within about 30 s; the results come back in the state, under each country.
+  const testMut = useMutation({
+    mutationFn: () => HttpUtil.post(`${BASE}/test`),
+    onSettled: refresh,
+  });
+
+  // Answers at once; the scan reports in the state, which is polled while it runs.
+  const scanMut = useMutation({
+    mutationFn: () => HttpUtil.post(`${BASE}/scan`),
+    onSettled: refresh,
+  });
+
   return {
     installMut,
     refreshRegionsMut,
@@ -100,5 +112,7 @@ export function usePsiphonMutations() {
     saveInboundMut,
     saveWarpMut,
     resetTrafficMut,
+    testMut,
+    scanMut,
   };
 }

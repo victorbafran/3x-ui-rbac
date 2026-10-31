@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/web/middleware"
+	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service/integration"
 
 	"github.com/gin-gonic/gin"
@@ -42,6 +43,8 @@ func (a *RelayController) initPsiphonRouter(g *gin.RouterGroup) {
 	g.POST("/psiphon/inbound/:id", a.psiphonInbound)
 	g.POST("/psiphon/warp", a.psiphonWarp)
 	g.POST("/psiphon/traffic/reset", a.psiphonResetTraffic)
+	g.POST("/psiphon/test", a.psiphonTest)
+	g.POST("/psiphon/scan", a.psiphonScan)
 }
 
 // psiphonWriteLimit lets an action outlive the server's 30-second write limit;
@@ -125,4 +128,17 @@ func (a *RelayController) psiphonResetTraffic(c *gin.Context) {
 		return
 	}
 	jsonMsg(c, I18nWeb(c, "pages.relays.psiphon.toasts.traffic"), a.psiphonService.ResetTraffic(req.Code, req.All))
+}
+
+// psiphonTest answers once every enabled country was measured, within PsiphonTestLimit.
+func (a *RelayController) psiphonTest(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(context.Background(), psiphonWriteLimit(c, service.PsiphonTestLimit))
+	defer cancel()
+	results, err := a.psiphonService.TestEnabled(ctx)
+	jsonMsgObj(c, I18nWeb(c, "pages.relays.psiphon.toasts.test"), results, err)
+}
+
+// psiphonScan answers at once; the card follows the scan in the state it polls.
+func (a *RelayController) psiphonScan(c *gin.Context) {
+	jsonMsg(c, I18nWeb(c, "pages.relays.psiphon.toasts.scan"), a.psiphonService.StartScan())
 }

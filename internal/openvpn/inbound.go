@@ -38,9 +38,9 @@ type openvpnSettings struct {
 	// practice a tunnel to one of the panel's exit servers. Empty leaves
 	// through this host, which is the right answer for the country the
 	// server is already in.
-	Exit     string `json:"exit"`
-	CertFile string `json:"certFile"`
-	KeyFile  string `json:"keyFile"`
+	Exit string `json:"exit"`
+	// certFile/keyFile, which an older form saved, are left unread: the
+	// panel's own authority is the only one a customer's file can carry.
 }
 
 // UsesTCP says whether this inbound is served over TCP rather than UDP.
@@ -137,8 +137,6 @@ func InstanceFromInbound(ib *model.Inbound) (Instance, bool) {
 		MaxSameClients: parsed.MaxSameClients,
 		UseTCP:         parsed.UseTCP,
 		Exit:           strings.TrimSpace(parsed.Exit),
-		CertFile:       strings.TrimSpace(parsed.CertFile),
-		KeyFile:        strings.TrimSpace(parsed.KeyFile),
 	}, true
 }
 

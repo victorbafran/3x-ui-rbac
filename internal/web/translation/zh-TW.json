@@ -858,9 +858,6 @@
         "openvpnMaxClientsHint": "針對整個入站。0 表示預設的 1024。",
         "openvpnMaxSameClients": "每個帳號的裝置數",
         "openvpnMaxSameClientsHint": "一個帳號可同時使用的裝置數。0 表示預設的 2。客戶自己的限制優先。",
-        "openvpnCertFile": "憑證檔案",
-        "openvpnCertFileHint": "你自己的憑證，如果有的話。留空則由面板簽發並一直沿用——重新簽發會讓每個用戶端都以為換了伺服器。",
-        "openvpnKeyFile": "私密金鑰檔案",
         "maxVersion": "最高版本",
         "headerName": "標頭名稱",
         "headerValue": "標頭值"

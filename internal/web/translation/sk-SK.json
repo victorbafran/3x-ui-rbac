@@ -859,9 +859,6 @@
         "openvpnMaxClientsHint": "Za celý vstup. Hodnota 0 použije predvolených 1024.",
         "openvpnMaxSameClients": "Zariadenia na účet",
         "openvpnMaxSameClientsHint": "Koľko zariadení môže naraz používať jeden účet. Hodnota 0 použije predvolené 2. Klient s vlastným limitom má prednosť.",
-        "openvpnCertFile": "Súbor certifikátu",
-        "openvpnCertFileHint": "Váš vlastný certifikát, ak ho máte. Ak pole necháte prázdne, panel vydá vlastný a bude ho opakovane používať — nové vydanie by sa každému klientovi javilo ako iný server.",
-        "openvpnKeyFile": "Súbor súkromného kľúča",
         "maxVersion": "Maximálna verzia",
         "headerName": "Názov hlavičky",
         "headerValue": "Hodnota hlavičky"

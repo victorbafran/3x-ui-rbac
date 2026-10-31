@@ -858,9 +858,6 @@
         "openvpnMaxClientsHint": "Cho cả inbound. 0 nghĩa là mặc định 1024.",
         "openvpnMaxSameClients": "Số thiết bị mỗi tài khoản",
         "openvpnMaxSameClientsHint": "Bao nhiêu thiết bị dùng chung một tài khoản cùng lúc. 0 nghĩa là mặc định 2. Giới hạn riêng của khách được ưu tiên.",
-        "openvpnCertFile": "Tệp chứng chỉ",
-        "openvpnCertFileHint": "Chứng chỉ của riêng bạn, nếu có. Để trống thì bảng điều khiển tự cấp và dùng lại — cấp lại sẽ khiến mọi ứng dụng tưởng là một máy chủ khác.",
-        "openvpnKeyFile": "Tệp khóa riêng",
         "maxVersion": "Phiên bản tối đa",
         "headerName": "Tên header",
         "headerValue": "Giá trị header"

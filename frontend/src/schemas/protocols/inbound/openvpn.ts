@@ -52,11 +52,6 @@ export const OpenVPNInboundSettingsSchema = z
     // time, so one inbound is one country and a customer with several holds
     // several profiles.
     exit: z.string().default(''),
-    // An operator-supplied keypair. Left empty the panel issues its own and
-    // reuses it: a certificate reissued on every restart looks to every client
-    // like a different server, and the client refuses it.
-    certFile: z.string().default(''),
-    keyFile: z.string().default(''),
   })
   // Loose for the reason cisco is: a setting the panel reads but this form
   // does not show must survive a save through the form.

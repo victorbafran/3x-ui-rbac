@@ -173,13 +173,22 @@ function stripTlsCertUseFile(stream: Record<string, unknown>): void {
   for (const c of tlsCerts(stream)) delete c.useFile;
 }
 
+// An older form saved these; the server ignores them, since only the panel's own
+// authority is one each customer's .ovpn carries. Loading without them drops them on save.
+function withoutOpenVPNCertificate(settings: Record<string, unknown>): Record<string, unknown> {
+  const { certFile: _certFile, keyFile: _keyFile, ...rest } = settings;
+  return rest;
+}
+
 export function rawInboundToFormValues(row: RawInboundRow): InboundFormValues {
   const protocol = (row.protocol || 'vless') as InboundSettings['protocol'];
   const rawSettings = coerceJsonObject(row.settings);
   const settings = (
     protocol === 'tuic'
       ? { clients: rawSettings.clients, server: resolveTuicServerSettings(rawSettings) }
-      : rawSettings
+      : protocol === 'openvpn'
+        ? withoutOpenVPNCertificate(rawSettings)
+        : rawSettings
   ) as InboundSettings['settings'];
   const rawStream = coerceJsonObject(row.streamSettings);
   const streamSettings =

@@ -858,9 +858,6 @@
         "openvpnMaxClientsHint": "Untuk seluruh inbound. 0 berarti 1024.",
         "openvpnMaxSameClients": "Perangkat per akun",
         "openvpnMaxSameClientsHint": "Berapa perangkat memakai satu akun bersamaan. 0 berarti 2. Batas milik pelanggan sendiri lebih diutamakan.",
-        "openvpnCertFile": "Berkas sertifikat",
-        "openvpnCertFileHint": "Sertifikat Anda sendiri, bila ada. Jika kosong panel menerbitkan miliknya dan memakainya terus — menerbitkan ulang akan tampak seperti server lain bagi setiap klien.",
-        "openvpnKeyFile": "Berkas kunci privat",
         "maxVersion": "Versi maksimum",
         "headerName": "Nama header",
         "headerValue": "Nilai header"

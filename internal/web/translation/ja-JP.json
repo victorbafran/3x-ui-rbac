@@ -858,9 +858,6 @@
         "openvpnMaxClientsHint": "インバウンド全体で。0 は既定の 1024 です。",
         "openvpnMaxSameClients": "1アカウントあたりの台数",
         "openvpnMaxSameClientsHint": "同時に何台まで使えるか。0 は既定の 2 です。お客様ごとの設定があればそちらが優先されます。",
-        "openvpnCertFile": "証明書ファイル",
-        "openvpnCertFileHint": "お持ちの証明書があれば。空欄ならパネルが発行して使い続けます。発行し直すと、どのクライアントにも別のサーバーに見えてしまいます。",
-        "openvpnKeyFile": "秘密鍵ファイル",
         "maxVersion": "最大バージョン",
         "headerName": "ヘッダー名",
         "headerValue": "ヘッダー値"

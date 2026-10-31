@@ -173,6 +173,33 @@ func TestAnInboundWithNoListenAddressServesBothFamilies(t *testing.T) {
 	}
 }
 
+// Seen live on a dual-stack box: a reply left from fd00:91::1, not the address
+// dialed, and the client rejected it. Hosts with several addresses all do this.
+func TestAUdpServerAnswersFromTheAddressItWasSentTo(t *testing.T) {
+	cases := []struct {
+		name string
+		ipv6 bool
+		inst Instance
+		want bool
+	}{
+		{"dual-stack udp", true, Instance{Id: 1, Port: 1194}, true},
+		{"udp on every IPv4 address", false, Instance{Id: 1, Port: 1194}, true},
+		{"udp on one address", true, Instance{Id: 1, Port: 1194, Listen: "203.0.113.7"}, true},
+		{"dual-stack tcp", true, Instance{Id: 1, Port: 443, UseTCP: true}, false},
+		{"tcp", false, Instance{Id: 1, Port: 443, UseTCP: true}, false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			hostWithIPv6(t, tc.ipv6)
+			cfg := configFor(t, tc.inst)
+			if got := strings.Contains(cfg, "\nmultihome\n"); got != tc.want {
+				t.Errorf("multihome written: %v, want %v (tcp replies from the connection; openvpn takes it for udp only):\n%s",
+					got, tc.want, cfg)
+			}
+		})
+	}
+}
+
 // Two inbounds handing out the same addresses would route each other's
 // customers, and an OpenVPN pool must also stay clear of the cisco pools and
 // of the block the exit servers use.

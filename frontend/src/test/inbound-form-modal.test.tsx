@@ -409,6 +409,47 @@ describe('InboundFormModal', () => {
     expect(screen.getByLabelText('Traffic leaves through')).toBeTruthy();
   });
 
+  // A certificate the form let an operator fill kept openvpn from starting: the
+  // server needs the panel's own authority, the one each customer's file carries.
+  it('drops a stored OpenVPN certificate instead of offering or saving it', async () => {
+    const post = vi.mocked(HttpUtil.post);
+    post.mockClear();
+    const openvpn = new DBInbound({
+      id: 44,
+      port: 1194,
+      listen: '',
+      protocol: 'openvpn',
+      remark: 'ovpn',
+      enable: true,
+      settings: {
+        clients: [],
+        exit: 'wgr2',
+        certFile: '/root/cert/vpn.example.com/fullchain.pem',
+        keyFile: '/root/cert/vpn.example.com/privkey.pem',
+      },
+      streamSettings: {},
+      sniffing: {},
+      nodeId: null,
+      shareAddrStrategy: 'listen',
+      shareAddr: '',
+    });
+    renderCloneLikeEdit(openvpn);
+    fireEvent.click(await screen.findByRole('tab', { name: 'Protocol' }));
+    await screen.findByLabelText('Devices per account');
+    expect(fieldLabels().filter((label) => /certificate|key file/i.test(label))).toEqual([]);
+
+    fireEvent.click(primaryButton());
+
+    const isUpdate = ([url]: unknown[]) => url === '/panel/api/inbounds/update/44';
+    await waitFor(() => expect(post.mock.calls.some(isUpdate)).toBe(true));
+    const settings = JSON.parse(
+      (post.mock.calls.find(isUpdate)![1] as { settings: string }).settings,
+    );
+    expect(settings.exit).toBe('wgr2');
+    expect(settings).not.toHaveProperty('certFile');
+    expect(settings).not.toHaveProperty('keyFile');
+  });
+
   it('adds a MASQUE inbound on its own transport with TLS and an address pool', async () => {
     const post = vi.mocked(HttpUtil.post);
     post.mockClear();

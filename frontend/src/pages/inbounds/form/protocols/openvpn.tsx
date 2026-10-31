@@ -126,16 +126,6 @@ export default function OpenVPNFields() {
       >
         <InputNumber min={0} max={100} placeholder="2" style={{ width: '100%' }} />
       </FormField>
-      <FormField
-        name={['settings', 'certFile']}
-        label={t('pages.inbounds.form.openvpnCertFile')}
-        tooltip={t('pages.inbounds.form.openvpnCertFileHint')}
-      >
-        <Input placeholder="/etc/ssl/certs/vpn.pem" />
-      </FormField>
-      <FormField name={['settings', 'keyFile']} label={t('pages.inbounds.form.openvpnKeyFile')}>
-        <Input placeholder="/etc/ssl/private/vpn.key" />
-      </FormField>
     </>
   );
 }

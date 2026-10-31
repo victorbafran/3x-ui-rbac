@@ -38,11 +38,6 @@ type Instance struct {
 	// Exit is the interface this inbound's traffic leaves through — a tunnel
 	// to a server in another country. Empty leaves through this host.
 	Exit string
-
-	// CertFile/KeyFile point at an operator-supplied keypair. Empty means the
-	// manager generates one and reuses it.
-	CertFile string
-	KeyFile  string
 }
 
 // User is one client. Login is what the customer types; Name is the panel's
@@ -182,13 +177,6 @@ func (inst Instance) structuralFingerprint() string {
 		strings.Join(inst.dns(), ","),
 		strconv.Itoa(inst.maxClients()),
 		strconv.Itoa(inst.maxSameClients()),
-		inst.CertFile,
-		inst.KeyFile,
-		// The content as well as the path, for the same reason as cisco: the
-		// certificate is read at startup, and one replaced in place would
-		// otherwise stay stale until an unrelated restart.
-		filestamp.Of(inst.CertFile),
-		filestamp.Of(inst.KeyFile),
 		inst.ownKeysStamp(),
 		strings.TrimSpace(inst.Exit),
 	}, "|")
@@ -197,10 +185,7 @@ func (inst Instance) structuralFingerprint() string {
 // ownKeysStamp covers the keys the panel made for this inbound, which a
 // restore can replace under a running server.
 func (inst Instance) ownKeysStamp() string {
-	paths := []string{tlsAuthPathForID(inst.Id)}
-	if strings.TrimSpace(inst.CertFile) == "" || strings.TrimSpace(inst.KeyFile) == "" {
-		paths = append(paths, caCertPathForID(inst.Id), certPathForID(inst.Id), keyPathForID(inst.Id))
-	}
+	paths := []string{tlsAuthPathForID(inst.Id), caCertPathForID(inst.Id), certPathForID(inst.Id), keyPathForID(inst.Id)}
 	stamps := make([]string, len(paths))
 	for i, p := range paths {
 		stamps[i] = filestamp.Of(p)
@@ -247,6 +232,11 @@ func renderConfig(inst Instance, helperPath string, drop *DropAccount) string {
 	}
 	w("port %d", inst.Port)
 	w("proto %s", inst.proto())
+	if !inst.UseTCP {
+		// A reply from another local address is rejected by the client; TCP
+		// already answers from the connection. Harmless on a single bound address.
+		w("multihome")
+	}
 	w("dev-type tun")
 	w("dev %s", inst.deviceName())
 	// topology subnet gives every client one address out of the pool rather
@@ -255,8 +245,8 @@ func renderConfig(inst Instance, helperPath string, drop *DropAccount) string {
 	w("server %s %s", inst.network(), inst.netmask())
 
 	w("ca %s", caCertPathForID(inst.Id))
-	w("cert %s", certFileFor(inst))
-	w("key %s", keyFileFor(inst))
+	w("cert %s", certPathForID(inst.Id))
+	w("key %s", keyPathForID(inst.Id))
 	// No Diffie-Hellman parameter file: the key exchange is ECDHE, which
 	// needs none and is faster. Generating a dh.pem would delay a first start
 	// by minutes for nothing.
@@ -336,20 +326,6 @@ func renderConfig(inst Instance, helperPath string, drop *DropAccount) string {
 	w("verb 3")
 	w("mute 20")
 	return b.String()
-}
-
-func certFileFor(inst Instance) string {
-	if f := strings.TrimSpace(inst.CertFile); f != "" {
-		return f
-	}
-	return certPathForID(inst.Id)
-}
-
-func keyFileFor(inst Instance) string {
-	if f := strings.TrimSpace(inst.KeyFile); f != "" {
-		return f
-	}
-	return keyPathForID(inst.Id)
 }
 
 // LoginToEmail maps what the server reports back to the panel identity that

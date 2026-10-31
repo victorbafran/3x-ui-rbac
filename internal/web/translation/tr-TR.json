@@ -858,9 +858,6 @@
         "openvpnMaxClientsHint": "Gelen bağlantının tamamı için. 0, varsayılan 1024 demektir.",
         "openvpnMaxSameClients": "Hesap başına cihaz",
         "openvpnMaxSameClientsHint": "Bir hesabı aynı anda kaç cihaz kullanabilir. 0, varsayılan 2 demektir. Müşterinin kendi sınırı önceliklidir.",
-        "openvpnCertFile": "Sertifika dosyası",
-        "openvpnCertFileHint": "Kendi sertifikanız varsa. Boş bırakılırsa panel kendi sertifikasını verir ve onu kullanmayı sürdürür — yeniden vermek her istemciye başka bir sunucu gibi görünür.",
-        "openvpnKeyFile": "Özel anahtar dosyası",
         "maxVersion": "Maksimum sürüm",
         "headerName": "Başlık adı",
         "headerValue": "Başlık değeri"

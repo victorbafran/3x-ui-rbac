@@ -276,8 +276,6 @@ export function createDefaultOpenVPNInboundSettings(): OpenVPNInboundSettings {
     maxSameClients: 2,
     useTcp: false,
     exit: '',
-    certFile: '',
-    keyFile: '',
   };
 }
 

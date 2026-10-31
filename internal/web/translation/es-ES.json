@@ -858,9 +858,6 @@
         "openvpnMaxClientsHint": "En todo el inbound. 0 usa el valor por defecto de 1024.",
         "openvpnMaxSameClients": "Dispositivos por cuenta",
         "openvpnMaxSameClientsHint": "Cuántos dispositivos pueden usar una cuenta a la vez. 0 usa el valor por defecto de 2. El límite propio de un cliente tiene prioridad.",
-        "openvpnCertFile": "Archivo de certificado",
-        "openvpnCertFileHint": "Tu propio certificado, si lo tienes. Vacío, el panel emite el suyo y lo reutiliza: reemitirlo parecería a cada cliente un servidor distinto.",
-        "openvpnKeyFile": "Archivo de clave privada",
         "maxVersion": "Versión máxima",
         "headerName": "Nombre de cabecera",
         "headerValue": "Valor de cabecera"

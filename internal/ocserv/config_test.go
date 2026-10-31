@@ -293,7 +293,7 @@ func TestRealClientIPReadsTheHeaderOnLoopbackOnly(t *testing.T) {
 			t.Errorf("config lacks %q:\n%s", want, cfg)
 		}
 	}
-	plain := configFor(t, Instance{Id: 1, Port: 443})
+	plain := configFor(t, Instance{Id: 1, Port: 443, Listen: "0.0.0.0"})
 	if strings.Contains(plain, "listen-proxy-proto") || !strings.Contains(plain, "listen-host = 0.0.0.0\n") {
 		t.Errorf("an ordinary inbound was told to expect a header:\n%s", plain)
 	}
@@ -302,6 +302,77 @@ func TestRealClientIPReadsTheHeaderOnLoopbackOnly(t *testing.T) {
 	withHeader.ProxyProtocol = true
 	if loop.structuralFingerprint() == withHeader.structuralFingerprint() {
 		t.Error("switching real client IP does not restart ocserv, which reads it once")
+	}
+}
+
+func hostWithIPv6(t *testing.T, has bool) {
+	t.Helper()
+	saved := hostHasIPv6
+	hostHasIPv6 = func() bool { return has }
+	t.Cleanup(func() { hostHasIPv6 = saved })
+}
+
+// listen-host = 0.0.0.0 leaves IPv6 no way in; none listens on both families. Only an
+// inbound handing out IPv6 drops it, and an explicit address stays as typed.
+func TestOnlyAnInboundHandingOutIPv6ServesBothFamilies(t *testing.T) {
+	cases := []struct {
+		name string
+		ipv6 bool
+		inst Instance
+		want string
+	}{
+		{"IPv4 inbound", true, Instance{Id: 1, Port: 443}, "listen-host = 0.0.0.0\n"},
+		{"IPv6 inbound", true, Instance{Id: 1, Port: 443, IPv6: true}, ""},
+		{"explicit IPv4 listen", true, Instance{Id: 1, Port: 443, Listen: "203.0.113.7", IPv6: true}, "listen-host = 203.0.113.7\n"},
+		{"real client IP", true, Instance{Id: 1, Port: 443, ProxyProtocol: true, IPv6: true}, "listen-host = 127.0.0.1\n"},
+		{"host without IPv6", false, Instance{Id: 1, Port: 443, IPv6: true}, "listen-host = 0.0.0.0\n"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			hostWithIPv6(t, tc.ipv6)
+			cfg := configFor(t, tc.inst)
+			if tc.want == "" && strings.Contains(cfg, "listen-host") {
+				t.Fatalf("config pins a listen address:\n%s", cfg)
+			}
+			if tc.want != "" && !strings.Contains(cfg, tc.want) {
+				t.Fatalf("config lacks %q:\n%s", tc.want, cfg)
+			}
+		})
+	}
+}
+
+// The family the operator picks on the inbound decides the socket; an inbound
+// saved before the setting existed, or with a typo, stays on IPv4.
+func TestTheInboundsIPFamilyDecidesTheListenFamily(t *testing.T) {
+	hostWithIPv6(t, true)
+	for _, tc := range []struct {
+		family    string
+		listensV4 bool
+	}{{"", true}, {"v6", false}, {"both", false}, {"v7", true}} {
+		t.Run(tc.family, func(t *testing.T) {
+			inst, ok := InstanceFromInbound(ciscoInbound(`{
+				"clients":[{"email":"ann","password":"p","enable":true}],
+				"ipFamily":"` + tc.family + `","address6":"v6.example.com"}`))
+			if !ok {
+				t.Fatal("the inbound was not served")
+			}
+			cfg := configFor(t, inst)
+			if got := strings.Contains(cfg, "listen-host = 0.0.0.0\n"); got != tc.listensV4 {
+				t.Fatalf("family %q: IPv4-only listen-host %v, want %v:\n%s", tc.family, got, tc.listensV4, cfg)
+			}
+		})
+	}
+}
+
+// ocserv opens its socket once at start: turning IPv6 on or off must restart
+// it, or it keeps listening on the family it had.
+func TestTurningIPv6OnRestartsOcserv(t *testing.T) {
+	hostWithIPv6(t, true)
+	v4 := Instance{Id: 1, Port: 443}
+	v6 := v4
+	v6.IPv6 = true
+	if v4.structuralFingerprint() == v6.structuralFingerprint() {
+		t.Error("turning IPv6 on leaves the fingerprint alone, so ocserv keeps its IPv4 socket")
 	}
 }
 

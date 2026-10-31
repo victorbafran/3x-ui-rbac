@@ -112,8 +112,8 @@ type Relay struct {
 	CountryCode string `json:"countryCode" gorm:"column:country_code"`
 	City        string `json:"city"`
 
-	// What customers uploaded (in) and downloaded (out) through a BackPack front
-	// since it was added; MetricsLast is its client's last reading, by leg.
+	// What customers uploaded (in) and downloaded (out) through a front since it was
+	// counted; MetricsLast is the last reading, by BackPack leg or Backhaul leg and direction.
 	TrafficIn   int64  `json:"trafficIn" gorm:"column:traffic_in;not null;default:0" example:"75264133"`
 	TrafficOut  int64  `json:"trafficOut" gorm:"column:traffic_out;not null;default:0" example:"699355553"`
 	MetricsLast string `json:"-" gorm:"column:metrics_last;not null;default:''"`

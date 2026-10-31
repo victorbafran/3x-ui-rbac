@@ -86,6 +86,8 @@ func TestAMissingBinaryIsReportedAsMissingRatherThanAsAFailedTunnel(t *testing.T
 	original := binaryCandidates
 	binaryCandidates = []string{filepath.Join(t.TempDir(), "definitely-not-here")}
 	t.Cleanup(func() { binaryCandidates = original })
+	serveBackhaul(t, nil, nil)
+	backhaulReleaseBase += "gone/"
 
 	if got := BinaryPath(); got != "" {
 		t.Fatalf("BinaryPath returned %q for a path that does not exist", got)

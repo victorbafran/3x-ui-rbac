@@ -529,12 +529,8 @@ func (a *SUBController) subOpenVPN(c *gin.Context) {
 			openvpn.Profile{Address: p.Address, Address6: p.Address6, Label: p.Label},
 		)
 		if err != nil {
-			// The inbound has not started yet, so its authority does not
-			// exist on disk. 503 rather than 404: the link is right and the
-			// server is not ready, and a customer who tries again later gets
-			// their file instead of concluding the link is dead.
 			logger.Warningf("sub: the openvpn profile for inbound %d is not ready: %v", wanted, err)
-			c.Status(http.StatusServiceUnavailable)
+			writeOpenVPNProfileError(c, err)
 			return
 		}
 		setNoCacheHeaders(c)
@@ -545,6 +541,25 @@ func (a *SUBController) subOpenVPN(c *gin.Context) {
 		return
 	}
 	c.Status(http.StatusNotFound)
+}
+
+// openvpnAvailable is openvpn.Available, a variable so a test can be either host.
+var openvpnAvailable = openvpn.Available
+
+// writeOpenVPNProfileError tells the page why there is no file: "try again in a
+// minute" is only true of an inbound that has not started on a host that can start it.
+func writeOpenVPNProfileError(c *gin.Context, err error) {
+	switch {
+	case errors.Is(err, openvpn.ErrNotStarted) && openvpnAvailable() == nil:
+		c.Header("Retry-After", "60")
+		c.JSON(http.StatusServiceUnavailable, gin.H{"reason": "notStarted"})
+	case errors.Is(err, openvpn.ErrNotStarted):
+		c.JSON(http.StatusServiceUnavailable, gin.H{"reason": "notInstalled"})
+	case errors.Is(err, openvpn.ErrNoAddress):
+		c.JSON(http.StatusInternalServerError, gin.H{"reason": "noAddress"})
+	default:
+		c.JSON(http.StatusInternalServerError, gin.H{"reason": "invalid"})
+	}
 }
 
 // subs handles HTTP requests for subscription links, returning either HTML page or base64-encoded subscription data.

@@ -19,6 +19,9 @@ type InboundConfig struct {
 	StreamSettings json_util.RawMessage `json:"streamSettings,omitempty"`
 	Tag            string               `json:"tag"`
 	Sniffing       json_util.RawMessage `json:"sniffing,omitempty"`
+	// PsiphonExit is the Psiphon country whose cisco and OpenVPN pools this generated
+	// inbound takes redirected; empty on every other inbound, an operator's of that tag too.
+	PsiphonExit string `json:"-"`
 }
 
 // Equals compares two InboundConfig instances for deep equality.

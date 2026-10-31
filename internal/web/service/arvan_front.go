@@ -1415,6 +1415,7 @@ func (s *ArvanService) redial(r model.Relay) error {
 		}
 	}
 	tunnel.GetManager().Retain(r.Id, legs)
+	s.relays.countBackhaulFronts()
 	return nil
 }
 

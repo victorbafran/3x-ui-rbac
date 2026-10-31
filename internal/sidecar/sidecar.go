@@ -49,6 +49,12 @@ func (p *Process) SetNoise(rules ...NoiseRule) {
 	p.log.setNoise(rules)
 }
 
+// OnLine hands fn every non-blank line the child prints, noise included, so
+// a caller can read state out of it; call it before Start.
+func (p *Process) OnLine(fn func(line string)) {
+	p.log.setOnLine(fn)
+}
+
 // IsRunning reports whether the child is alive.
 func (p *Process) IsRunning() bool {
 	p.mu.RLock()

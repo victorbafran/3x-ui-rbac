@@ -51,10 +51,14 @@ import {
   TUNNEL_TOOLS,
   TUNNEL_TRANSPORTS,
   toolOf,
+  transportChoices,
+  transportEncrypted,
   udpLegPort,
 } from '@/schemas/relay';
 import type { IPFamily, Reachability, Relay, RelayFormValues } from '@/schemas/relay';
 import ArvanFrontModal from './ArvanFrontModal';
+import PsiphonCard from './PsiphonCard';
+import { bytes } from './bytes';
 
 // A relay is a plain server the panel reaches over SSH once. An exit sits in
 // another country: WireGuard and one forwarding rule go on it, and a cisco
@@ -174,21 +178,9 @@ function frontAddress6(r: Relay, t: TFunction) {
   );
 }
 
-function bytes(n: number): string {
-  if (!n) return '0';
-  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-  let v = n;
-  let i = 0;
-  while (v >= 1024 && i < units.length - 1) {
-    v /= 1024;
-    i++;
-  }
-  return `${v.toFixed(v >= 10 || i === 0 ? 0 : 1)} ${units[i]}`;
-}
-
 export default function RelaysPage() {
   const { t } = useTranslation();
-  const { antdThemeConfig } = useTheme();
+  const { isDark, isUltra, antdThemeConfig } = useTheme();
   const { isMobile } = useMediaQuery();
   const [modal, modalContextHolder] = Modal.useModal();
   const [messageApi, messageContextHolder] = message.useMessage();
@@ -222,6 +214,13 @@ export default function RelaysPage() {
     }),
     [relays],
   );
+
+  const pageClass = useMemo(() => {
+    const classes = ['relays-page'];
+    if (isDark) classes.push('is-dark');
+    if (isUltra) classes.push('is-ultra');
+    return classes.join(' ');
+  }, [isDark, isUltra]);
 
   const onAdd = useCallback(() => {
     setEditing(null);
@@ -462,7 +461,7 @@ export default function RelaysPage() {
     <ConfigProvider theme={antdThemeConfig}>
       {messageContextHolder}
       {modalContextHolder}
-      <Layout>
+      <Layout className={pageClass}>
         <AppSidebar />
         <Layout className="content-shell">
           <Layout.Content id="content-layout" className="content-area">
@@ -538,9 +537,13 @@ export default function RelaysPage() {
                         dataSource={relays}
                         columns={columns}
                         pagination={false}
+                        scroll={{ x: 'max-content' }}
                         locale={{ emptyText: t('pages.relays.empty') }}
                       />
                     </Card>
+                  </Col>
+                  <Col span={24}>
+                    <PsiphonCard />
                   </Col>
                 </Row>
               )}
@@ -729,11 +732,25 @@ export default function RelaysPage() {
                   name="transport"
                   label={t('pages.relays.fields.transport')}
                   tooltip={t('pages.relays.fields.transportHint')}
+                  extra={
+                    !transportEncrypted(tool, transport) ? (
+                      <Typography.Text type="warning">
+                        {t('pages.relays.fields.transportPlain')}
+                      </Typography.Text>
+                    ) : udpPort ? (
+                      // Backhaul's UDP tunnel beside it rides udp, which encrypts nothing.
+                      <Typography.Text type="warning">
+                        {t('pages.relays.fields.transportUdpPlain', { port: udpPort })}
+                      </Typography.Text>
+                    ) : undefined
+                  }
                 >
                   <Select
-                    options={(TUNNEL_TRANSPORTS[toolOf(tool)] ?? []).map((v) => ({
+                    options={transportChoices(toolOf(tool), editing?.transport).map((v) => ({
                       value: v,
-                      label: v,
+                      label: transportEncrypted(tool, v)
+                        ? t('pages.relays.fields.transportEncrypted', { transport: v })
+                        : v,
                     }))}
                   />
                 </Form.Item>

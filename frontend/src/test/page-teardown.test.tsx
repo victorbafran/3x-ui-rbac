@@ -14,7 +14,7 @@ it('drops what a closed page left queued instead of running it without window', 
   render(<Button loading={{ delay: 100 }}>Save</Button>);
   cleanup();
 
-  // SubOpenVPNCard: antd's message renders in a root RTL does not own, outside act.
+  // SubOpenVPNSection: antd's message renders in a root RTL does not own, outside act.
   const root = createRoot(document.body.appendChild(document.createElement('div')));
   scope.IS_REACT_ACT_ENVIRONMENT = false;
   root.render(<span>Not ready yet</span>);

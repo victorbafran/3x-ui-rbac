@@ -13,6 +13,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 	"github.com/mhsanaei/3x-ui/v3/internal/relay"
+	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 )
 
 // hostBinding is how a client's host binding applies to one inbound.
@@ -191,8 +192,10 @@ var localCountryLabel = func() string {
 	return ""
 }
 
-// hostCountries labels every host of an inbound that offers countries: an exit's
-// own label, or this server's for a host that leaves here. Nil when none does.
+// hostCountries labels every host of an inbound that offers relay countries: an exit's
+// own label, a Psiphon country's own, or this server's for a host that leaves here.
+// Nil when no relay exit is among them: a Psiphon host's name carries its country
+// already, and the inbound's other names stay as they were.
 func hostCountries(hosts []*model.Host) map[int]string {
 	var exitIDs []int
 	for _, h := range hosts {
@@ -209,6 +212,8 @@ func hostCountries(hosts []*model.Host) map[int]string {
 	for _, h := range hosts {
 		if id, ok := relay.InterfaceID(h.Exit); ok {
 			out[h.Id] = labels[id]
+		} else if label, ok := service.PsiphonExitLabel(h.Exit); ok {
+			out[h.Id] = label
 		} else {
 			out[h.Id] = local
 		}

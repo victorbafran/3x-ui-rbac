@@ -2,9 +2,9 @@ package ocserv
 
 import (
 	"context"
-	"fmt"
 	"os/exec"
 	"runtime"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -32,34 +32,30 @@ type locationRoute struct {
 	Table int
 }
 
-func runOut(name string, args ...string) (string, error) {
+var runOut = func(name string, args ...string) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), natTimeout)
 	defer cancel()
 	out, err := exec.CommandContext(ctx, name, args...).Output()
 	return string(out), err
 }
 
+// What touches the host's routes and NAT, run and runOut too, is a variable so a
+// test can stand a fake host in; onLinux is what lets any of it run.
+var (
+	onLinux        = runtime.GOOS == "linux"
+	steerPool      = relay.SteerPool
+	reassertPool   = relay.ReassertPool
+	releasePool    = relay.ReleasePool
+	reassertGuards = relay.ReassertPsiphonGuards
+	ensureExitSNAT = relay.EnsureExitSNAT
+	removeExitSNAT = relay.RemoveExitSNAT
+)
+
 // ipRuleExists reports whether the rule steering this pool is already in
 // place, so a reconcile does not stack a second copy of it every time.
 func ipRuleExists(cidr string, table int) bool {
 	out, err := runOut("ip", "rule", "show")
-	if err != nil {
-		return false
-	}
-	want := fmt.Sprintf("from %s lookup %d", cidr, table)
-	wantNamed := fmt.Sprintf("from %s lookup ", cidr)
-	for _, line := range strings.Split(out, "\n") {
-		if strings.Contains(line, want) {
-			return true
-		}
-		// A table that also has a name in rt_tables prints the name rather
-		// than the number, so the number alone would never match and the
-		// rule would be added again on every single reconcile.
-		if strings.Contains(line, wantNamed) && strings.Contains(line, "priority "+strconv.Itoa(table)) {
-			return true
-		}
-	}
-	return false
+	return err == nil && relay.PoolRuleIn(out, cidr, table)
 }
 
 // ensureLocationRoute puts one country's pool on the right path.
@@ -70,12 +66,12 @@ func ipRuleExists(cidr string, table int) bool {
 // packets heading into the tunnel too, and the server at the far end would
 // have nothing left to route the answers back to.
 func ensureLocationRoute(r locationRoute) {
-	if runtime.GOOS != "linux" || r.CIDR == "" {
+	if !onLinux || r.CIDR == "" {
 		return
 	}
 	exit := strings.TrimSpace(r.Exit)
 	if exit == "" {
-		removeLocationRoute(locationRoute{CIDR: r.CIDR, Exit: "x", Table: r.Table})
+		removeLocationRoute(locationRoute{CIDR: r.CIDR, Exit: "x", Table: r.Table}, nil)
 		ensureNAT(r.CIDR)
 		return
 	}
@@ -84,42 +80,86 @@ func ensureLocationRoute(r locationRoute) {
 	if err := run("sysctl", "-w", "net.ipv4.ip_forward=1"); err != nil {
 		logger.Warningf("ocserv: could not enable ip_forward: %v", err)
 	}
-	table := strconv.Itoa(r.Table)
-	// replace rather than add: an exit the operator has just changed should
-	// take effect, not collide with the route that is already in the table.
-	if err := run("ip", "route", "replace", "default", "dev", exit, "table", table); err != nil {
-		logger.Warningf("ocserv: %s cannot be routed out of %q — the interface is missing or down, and clients who pick that location will reach nothing: %v", r.CIDR, exit, err)
+	through, _, err := steerPool(r.poolExit())
+	if err != nil {
+		logger.Warningf("ocserv: could not steer %s into table %d: %v", r.CIDR, r.Table, err)
 		return
 	}
-	if !ipRuleExists(r.CIDR, r.Table) {
-		if err := run("ip", "rule", "add", "from", r.CIDR, "lookup", table, "priority", table); err != nil {
-			logger.Warningf("ocserv: could not steer %s into table %s: %v", r.CIDR, table, err)
-			return
-		}
-	}
 	// A network the operator typed for a country can sit outside what exits accept.
-	if err := relay.EnsureExitSNAT(r.CIDR, exit); err != nil {
+	if err := ensureExitSNAT(r.CIDR, exit); err != nil {
 		logger.Warningf("ocserv: %s reaches %s but cannot be answered: %v", r.CIDR, exit, err)
 	}
+	if !through {
+		logger.Warningf("ocserv: %s is held closed: %q is missing or down, and clients who pick that location reach nothing until it is back", r.CIDR, exit)
+		return
+	}
 	logger.Infof("ocserv: %s now leaves through %s", r.CIDR, exit)
+}
+
+func (r locationRoute) poolExit() relay.PoolExit {
+	return relay.PoolExit{CIDR: r.CIDR, Exit: strings.TrimSpace(r.Exit), Table: r.Table}
+}
+
+// ReassertRoutes puts back what a recreated device (relay.Up remakes every wgrN) or a
+// flushed iptables took from the pools, without restarting anything.
+func (m *Manager) ReassertRoutes() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for _, cur := range m.procs {
+		for _, r := range cur.routes {
+			// A country with no exit is masqueraded here; a table would cut it off.
+			if strings.TrimSpace(r.Exit) == "" {
+				continue
+			}
+			through, wrote, err := reassertPool(r.poolExit())
+			switch {
+			case err != nil:
+				logger.Debugf("ocserv: could not reassert %s on %s: %v", r.CIDR, r.Exit, err)
+			case wrote && through:
+				logger.Infof("ocserv: %s leaves through %s again", r.CIDR, r.Exit)
+			case wrote:
+				logger.Infof("ocserv: %s is held closed until %s is back", r.CIDR, r.Exit)
+			}
+		}
+	}
+	if wrote, err := reassertGuards(); err != nil {
+		logger.Debugf("ocserv: could not reassert the Psiphon redirect guards: %v", err)
+	} else if wrote {
+		logger.Info("ocserv: the Psiphon redirect ports are guarded again")
+	}
 }
 
 // removeLocationRoute takes a country's pool back off the wire. A rule left
 // behind would keep sending an address range into a tunnel nobody serves any
 // more, and the next inbound to be handed that range would vanish.
-func removeLocationRoute(r locationRoute) {
-	if runtime.GOOS != "linux" || r.CIDR == "" {
+//
+// What a wanted country holds now is left to it: two countries trading tables
+// would otherwise each flush the other's, and a pool kept under a new table
+// would lose its NAT and its exit's rewrite.
+func removeLocationRoute(r locationRoute, wanted []locationRoute) {
+	if !onLinux || r.CIDR == "" {
 		return
 	}
-	relay.RemoveExitSNAT(r.CIDR)
+	poolKept := slices.ContainsFunc(wanted, func(w locationRoute) bool { return w.CIDR == r.CIDR })
+	tableKept := slices.ContainsFunc(wanted, func(w locationRoute) bool { return w.Table == r.Table })
+	if !poolKept {
+		removeExitSNAT(r.CIDR)
+		if err := releasePool(r.CIDR); err != nil {
+			logger.Warningf("ocserv: could not take every rule off %s: %v", r.CIDR, err)
+		}
+	}
 	table := strconv.Itoa(r.Table)
 	for ipRuleExists(r.CIDR, r.Table) {
 		if err := run("ip", "rule", "del", "from", r.CIDR, "lookup", table); err != nil {
 			break
 		}
 	}
-	_ = run("ip", "route", "flush", "table", table)
-	removeNAT(r.CIDR)
+	if !tableKept {
+		_ = run("ip", "route", "flush", "table", table)
+	}
+	if !poolKept {
+		removeNAT(r.CIDR)
+	}
 }
 
 // locationRoutes is what an instance's locations need on the wire.
@@ -155,6 +195,6 @@ func syncLocationRoutes(previous, wanted []locationRoute) {
 		if _, still := keep[r.CIDR+"|"+strconv.Itoa(r.Table)]; still {
 			continue
 		}
-		removeLocationRoute(r)
+		removeLocationRoute(r, wanted)
 	}
 }

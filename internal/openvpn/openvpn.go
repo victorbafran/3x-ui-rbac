@@ -9,6 +9,7 @@
 package openvpn
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -16,38 +17,53 @@ import (
 	"runtime"
 	"strings"
 	"sync"
+
+	"github.com/mhsanaei/3x-ui/v3/internal/sidecar"
 )
 
 // binaryNames are what the distributions call it. openvpn is the only one in
 // practice, but a path set by the operator wins over all of them.
 var binaryNames = []string{"openvpn"}
 
+// ErrNotInstalled is a host with no openvpn binary for an inbound to run.
+var ErrNotInstalled = errors.New("openvpn is not installed on this host")
+
 var (
-	lookupOnce sync.Once
+	lookupMu   sync.Mutex
 	lookupPath string
-	lookupErr  error
 )
 
-// BinaryPath is the openvpn executable this host will run, found once.
+// BinaryPath is the openvpn executable this host will run. Only a find is kept:
+// the panel may install the package while it runs, and a miss must not stick.
 func BinaryPath() (string, error) {
-	lookupOnce.Do(func() {
-		if custom := strings.TrimSpace(os.Getenv("XUI_OPENVPN_BIN")); custom != "" {
-			if _, err := os.Stat(custom); err == nil {
-				lookupPath = custom
-				return
-			}
-			lookupErr = fmt.Errorf("XUI_OPENVPN_BIN points at %s, which is not there", custom)
-			return
+	lookupMu.Lock()
+	defer lookupMu.Unlock()
+	if lookupPath != "" {
+		return lookupPath, nil
+	}
+	if custom := strings.TrimSpace(os.Getenv("XUI_OPENVPN_BIN")); custom != "" {
+		if _, err := os.Stat(custom); err != nil {
+			return "", fmt.Errorf("XUI_OPENVPN_BIN points at %s, which is not there", custom)
 		}
-		for _, name := range binaryNames {
-			if p, err := exec.LookPath(name); err == nil {
-				lookupPath = p
-				return
-			}
+		lookupPath = custom
+		return lookupPath, nil
+	}
+	for _, name := range binaryNames {
+		if p, err := exec.LookPath(name); err == nil {
+			lookupPath = p
+			return lookupPath, nil
 		}
-		lookupErr = fmt.Errorf("openvpn is not installed on this host")
-	})
-	return lookupPath, lookupErr
+	}
+	return "", ErrNotInstalled
+}
+
+// DistroPackage is what the panel installs when an enabled inbound finds no
+// openvpn; the distribution's own units would otherwise run configs beside it.
+var DistroPackage = sidecar.Package{
+	Name:    "openvpn",
+	Present: func() bool { _, err := BinaryPath(); return !errors.Is(err, ErrNotInstalled) },
+	Units:   []string{"openvpn.service", "openvpn@.service", "openvpn-server@.service"},
+	OptOut:  "XUI_WITH_OPENVPN",
 }
 
 // Available reports whether this host can serve an OpenVPN inbound at all.

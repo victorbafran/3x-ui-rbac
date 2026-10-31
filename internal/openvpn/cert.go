@@ -28,18 +28,9 @@ import (
 // rotating a key that never leaves the host.
 const certLifetime = 10 * 365 * 24 * time.Hour
 
-// ensureKeypair returns the paths the config should use, generating the
-// authority, the server certificate and the tls-crypt key when they are not
-// already there. An operator-supplied pair is used as given and nothing is
-// generated for it.
+// ensureKeypair makes the authority and server certificate once. Never an operator's pair:
+// each customer's .ovpn carries this authority, and a cert it does not sign stops the server.
 func ensureKeypair(inst Instance) (caFile, certFile, keyFile string, err error) {
-	if strings.TrimSpace(inst.CertFile) != "" && strings.TrimSpace(inst.KeyFile) != "" {
-		// The operator brought their own. The authority is still needed for
-		// the client's copy, and is theirs to point at: with no CA file of
-		// ours, the certificate is its own.
-		return inst.CertFile, inst.CertFile, inst.KeyFile, nil
-	}
-
 	caFile = caCertPathForID(inst.Id)
 	certFile = certPathForID(inst.Id)
 	keyFile = keyPathForID(inst.Id)

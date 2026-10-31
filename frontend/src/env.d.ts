@@ -26,6 +26,7 @@ interface SubPageData {
     username?: string;
     password?: string;
     label?: string;
+    family?: string;
   }[];
   openvpnProfiles?: {
     email?: string;

@@ -4,6 +4,8 @@ export const keys = {
     status: () => ['server', 'status'] as const,
     fail2banStatus: () => ['server', 'fail2banStatus'] as const,
     standby: () => ['server', 'standby'] as const,
+    certCovers: (certFile: string, names: string[]) =>
+      ['server', 'certCovers', certFile, names] as const,
   },
   clones: {
     root: () => ['clones'] as const,
@@ -22,6 +24,11 @@ export const keys = {
       root: () => ['relays', 'arvan'] as const,
       key: () => ['relays', 'arvan', 'key'] as const,
       front: (relayId: number) => ['relays', 'arvan', 'front', relayId] as const,
+    },
+    psiphon: {
+      root: () => ['relays', 'psiphon'] as const,
+      state: () => ['relays', 'psiphon', 'state'] as const,
+      inbounds: () => ['relays', 'psiphon', 'inbounds'] as const,
     },
   },
   admins: {

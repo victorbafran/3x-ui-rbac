@@ -19,6 +19,17 @@ type CiscoJob struct {
 	lastSpeedSample time.Time
 }
 
+// ciscoSidecars is what a tick asks of the ocserv manager.
+type ciscoSidecars interface {
+	HasRunning() bool
+	Reconcile([]ocserv.Instance)
+	ReassertRoutes()
+	CollectTraffic() ([]ocserv.Traffic, []string)
+}
+
+// ciscoManager is the ocserv manager; a variable so a test can see what a tick does.
+var ciscoManager = func() ciscoSidecars { return ocserv.GetManager() }
+
 // NewCiscoJob creates a new cisco reconcile/traffic job instance.
 func NewCiscoJob() *CiscoJob { return new(CiscoJob) }
 
@@ -31,12 +42,16 @@ func (j *CiscoJob) Run() {
 		return
 	}
 
-	mgr := ocserv.GetManager()
+	mgr := ciscoManager()
 	// Nothing is wanted and nothing is running: skip the reconcile entirely so
 	// a host without ocserv installed does not log a failure every 10 seconds
 	// for a feature it is not using.
 	if len(desired) == 0 && !mgr.HasRunning() {
 		return
+	}
+
+	if len(desired) > 0 {
+		requestPackage(ocserv.DistroPackage)
 	}
 
 	activeTags := make([]string, 0, len(desired))
@@ -45,6 +60,9 @@ func (j *CiscoJob) Run() {
 	}
 
 	mgr.Reconcile(desired)
+	// A relay brought back up took its route with it, a flushed iptables a Psiphon
+	// redirect; nothing restarts the server to put them back.
+	mgr.ReassertRoutes()
 
 	deltas, onlineEmails := mgr.CollectTraffic()
 

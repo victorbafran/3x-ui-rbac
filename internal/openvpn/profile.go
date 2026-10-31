@@ -29,6 +29,13 @@ type Profile struct {
 // character in it, as the .conf builders do: a break starts a directive of its own.
 var ErrControlCharacter = errors.New("holds a control character")
 
+// ErrNotStarted is a profile asked for before the inbound first started: its
+// authority and shared key are made on that start and are not on disk yet.
+var ErrNotStarted = errors.New("the inbound has not started yet")
+
+// ErrNoAddress is a profile with nothing for the customer's client to dial.
+var ErrNoAddress = errors.New("no address for the customer to connect to")
+
 func isControlCharacter(r rune) bool { return r < 0x20 || r == 0x7f }
 
 // Render writes the profile for an instance.
@@ -44,16 +51,16 @@ func Render(inst Instance, p Profile) (string, error) {
 	}
 	ca, err := os.ReadFile(caCertPathForID(inst.Id))
 	if err != nil {
-		return "", fmt.Errorf("the certificate authority for inbound %d is missing; the inbound has not started yet: %w", inst.Id, err)
+		return "", fmt.Errorf("the certificate authority for inbound %d is missing: %w: %w", inst.Id, ErrNotStarted, err)
 	}
 	key, err := os.ReadFile(tlsAuthPathForID(inst.Id))
 	if err != nil {
-		return "", fmt.Errorf("the shared key for inbound %d is missing; the inbound has not started yet: %w", inst.Id, err)
+		return "", fmt.Errorf("the shared key for inbound %d is missing: %w: %w", inst.Id, ErrNotStarted, err)
 	}
 
 	address := remoteHost(p.Address)
 	if address == "" {
-		return "", fmt.Errorf("no address for the customer to connect to")
+		return "", ErrNoAddress
 	}
 
 	var b strings.Builder

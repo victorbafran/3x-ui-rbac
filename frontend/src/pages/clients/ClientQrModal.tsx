@@ -10,7 +10,7 @@ import { isPostQuantumLink } from '@/lib/xray/inbound-link';
 import { LinkTags, linkMetaText, parseLinkParts } from '@/lib/xray/link-label';
 import { QrPanel } from '@/pages/inbounds/qr';
 import type { ClientRecord, InboundOption } from '@/hooks/useClients';
-import { formatTunnelConfigMeta } from '@/lib/inbounds/label';
+import { formatTunnelConfigMeta, wireguardFileNames } from '@/lib/inbounds/label';
 import { isClientRecordId, tunnelFamilyLabel, useTunnelConfigs } from '@/hooks/useTunnelConfigs';
 
 interface SubSettings {
@@ -427,6 +427,12 @@ function ClientQrModalContent({
         title: t('pages.clients.amneziaWgConfig'),
       },
     ];
+    // One list across both sections, as they all land in one Downloads folder.
+    const fileNames = wireguardFileNames(
+      [...wgConfigs, ...awgConfigs].map((c) => c.remark),
+      client?.email,
+    );
+    let fileIdx = 0;
     for (const section of tunnelSections) {
       section.configs.forEach(({ inboundId, endpoint, family, text }, idx) => {
         const inbound = inboundsById[inboundId] ?? { id: inboundId };
@@ -448,7 +454,9 @@ function ClientQrModalContent({
         out.push({
           key: `${section.key}-config-${inboundId}-${idx}`,
           label,
-          children: <QrPanel value={text} remark={meta.qrRemark} downloadName={meta.fileName} />,
+          children: (
+            <QrPanel value={text} remark={meta.qrRemark} downloadName={fileNames[fileIdx++]} />
+          ),
         });
       });
     }

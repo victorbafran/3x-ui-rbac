@@ -91,3 +91,53 @@ export function buildSubApps({
     ],
   };
 }
+
+export interface CiscoLogin {
+  email?: string;
+  server?: string;
+  port?: number;
+  username?: string;
+  password?: string;
+  // Tells a pair's IPv6 and IPv4 logins apart, as their config names are.
+  label?: string;
+  // "v6" or "v4" when the label names the family, which the page then says itself.
+  family?: string;
+}
+
+export interface OpenVPNProfile {
+  email?: string;
+  label?: string;
+  fileName?: string;
+  url?: string;
+  username?: string;
+  password?: string;
+}
+
+export interface CredentialGroup {
+  username: string;
+  password: string;
+  logins: CiscoLogin[];
+  profiles: OpenVPNProfile[];
+}
+
+// Rows are grouped by the exact name and password they sign in with, so a value is
+// shown once under the rows it opens and never under another client's rows.
+export function groupLoginsByCredentials(
+  logins: CiscoLogin[],
+  profiles: OpenVPNProfile[],
+): CredentialGroup[] {
+  const groups = new Map<string, CredentialGroup>();
+  const groupOf = (username = '', password = '') => {
+    const key = JSON.stringify([username, password]);
+    let group = groups.get(key);
+    if (!group) {
+      group = { username, password, logins: [], profiles: [] };
+      groups.set(key, group);
+    }
+    return group;
+  };
+  for (const login of logins) groupOf(login.username, login.password).logins.push(login);
+  for (const profile of profiles)
+    groupOf(profile.username, profile.password).profiles.push(profile);
+  return [...groups.values()];
+}

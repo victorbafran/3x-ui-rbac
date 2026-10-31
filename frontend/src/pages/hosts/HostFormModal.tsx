@@ -33,6 +33,7 @@ import DynamicEchHelper from '@/components/form/DynamicEchHelper';
 import { FormField, rhfZodValidate } from '@/components/form/rhf';
 import { useNodesQuery } from '@/api/queries/useNodesQuery';
 import { useRelayOptions } from '@/api/queries/useRelaysQuery';
+import type { RelayOption } from '@/schemas/relay';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { catTabLabel } from '@/pages/settings/catTabLabel';
 import { HostFinalMaskForm, HostMuxForm, HostSockoptForm } from './json-forms';
@@ -148,15 +149,16 @@ export default function HostFormModal({
 
   const { nodes } = useNodesQuery();
 
-  // Exits only: an empty value already means this server.
+  // Exits only: an empty value already means this server. Psiphon countries
+  // follow the exit servers under a heading of their own.
   const { options: relayOptions } = useRelayOptions();
-  const exitSelectOptions = useMemo(
-    () =>
-      relayOptions
-        .filter((o) => o.interface !== '')
-        .map((o) => ({ value: o.interface, label: o.label || o.name })),
-    [relayOptions],
-  );
+  const exitSelectOptions = useMemo(() => {
+    const exits = relayOptions.filter((o) => o.interface !== '');
+    const option = (o: RelayOption) => ({ value: o.interface, label: o.label || o.name });
+    const servers = exits.filter((o) => o.kind !== 'psiphon').map(option);
+    const psiphon = exits.filter((o) => o.kind === 'psiphon').map(option);
+    return psiphon.length ? [...servers, { label: 'Psiphon', options: psiphon }] : servers;
+  }, [relayOptions]);
   const inboundSelectOptions = useMemo(
     () =>
       inboundOptions.map((ib) => ({

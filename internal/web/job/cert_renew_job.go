@@ -9,9 +9,8 @@ import (
 )
 
 // CertRenewJob renews the certificates the panel issued before they expire.
-// It only fetches the new files: the cisco and OpenVPN sidecars notice the
-// change themselves, because their restart fingerprints cover the
-// certificate's content.
+// It only fetches the new files: the cisco sidecar notices the change itself,
+// because its restart fingerprint covers the certificate's content.
 type CertRenewJob struct{}
 
 // NewCertRenewJob returns the renewal job.

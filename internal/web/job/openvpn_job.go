@@ -5,6 +5,7 @@ import (
 
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 	"github.com/mhsanaei/3x-ui/v3/internal/openvpn"
+	"github.com/mhsanaei/3x-ui/v3/internal/sidecar"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 	"github.com/mhsanaei/3x-ui/v3/internal/xray"
 )
@@ -23,6 +24,21 @@ type OpenVPNJob struct {
 	lastSpeedSample time.Time
 }
 
+// openvpnSidecars is what a tick asks of the openvpn manager.
+type openvpnSidecars interface {
+	HasRunning() bool
+	Reconcile([]openvpn.Instance)
+	ReassertRoutes()
+	CollectTraffic() ([]openvpn.Traffic, []string)
+}
+
+// openvpnManager is the openvpn manager; a variable so a test can see what a tick does.
+var openvpnManager = func() openvpnSidecars { return openvpn.GetManager() }
+
+// requestPackage installs a sidecar's missing package once per panel run; a
+// variable so a test can see what a tick asked for.
+var requestPackage = func(p sidecar.Package) { sidecar.Installs.Request(p) }
+
 func NewOpenVPNJob() *OpenVPNJob { return new(OpenVPNJob) }
 
 func (j *OpenVPNJob) Run() {
@@ -32,12 +48,16 @@ func (j *OpenVPNJob) Run() {
 		return
 	}
 
-	mgr := openvpn.GetManager()
+	mgr := openvpnManager()
 	// Nothing wanted and nothing running: skip entirely, so a host without
 	// openvpn installed does not log a failure every few seconds for a
 	// feature it is not using.
 	if len(desired) == 0 && !mgr.HasRunning() {
 		return
+	}
+
+	if len(desired) > 0 {
+		requestPackage(openvpn.DistroPackage)
 	}
 
 	activeTags := make([]string, 0, len(desired))
@@ -46,6 +66,9 @@ func (j *OpenVPNJob) Run() {
 	}
 
 	mgr.Reconcile(desired)
+	// A relay brought back up took its route with it, a flushed iptables a Psiphon
+	// redirect; nothing restarts the server to put them back.
+	mgr.ReassertRoutes()
 
 	deltas, onlineEmails := mgr.CollectTraffic()
 

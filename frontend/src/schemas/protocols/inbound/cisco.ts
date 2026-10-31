@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { IP_FAMILIES } from '@/schemas/relay';
+
 // A cisco inbound is served by an ocserv sidecar, not by xray-core, so its
 // settings describe the VPN server rather than an xray handler: who may log
 // in, what addresses they are handed, and which certificate is presented.
@@ -90,6 +92,11 @@ export const CiscoInboundSettingsSchema = z
     // shows a Group dropdown and picks where to come out; each one is handed a
     // pool of its own so the host can route it to that country's exit.
     locations: z.array(CiscoLocationSchema).default([]),
+    // IPv6 served by this server itself: "" keeps customers on IPv4 as before,
+    // "v6" hands them address6 instead, "both" hands it out first and IPv4 after.
+    ipFamily: z.enum(IP_FAMILIES).default(''),
+    // A name whose only record is AAAA to this server, or the IPv6 itself.
+    address6: z.string().default(''),
   })
   // Loose, not strict: the panel reads settings the form may not show yet,
   // and a strict schema drops them on every save through the form. That is

@@ -3,6 +3,7 @@ package service
 import (
 	"encoding/json"
 	"maps"
+	"slices"
 	"sync"
 	"time"
 
@@ -32,8 +33,8 @@ var frontRates = struct {
 	byRelay map[int]map[string]legRate
 }{byRelay: map[int]map[string]legRate{}}
 
-// CollectFrontTraffic adds to each enabled BackPack front what its client
-// carried since the last reading. Backhaul writes no counters; its fronts get none.
+// CollectFrontTraffic adds to each enabled front what its tunnel carried since the
+// last reading: a BackPack front's from its client's counters, a Backhaul one's from the firewall's.
 func (s *RelayService) CollectFrontTraffic() {
 	if global.IsStandby() {
 		return
@@ -45,10 +46,73 @@ func (s *RelayService) CollectFrontTraffic() {
 		return
 	}
 	now := time.Now()
+	var counted map[int]map[string]tunnel.LegMetrics
+	if slices.ContainsFunc(fronts, func(r model.Relay) bool { return frontTool(r) == tunnel.ToolBackhaul }) {
+		var err error
+		counted, err = readFrontAcct(frontAcctPairs(fronts), now)
+		frontAcctReadErr.note("front traffic: could not read the Backhaul fronts' counters:", err)
+	}
 	for _, r := range fronts {
+		read := counted[r.Id]
 		if frontTool(r) == tunnel.ToolBackPack {
-			collectFrontTraffic(r, tunnel.FrontMetrics(r.Id, now))
+			read = tunnel.FrontMetrics(r.Id, now)
 		}
+		collectFrontTraffic(r, read)
+	}
+}
+
+// Variables so a test stands in for the panel's own netfilter.
+var (
+	fitFrontAcct  = tunnel.FitFrontAcct
+	readFrontAcct = tunnel.ReadFrontAcct
+)
+
+// countBackhaulFronts has the firewall count every enabled Backhaul front's tunnel and
+// no other; a standby copy dials none, so it counts none.
+func (s *RelayService) countBackhaulFronts() {
+	var fronts []model.Relay
+	if !global.IsStandby() {
+		if err := database.GetDB().Where("enabled = ? AND role = ?", true, model.RelayFront).
+			Find(&fronts).Error; err != nil {
+			logger.Warning("front traffic: could not list the entry servers:", err)
+			return
+		}
+	}
+	frontAcctFitErr.note("front traffic: the Backhaul fronts cannot be counted:", fitFrontAcct(frontAcctPairs(fronts)))
+}
+
+// frontAcctPairs is what the firewall counts each front by: the address and port its rows name now.
+func frontAcctPairs(fronts []model.Relay) []tunnel.Pair {
+	pairs := make([]tunnel.Pair, 0, len(fronts))
+	for _, r := range fronts {
+		pairs = append(pairs, tunnel.Pair{
+			Id: r.Id, FrontAddress: r.Address, TunnelPort: r.TunnelPort,
+			Transport: tunnel.Transport(r.Transport), Tool: frontTool(r),
+		})
+	}
+	return pairs
+}
+
+// onceEach logs an error when it differs from the last one: a box whose firewall
+// refuses would otherwise say so twice a minute for ever.
+type onceEach struct {
+	sync.Mutex
+	last string
+}
+
+var frontAcctFitErr, frontAcctReadErr onceEach
+
+func (o *onceEach) note(what string, err error) {
+	msg := ""
+	if err != nil {
+		msg = err.Error()
+	}
+	o.Lock()
+	same := msg == o.last
+	o.last = msg
+	o.Unlock()
+	if err != nil && !same {
+		logger.Warning(what, err)
 	}
 }
 

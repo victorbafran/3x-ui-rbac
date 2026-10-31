@@ -284,9 +284,8 @@ func explainProof(name string, err error) error {
 }
 
 // RenewDue renews every certificate the panel issued that has less than
-// RenewBefore left. ocserv and OpenVPN pick the new files up on their own:
-// their restart fingerprints cover the certificate's content, not only its
-// path.
+// RenewBefore left. ocserv picks the new files up on its own: its restart
+// fingerprint covers the certificate's content, not only its path.
 func RenewDue(ctx context.Context, now time.Time) []error {
 	entries, err := os.ReadDir(baseDir())
 	if err != nil {

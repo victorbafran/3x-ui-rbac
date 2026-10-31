@@ -76,14 +76,12 @@ func fingerprint(p Pair) string {
 	return fmt.Sprintf("%s|%s|%d|%s|%s", p.Tool.norm(), p.FrontAddress, p.TunnelPort, p.Transport, p.Token)
 }
 
-// clientBinary is the program that runs this leg's client on the panel's
-// machine. BackPack's is the panel's own verified copy, fetched once; it is
-// never the operator's /usr/local/bin/backpack, which may be carrying tunnels
-// of their own.
+// clientBinary runs this leg's client here: BackPack's own verified copy, never the operator's;
+// Backhaul's from this host, else the pinned release, as a restored or promoted panel has none.
 func clientBinary(p Pair) (string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
 	if p.Tool.norm() == ToolBackPack {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
-		defer cancel()
 		bin, err := FetchBackPack(ctx, panelArch())
 		if err != nil {
 			return "", fmt.Errorf("backpack is not installed on this panel and could not be fetched: %w", err)
@@ -93,7 +91,11 @@ func clientBinary(p Pair) (string, error) {
 	if bin := BinaryPath(); bin != "" {
 		return bin, nil
 	}
-	return "", fmt.Errorf("backhaul is not installed on this panel; the tunnel cannot be dialled from here")
+	bin, err := FetchBackhaul(ctx, panelArch())
+	if err != nil {
+		return "", fmt.Errorf("backhaul is not installed on this panel and could not be fetched: %w", err)
+	}
+	return bin, nil
 }
 
 // panelArch names this machine's architecture the way BackPack's releases do.

@@ -16,6 +16,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+
+	"github.com/mhsanaei/3x-ui/v3/internal/sidecar"
 )
 
 // serverCandidates and ctlCandidates are the usual install locations, tried
@@ -43,6 +45,15 @@ func ServerBinaryPath() string { return lookup("ocserv", serverCandidates) }
 
 // CtlBinaryPath returns the occtl executable, or "" when it is not installed.
 func CtlBinaryPath() string { return lookup("occtl", ctlCandidates) }
+
+// DistroPackage is what the panel installs when an enabled cisco inbound finds
+// no ocserv; the distribution's own ocserv would take port 443 the moment it starts.
+var DistroPackage = sidecar.Package{
+	Name:    "ocserv",
+	Present: func() bool { return ServerBinaryPath() != "" && CtlBinaryPath() != "" },
+	Units:   []string{"ocserv.service"},
+	OptOut:  "XUI_WITH_CISCO",
+}
 
 // Available reports why a cisco inbound cannot be served, or nil when it can.
 // The messages name the package to install, because that is the only thing the

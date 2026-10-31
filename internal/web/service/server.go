@@ -39,6 +39,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
+	"github.com/mhsanaei/3x-ui/v3/internal/ocserv"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/netsafe"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/sys"
@@ -2698,7 +2699,7 @@ func (s *ServerService) GetCertHash(certFile string, certContent string) ([]stri
 		// caller-supplied value.
 		known, ok := s.resolveKnownCertFile(path)
 		if !ok {
-			return nil, common.NewError("certificate file is not referenced by any inbound or panel setting")
+			return nil, ErrCertNotReferenced
 		}
 		b, err := os.ReadFile(known)
 		if err != nil {
@@ -2761,9 +2762,8 @@ func (s *ServerService) resolveKnownCertFile(certFile string) (string, bool) {
 	return "", false
 }
 
-// knownCertFiles collects every certificate file path the panel legitimately
-// references: the certificateFile of each inbound's TLS settings and the
-// panel's own web TLS certificate.
+// knownCertFiles collects every certificate file the panel references: each inbound's
+// TLS certificateFile, a cisco inbound's certFile and the panel's own web certificate.
 func (s *ServerService) knownCertFiles() []string {
 	var files []string
 	if cert, err := s.settingService.GetCertFile(); err == nil {
@@ -2774,6 +2774,11 @@ func (s *ServerService) knownCertFiles() []string {
 	if inbounds, err := s.inboundService.GetAllInbounds(); err == nil {
 		for _, inbound := range inbounds {
 			files = collectCertFiles(inbound.StreamSettings, files)
+			if inbound.Protocol == model.Cisco {
+				if cert := ocserv.CertFileOf(inbound); cert != "" {
+					files = append(files, cert)
+				}
+			}
 		}
 	}
 	return files

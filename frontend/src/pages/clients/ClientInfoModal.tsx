@@ -10,7 +10,11 @@ import {
 } from '@ant-design/icons';
 
 import { ClipboardManager, FileManager, HttpUtil, IntlUtil, SizeFormatter } from '@/utils';
-import { formatInboundLabel, formatTunnelConfigMeta } from '@/lib/inbounds/label';
+import {
+  formatInboundLabel,
+  formatTunnelConfigMeta,
+  wireguardFileNames,
+} from '@/lib/inbounds/label';
 import { normalizeClientIps, type ClientIpInfo } from '@/lib/clients/ip-log';
 import { useDatepicker } from '@/hooks/useDatepicker';
 import { useClientHwids } from '@/hooks/useClientHwids';
@@ -194,7 +198,23 @@ export default function ClientInfoModal({
     [tunnelConfigs],
   );
 
-  function tunnelConfigBlock(cfg: TunnelConfig, idx: number, all: TunnelConfig[], color: string) {
+  // One list across WireGuard and AmneziaWG, as they all land in one Downloads folder.
+  const tunnelFileNames = useMemo(
+    () =>
+      wireguardFileNames(
+        [...wgConfigs, ...awgConfigs].map((c) => c.remark),
+        client?.email,
+      ),
+    [wgConfigs, awgConfigs, client?.email],
+  );
+
+  function tunnelConfigBlock(
+    cfg: TunnelConfig,
+    idx: number,
+    all: TunnelConfig[],
+    color: string,
+    fileName: string,
+  ) {
     const inbound = inboundsById[cfg.inboundId] ?? { id: cfg.inboundId };
     const meta = formatTunnelConfigMeta(inbound, client?.email, all.length, cfg.endpoint);
     const label = [meta.label || t('pages.clients.config'), tunnelFamilyLabel(cfg.family)]
@@ -205,7 +225,7 @@ export default function ClientInfoModal({
         key={`${cfg.protocol}-${cfg.inboundId}-${idx}`}
         label={label}
         text={cfg.text}
-        fileName={meta.fileName}
+        fileName={fileName}
         qrRemark={meta.qrRemark}
         tagColor={color}
       />
@@ -799,14 +819,24 @@ export default function ClientInfoModal({
             {wgConfigs.length > 0 && client && (
               <>
                 <Divider>{t('pages.clients.wireguardConfig')}</Divider>
-                {wgConfigs.map((cfg, idx, all) => tunnelConfigBlock(cfg, idx, all, 'cyan'))}
+                {wgConfigs.map((cfg, idx, all) =>
+                  tunnelConfigBlock(cfg, idx, all, 'cyan', tunnelFileNames[idx]),
+                )}
               </>
             )}
 
             {awgConfigs.length > 0 && client && (
               <>
                 <Divider>{t('pages.clients.amneziaWgConfig')}</Divider>
-                {awgConfigs.map((cfg, idx, all) => tunnelConfigBlock(cfg, idx, all, 'purple'))}
+                {awgConfigs.map((cfg, idx, all) =>
+                  tunnelConfigBlock(
+                    cfg,
+                    idx,
+                    all,
+                    'purple',
+                    tunnelFileNames[wgConfigs.length + idx],
+                  ),
+                )}
               </>
             )}
           </>

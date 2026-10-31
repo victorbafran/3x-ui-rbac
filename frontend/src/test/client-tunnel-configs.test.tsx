@@ -116,14 +116,10 @@ describe('ClientQrModal tunnel configs from the backend', () => {
       [
         'WireGuard configUS · New York - edge.example.com:443',
         'US · New York - edge.example.com:443 - WG-CLIENT',
-        'WG-CLIENT-US_New_York-edge.example.com_443.conf',
+        'WG-CLIENT-1.conf',
       ],
-      [
-        'WireGuard configEU · Frankfurt',
-        'EU · Frankfurt - WG-CLIENT',
-        'WG-CLIENT-EU_Frankfurt.conf',
-      ],
-      ['AmneziaWG config', 'WG-CLIENT', 'WG-CLIENT.conf'],
+      ['WireGuard configEU · Frankfurt', 'EU · Frankfurt - WG-CLIENT', 'WG-CLIENT-2.conf'],
+      ['AmneziaWG config', 'WG-CLIENT', 'WG-CLIENT-3.conf'],
     ]);
   });
 
@@ -151,14 +147,44 @@ describe('ClientQrModal tunnel configs from the backend', () => {
         header: 'WireGuard configIPv6US · New York - [2001:db8::1]:51820',
         value: '# US · New York - alice · IPv6',
         remark: 'US · New York - [2001:db8::1]:51820 - alice',
-        download: 'alice-US_New_York-_2001_db8_1_51820.conf',
+        download: 'alice-1.conf',
       },
       {
         header: 'WireGuard configIPv4US · New York - 203.0.113.5:51820',
         value: '# US · New York - alice · IPv4',
         remark: 'US · New York - 203.0.113.5:51820 - alice',
-        download: 'alice-US_New_York-203.0.113.5_51820.conf',
+        download: 'alice-2.conf',
       },
+    ]);
+  });
+
+  // The WireGuard app shows a tunnel by its file name, so the country has to be in it.
+  it("names each file after the client and its config's country", async () => {
+    serveTunnelConfigs([
+      config({
+        inboundId: 201,
+        protocol: 'wireguard',
+        family: 'v6',
+        endpoint: '[2001:db8::1]:45222',
+        remark: 'in-45222-udp - 🇩🇪 De - Epic-vpnPromax · IPv6',
+      }),
+      config({
+        inboundId: 201,
+        protocol: 'wireguard',
+        family: 'v4',
+        endpoint: '203.0.113.5:45222',
+        remark: 'in-45222-udp - 🇩🇪 De - Epic-vpnPromax · IPv4',
+      }),
+      config({ inboundId: 202, protocol: 'wireguard', remark: 'wg-eu - 🇫🇷 Fr - Epic-vpnPromax' }),
+      config({ inboundId: 101, protocol: 'amneziawg', remark: 'awg - 🇩🇪 De - Epic-vpnPromax' }),
+    ]);
+    renderQr('Epic-vpnPromax');
+
+    expect((await qrPanels(4)).map(({ download }) => download)).toEqual([
+      'Epic-vpnPro-DE1.conf',
+      'Epic-vpnPro-DE2.conf',
+      'Epic-vpnProm-FR.conf',
+      'Epic-vpnPro-DE3.conf',
     ]);
   });
 
@@ -288,16 +314,50 @@ describe('ClientInfoModal tunnel configs from the backend', () => {
     renderInfo('NSK-RT-01');
 
     expect(await downloads()).toEqual([
-      [
-        'DE · Kelsterbach - [2001:db8::1]:52716 · IPv6',
-        'AWG6',
-        'NSK-RT-01-DE_Kelsterbach-_2001_db8_1_52716.conf',
-      ],
-      [
-        'DE · Kelsterbach - 203.0.113.5:52716 · IPv4',
-        'AWG4',
-        'NSK-RT-01-DE_Kelsterbach-203.0.113.5_52716.conf',
-      ],
+      ['DE · Kelsterbach - [2001:db8::1]:52716 · IPv6', 'AWG6', 'NSK-RT-01-1.conf'],
+      ['DE · Kelsterbach - 203.0.113.5:52716 · IPv4', 'AWG4', 'NSK-RT-01-2.conf'],
+    ]);
+  });
+
+  it("names each file after the client and its config's country", async () => {
+    serveTunnelConfigs([
+      config({ inboundId: 201, protocol: 'wireguard', remark: 'wg-us - 🇺🇸 US - NSK-RT-01' }),
+      config({
+        inboundId: 101,
+        protocol: 'amneziawg',
+        family: 'v6',
+        endpoint: '[2001:db8::1]:52716',
+        remark: 'awg-de - 🇩🇪 De - NSK-RT-01 · IPv6',
+      }),
+      config({
+        inboundId: 101,
+        protocol: 'amneziawg',
+        family: 'v4',
+        endpoint: '203.0.113.5:52716',
+        remark: 'awg-de - 🇩🇪 De - NSK-RT-01 · IPv4',
+      }),
+    ]);
+    renderInfo('NSK-RT-01');
+
+    expect((await downloads()).map(([, , fileName]) => fileName)).toEqual([
+      'NSK-RT-01-US.conf',
+      'NSK-RT-01-DE1.conf',
+      'NSK-RT-01-DE2.conf',
+    ]);
+  });
+
+  // Both land in one Downloads folder, where a second "NSK-RT-01-DE.conf" comes out as
+  // "NSK-RT-01-DE (1).conf", a name the WireGuard and AmneziaWG apps refuse.
+  it('numbers a WireGuard and an AmneziaWG config of one country as one list', async () => {
+    serveTunnelConfigs([
+      config({ inboundId: 201, protocol: 'wireguard', remark: 'wg-us - 🇩🇪 De - NSK-RT-01' }),
+      config({ inboundId: 101, protocol: 'amneziawg', remark: 'awg-de - 🇩🇪 De - NSK-RT-01' }),
+    ]);
+    renderInfo('NSK-RT-01');
+
+    expect((await downloads()).map(([, , fileName]) => fileName)).toEqual([
+      'NSK-RT-01-DE1.conf',
+      'NSK-RT-01-DE2.conf',
     ]);
   });
 });

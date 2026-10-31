@@ -5,10 +5,14 @@ import { Alert, AutoComplete, Button, Form, Input, InputNumber, Select, Space, S
 import { useFieldArray, useFormContext, useWatch } from 'react-hook-form';
 
 import { FormField } from '@/components/form/rhf';
+import { certNameFrom } from '@/components/CertIssueControl';
 import { CertIssueButton } from '@/pages/inbounds/form/CertIssueButton';
+import { useCertCovers } from '@/api/queries/useCertCovers';
 import { useInboundOptions } from '@/api/queries/useInboundOptions';
+import { useMeQuery } from '@/api/queries/useMeQuery';
 import { useRelayOptions } from '@/api/queries/useRelaysQuery';
 import type { RelayOption } from '@/schemas/relay';
+import SidecarIPv6Fields from './SidecarIPv6Fields';
 
 // The countries this inbound offers. ocserv advertises them before it asks for
 // a password, so the customer's own client shows a Group dropdown and picks
@@ -34,10 +38,24 @@ function LocationList() {
   // can type its interface, and a reseller who cannot read the relay routes
   // simply gets no suggestions instead of an empty, broken dropdown.
   const { options: relays } = useRelayOptions();
-  const exitOptions = relays.map((r) => ({
-    value: r.interface,
-    label: `${r.label || r.name} — ${r.address}${r.ready ? '' : ' (…)'}`,
-  }));
+  // An exit used on one row is offered on no other, so the operator sees what is
+  // taken. Psiphon countries follow the exit servers under their own heading.
+  const exitOptionsFor = (index: number) => {
+    const own = exitOf(rows?.[index]);
+    const taken = new Set(rows?.map((row, j) => (j === index ? undefined : exitOf(row))));
+    const free = relays.filter((r) => r.interface === own || !taken.has(r.interface));
+    const pending = (r: RelayOption) => (r.ready ? '' : ' (…)');
+    const servers = free
+      .filter((r) => r.kind !== 'psiphon')
+      .map((r) => ({
+        value: r.interface,
+        label: `${r.label || r.name} — ${r.address}${pending(r)}`,
+      }));
+    const psiphon = free
+      .filter((r) => r.kind === 'psiphon')
+      .map((r) => ({ value: r.interface, label: `${r.label || r.name}${pending(r)}` }));
+    return psiphon.length ? [...servers, { label: 'Psiphon', options: psiphon }] : servers;
+  };
 
   // A country that leaves through an enrolled exit takes that server's own
   // country and flag, and the two name boxes are hidden for it: the panel
@@ -117,11 +135,11 @@ function LocationList() {
           <FormField name={['settings', 'locations', i, 'exit']} noStyle>
             <AutoComplete
               aria-label={t('pages.inbounds.form.ciscoLocationExit')}
-              options={exitOptions}
+              options={exitOptionsFor(i)}
               onSelect={(value: string) => fillFromRelay(i, value)}
               placeholder={t('pages.inbounds.form.ciscoLocationExit')}
               filterOption={(input, option) =>
-                String(option?.value ?? '')
+                String(option && 'value' in option ? option.value : '')
                   .toLowerCase()
                   .includes(input.toLowerCase()) ||
                 String(option?.label ?? '')
@@ -148,6 +166,12 @@ function LocationList() {
   );
 }
 
+// An empty exit is this server once the row is named; a fresh row has none yet.
+function exitOf(row: { name?: string; exit?: string } | undefined): string | undefined {
+  if (row?.exit) return row.exit;
+  return row?.name?.trim() ? '' : undefined;
+}
+
 function flagOf(code: string): string {
   const up = code.trim().toUpperCase();
   if (!/^[A-Z]{2}$/.test(up)) return '';
@@ -159,6 +183,7 @@ export default function CiscoFields() {
   const { control } = useFormContext();
   const port = useWatch({ control, name: 'port' }) as number | undefined;
   const { data: inboundOptions } = useInboundOptions();
+  const ipv6Cert = useIPv6Certificate();
 
   // ocserv owns TCP and UDP on its port outright. REALITY's whole cover story
   // is that port 443 answers like an ordinary TLS site, so the two cannot
@@ -287,6 +312,7 @@ export default function CiscoFields() {
       >
         <Switch />
       </FormField>
+      <SidecarIPv6Fields />
       <FormField
         name={['settings', 'certFile']}
         label={t('pages.inbounds.form.ciscoCertFile')}
@@ -297,8 +323,58 @@ export default function CiscoFields() {
       <FormField name={['settings', 'keyFile']} label={t('pages.inbounds.form.ciscoKeyFile')}>
         <Input placeholder="/etc/ssl/private/vpn.key" />
       </FormField>
-      <CertIssueButton certField="settings.certFile" keyField="settings.keyFile" />
+      {ipv6Cert.uncovered ? (
+        <Alert
+          type="warning"
+          showIcon
+          style={{ marginBottom: 16 }}
+          message={t('pages.inbounds.form.ciscoCertMissesIPv6', { name: ipv6Cert.uncovered })}
+          description={t('pages.inbounds.form.ciscoCertMissesIPv6Hint')}
+        />
+      ) : null}
+      <CertIssueButton
+        certField="settings.certFile"
+        keyField="settings.keyFile"
+        initialNames={ipv6Cert.names}
+      />
       <LocationList />
     </>
   );
+}
+
+// An inbound handing out IPv6 by name needs one certificate carrying both names
+// AnyConnect may dial; uncovered is the IPv6 one its certificate lacks, if any.
+function useIPv6Certificate(): { uncovered: string; names: string[] } {
+  const { control } = useFormContext();
+  const { me } = useMeQuery();
+  const [family, address6, certFile, nodeId, strategy, shareAddr, listen] = useWatch({
+    control,
+    name: [
+      'settings.ipFamily',
+      'settings.address6',
+      'settings.certFile',
+      'nodeId',
+      'shareAddrStrategy',
+      'shareAddr',
+      'listen',
+    ],
+  }) as [string?, string?, string?, (number | null)?, string?, string?, string?];
+  const ipv6 = String(address6 ?? '').trim();
+  const on = Boolean(family) && ipv6 !== '';
+  // The route is the super admin's, and a node reads its certificate off its own disk.
+  const checkable = on && me?.role === 'super_admin' && typeof nodeId !== 'number';
+  const { data } = useCertCovers(String(certFile ?? '').trim(), [ipv6], checkable);
+  if (!on) return { uncovered: '', names: [] };
+  // The IPv4 name as the subscription picks it: the share address, the listen
+  // address, the certificate's own name, then the panel's.
+  const name4 = certNameFrom(
+    strategy === 'custom' ? shareAddr : undefined,
+    listen,
+    data?.host,
+    window.location.hostname,
+  );
+  return {
+    uncovered: data?.uncovered.length ? data.uncovered[0] : '',
+    names: [...new Set([...name4, ...certNameFrom(ipv6)])],
+  };
 }

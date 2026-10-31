@@ -1,6 +1,10 @@
 package tunnel
 
 import (
+	"os"
+	"os/exec"
+	"path"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -83,5 +87,52 @@ func TestTheReasonIsTakenFromTheEndOfTheOutput(t *testing.T) {
 		if got := lastLine(tc.in); got != tc.want {
 			t.Errorf("lastLine(%q) = %q, want %q", tc.in, got, tc.want)
 		}
+	}
+}
+
+// A front given back must not keep a tunnel's private key; the pair is named
+// from the config path, so teardown takes it with the config and nothing else.
+func TestTearingDownALegTakesItsCertificateWithIt(t *testing.T) {
+	sh, err := exec.LookPath("sh")
+	if err != nil {
+		t.Skip("no sh to run the teardown's removal with")
+	}
+	var rm string
+	for _, line := range strings.Split(teardownScript, "\n") {
+		if strings.HasPrefix(line, "rm -f ") && strings.Contains(line, "$CONF_PATH") {
+			rm = line
+		}
+	}
+	if rm == "" {
+		t.Fatal("teardown removes no config")
+	}
+	leg := wssPair()
+	if path.Dir(leg.remoteCertPath()) != path.Dir(leg.remoteConfigPath()) || path.Dir(leg.remoteKeyPath()) != path.Dir(leg.remoteConfigPath()) {
+		t.Fatalf("the pair is not beside the config teardown removes it from: %s %s", leg.remoteCertPath(), leg.remoteKeyPath())
+	}
+	dir := t.TempDir()
+	put := func(name string) string {
+		p := filepath.Join(dir, name)
+		if err := os.WriteFile(p, []byte("x"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		return p
+	}
+	conf := put(path.Base(leg.remoteConfigPath()))
+	gone := []string{conf, put(path.Base(leg.remoteCertPath())), put(path.Base(leg.remoteKeyPath()))}
+	other := put("x-ui-20.crt")
+
+	cmd := exec.Command(sh, "-c", rm)
+	cmd.Env = append(os.Environ(), "CONF_PATH="+filepath.ToSlash(conf), "UNIT=x-ui-test-no-such-unit")
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("%v: %s", err, out)
+	}
+	for _, p := range gone {
+		if _, err := os.Stat(p); !os.IsNotExist(err) {
+			t.Errorf("%s is still on the front after teardown", filepath.Base(p))
+		}
+	}
+	if _, err := os.Stat(other); err != nil {
+		t.Errorf("another tunnel's certificate went too: %v", err)
 	}
 }

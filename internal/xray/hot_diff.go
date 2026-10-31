@@ -179,6 +179,10 @@ func diffInbounds(oldCfg, newCfg *Config, diff *HotDiff) bool {
 			logger.Debug("hot diff: inbound [", oldIb.Tag, "] is a password-auth SOCKS5 inbound (e.g. TUIC or AmneziaWG relay); a gRPC remove+add reports success but was observed in production to silently drop an account, forcing a full restart instead of a hot swap")
 			return false
 		}
+		if exists && (inboundIsPsiphonRedirect(oldIb) || inboundIsPsiphonRedirect(newIb)) {
+			logger.Debug("hot diff: inbound [", oldIb.Tag, "] takes Psiphon pools redirected, which would carry traffic under the old routing before the new rules land, forcing a full restart")
+			return false
+		}
 		diff.RemovedInboundTags = append(diff.RemovedInboundTags, oldIb.Tag)
 		if exists {
 			raw, err := json.Marshal(newIb)
@@ -206,6 +210,10 @@ func diffInbounds(oldCfg, newCfg *Config, diff *HotDiff) bool {
 		}
 		if inboundUsesSocksAccounts(newIb) {
 			logger.Debug("hot diff: new inbound [", newIb.Tag, "] is a password-auth SOCKS5 inbound (e.g. TUIC or AmneziaWG relay); forcing a full restart instead of a hot add, same reasoning as the existing-inbound case above")
+			return false
+		}
+		if inboundIsPsiphonRedirect(newIb) {
+			logger.Debug("hot diff: new inbound [", newIb.Tag, "] takes Psiphon pools redirected, which would carry traffic under the old routing before the new rules land, forcing a full restart")
 			return false
 		}
 		raw, err := json.Marshal(newIb)
@@ -367,6 +375,10 @@ func splitSettingsClients(raw json_util.RawMessage) (map[string]clientEntry, []b
 	}
 	return clients, rest, true
 }
+
+// inboundIsPsiphonRedirect: the API adds an inbound before it swaps the routing, so one
+// added hot sends a pool's first connections by the old rules, out of this server's address.
+func inboundIsPsiphonRedirect(ib *InboundConfig) bool { return ib != nil && ib.PsiphonExit != "" }
 
 func inboundUsesReality(ib *InboundConfig) bool {
 	if ib == nil || len(ib.StreamSettings) == 0 {

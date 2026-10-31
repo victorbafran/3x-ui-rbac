@@ -14,13 +14,19 @@ import { ClipboardManager, LanguageManager } from '@/utils';
 import { setMessageInstance } from '@/utils/messageBus';
 import { useTheme } from '@/hooks/useTheme';
 import SubAppsTab from './SubAppsTab';
-import SubCiscoCard, { type CiscoLogin } from './SubCiscoCard';
 import SubConfigsTab from './SubConfigsTab';
 import SubHeader from './SubHeader';
 import SubHero from './SubHero';
 import SubLinksTab from './SubLinksTab';
-import SubOpenVPNCard, { type OpenVPNProfile } from './SubOpenVPNCard';
-import { buildSubApps, daysUntil, detectPlatform, resolveSubStatus } from './subPageModel';
+import SubLoginsCard from './SubLoginsCard';
+import {
+  buildSubApps,
+  daysUntil,
+  detectPlatform,
+  resolveSubStatus,
+  type CiscoLogin,
+  type OpenVPNProfile,
+} from './subPageModel';
 import './SubPage.css';
 
 const subData = window.__SUB_PAGE_DATA__ || {};
@@ -48,7 +54,7 @@ const usedByte =
   Number(subData.usedByte || 0) ||
   Number(subData.downloadByte || 0) + Number(subData.uploadByte || 0);
 const expireMs = Number(subData.expire || 0) * 1000;
-const clientEmail = [
+const clientNames = [
   ...new Set(
     [
       ...linkEmails,
@@ -56,7 +62,8 @@ const clientEmail = [
       ...openvpnProfiles.map((p) => p.email ?? ''),
     ].filter(Boolean),
   ),
-].join(', ');
+];
+const clientEmail = clientNames.join(', ');
 const loadedAt = Date.now();
 
 const heroData = {
@@ -148,7 +155,7 @@ export default function SubPage() {
             <span className="sub-tab-count">{links.length}</span>
           </>
         ),
-        children: <SubConfigsTab links={links} onCopy={copy} />,
+        children: <SubConfigsTab links={links} clientNames={clientNames} onCopy={copy} />,
       });
     }
     return items;
@@ -174,8 +181,7 @@ export default function SubPage() {
             />
             {announce && <Alert type="info" showIcon title={announce} className="sub-announce" />}
             <SubHero {...heroData} lang={lang} />
-            <SubCiscoCard logins={ciscoLogins} />
-            <SubOpenVPNCard profiles={openvpnProfiles} />
+            <SubLoginsCard logins={ciscoLogins} profiles={openvpnProfiles} onCopy={copy} />
             {tabs.length > 0 && <Tabs className="sub-tabs" tabBarGutter={24} items={tabs} />}
             {((updateHours > 0 && !nothingToImport) || subSupportUrl) && (
               <footer className="sub-footer">

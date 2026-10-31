@@ -6,6 +6,7 @@ import (
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
+	"github.com/mhsanaei/3x-ui/v3/internal/sidecar"
 )
 
 // ciscoSettings is the stored shape of a cisco inbound's settings.
@@ -145,6 +146,7 @@ func InstanceFromInbound(ib *model.Inbound) (Instance, bool) {
 		MTU:            parsed.MTU,
 		MTUDiscovery:   parsed.MTUDiscovery,
 		MobileDPD:      parsed.MobileDPD,
+		IPv6:           sidecar.IPv6SettingsOf(ib.Settings).ServesIPv6(),
 		Locations:      locations,
 		CertFile:       strings.TrimSpace(parsed.CertFile),
 		KeyFile:        strings.TrimSpace(parsed.KeyFile),
@@ -179,6 +181,19 @@ func ExpectsProxyHeader(ib *model.Inbound) bool {
 	}
 	_ = json.Unmarshal([]byte(ib.Settings), &parsed)
 	return parsed.ProxyProtocol
+}
+
+// CertFileOf is the operator's certificate a cisco inbound serves, "" for the
+// pair ocserv generates; settings alone, like DTLSPort.
+func CertFileOf(ib *model.Inbound) string {
+	if ib == nil || ib.Protocol != model.Cisco {
+		return ""
+	}
+	var parsed struct {
+		CertFile string `json:"certFile"`
+	}
+	_ = json.Unmarshal([]byte(ib.Settings), &parsed)
+	return strings.TrimSpace(parsed.CertFile)
 }
 
 // entitlement works out which countries one client may pick.

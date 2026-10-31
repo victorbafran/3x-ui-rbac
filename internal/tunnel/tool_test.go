@@ -116,6 +116,47 @@ func TestEveryFrontCarriesUDPOneWayOrTheOther(t *testing.T) {
 	}
 }
 
+// Backhaul's udp transport sends its token readable, on its control connection
+// and in each flow's first datagram, and its wss server lets in whoever shows
+// the main token. The UDP leg beside a wss tunnel giving that token away would
+// undo the tunnel's TLS, so the UDP leg carries one of its own.
+func TestTheUDPLegNeverCarriesTheMainToken(t *testing.T) {
+	for _, tr := range []Transport{TransportTCP, TransportWSS, TransportWSSMux} {
+		p := goodPair()
+		p.Transport = tr
+		legs := Legs(p)
+		main, udp := legs[0], legs[1]
+		if main.Token != p.Token {
+			t.Errorf("%s: the main leg's token changed", tr)
+		}
+		if udp.Token == "" || strings.Contains(udp.Token, p.Token) {
+			t.Errorf("%s: the udp leg carries %q", tr, udp.Token)
+		}
+		// The front's end and the panel's are built by separate calls.
+		if again := Legs(p)[1].Token; again != udp.Token {
+			t.Errorf("%s: the two ends would disagree: %q and %q", tr, udp.Token, again)
+		}
+		server, err := ServerConfig(udp)
+		if err != nil {
+			t.Fatal(err)
+		}
+		client, err := ClientConfig(udp)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for side, config := range map[string]string{"server": server, "client": client} {
+			if strings.Contains(config, p.Token) || !strings.Contains(config, udp.Token) {
+				t.Errorf("%s: the udp leg's %s config carries the wrong token:\n%s", tr, side, config)
+			}
+		}
+	}
+	other := goodPair()
+	other.Token = "another-real-token"
+	if Legs(other)[1].Token == Legs(goodPair())[1].Token {
+		t.Error("two tunnels' udp legs share a token")
+	}
+}
+
 // The existing Backhaul names do not move: a front set up before this change
 // keeps its unit and its config.
 func TestBackhaulsMainLegKeepsItsNames(t *testing.T) {
@@ -147,5 +188,30 @@ func TestADatagramCarrierIsNotJudgedByTheTCPTable(t *testing.T) {
 		if known {
 			t.Errorf("a %s tunnel was judged from the TCP table it never appears in", tr)
 		}
+	}
+}
+
+// udp as a front's main tunnel turns every customer port into a UDP-only
+// listener (measured on the Iran front: TCP dead), so it cannot be chosen; but
+// Backhaul's UDP leg rides it and a front stored on it must still provision.
+func TestUDPStillRunsButCannotBeChosen(t *testing.T) {
+	for _, tool := range []Tool{ToolBackhaul, ToolBackPack} {
+		p := goodPair()
+		p.Tool, p.Transport = tool, TransportUDP
+		if _, err := ServerConfig(p); err != nil {
+			t.Errorf("%s: a front stored on udp no longer provisions: %v", tool, err)
+		}
+		if err := ValidChoiceFor(tool, TransportUDP); err == nil || !strings.Contains(err.Error(), "carries only UDP") {
+			t.Errorf("%s: udp was not refused as a choice for the reason: %v", tool, err)
+		}
+		if err := ValidChoiceFor(tool, TransportTCP); err != nil {
+			t.Errorf("%s: tcp was refused: %v", tool, err)
+		}
+	}
+	if _, err := ServerConfig(Legs(goodPair())[1]); err != nil {
+		t.Errorf("Backhaul's own UDP leg no longer provisions: %v", err)
+	}
+	if err := ValidChoiceFor(ToolBackhaul, TransportKCP); err == nil || !strings.Contains(err.Error(), "not a transport") {
+		t.Errorf("a transport Backhaul does not know was not refused for that: %v", err)
 	}
 }

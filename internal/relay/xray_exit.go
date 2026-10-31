@@ -14,7 +14,7 @@ import (
 const (
 	xrayExitTableBase = 60000
 	// Below main's 32766, or main's default route would answer first; clear of
-	// cisco's 7000 and OpenVPN's 7600 blocks.
+	// the cisco and OpenVPN pools' 10000-29999.
 	xrayExitPriorityBase = 6000
 )
 

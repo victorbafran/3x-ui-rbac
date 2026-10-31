@@ -4,6 +4,7 @@
 .xray-page,
 .settings-page,
 .nodes-page,
+.relays-page,
 .groups-page,
 .api-docs-page,
 .sponsors-page {
@@ -19,6 +20,7 @@
 .xray-page.is-dark,
 .settings-page.is-dark,
 .nodes-page.is-dark,
+.relays-page.is-dark,
 .groups-page.is-dark,
 .api-docs-page.is-dark,
 .sponsors-page.is-dark {
@@ -32,6 +34,7 @@
 .xray-page.is-dark.is-ultra,
 .settings-page.is-dark.is-ultra,
 .nodes-page.is-dark.is-ultra,
+.relays-page.is-dark.is-ultra,
 .groups-page.is-dark.is-ultra,
 .api-docs-page.is-dark.is-ultra,
 .sponsors-page.is-dark.is-ultra {
@@ -51,6 +54,8 @@
 .settings-page .ant-layout-content,
 .nodes-page .ant-layout,
 .nodes-page .ant-layout-content,
+.relays-page .ant-layout,
+.relays-page .ant-layout-content,
 .groups-page .ant-layout,
 .groups-page .ant-layout-content,
 .api-docs-page .ant-layout,
@@ -64,6 +69,7 @@
 .xray-page .content-shell,
 .settings-page .content-shell,
 .nodes-page .content-shell,
+.relays-page .content-shell,
 .groups-page .content-shell,
 .api-docs-page .content-shell {
   background: transparent;
@@ -75,6 +81,7 @@
 .xray-page .content-area,
 .settings-page .content-area,
 .nodes-page .content-area,
+.relays-page .content-area,
 .groups-page .content-area {
   padding: 24px;
 }
@@ -83,6 +90,7 @@
   .clients-page .content-area,
   .inbounds-page .content-area,
   .nodes-page .content-area,
+  .relays-page .content-area,
   .groups-page .content-area {
     padding: 8px;
   }
@@ -177,6 +185,7 @@ body.dark .ant-dropdown-menu-item-divider {
 .clients-page .summary-card,
 .inbounds-page .summary-card,
 .nodes-page .summary-card,
+.relays-page .summary-card,
 .groups-page .summary-card {
   padding: 16px;
 }
@@ -185,6 +194,7 @@ body.dark .ant-dropdown-menu-item-divider {
   .clients-page .summary-card,
   .inbounds-page .summary-card,
   .nodes-page .summary-card,
+  .relays-page .summary-card,
   .groups-page .summary-card {
     padding: 8px;
   }

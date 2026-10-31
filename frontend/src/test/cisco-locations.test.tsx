@@ -34,6 +34,16 @@ vi.mock('@/api/queries/useRelaysQuery', () => ({
         countryCode: 'NL',
         ready: true,
       },
+      {
+        interface: 'psi-AT',
+        name: 'Psiphon AT',
+        label: '🇦🇹 Austria',
+        address: '',
+        country: 'Austria',
+        countryCode: 'AT',
+        ready: true,
+        kind: 'psiphon',
+      },
     ],
   }),
   useRelaysQuery: () => ({
@@ -72,6 +82,34 @@ function countryNames(): string[] {
   return Array.from(
     document.querySelectorAll<HTMLInputElement>('input[placeholder="name, e.g. netherlands"]'),
   ).map((el) => el.value);
+}
+
+// One exit picker per row, in row order.
+function exitPickers(): HTMLInputElement[] {
+  return Array.from(
+    document.querySelectorAll<HTMLInputElement>('input[aria-label="exit, e.g. wg0"]'),
+  );
+}
+
+// Read from that picker's own dropdown, so a list another row left open
+// cannot answer for it.
+function offeredOn(row: number): string[] {
+  const picker = exitPickers()[row] as HTMLElement;
+  fireEvent.mouseDown(picker);
+  fireEvent.focus(picker);
+  const list = document.getElementById(picker.getAttribute('aria-controls') ?? '');
+  const dropdown = list?.closest('.ant-select-dropdown');
+  expect(dropdown, `row ${row} should open its own exit list`).toBeTruthy();
+  return Array.from(
+    dropdown?.querySelectorAll('.ant-select-item-group, .ant-select-item-option') ?? [],
+  ).map((el) => el.textContent ?? '');
+}
+
+const GERMANY = '🇩🇪 Germany — ';
+const NETHERLANDS = '🇳🇱 Netherlands — 198.51.100.7';
+
+function location(name: string, label: string, exit: string) {
+  return { name, label, exit, network: '', netmask: '', dns: [] };
 }
 
 describe('the countries a cisco inbound offers', () => {
@@ -161,6 +199,35 @@ describe('the countries a cisco inbound offers', () => {
     cleanup();
   });
 
+  // A Psiphon country is stored by its exit name like a relay's interface: offered
+  // after the exit servers, and naming the row for its country.
+  it('offers the Psiphon countries under their own heading and names the row', () => {
+    renderCisco(createDefaultCiscoInboundSettings());
+    const add = Array.from(document.querySelectorAll<HTMLElement>('button[aria-label="Add"]')).at(
+      -1,
+    );
+    fireEvent.click(add as HTMLElement);
+    const exitInput = Array.from(document.querySelectorAll<HTMLInputElement>('input')).at(-1);
+    fireEvent.mouseDown(exitInput as HTMLElement);
+    fireEvent.focus(exitInput as HTMLElement);
+
+    const listed = Array.from(
+      document.querySelectorAll('.ant-select-item-group, .ant-select-item-option'),
+    ).map((el) => el.textContent ?? '');
+    expect(listed.slice(-2)).toEqual(['Psiphon', '🇦🇹 Austria']);
+    const option = Array.from(document.querySelectorAll('.ant-select-item-option')).find((el) =>
+      (el.textContent ?? '').includes('Austria'),
+    );
+    fireEvent.click(option as HTMLElement);
+
+    expect(countryNames()).toHaveLength(0);
+    const shown = Array.from(document.querySelectorAll<HTMLInputElement>('input[readonly]')).map(
+      (el) => el.value,
+    );
+    expect(shown).toContain('🇦🇹 Austria');
+    cleanup();
+  });
+
   // The country this panel carries itself deserves its flag as much as any
   // other, and it is the one the operator may want to sell under a name of
   // their own — so it, and only it, keeps a way back to the boxes.
@@ -227,6 +294,86 @@ describe('the countries a cisco inbound offers', () => {
       (el) => el.value,
     );
     expect(shown).toContain('\u{1F1E9}\u{1F1EA} Germany');
+    cleanup();
+  });
+
+  // An exit already used on one row is not offered on the others, so the operator
+  // sees what is taken; the row using it keeps it, and an emptied heading goes too.
+  it('offers each exit on the row that uses it and on no other', () => {
+    renderCisco({
+      ...createDefaultCiscoInboundSettings(),
+      locations: [
+        location('netherlands', '🇳🇱 Netherlands', 'wgr2'),
+        location('austria', '🇦🇹 Austria', 'psi-AT'),
+        location('', '', ''),
+      ],
+    });
+    expect(offeredOn(2)).toEqual([GERMANY]);
+    // A picker opens filtered by the exit it holds, so a used row lists just its own.
+    expect(offeredOn(0)).toEqual([NETHERLANDS]);
+    expect(offeredOn(1)).toEqual(['Psiphon', '🇦🇹 Austria']);
+    cleanup();
+  });
+
+  // Typing over a row's exit to change its country is when a used one would slip back
+  // in: the list it filters is still only what no other row uses.
+  it('offers a used exit on no other row while one is being typed', () => {
+    renderCisco({
+      ...createDefaultCiscoInboundSettings(),
+      locations: [
+        location('netherlands', '🇳🇱 Netherlands', 'wgr2'),
+        location('austria', '🇦🇹 Austria', 'psi-AT'),
+      ],
+    });
+    fireEvent.change(exitPickers()[1] as HTMLElement, { target: { value: 'an' } });
+    expect(offeredOn(1)).toEqual([GERMANY]);
+    cleanup();
+  });
+
+  // Rows saved before this rule may share an exit. Each keeps its own in its
+  // picker, or reopening one would offer nothing for the exit it already has.
+  it('keeps a shared exit offered on each row that has it', () => {
+    renderCisco({
+      ...createDefaultCiscoInboundSettings(),
+      locations: [
+        location('netherlands', '🇳🇱 Netherlands', 'wgr2'),
+        location('holland', '🇳🇱 Holland', 'wgr2'),
+      ],
+    });
+    expect(offeredOn(0)).toEqual([NETHERLANDS]);
+    expect(offeredOn(1)).toEqual([NETHERLANDS]);
+    cleanup();
+  });
+
+  // Clearing a row's exit hands it back at once, which holds only if the
+  // pickers follow the rows as they are now rather than as they loaded.
+  it('offers an exit again once its row lets go of it', () => {
+    renderCisco({
+      ...createDefaultCiscoInboundSettings(),
+      locations: [location('netherlands', '🇳🇱 Netherlands', 'wgr2'), location('', '', '')],
+    });
+    expect(offeredOn(1)).not.toContain(NETHERLANDS);
+
+    fireEvent.change(exitPickers()[0] as HTMLElement, { target: { value: '' } });
+    expect(offeredOn(1)).toContain(NETHERLANDS);
+    cleanup();
+  });
+
+  // An empty exit is this server, but only once the row has a name: a fresh
+  // row has picked nothing yet and must not hide this server from the others.
+  it('takes this server only for a row that leaves through it', () => {
+    renderCisco({
+      ...createDefaultCiscoInboundSettings(),
+      locations: [location('', '', ''), location('', '', '')],
+    });
+    expect(offeredOn(1)).toContain(GERMANY);
+
+    const firstName = document.querySelector<HTMLInputElement>(
+      'input[placeholder="name, e.g. netherlands"]',
+    );
+    fireEvent.change(firstName as HTMLElement, { target: { value: 'germany' } });
+    expect(offeredOn(1)).not.toContain(GERMANY);
+    expect(offeredOn(0)).toContain(GERMANY);
     cleanup();
   });
 

@@ -449,6 +449,11 @@ export interface Blocker {
   detail?: string;
 }
 
+export interface CertCovers {
+  host: string;
+  uncovered: string[];
+}
+
 export interface Client {
   adTag?: string;
   allowedIPs?: string[];

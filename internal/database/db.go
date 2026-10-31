@@ -92,6 +92,7 @@ func allModels() []any {
 		&model.ArvanIP{},
 		&model.AdminInbound{},
 		&model.PanelClone{},
+		&model.PsiphonCountry{},
 	}
 }
 

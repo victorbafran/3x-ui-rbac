@@ -347,6 +347,15 @@ func checkPortConflictTx(db *gorm.DB, inbound *model.Inbound, ignoreId int) (*po
 		}, nil
 	}
 
+	// A Psiphon country's client holds its two loopback ports, and Xray its redirect port on
+	// every address; an inbound taking one later would stop Xray, or that country, binding.
+	if inbound.NodeID == nil && newBits&transportTCP != 0 {
+		loopback := listenOverlaps(loopbackBind, inboundBindAddr(inbound))
+		if conflict, err := psiphonPortConflict(db, inbound.Port, loopback, ignoreId); conflict != nil || err != nil {
+			return conflict, err
+		}
+	}
+
 	// Local embedded inbounds reserve an automatically assigned Xray SOCKS relay port.
 	if inbound.NodeID == nil && listenOverlaps(loopbackBind, inboundBindAddr(inbound)) {
 		conflict, err := checkAmneziawgnetSocksConflict(db, inbound, ignoreId, newBits)
@@ -781,10 +790,31 @@ func (s *InboundService) resolveInboundTag(inbound *model.Inbound, ignoreId int)
 			return "", err
 		}
 		if !taken {
+			taken, err = s.tagReserved(inbound.Tag, ignoreId)
+		}
+		if err != nil {
+			return "", err
+		}
+		if !taken {
 			return inbound.Tag, nil
 		}
 	}
 	return s.generateInboundTag(inbound, ignoreId)
+}
+
+// tagReserved: a redir-psi- tag is a Psiphon country's redirect, and any inbound holding one
+// keeps that country's cisco and OpenVPN pools closed. Only a row stored with it keeps it.
+func (s *InboundService) tagReserved(tag string, id int) (bool, error) {
+	if s.FromNodeSync || !strings.HasPrefix(tag, psiphonRedirectTag(psiphonExitPrefix)) {
+		return false, nil
+	}
+	var stored []string
+	if id > 0 {
+		if err := database.GetDB().Model(model.Inbound{}).Where("id = ?", id).Pluck("tag", &stored).Error; err != nil {
+			return false, err
+		}
+	}
+	return !slices.Contains(stored, tag), nil
 }
 
 func (s *InboundService) tagExists(tag string, ignoreId int) (bool, error) {

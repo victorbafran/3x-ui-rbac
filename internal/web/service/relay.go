@@ -17,6 +17,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 	"github.com/mhsanaei/3x-ui/v3/internal/ocserv"
+	"github.com/mhsanaei/3x-ui/v3/internal/psiphon"
 	"github.com/mhsanaei/3x-ui/v3/internal/relay"
 	"github.com/mhsanaei/3x-ui/v3/internal/tunnel"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/global"
@@ -73,8 +74,8 @@ type RelayView struct {
 	// ProxyPorts are the forwarded ports whose service wants the customer's
 	// real address; only a BackPack front carries them.
 	ProxyPorts []int `json:"proxyPorts"`
-	// RateIn and RateOut are a BackPack front's customer upload and download
-	// speed in bytes a second, from its last two readings; 0 once those are stale.
+	// RateIn and RateOut are a front's customer upload and download speed in
+	// bytes a second, from its last two readings; 0 once those are stale.
 	RateIn  float64 `json:"rateIn"`
 	RateOut float64 `json:"rateOut"`
 }
@@ -210,22 +211,38 @@ func (s *RelayService) usage() map[string][]string {
 // settingsExits is every exit an inbound's settings name: OpenVPN's own and
 // each cisco country's.
 func settingsExits(settings string) []string {
+	places := settingsExitPlaces(settings)
+	out := make([]string, 0, len(places))
+	for _, p := range places {
+		out = append(out, p.exit)
+	}
+	return out
+}
+
+// exitPlace is one exit an inbound's settings name, with the cisco location
+// naming it; location is empty for the inbound's own exit.
+type exitPlace struct {
+	exit, location string
+}
+
+func settingsExitPlaces(settings string) []exitPlace {
 	var parsed struct {
 		Exit      string `json:"exit"`
 		Locations []struct {
+			Name string `json:"name"`
 			Exit string `json:"exit"`
 		} `json:"locations"`
 	}
 	if json.Unmarshal([]byte(settings), &parsed) != nil {
 		return nil
 	}
-	var out []string
+	var out []exitPlace
 	if e := strings.TrimSpace(parsed.Exit); e != "" {
-		out = append(out, e)
+		out = append(out, exitPlace{exit: e})
 	}
 	for _, l := range parsed.Locations {
 		if e := strings.TrimSpace(l.Exit); e != "" {
-			out = append(out, e)
+			out = append(out, exitPlace{exit: e, location: l.Name})
 		}
 	}
 	return out
@@ -466,7 +483,12 @@ func (s *RelayService) fillFront(r *model.Relay, req RelayRequest, base *model.R
 	if transport == "" {
 		transport = string(tunnel.TransportTCP)
 	}
-	if err := tunnel.ValidTransportFor(tool, tunnel.Transport(transport)); err != nil {
+	check := tunnel.ValidChoiceFor
+	if base != nil && base.Transport == transport {
+		// A front saved on a transport no longer offered keeps it through other edits.
+		check = tunnel.ValidTransportFor
+	}
+	if err := check(tool, tunnel.Transport(transport)); err != nil {
 		return err
 	}
 	r.Transport = transport
@@ -626,6 +648,7 @@ func (s *RelayService) provisionFront(ctx context.Context, r *model.Relay) (read
 		}
 	}
 	tunnel.GetManager().Retain(r.Id, legs)
+	s.countBackhaulFronts()
 
 	fields := map[string]any{
 		"status": RelayReady, "last_error": "", "last_seen": time.Now().Unix(),
@@ -815,12 +838,14 @@ func (s *RelayService) Delete(id int) error {
 			logger.Warningf("front %s: cannot reach it to tear the tunnel down: %v", r.Name, cerr)
 		}
 		// Its Arvan rows go with it, or a later relay reusing the id inherits them.
-		return database.GetDB().Transaction(func(tx *gorm.DB) error {
+		err := database.GetDB().Transaction(func(tx *gorm.DB) error {
 			if err := deleteArvanRows(tx, id); err != nil {
 				return err
 			}
 			return tx.Delete(&model.Relay{}, id).Error
 		})
+		s.countBackhaulFronts()
+		return err
 	}
 
 	if used := s.usage()[relay.InterfaceName(r.Id)]; len(used) > 0 {
@@ -873,6 +898,8 @@ var (
 // does not survive a reboot, and a country whose tunnel is missing after the
 // panel restarts would quietly stop working while still being offered.
 func (s *RelayService) Reconcile() {
+	// Before the fronts: provisioning one can take minutes, and a reboot left none counted.
+	s.countBackhaulFronts()
 	var rows []model.Relay
 	if err := database.GetDB().Where("enabled = ?", true).Find(&rows).Error; err != nil {
 		return
@@ -918,13 +945,15 @@ func (s *RelayService) ensureXrayExit(r model.Relay) {
 	}
 }
 
-// StandDown takes this panel's own end of every tunnel down, here only: the far
-// ends stay as they are, serving the main panel, which dials the same fronts and exits.
+// StandDown takes this panel's own end of every tunnel down, its counting of them and
+// its Psiphon countries, which run on the main panel only; the far ends keep serving it.
 func (s *RelayService) StandDown() {
 	tunnel.GetManager().Reconcile(nil)
+	s.countBackhaulFronts()
 	for _, id := range relay.LocalInterfaceIDs() {
 		relay.DownOrphan(id)
 	}
+	psiphon.GetManager().StopAll()
 }
 
 // downOrphans takes down any tunnel this panel brought up for a relay that no
@@ -950,6 +979,11 @@ func (s *RelayService) downOrphans() {
 // that produces the same tunnel does not drop the customers on it.
 func (s *RelayService) reconcileFront(r model.Relay) {
 	if r.KeyPath == "" || r.TunnelToken == "" {
+		return
+	}
+	// A save's own provisioning is running on this front: it does all of this,
+	// from the newer row, and two runs at once interleave their steps there.
+	if _, busy := relayRunning.Load(r.Id); busy {
 		return
 	}
 	token, err := decryptRelaySecret(r.Id, r.TunnelToken)
@@ -1071,6 +1105,9 @@ type RelayOption struct {
 	Country     string `json:"country"`
 	CountryCode string `json:"countryCode"`
 	Ready       bool   `json:"ready"`
+	// Kind is RelayOptionRelay or RelayOptionPsiphon; a Psiphon country is an
+	// Xray outbound, which cisco and OpenVPN cannot route into.
+	Kind string `json:"kind"`
 }
 
 func (s *RelayService) Options() ([]RelayOption, error) {
@@ -1078,7 +1115,11 @@ func (s *RelayService) Options() ([]RelayOption, error) {
 	if err != nil {
 		return nil, err
 	}
-	return s.withThisServer(out), nil
+	psiphonOptions, err := (&PsiphonService{}).exitOptions()
+	if err != nil {
+		return nil, err
+	}
+	return append(s.withThisServer(out), psiphonOptions...), nil
 }
 
 // exitOptions is the enrolled exit servers, the part of Options that comes
@@ -1104,6 +1145,7 @@ func (s *RelayService) exitOptions() ([]RelayOption, error) {
 			Country:     r.Country,
 			CountryCode: r.CountryCode,
 			Ready:       r.Status == RelayReady,
+			Kind:        RelayOptionRelay,
 		})
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Name < out[j].Name })
@@ -1129,6 +1171,7 @@ func (s *RelayService) withThisServer(out []RelayOption) []RelayOption {
 			Country:     h.Country,
 			CountryCode: h.CountryCode,
 			Ready:       true,
+			Kind:        RelayOptionRelay,
 		}}, out...)
 	}
 	return out

@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 
-import SubOpenVPNCard from '@/pages/sub/SubOpenVPNCard';
+import SubLoginsCard from '@/pages/sub/SubLoginsCard';
+import type { OpenVPNProfile } from '@/pages/sub/subPageModel';
 import { renderWithProviders } from './test-utils';
 
 // The page shows these through antd's static message, whose holder does not
@@ -19,6 +20,10 @@ const PROFILE = {
   username: 'customer@example.com',
   password: 'pw123456',
 };
+
+function SubOpenVPNCard({ profiles }: { profiles: OpenVPNProfile[] }) {
+  return <SubLoginsCard logins={[]} profiles={profiles} onCopy={() => {}} />;
+}
 
 function stubObjectURL() {
   const created: Blob[] = [];

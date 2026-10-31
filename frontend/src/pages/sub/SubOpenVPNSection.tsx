@@ -1,31 +1,22 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Card, Space, Tooltip, Typography } from 'antd';
+import { Button } from 'antd';
 import {
   AndroidOutlined,
   AppleOutlined,
-  CopyOutlined,
   DesktopOutlined,
   DownloadOutlined,
 } from '@ant-design/icons';
 
-import { ClipboardManager } from '@/utils';
 import { getMessage } from '@/utils/messageBus';
-
-export interface OpenVPNProfile {
-  email?: string;
-  label?: string;
-  fileName?: string;
-  url?: string;
-  username?: string;
-  password?: string;
-}
+import type { OpenVPNProfile } from './subPageModel';
+import SubLoginSectionHead, { type LoginApp } from './SubLoginSectionHead';
 
 // OpenVPN's own client is the one to lead with. Unlike the V2Ray-family apps
 // the rest of this page recommends, nothing else on a phone opens a .ovpn
 // file reliably, so a customer who is not told where to get it downloads a
 // file their phone has no idea what to do with.
-const CLIENT_APPS = [
+const CLIENT_APPS: readonly LoginApp[] = [
   {
     key: 'openvpn-android',
     icon: <AndroidOutlined aria-hidden />,
@@ -44,7 +35,7 @@ const CLIENT_APPS = [
     labelKey: 'subscription.openvpnAppDesktop',
     url: 'https://openvpn.net/client/',
   },
-] as const;
+];
 
 // Why the server has no file, as it answers; only an inbound that has not
 // started yet is worth trying again in a minute.
@@ -72,14 +63,17 @@ async function failureKey(response: Response): Promise<string> {
 // into this page: it embeds the server's shared key, and a page a customer
 // opens to check their traffic should not leave that in every browser cache
 // it passes through.
-export default function SubOpenVPNCard({ profiles }: { profiles: OpenVPNProfile[] }) {
+export default function SubOpenVPNSection({
+  profiles,
+  titled,
+  guided,
+}: {
+  profiles: OpenVPNProfile[];
+  titled: boolean;
+  guided: boolean;
+}) {
   const { t } = useTranslation();
   const [busy, setBusy] = useState('');
-  if (!profiles.length) return null;
-
-  const copy = (value?: string) => {
-    if (value) void ClipboardManager.copyText(value);
-  };
 
   const download = async (profile: OpenVPNProfile) => {
     const url = profile.url;
@@ -111,33 +105,24 @@ export default function SubOpenVPNCard({ profiles }: { profiles: OpenVPNProfile[
   };
 
   return (
-    <Card className="sub-card-inner" size="small" title={t('subscription.openvpnTitle')}>
-      <Typography.Paragraph type="secondary" style={{ marginBottom: 12 }}>
-        {t('subscription.openvpnHint')}
-      </Typography.Paragraph>
-
-      <Space wrap size={8} style={{ marginBottom: 16 }}>
-        {CLIENT_APPS.map((app) => (
-          <Button
-            key={app.key}
-            size="small"
-            icon={app.icon}
-            href={app.url}
-            target="_blank"
-            rel="noopener noreferrer"
+    <div className="sub-login-section">
+      <SubLoginSectionHead
+        kind="openvpn"
+        title={titled ? t('subscription.openvpnTitle') : ''}
+        hint={guided ? t('subscription.openvpnHint') : ''}
+        apps={guided ? CLIENT_APPS : []}
+      />
+      <div className="sub-rows">
+        {profiles.map((profile, idx) => (
+          <div
+            className="sub-row sub-login-row"
+            key={`${profile.url ?? profile.label ?? 'openvpn'}-${idx}`}
           >
-            {t(app.labelKey)}
-          </Button>
-        ))}
-      </Space>
-
-      {profiles.map((profile, idx) => (
-        <dl className="sub-cisco-rows" key={`${profile.url ?? profile.label ?? 'openvpn'}-${idx}`}>
-          <div className="sub-cisco-row">
-            <dt>{profile.label || t('subscription.openvpnProfile')}</dt>
-            <dd>
+            <span className="sub-login-file" dir="auto">
+              {profile.label || t('subscription.openvpnProfile')}
+            </span>
+            <div className="sub-row-actions">
               <Button
-                size="small"
                 type="primary"
                 icon={<DownloadOutlined aria-hidden />}
                 loading={busy === profile.url}
@@ -146,43 +131,10 @@ export default function SubOpenVPNCard({ profiles }: { profiles: OpenVPNProfile[
               >
                 {t('subscription.openvpnDownload')}
               </Button>
-            </dd>
+            </div>
           </div>
-          <Row label={t('subscription.openvpnUsername')} value={profile.username} onCopy={copy} />
-          <Row label={t('subscription.openvpnPassword')} value={profile.password} onCopy={copy} />
-        </dl>
-      ))}
-    </Card>
-  );
-}
-
-function Row({
-  label,
-  value,
-  onCopy,
-}: {
-  label: string;
-  value?: string;
-  onCopy: (v?: string) => void;
-}) {
-  const { t } = useTranslation();
-  return (
-    <div className="sub-cisco-row">
-      <dt>{label}</dt>
-      <dd>
-        <code>{value || '-'}</code>
-        {value && (
-          <Tooltip title={t('copy')}>
-            <Button
-              size="small"
-              type="text"
-              icon={<CopyOutlined aria-hidden />}
-              aria-label={t('copy')}
-              onClick={() => onCopy(value)}
-            />
-          </Tooltip>
-        )}
-      </dd>
+        ))}
+      </div>
     </div>
   );
 }

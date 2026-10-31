@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup } from '@testing-library/react';
 
-import SubCiscoCard from '@/pages/sub/SubCiscoCard';
+import SubLoginsCard from '@/pages/sub/SubLoginsCard';
+import type { CiscoLogin } from '@/pages/sub/subPageModel';
 import { renderWithProviders } from './test-utils';
 
 const LOGIN = {
@@ -11,9 +12,13 @@ const LOGIN = {
   password: 'pw123456',
 };
 
+function SubCiscoCard({ logins }: { logins: CiscoLogin[] }) {
+  return <SubLoginsCard logins={logins} profiles={[]} onCopy={() => {}} />;
+}
+
 function blocks(): string[] {
-  return Array.from(document.querySelectorAll('.sub-cisco-login')).map(
-    (dl) => dl.textContent ?? '',
+  return Array.from(document.querySelectorAll('.sub-login-row')).map(
+    (row) => row.textContent ?? '',
   );
 }
 
@@ -56,8 +61,8 @@ describe('the cisco card on the subscription page', () => {
     expect(numbered.startsWith('2')).toBe(true);
   });
 
-  // One login, or the "off" setting, carries no label, and the card adds none.
-  it('adds no heading to a login that has no label', () => {
+  // One login, or the "off" setting, carries no label; the row is then just the server.
+  it('names a login that has no label plainly as the server', () => {
     renderWithProviders(<SubCiscoCard logins={[{ ...LOGIN, server: 'tun.example.ir' }]} />);
     expect(blocks()).toHaveLength(1);
     expect(blocks()[0].startsWith('Server')).toBe(true);

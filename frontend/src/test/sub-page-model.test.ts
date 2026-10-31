@@ -4,6 +4,7 @@ import {
   buildSubApps,
   daysUntil,
   detectPlatform,
+  groupLoginsByCredentials,
   resolveSubStatus,
   usagePercent,
 } from '@/pages/sub/subPageModel';
@@ -131,5 +132,57 @@ describe('buildSubApps', () => {
     expect(buildSubApps(withQuery).ios[0].url).toBe(
       `shadowrocket://add/sub://${rocket}?remark=Nova%20Net`,
     );
+  });
+});
+
+describe('groupLoginsByCredentials', () => {
+  const ali = { username: 'ali', password: 'pw-ali' };
+  const cisco = (server: string, who = ali) => ({ ...who, server, port: 443 });
+  const ovpn = (label: string, who = ali) => ({ ...who, label, url: `/ovpn/${label}` });
+  const shape = (groups: ReturnType<typeof groupLoginsByCredentials>) =>
+    groups.map((g) => ({
+      who: `${g.username}/${g.password}`,
+      cisco: g.logins.map((l) => l.server),
+      openvpn: g.profiles.map((p) => p.label),
+    }));
+
+  // One client on both protocols is the usual subscription: one name, one password.
+  it('puts cisco and OpenVPN rows that share a login under one group', () => {
+    const groups = groupLoginsByCredentials(
+      [cisco('v6.example.ir'), cisco('v4.example.ir')],
+      [ovpn('Germany'), ovpn('Finland')],
+    );
+    expect(shape(groups)).toEqual([
+      {
+        who: 'ali/pw-ali',
+        cisco: ['v6.example.ir', 'v4.example.ir'],
+        openvpn: ['Germany', 'Finland'],
+      },
+    ]);
+  });
+
+  // Merging these would hand one client's password to the other's rows.
+  it('keeps two clients apart, each with only its own rows', () => {
+    const reza = { username: 'reza', password: 'pw-reza' };
+    const groups = groupLoginsByCredentials(
+      [cisco('a.example.ir'), cisco('b.example.ir', reza)],
+      [ovpn('Germany', reza), ovpn('Finland')],
+    );
+    expect(shape(groups)).toEqual([
+      { who: 'ali/pw-ali', cisco: ['a.example.ir'], openvpn: ['Finland'] },
+      { who: 'reza/pw-reza', cisco: ['b.example.ir'], openvpn: ['Germany'] },
+    ]);
+  });
+
+  // The same name with another password is a different login, not the same one.
+  it('splits rows whose username matches but whose password does not', () => {
+    const groups = groupLoginsByCredentials(
+      [cisco('a.example.ir')],
+      [ovpn('Germany', { username: 'ali', password: 'other' })],
+    );
+    expect(shape(groups)).toEqual([
+      { who: 'ali/pw-ali', cisco: ['a.example.ir'], openvpn: [] },
+      { who: 'ali/other', cisco: [], openvpn: ['Germany'] },
+    ]);
   });
 });

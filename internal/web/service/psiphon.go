@@ -227,8 +227,16 @@ func (s *PsiphonService) State() (*PsiphonState, error) {
 		return nil, err
 	}
 	st.Regions, st.RegionsAt = append(st.Regions, saved.Regions...), saved.At
-	if len(st.Regions) == 0 && st.Installed {
-		st.Regions = slices.Clone(psiphon.FallbackRegions)
+	// A client lists only the countries of the servers it was handed, and that set
+	// changes run to run: measured, Poland, Singapore and Canada were missing from a
+	// probe's list and each still connected when picked. So the known ones stay offered.
+	if st.Installed {
+		for _, code := range psiphon.FallbackRegions {
+			if !slices.Contains(st.Regions, code) {
+				st.Regions = append(st.Regions, code)
+			}
+		}
+		slices.Sort(st.Regions)
 	}
 
 	var rows []model.PsiphonCountry

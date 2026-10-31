@@ -34,6 +34,17 @@ export function psiphonExitWorks(test: PsiphonExitTest): boolean {
   return test.exitIp !== '' && test.error === '';
 }
 
+// What keeps a country from being switched off: count hosts of an inbound, a cisco
+// location of one (named in location), or an OpenVPN inbound's exit.
+export const PSIPHON_USE_KINDS = ['host', 'cisco', 'openvpn'] as const;
+export const PsiphonCountryUseSchema = z.object({
+  kind: z.enum(PSIPHON_USE_KINDS),
+  inbound: z.string().default(''),
+  count: z.number().default(1),
+  location: z.string().default(''),
+});
+export type PsiphonCountryUse = z.infer<typeof PsiphonCountryUseSchema>;
+
 export const PsiphonCountrySchema = z.object({
   code: z.string(),
   name: z.string().default(''),
@@ -51,6 +62,10 @@ export const PsiphonCountrySchema = z.object({
   trafficDown: z.number().default(0),
   trafficUp: z.number().default(0),
   test: PsiphonExitTestSchema.nullish().transform((v) => v ?? null),
+  usedBy: z
+    .array(PsiphonCountryUseSchema)
+    .nullish()
+    .transform((v) => v ?? []),
 });
 export type PsiphonCountry = z.infer<typeof PsiphonCountrySchema>;
 

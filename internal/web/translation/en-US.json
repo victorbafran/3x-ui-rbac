@@ -2961,7 +2961,15 @@
           "refresh": "Refresh list",
           "listedAt": "List read {time}",
           "save": "Save countries",
-          "memory": "About {mb} MB of memory for {count} countries"
+          "memory": "About {mb} MB of memory for {count} countries",
+          "inUse": "In use",
+          "inUseHint": "Customers leave through it: {uses}. Take it off there before switching it off.",
+          "inUseOff": "Switched off, yet still the exit of: {uses}. Those customers get nothing until it is switched on again or taken off there.",
+          "useHost": "a host on {inbound}",
+          "useHosts": "{count} hosts on {inbound}",
+          "useCisco": "cisco {inbound}",
+          "useCiscoLocation": "cisco {inbound}, location {location}",
+          "useOpenvpn": "OpenVPN {inbound}"
         },
         "check": {
           "title": "Test and scan",
@@ -2982,7 +2990,10 @@
           "enable": "Enable",
           "enabled": "Enabled",
           "measured": "⏱ {latency} ms · ↓ {speed}/s",
-          "testedAt": "Tested {time}"
+          "testedAt": "Tested {time}",
+          "testing": "Testing…",
+          "testedAgo": "Tested {age}",
+          "justNow": "just now"
         },
         "inbounds": {
           "title": "Countries per inbound",

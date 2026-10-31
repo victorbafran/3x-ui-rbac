@@ -2961,7 +2961,15 @@
           "refresh": "Obnoviť zoznam",
           "listedAt": "Zoznam načítaný {time}",
           "save": "Uložiť krajiny",
-          "memory": "Asi {mb} MB pamäte pre {count} krajín"
+          "memory": "Asi {mb} MB pamäte pre {count} krajín",
+          "inUse": "Používa sa",
+          "inUseHint": "Zákazníci cez ňu odchádzajú: {uses}. Pred vypnutím ju odtiaľ odoberte.",
+          "inUseOff": "Vypnutá, no stále je výstupom pre: {uses}. Títo zákazníci sa nikam nedostanú, kým ju znova nezapnete alebo ju odtiaľ neodoberiete.",
+          "useHost": "hostiteľ na {inbound}",
+          "useHosts": "hostitelia na {inbound}: {count}",
+          "useCisco": "cisco {inbound}",
+          "useCiscoLocation": "cisco {inbound}, lokalita {location}",
+          "useOpenvpn": "OpenVPN {inbound}"
         },
         "check": {
           "title": "Test a sken",
@@ -2982,7 +2990,10 @@
           "enable": "Zapnúť",
           "enabled": "Zapnutá",
           "measured": "⏱ {latency} ms · ↓ {speed}/s",
-          "testedAt": "Otestované {time}"
+          "testedAt": "Otestované {time}",
+          "testing": "Testuje sa…",
+          "testedAgo": "Otestované {age}",
+          "justNow": "práve teraz"
         },
         "inbounds": {
           "title": "Krajiny podľa vstupu",

@@ -2961,7 +2961,15 @@
           "refresh": "Обновить список",
           "listedAt": "Список прочитан {time}",
           "save": "Сохранить страны",
-          "memory": "Около {mb} МБ памяти на {count} стран"
+          "memory": "Около {mb} МБ памяти на {count} стран",
+          "inUse": "Используется",
+          "inUseHint": "Через неё выходят клиенты: {uses}. Уберите её оттуда, прежде чем выключать.",
+          "inUseOff": "Выключена, но всё ещё служит выходом для: {uses}. Эти клиенты никуда не попадут, пока её не включат снова или не уберут оттуда.",
+          "useHost": "хост на {inbound}",
+          "useHosts": "хостов на {inbound}: {count}",
+          "useCisco": "cisco {inbound}",
+          "useCiscoLocation": "cisco {inbound}, локация {location}",
+          "useOpenvpn": "OpenVPN {inbound}"
         },
         "check": {
           "title": "Проверка и сканирование",
@@ -2982,7 +2990,10 @@
           "enable": "Включить",
           "enabled": "Включена",
           "measured": "⏱ {latency} мс · ↓ {speed}/s",
-          "testedAt": "Проверено {time}"
+          "testedAt": "Проверено {time}",
+          "testing": "Проверка…",
+          "testedAgo": "Проверено {age}",
+          "justNow": "только что"
         },
         "inbounds": {
           "title": "Страны по инбаундам",

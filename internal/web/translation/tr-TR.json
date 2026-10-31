@@ -2961,7 +2961,15 @@
           "refresh": "Listeyi yenile",
           "listedAt": "Liste okundu: {time}",
           "save": "Ülkeleri kaydet",
-          "memory": "{count} ülke için yaklaşık {mb} MB bellek"
+          "memory": "{count} ülke için yaklaşık {mb} MB bellek",
+          "inUse": "Kullanımda",
+          "inUseHint": "Müşteriler buradan çıkıyor: {uses}. Kapatmadan önce oradan kaldırın.",
+          "inUseOff": "Kapalı, ama hâlâ şunların çıkışı: {uses}. Yeniden açılana ya da oradan kaldırılana kadar bu müşteriler hiçbir yere ulaşamaz.",
+          "useHost": "{inbound} üzerinde bir host",
+          "useHosts": "{inbound} üzerinde {count} host",
+          "useCisco": "cisco {inbound}",
+          "useCiscoLocation": "cisco {inbound}, konum {location}",
+          "useOpenvpn": "OpenVPN {inbound}"
         },
         "check": {
           "title": "Test ve tarama",
@@ -2982,7 +2990,10 @@
           "enable": "Aç",
           "enabled": "Açık",
           "measured": "⏱ {latency} ms · ↓ {speed}/s",
-          "testedAt": "Test edildi {time}"
+          "testedAt": "Test edildi {time}",
+          "testing": "Test ediliyor…",
+          "testedAgo": "Test: {age}",
+          "justNow": "az önce"
         },
         "inbounds": {
           "title": "Gelen bağlantı başına ülkeler",

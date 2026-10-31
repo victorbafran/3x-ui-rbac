@@ -2961,7 +2961,15 @@
           "refresh": "Segarkan daftar",
           "listedAt": "Daftar dibaca {time}",
           "save": "Simpan negara",
-          "memory": "Sekitar {mb} MB memori untuk {count} negara"
+          "memory": "Sekitar {mb} MB memori untuk {count} negara",
+          "inUse": "Dipakai",
+          "inUseHint": "Pelanggan keluar lewat negara ini: {uses}. Lepaskan dari sana sebelum mematikannya.",
+          "inUseOff": "Mati, tetapi masih menjadi jalur keluar: {uses}. Pelanggan itu tidak terhubung ke mana pun sampai dinyalakan lagi atau dilepas dari sana.",
+          "useHost": "satu host di {inbound}",
+          "useHosts": "{count} host di {inbound}",
+          "useCisco": "cisco {inbound}",
+          "useCiscoLocation": "cisco {inbound}, lokasi {location}",
+          "useOpenvpn": "OpenVPN {inbound}"
         },
         "check": {
           "title": "Uji dan pindai",
@@ -2982,7 +2990,10 @@
           "enable": "Aktifkan",
           "enabled": "Aktif",
           "measured": "⏱ {latency} md · ↓ {speed}/s",
-          "testedAt": "Diuji {time}"
+          "testedAt": "Diuji {time}",
+          "testing": "Menguji…",
+          "testedAgo": "Diuji {age}",
+          "justNow": "baru saja"
         },
         "inbounds": {
           "title": "Negara per inbound",

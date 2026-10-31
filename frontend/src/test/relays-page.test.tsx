@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
@@ -5,6 +6,7 @@ import { MemoryRouter } from 'react-router';
 import type { Relay } from '@/schemas/relay';
 import {
   psiphonRefetchMs,
+  type PsiphonCountryUse,
   type PsiphonExitTest,
   type PsiphonInbound,
   type PsiphonState,
@@ -922,6 +924,7 @@ const psiphonCountry = (code: string, name: string, flag: string) => ({
   trafficDown: 0,
   trafficUp: 0,
   test: null,
+  usedBy: [] as PsiphonCountryUse[],
 });
 
 const noScan = {
@@ -1336,6 +1339,134 @@ describe('the Psiphon card', () => {
       'The last scan was cut short by a restart or standby after 1 of 27 countries',
     );
     cleanup();
+  });
+
+  // The panel refuses to switch off a country customers still leave through; the card
+  // locks it and says exactly where, and names one that is off yet still in use.
+  it('locks a country in use and says where it is used', async () => {
+    psiphonState = {
+      ...psiphonReady,
+      countries: [
+        {
+          ...psiphonReady.countries[0],
+          usedBy: [
+            { kind: 'host', inbound: 'in-2576-udp', count: 2, location: '' },
+            { kind: 'cisco', inbound: 'in-443-tcp', count: 1, location: 'austria' },
+            { kind: 'openvpn', inbound: 'in-1194-tcp', count: 1, location: '' },
+          ],
+        },
+        {
+          ...psiphonReady.countries[1],
+          usedBy: [{ kind: 'host', inbound: 'in-8443-tcp', count: 1, location: '' }],
+        },
+        {
+          ...psiphonReady.countries[2],
+          enabled: false,
+          usedBy: [{ kind: 'cisco', inbound: 'in-444-tcp', count: 1, location: '' }],
+        },
+      ],
+    };
+    const card = renderPage();
+    const cell = (label: string) =>
+      within(card).getByText(label).closest('.ant-col') as HTMLElement;
+    const box = (label: string) => cell(label).querySelector('input') as HTMLInputElement;
+    expect(box('🇩🇪 Germany').checked).toBe(true);
+    expect(box('🇩🇪 Germany').disabled).toBe(true);
+    fireEvent.mouseEnter(within(cell('🇩🇪 Germany')).getByText('In use'));
+    await waitFor(() =>
+      expect(document.body.textContent).toContain(
+        'Customers leave through it: 2 hosts on in-2576-udp · cisco in-443-tcp, location austria · OpenVPN in-1194-tcp. Take it off there before switching it off.',
+      ),
+    );
+    expect(box('🇺🇸 United States').disabled).toBe(true);
+    cleanup();
+
+    const again = renderPage();
+    const tag = within(
+      within(again).getByText('🇺🇸 United States').closest('.ant-col') as HTMLElement,
+    ).getByText('In use');
+    fireEvent.mouseEnter(tag);
+    await waitFor(() => expect(document.body.textContent).toContain('a host on in-8443-tcp.'));
+    cleanup();
+
+    const third = renderPage();
+    const gb = within(third).getByText('🇬🇧 United Kingdom').closest('.ant-col') as HTMLElement;
+    expect((gb.querySelector('input') as HTMLInputElement).disabled).toBe(false);
+    expect((gb.querySelector('input') as HTMLInputElement).checked).toBe(false);
+    fireEvent.mouseEnter(within(gb).getByText('In use'));
+    await waitFor(() =>
+      expect(document.body.textContent).toContain(
+        'Switched off, yet still the exit of: cisco in-444-tcp.',
+      ),
+    );
+    const austria = within(third).getByText('🇦🇹 Austria').closest('.ant-col') as HTMLElement;
+    expect(within(austria).queryByText('In use')).toBeNull();
+    cleanup();
+  });
+
+  // The test takes up to 30 s and nothing showed it running; a result then said when it
+  // ran only in a tooltip. Now each running country spins, and the age shows and moves.
+  it('shows each country testing, then how long ago and what changed', async () => {
+    vi.useFakeTimers({
+      toFake: ['Date', 'setInterval', 'clearInterval', 'setTimeout', 'clearTimeout'],
+    });
+    const now = Math.floor(Date.now() / 1000);
+    const measured = { connected: true, exitIp: '164.92.130.120', exitLoc: 'DE' };
+    const tested = (de: Partial<PsiphonExitTest>, us: Partial<PsiphonExitTest>): PsiphonState => ({
+      ...psiphonReady,
+      countries: [
+        { ...psiphonReady.countries[0], test: exitTest('DE', { ...measured, ...de }) },
+        { ...psiphonReady.countries[1], test: exitTest('US', { ...measured, ...us }) },
+        psiphonReady.countries[2],
+        { ...psiphonCountry('AT', 'Austria', '🇦🇹'), enabled: false, running: false },
+      ],
+    });
+    const before = { latencyMs: 412, speed: 1258291, at: now - 125 };
+    psiphonState = tested(before, before);
+    const poll = { again: () => {} };
+    function Polled() {
+      const [, setTick] = useState(0);
+      useEffect(() => {
+        poll.again = () => setTick((n) => n + 1);
+      }, []);
+      return (
+        <MemoryRouter>
+          <RelaysPage />
+        </MemoryRouter>
+      );
+    }
+    renderWithProviders(<Polled />);
+    const cell = (label: string) => screen.getByText(label).closest('.ant-col') as HTMLElement;
+    try {
+      expect(cell('🇺🇸 United States').textContent).toContain('Tested 2 minutes ago');
+      testMut.isPending = true;
+      act(() => poll.again());
+      expect(cell('🇩🇪 Germany').textContent).toContain('Testing…');
+      expect(cell('🇺🇸 United States').textContent).toContain('Testing…');
+      expect(cell('🇬🇧 United Kingdom').textContent).not.toContain('Testing…');
+      expect(cell('🇦🇹 Austria').textContent).not.toContain('Testing…');
+
+      testMut.isPending = false;
+      psiphonState = tested({ latencyMs: 300, speed: 2097152, at: now }, { ...before, at: now });
+      act(() => poll.again());
+      expect(cell('🇩🇪 Germany').textContent).not.toContain('Testing…');
+      expect(cell('🇩🇪 Germany').textContent).toContain('⏱ 300 ms');
+      expect(cell('🇩🇪 Germany').textContent).toContain('Tested just now');
+      expect(cell('🇺🇸 United States').textContent).toContain('Tested just now');
+      // Germany's numbers moved; the United States measured the same again.
+      expect(cell('🇩🇪 Germany').querySelector('.psiphon-test-changed')).not.toBeNull();
+      expect(cell('🇺🇸 United States').querySelector('.psiphon-test-changed')).toBeNull();
+
+      await act(async () => {
+        vi.advanceTimersByTime(3 * 60_000);
+      });
+      expect(cell('🇩🇪 Germany').textContent).toContain('Tested 3 minutes ago');
+      expect(cell('🇩🇪 Germany').querySelector('.psiphon-test-changed')).toBeNull();
+    } finally {
+      testMut.isPending = false;
+      vi.useRealTimers();
+      cleanup();
+    }
   });
 });
 

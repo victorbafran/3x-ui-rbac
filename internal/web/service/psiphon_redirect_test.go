@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"maps"
+	"reflect"
 	"slices"
 	"strings"
 	"testing"
@@ -481,5 +482,82 @@ func TestNoInboundIsGivenAPsiphonRedirectsTag(t *testing.T) {
 	}
 	if _, _, err := svc.AddInbound(cisco("psi-NL")); err != nil {
 		t.Errorf("a cisco location on NL, whose tag is free: %v", err)
+	}
+}
+
+// The card locks a country in use and says where: each inbound once per kind, a host count,
+// the cisco location by name, a disabled inbound too, and a country off yet still named.
+func TestTheStateNamesWhatKeepsEachCountryOn(t *testing.T) {
+	setupRelayDB(t)
+	seedPsiphonCountries(t,
+		model.PsiphonCountry{Code: "AT", Enabled: true, SocksPort: 11181, HTTPPort: 11381},
+		model.PsiphonCountry{Code: "CA", Enabled: true, SocksPort: 11182, HTTPPort: 11382},
+		model.PsiphonCountry{Code: "DE", Enabled: true, SocksPort: 11183, HTTPPort: 11383},
+		model.PsiphonCountry{Code: "GB", Enabled: false, SocksPort: 11184, HTTPPort: 11384},
+	)
+	ids := map[string]int{}
+	for _, ib := range []*model.Inbound{
+		{Tag: "in-2576-udp", Port: 2576, Protocol: model.Hysteria, Enable: true},
+		{Tag: "in-443-tcp", Port: 443, Protocol: model.Cisco, Settings: ciscoSettings("psi-AT", "wgr9", "psi-DE", "psi-DE")},
+		{Tag: "in-1194-tcp", Remark: "ovpn", Port: 1194, Protocol: model.OpenVPN, Enable: true, Settings: `{"exit":"psi-GB"}`},
+		{Tag: "in-8443-off", Port: 8443, Protocol: model.VLESS},
+	} {
+		if err := database.GetDB().Create(ib).Error; err != nil {
+			t.Fatal(err)
+		}
+		ids[ib.Tag] = ib.Id
+	}
+	hosts := []model.Host{
+		{InboundId: ids["in-2576-udp"], Remark: "a1", Exit: "psi-AT"},
+		{InboundId: ids["in-2576-udp"], Remark: "a2", Exit: "psi-AT"},
+		{InboundId: ids["in-2576-udp"], Remark: "d", Exit: "psi-DE"},
+		{InboundId: ids["in-8443-off"], Remark: "d-off", Exit: "psi-DE"},
+		{InboundId: ids["in-8443-off"], Remark: "relay", Exit: "wgr9"},
+		{InboundId: 999, Remark: "orphan", Exit: "psi-CA"},
+	}
+	if err := database.GetDB().Create(&hosts).Error; err != nil {
+		t.Fatal(err)
+	}
+
+	st, err := (&PsiphonService{}).State()
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := map[string][]PsiphonCountryUse{}
+	for _, c := range st.Countries {
+		if c.UsedBy == nil {
+			t.Errorf("%s: usedBy is null; the card reads a list", c.Code)
+		}
+		got[c.Code] = c.UsedBy
+	}
+	want := map[string][]PsiphonCountryUse{
+		"AT": {
+			{Kind: "host", Inbound: "in-2576-udp", Count: 2},
+			{Kind: "cisco", Inbound: "in-443-tcp", Count: 1, Location: "ca"},
+		},
+		"CA": {},
+		"DE": {
+			{Kind: "host", Inbound: "in-2576-udp", Count: 1},
+			{Kind: "cisco", Inbound: "in-443-tcp", Count: 1, Location: "cc"},
+			{Kind: "cisco", Inbound: "in-443-tcp", Count: 1, Location: "cd"},
+			{Kind: "host", Inbound: "in-8443-off", Count: 1},
+		},
+		"GB": {{Kind: "openvpn", Inbound: "ovpn", Count: 1}},
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("usedBy = %+v\nwant      %+v", got, want)
+	}
+
+	// The refusal names exactly the inbounds the card shows, each once.
+	err = (&PsiphonService{}).SetCountries([]string{"AT", "CA"})
+	if want := "🇩🇪 Germany is still the exit of in-2576-udp, in-443-tcp, in-8443-off; take it off there first"; err == nil || err.Error() != want {
+		t.Errorf("switching DE off: got %v, want %q", err, want)
+	}
+	if err := (&PsiphonService{}).SetCountries([]string{"AT", "DE"}); err != nil && !strings.Contains(err.Error(), "not every one could start") {
+		t.Errorf("switching CA off, which only an orphaned host names: %v", err)
+	}
+	var ca model.PsiphonCountry
+	if err := database.GetDB().Where("code = ?", "CA").First(&ca).Error; err != nil || ca.Enabled {
+		t.Errorf("CA after the save: enabled=%v err=%v; want it off", ca.Enabled, err)
 	}
 }

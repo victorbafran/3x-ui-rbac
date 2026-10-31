@@ -152,6 +152,24 @@ type PsiphonCountryView struct {
 	TrafficUp   int64 `json:"trafficUp"`
 	// Test is the card's last test of the country, nil until one ran.
 	Test *PsiphonExitTest `json:"test,omitempty"`
+	// UsedBy is what keeps the country from being switched off, never nil.
+	UsedBy []PsiphonCountryUse `json:"usedBy"`
+}
+
+// The kinds of PsiphonCountryUse.
+const (
+	psiphonUseHost    = "host"
+	psiphonUseCisco   = "cisco"
+	psiphonUseOpenVPN = "openvpn"
+)
+
+// PsiphonCountryUse is one inbound leaving through a country: Count hosts of it, a
+// cisco location of it (named in Location), or OpenVPN's exit.
+type PsiphonCountryUse struct {
+	Kind     string `json:"kind"`
+	Inbound  string `json:"inbound"`
+	Count    int    `json:"count"`
+	Location string `json:"location,omitempty"`
 }
 
 // PsiphonExitTest is one country measured: whether its tunnel was up, where it
@@ -272,6 +290,10 @@ func (s *PsiphonService) State() (*PsiphonState, error) {
 		byCode[r.Code] = r
 	}
 	codes := psiphonListedCodes(st.Regions, rows)
+	uses, err := psiphonCountryUses(database.GetDB())
+	if err != nil {
+		return nil, err
+	}
 	mgr := psiphon.GetManager()
 	psiphonTests.Lock()
 	tests := maps.Clone(psiphonTests.byCode)
@@ -293,6 +315,7 @@ func (s *PsiphonService) State() (*PsiphonState, error) {
 			SocksPort:   row.SocksPort,
 			TrafficDown: row.TrafficDown,
 			TrafficUp:   row.TrafficUp,
+			UsedBy:      append([]PsiphonCountryUse{}, uses[code]...),
 		}
 		// A client that exited says why; that is the error that matters now.
 		if row.Enabled && !live.Running && live.Detail != "" {
@@ -459,6 +482,10 @@ func (s *PsiphonService) SetCountries(codes []string) error {
 		if err := tx.Find(&rows).Error; err != nil {
 			return err
 		}
+		uses, err := psiphonCountryUses(tx)
+		if err != nil {
+			return err
+		}
 		known := make(map[string]bool, len(rows))
 		for _, r := range rows {
 			known[r.Code] = true
@@ -466,14 +493,8 @@ func (s *PsiphonService) SetCountries(codes []string) error {
 			if r.Enabled == on {
 				continue
 			}
-			if !on {
-				users, err := psiphonCountryUsers(tx, r.Code)
-				if err != nil {
-					return err
-				}
-				if len(users) > 0 {
-					return fmt.Errorf("%s is still the exit of %s; take it off there first", psiphonLabel(r.Code), strings.Join(users, ", "))
-				}
+			if users := psiphonUseInbounds(uses[r.Code]); !on && len(users) > 0 {
+				return fmt.Errorf("%s is still the exit of %s; take it off there first", psiphonLabel(r.Code), strings.Join(users, ", "))
 			}
 			if err := tx.Model(&model.PsiphonCountry{}).Where("code = ?", r.Code).Update("enabled", on).Error; err != nil {
 				return err
@@ -514,35 +535,68 @@ func (s *PsiphonService) SetCountries(codes []string) error {
 	return nil
 }
 
-// psiphonCountryUsers names the inbounds leaving through a country: by a host, a
-// cisco location or OpenVPN's exit, read from the settings as relay usage reads them.
-func psiphonCountryUsers(tx *gorm.DB, code string) ([]string, error) {
-	var ids []int
-	if err := tx.Model(&model.Host{}).Where("exit_iface = ?", psiphonExit(code)).
-		Distinct().Pluck("inbound_id", &ids).Error; err != nil {
+// psiphonCountryUses is, per country, every inbound leaving through it by its hosts, a cisco
+// location or OpenVPN's exit, in inbound order. A disabled inbound counts: it can come back.
+func psiphonCountryUses(tx *gorm.DB) (map[string][]PsiphonCountryUse, error) {
+	var hosts []model.Host
+	if err := tx.Where("exit_iface LIKE ?", psiphonExitPrefix+"%").Find(&hosts).Error; err != nil {
 		return nil, err
 	}
-	var sidecars []model.Inbound
-	if err := tx.Where("protocol IN ?", []model.Protocol{model.Cisco, model.OpenVPN}).Find(&sidecars).Error; err != nil {
-		return nil, err
-	}
-	for _, ib := range sidecars {
-		if slices.Contains(settingsExits(ib.Settings), psiphonExit(code)) && !slices.Contains(ids, ib.Id) {
-			ids = append(ids, ib.Id)
+	hostCodes := map[int]map[string]int{}
+	ids := []int{}
+	for _, h := range hosts {
+		code, ok := psiphonCode(h.Exit)
+		if !ok {
+			continue
 		}
+		if hostCodes[h.InboundId] == nil {
+			hostCodes[h.InboundId] = map[string]int{}
+			ids = append(ids, h.InboundId)
+		}
+		hostCodes[h.InboundId][code]++
 	}
-	if len(ids) == 0 {
-		return nil, nil
+	sidecars := []model.Protocol{model.Cisco, model.OpenVPN}
+	q := tx.Where("protocol IN ?", sidecars)
+	if len(ids) > 0 {
+		q = tx.Where("id IN ? OR protocol IN ?", ids, sidecars)
 	}
 	var inbounds []model.Inbound
-	if err := tx.Where("id IN ?", ids).Order("id asc").Find(&inbounds).Error; err != nil {
+	if err := q.Order("id asc").Find(&inbounds).Error; err != nil {
 		return nil, err
 	}
-	names := make([]string, 0, len(inbounds))
+	out := map[string][]PsiphonCountryUse{}
 	for i := range inbounds {
-		names = append(names, inboundName(&inbounds[i]))
+		ib := &inbounds[i]
+		name := inboundName(ib)
+		codes := slices.Sorted(maps.Keys(hostCodes[ib.Id]))
+		for _, code := range codes {
+			out[code] = append(out[code], PsiphonCountryUse{Kind: psiphonUseHost, Inbound: name, Count: hostCodes[ib.Id][code]})
+		}
+		if ib.Protocol != model.Cisco && ib.Protocol != model.OpenVPN {
+			continue
+		}
+		kind := psiphonUseCisco
+		if ib.Protocol == model.OpenVPN {
+			kind = psiphonUseOpenVPN
+		}
+		for _, place := range settingsExitPlaces(ib.Settings) {
+			if code, ok := psiphonCode(place.exit); ok {
+				out[code] = append(out[code], PsiphonCountryUse{Kind: kind, Inbound: name, Count: 1, Location: place.location})
+			}
+		}
 	}
-	return names, nil
+	return out, nil
+}
+
+// psiphonUseInbounds is the inbounds of uses, each named once, in their order.
+func psiphonUseInbounds(uses []PsiphonCountryUse) []string {
+	var names []string
+	for _, u := range uses {
+		if !slices.Contains(names, u.Inbound) {
+			names = append(names, u.Inbound)
+		}
+	}
+	return names
 }
 
 // psiphonTakenPorts is every port a country holds, its redirect port too, and

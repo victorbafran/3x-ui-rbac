@@ -192,17 +192,21 @@ _openapi:
         last check saw, lastError, its local socksPort, and trafficDown and
         trafficUp: the bytes customers downloaded and uploaded through it since
         the last reset, saved every 30 seconds and kept while the country is
-        off, and test: its last test from the card, absent until one ran), the
-        WARP setting (mode "off", "sites" or "all", the site rules one per line,
-        and whether a WARP account is registered), and scan: the running or last
-        scan of every country (running, stopped when a shutdown or standby cut
-        it short, startedAt, finishedAt, total, and results in the order the
-        countries finished). A test or scan result has code, connected, exitIp,
-        exitLoc, latencyMs (the trace request’s round trip), speed (the download
-        in bytes per second), error and at. Customers who enter through an entry
-        server reach the same countries, because their traffic lands on this
-        panel’s inbounds.'
-      url: '#psiphon-on-this-panels-own-server-whether-it-can-run-here-supported-is-false-on-anything-but-x86_64-linux-whether-the-binary-is-installed-the-countries-psiphon-offers-regions-iso-codes-read-at-regionsat-every-country-with-its-state-code-name-flag-enabled-running-connected-the-region-it-connected-through-the-exitip-and-exitloc-its-last-check-saw-lasterror-its-local-socksport-and-trafficdown-and-trafficup-the-bytes-customers-downloaded-and-uploaded-through-it-since-the-last-reset-saved-every-30-seconds-and-kept-while-the-country-is-off-and-test-its-last-test-from-the-card-absent-until-one-ran-the-warp-setting-mode-off-sites-or-all-the-site-rules-one-per-line-and-whether-a-warp-account-is-registered-and-scan-the-running-or-last-scan-of-every-country-running-stopped-when-a-shutdown-or-standby-cut-it-short-startedat-finishedat-total-and-results-in-the-order-the-countries-finished-a-test-or-scan-result-has-code-connected-exitip-exitloc-latencyms-the-trace-requests-round-trip-speed-the-download-in-bytes-per-second-error-and-at-customers-who-enter-through-an-entry-server-reach-the-same-countries-because-their-traffic-lands-on-this-panels-inbounds'
+        off, test: its last test from the card, absent until one ran, and
+        usedBy: what keeps it from being switched off, each entry a kind
+        ("host", "cisco" or "openvpn"), the inbound by remark or tag, count
+        (that inbound’s hosts leaving through it; 1 otherwise) and, for cisco,
+        the location’s name; a disabled inbound counts, and an empty list means
+        nothing holds it), the WARP setting (mode "off", "sites" or "all", the
+        site rules one per line, and whether a WARP account is registered), and
+        scan: the running or last scan of every country (running, stopped when a
+        shutdown or standby cut it short, startedAt, finishedAt, total, and
+        results in the order the countries finished). A test or scan result has
+        code, connected, exitIp, exitLoc, latencyMs (the trace request’s round
+        trip), speed (the download in bytes per second), error and at. Customers
+        who enter through an entry server reach the same countries, because
+        their traffic lands on this panel’s inbounds.'
+      url: '#psiphon-on-this-panels-own-server-whether-it-can-run-here-supported-is-false-on-anything-but-x86_64-linux-whether-the-binary-is-installed-the-countries-psiphon-offers-regions-iso-codes-read-at-regionsat-every-country-with-its-state-code-name-flag-enabled-running-connected-the-region-it-connected-through-the-exitip-and-exitloc-its-last-check-saw-lasterror-its-local-socksport-and-trafficdown-and-trafficup-the-bytes-customers-downloaded-and-uploaded-through-it-since-the-last-reset-saved-every-30-seconds-and-kept-while-the-country-is-off-test-its-last-test-from-the-card-absent-until-one-ran-and-usedby-what-keeps-it-from-being-switched-off-each-entry-a-kind-host-cisco-or-openvpn-the-inbound-by-remark-or-tag-count-that-inbounds-hosts-leaving-through-it-1-otherwise-and-for-cisco-the-locations-name-a-disabled-inbound-counts-and-an-empty-list-means-nothing-holds-it-the-warp-setting-mode-off-sites-or-all-the-site-rules-one-per-line-and-whether-a-warp-account-is-registered-and-scan-the-running-or-last-scan-of-every-country-running-stopped-when-a-shutdown-or-standby-cut-it-short-startedat-finishedat-total-and-results-in-the-order-the-countries-finished-a-test-or-scan-result-has-code-connected-exitip-exitloc-latencyms-the-trace-requests-round-trip-speed-the-download-in-bytes-per-second-error-and-at-customers-who-enter-through-an-entry-server-reach-the-same-countries-because-their-traffic-lands-on-this-panels-inbounds'
     - depth: 2
       title: Download the pinned Psiphon build (checked against its SHA-256) and read
         the live list of countries by starting it once. Returns when done,
@@ -429,17 +433,22 @@ _openapi:
           exitLoc its last check saw, lastError, its local socksPort, and
           trafficDown and trafficUp: the bytes customers downloaded and uploaded
           through it since the last reset, saved every 30 seconds and kept while
-          the country is off, and test: its last test from the card, absent
-          until one ran), the WARP setting (mode "off", "sites" or "all", the
-          site rules one per line, and whether a WARP account is registered),
-          and scan: the running or last scan of every country (running, stopped
-          when a shutdown or standby cut it short, startedAt, finishedAt, total,
-          and results in the order the countries finished). A test or scan
-          result has code, connected, exitIp, exitLoc, latencyMs (the trace
-          request’s round trip), speed (the download in bytes per second), error
-          and at. Customers who enter through an entry server reach the same
-          countries, because their traffic lands on this panel’s inbounds.'
-        id: psiphon-on-this-panels-own-server-whether-it-can-run-here-supported-is-false-on-anything-but-x86_64-linux-whether-the-binary-is-installed-the-countries-psiphon-offers-regions-iso-codes-read-at-regionsat-every-country-with-its-state-code-name-flag-enabled-running-connected-the-region-it-connected-through-the-exitip-and-exitloc-its-last-check-saw-lasterror-its-local-socksport-and-trafficdown-and-trafficup-the-bytes-customers-downloaded-and-uploaded-through-it-since-the-last-reset-saved-every-30-seconds-and-kept-while-the-country-is-off-and-test-its-last-test-from-the-card-absent-until-one-ran-the-warp-setting-mode-off-sites-or-all-the-site-rules-one-per-line-and-whether-a-warp-account-is-registered-and-scan-the-running-or-last-scan-of-every-country-running-stopped-when-a-shutdown-or-standby-cut-it-short-startedat-finishedat-total-and-results-in-the-order-the-countries-finished-a-test-or-scan-result-has-code-connected-exitip-exitloc-latencyms-the-trace-requests-round-trip-speed-the-download-in-bytes-per-second-error-and-at-customers-who-enter-through-an-entry-server-reach-the-same-countries-because-their-traffic-lands-on-this-panels-inbounds
+          the country is off, test: its last test from the card, absent until
+          one ran, and usedBy: what keeps it from being switched off, each entry
+          a kind ("host", "cisco" or "openvpn"), the inbound by remark or tag,
+          count (that inbound’s hosts leaving through it; 1 otherwise) and, for
+          cisco, the location’s name; a disabled inbound counts, and an empty
+          list means nothing holds it), the WARP setting (mode "off", "sites" or
+          "all", the site rules one per line, and whether a WARP account is
+          registered), and scan: the running or last scan of every country
+          (running, stopped when a shutdown or standby cut it short, startedAt,
+          finishedAt, total, and results in the order the countries finished). A
+          test or scan result has code, connected, exitIp, exitLoc, latencyMs
+          (the trace request’s round trip), speed (the download in bytes per
+          second), error and at. Customers who enter through an entry server
+          reach the same countries, because their traffic lands on this panel’s
+          inbounds.'
+        id: psiphon-on-this-panels-own-server-whether-it-can-run-here-supported-is-false-on-anything-but-x86_64-linux-whether-the-binary-is-installed-the-countries-psiphon-offers-regions-iso-codes-read-at-regionsat-every-country-with-its-state-code-name-flag-enabled-running-connected-the-region-it-connected-through-the-exitip-and-exitloc-its-last-check-saw-lasterror-its-local-socksport-and-trafficdown-and-trafficup-the-bytes-customers-downloaded-and-uploaded-through-it-since-the-last-reset-saved-every-30-seconds-and-kept-while-the-country-is-off-test-its-last-test-from-the-card-absent-until-one-ran-and-usedby-what-keeps-it-from-being-switched-off-each-entry-a-kind-host-cisco-or-openvpn-the-inbound-by-remark-or-tag-count-that-inbounds-hosts-leaving-through-it-1-otherwise-and-for-cisco-the-locations-name-a-disabled-inbound-counts-and-an-empty-list-means-nothing-holds-it-the-warp-setting-mode-off-sites-or-all-the-site-rules-one-per-line-and-whether-a-warp-account-is-registered-and-scan-the-running-or-last-scan-of-every-country-running-stopped-when-a-shutdown-or-standby-cut-it-short-startedat-finishedat-total-and-results-in-the-order-the-countries-finished-a-test-or-scan-result-has-code-connected-exitip-exitloc-latencyms-the-trace-requests-round-trip-speed-the-download-in-bytes-per-second-error-and-at-customers-who-enter-through-an-entry-server-reach-the-same-countries-because-their-traffic-lands-on-this-panels-inbounds
       - content: Download the pinned Psiphon build (checked against its SHA-256) and
           read the live list of countries by starting it once. Returns when
           done, within about three minutes. Nothing keeps running until a

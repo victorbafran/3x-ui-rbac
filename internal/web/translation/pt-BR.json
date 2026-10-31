@@ -2961,7 +2961,15 @@
           "refresh": "Atualizar lista",
           "listedAt": "Lista lida {time}",
           "save": "Salvar países",
-          "memory": "Cerca de {mb} MB de memória para {count} países"
+          "memory": "Cerca de {mb} MB de memória para {count} países",
+          "inUse": "Em uso",
+          "inUseHint": "Clientes saem por ele: {uses}. Retire-o de lá antes de desativá-lo.",
+          "inUseOff": "Desativado, mas ainda é a saída de: {uses}. Esses clientes não chegam a lugar nenhum até ele ser reativado ou retirado de lá.",
+          "useHost": "um host em {inbound}",
+          "useHosts": "{count} hosts em {inbound}",
+          "useCisco": "cisco {inbound}",
+          "useCiscoLocation": "cisco {inbound}, local {location}",
+          "useOpenvpn": "OpenVPN {inbound}"
         },
         "check": {
           "title": "Testar e varrer",
@@ -2982,7 +2990,10 @@
           "enable": "Ligar",
           "enabled": "Ligado",
           "measured": "⏱ {latency} ms · ↓ {speed}/s",
-          "testedAt": "Testado {time}"
+          "testedAt": "Testado {time}",
+          "testing": "Testando…",
+          "testedAgo": "Testado {age}",
+          "justNow": "agora mesmo"
         },
         "inbounds": {
           "title": "Países por inbound",

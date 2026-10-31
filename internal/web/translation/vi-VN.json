@@ -2961,7 +2961,15 @@
           "refresh": "Làm mới danh sách",
           "listedAt": "Đọc danh sách lúc {time}",
           "save": "Lưu quốc gia",
-          "memory": "Khoảng {mb} MB bộ nhớ cho {count} quốc gia"
+          "memory": "Khoảng {mb} MB bộ nhớ cho {count} quốc gia",
+          "inUse": "Đang dùng",
+          "inUseHint": "Khách hàng đang đi ra qua quốc gia này: {uses}. Hãy gỡ khỏi đó trước khi tắt.",
+          "inUseOff": "Đã tắt, nhưng vẫn là lối ra của: {uses}. Những khách hàng đó không đi được đâu cho đến khi bật lại hoặc gỡ khỏi đó.",
+          "useHost": "một host trên {inbound}",
+          "useHosts": "{count} host trên {inbound}",
+          "useCisco": "cisco {inbound}",
+          "useCiscoLocation": "cisco {inbound}, vị trí {location}",
+          "useOpenvpn": "OpenVPN {inbound}"
         },
         "check": {
           "title": "Kiểm tra và quét",
@@ -2982,7 +2990,10 @@
           "enable": "Bật",
           "enabled": "Đã bật",
           "measured": "⏱ {latency} ms · ↓ {speed}/s",
-          "testedAt": "Đã kiểm tra {time}"
+          "testedAt": "Đã kiểm tra {time}",
+          "testing": "Đang kiểm tra…",
+          "testedAgo": "Đã kiểm tra {age}",
+          "justNow": "vừa xong"
         },
         "inbounds": {
           "title": "Quốc gia theo inbound",

@@ -2961,7 +2961,15 @@
           "refresh": "刷新列表",
           "listedAt": "列表读取于 {time}",
           "save": "保存国家",
-          "memory": "{count} 个国家约占 {mb} MB 内存"
+          "memory": "{count} 个国家约占 {mb} MB 内存",
+          "inUse": "使用中",
+          "inUseHint": "客户正从这里出去：{uses}。关闭前请先从那里移除。",
+          "inUseOff": "已关闭，但仍是以下项的出口：{uses}。在重新开启或从那里移除之前，这些客户无法连接到任何地方。",
+          "useHost": "{inbound} 上的 1 个主机",
+          "useHosts": "{inbound} 上的 {count} 个主机",
+          "useCisco": "cisco {inbound}",
+          "useCiscoLocation": "cisco {inbound}，位置 {location}",
+          "useOpenvpn": "OpenVPN {inbound}"
         },
         "check": {
           "title": "测试与扫描",
@@ -2982,7 +2990,10 @@
           "enable": "启用",
           "enabled": "已启用",
           "measured": "⏱ {latency} ms · ↓ {speed}/s",
-          "testedAt": "测试于 {time}"
+          "testedAt": "测试于 {time}",
+          "testing": "测试中…",
+          "testedAgo": "测试于{age}",
+          "justNow": "刚刚"
         },
         "inbounds": {
           "title": "每个入站的国家",

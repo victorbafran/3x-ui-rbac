@@ -2961,7 +2961,15 @@
           "refresh": "به‌روزرسانی فهرست",
           "listedAt": "فهرست خوانده‌شده در {time}",
           "save": "ذخیره کشورها",
-          "memory": "حدود {mb} مگابایت حافظه برای {count} کشور"
+          "memory": "حدود {mb} مگابایت حافظه برای {count} کشور",
+          "inUse": "در حال استفاده",
+          "inUseHint": "مشتری‌ها از این کشور بیرون می‌روند: {uses}. پیش از خاموش کردن، آن را از آنجا بردارید.",
+          "inUseOff": "خاموش است، ولی هنوز خروجیِ این‌هاست: {uses}. تا دوباره روشن نشود یا از آنجا برداشته نشود، این مشتری‌ها به جایی نمی‌رسند.",
+          "useHost": "یک هاست روی {inbound}",
+          "useHosts": "{count} هاست روی {inbound}",
+          "useCisco": "سیسکو {inbound}",
+          "useCiscoLocation": "سیسکو {inbound}، لوکیشن {location}",
+          "useOpenvpn": "OpenVPN {inbound}"
         },
         "check": {
           "title": "آزمایش و اسکن",
@@ -2982,7 +2990,10 @@
           "enable": "روشن کن",
           "enabled": "روشن است",
           "measured": "⏱ {latency} میلی‌ثانیه · ↓ {speed}/s",
-          "testedAt": "آزمایش‌شده در {time}"
+          "testedAt": "آزمایش‌شده در {time}",
+          "testing": "در حال آزمایش…",
+          "testedAgo": "آزمایش‌شده {age}",
+          "justNow": "همین حالا"
         },
         "inbounds": {
           "title": "کشورهای هر اینباند",

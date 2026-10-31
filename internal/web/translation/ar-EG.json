@@ -2961,7 +2961,15 @@
           "refresh": "تحديث القائمة",
           "listedAt": "قُرئت القائمة في {time}",
           "save": "حفظ الدول",
-          "memory": "نحو {mb} ميغابايت من الذاكرة لـ {count} دولة"
+          "memory": "نحو {mb} ميغابايت من الذاكرة لـ {count} دولة",
+          "inUse": "قيد الاستخدام",
+          "inUseHint": "يخرج العملاء عبرها: {uses}. أزلها من هناك قبل إيقافها.",
+          "inUseOff": "متوقفة، لكنها ما زالت مخرج: {uses}. لن يصل هؤلاء العملاء إلى شيء حتى تُشغَّل مجددًا أو تُزال من هناك.",
+          "useHost": "مضيف على {inbound}",
+          "useHosts": "{count} مضيفات على {inbound}",
+          "useCisco": "cisco {inbound}",
+          "useCiscoLocation": "cisco {inbound}، الموقع {location}",
+          "useOpenvpn": "OpenVPN {inbound}"
         },
         "check": {
           "title": "الاختبار والفحص",
@@ -2982,7 +2990,10 @@
           "enable": "تفعيل",
           "enabled": "مفعّلة",
           "measured": "⏱ {latency} مللي ثانية · ↓ {speed}/s",
-          "testedAt": "اختُبرت في {time}"
+          "testedAt": "اختُبرت في {time}",
+          "testing": "جارٍ الاختبار…",
+          "testedAgo": "اختُبرت {age}",
+          "justNow": "الآن"
         },
         "inbounds": {
           "title": "الدول لكل inbound",

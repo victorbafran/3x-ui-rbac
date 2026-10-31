@@ -19,10 +19,12 @@ import {
   Tag,
   Tooltip,
   Typography,
+  theme,
 } from 'antd';
 import {
   CloudDownloadOutlined,
   DashboardOutlined,
+  LockOutlined,
   RadarChartOutlined,
   ReloadOutlined,
 } from '@ant-design/icons';
@@ -38,6 +40,7 @@ import {
   psiphonExitWorks,
   psiphonPhase,
   type PsiphonCountry,
+  type PsiphonCountryUse,
   type PsiphonExitTest,
   type PsiphonInbound,
   type PsiphonPhase,
@@ -45,7 +48,7 @@ import {
   type PsiphonWarp,
   type PsiphonWarpFormValues,
 } from '@/schemas/psiphon';
-import { IntlUtil } from '@/utils';
+import { IntlUtil, LanguageManager } from '@/utils';
 import { bytes } from './bytes';
 
 type PsiphonMutations = ReturnType<typeof usePsiphonMutations>;
@@ -99,20 +102,124 @@ function measuredText(test: PsiphonExitTest, t: TFunction): string {
   });
 }
 
-// The card's last test of a running country: its round trip and download speed,
-// or why the test failed.
-function countryTest(country: PsiphonCountry | undefined, t: TFunction) {
-  const test = country?.enabled ? country.test : null;
-  if (!test) return null;
-  const when = t('pages.relays.psiphon.check.testedAt', {
-    time: IntlUtil.formatDate(test.at * 1000),
-  });
-  return psiphonExitWorks(test) ? (
-    <Tooltip title={when}>
-      <span style={{ fontSize: 12, opacity: 0.7, cursor: 'help' }}>{measuredText(test, t)}</span>
+// How long ago a test ran, in the panel's language; the card re-renders it as time passes.
+function testAge(at: number, now: number, t: TFunction): string {
+  const secs = Math.max(0, Math.round(now / 1000 - at));
+  if (secs < 60) return t('pages.relays.psiphon.check.justNow');
+  const fmt = new Intl.RelativeTimeFormat(LanguageManager.getLanguage(), { numeric: 'auto' });
+  if (secs < 3600) return fmt.format(-Math.floor(secs / 60), 'minute');
+  if (secs < 86400) return fmt.format(-Math.floor(secs / 3600), 'hour');
+  return fmt.format(-Math.floor(secs / 86400), 'day');
+}
+
+const AGE_TICK_MS = 15_000;
+
+function useNow(everyMs: number): number {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), everyMs);
+    return () => clearInterval(timer);
+  }, [everyMs]);
+  return now;
+}
+
+const CHANGED_MS = 4000;
+
+function measuredDiffers(a: PsiphonExitTest, b: PsiphonExitTest): boolean {
+  return (
+    a.latencyMs !== b.latencyMs ||
+    a.speed !== b.speed ||
+    a.exitIp !== b.exitIp ||
+    a.error !== b.error
+  );
+}
+
+function testsByCode(countries: PsiphonCountry[]): Map<string, PsiphonExitTest> {
+  return new Map(countries.flatMap((c) => (c.test ? [[c.code, c.test] as const] : [])));
+}
+
+// The countries whose numbers a test just changed, for a few seconds after the new
+// result lands; a country's first result is news, not a change.
+function useJustChanged(countries: PsiphonCountry[]): Set<string> {
+  const [seen, setSeen] = useState(() => testsByCode(countries));
+  const [changed, setChanged] = useState<Set<string>>(() => new Set());
+  const tests = testsByCode(countries);
+  const landed = [...tests].filter(([code, test]) => seen.get(code)?.at !== test.at);
+  if (landed.length) {
+    setSeen(tests);
+    const moved = landed.filter(([code, test]) => {
+      const before = seen.get(code);
+      return before !== undefined && measuredDiffers(before, test);
+    });
+    if (moved.length) setChanged(new Set(moved.map(([code]) => code)));
+  }
+  useEffect(() => {
+    if (!changed.size) return;
+    const timer = setTimeout(() => setChanged(new Set()), CHANGED_MS);
+    return () => clearTimeout(timer);
+  }, [changed]);
+  return changed;
+}
+
+// The card's last test of a running country: its round trip and download speed, or why
+// it failed, how long ago underneath; a spinner instead while a test is under way.
+function CountryTest({
+  country,
+  testing,
+  changed,
+  now,
+}: {
+  country: PsiphonCountry | undefined;
+  testing: boolean;
+  changed: boolean;
+  now: number;
+}) {
+  const { t } = useTranslation();
+  const { token } = theme.useToken();
+  if (!country?.enabled) return null;
+  const { test } = country;
+  let result = null;
+  if (test) {
+    result = psiphonExitWorks(test) ? (
+      <span style={{ fontSize: 12, opacity: 0.7 }}>{measuredText(test, t)}</span>
+    ) : (
+      clipped(test.error || t('pages.relays.psiphon.check.noTest'), 'danger')
+    );
+  }
+  const age = test ? (
+    <Tooltip
+      title={t('pages.relays.psiphon.check.testedAt', {
+        time: IntlUtil.formatDate(test.at * 1000),
+      })}
+    >
+      <span style={{ fontSize: 12, opacity: 0.6, cursor: 'help' }}>
+        {t('pages.relays.psiphon.check.testedAgo', { age: testAge(test.at, now, t) })}
+      </span>
     </Tooltip>
-  ) : (
-    clipped(test.error || t('pages.relays.psiphon.check.noTest'), 'danger')
+  ) : null;
+  return (
+    <>
+      {result ? (
+        <span
+          className={changed ? 'psiphon-test-changed' : undefined}
+          style={{
+            borderRadius: 4,
+            transition: 'background-color 0.6s',
+            background: changed ? token.colorWarningBg : 'transparent',
+          }}
+        >
+          {result}
+        </span>
+      ) : null}
+      {testing && country.running ? (
+        <Space size={4} style={{ fontSize: 12 }}>
+          <Spin size="small" />
+          <span>{t('pages.relays.psiphon.check.testing')}</span>
+        </Space>
+      ) : (
+        age
+      )}
+    </>
   );
 }
 
@@ -208,6 +315,40 @@ function enabledCodesOf(state: PsiphonState): string[] {
     .sort();
 }
 
+function whereUsed(use: PsiphonCountryUse, t: TFunction): string {
+  const { inbound, count, location } = use;
+  if (use.kind === 'host') {
+    return count === 1
+      ? t('pages.relays.psiphon.countries.useHost', { inbound })
+      : t('pages.relays.psiphon.countries.useHosts', { inbound, count });
+  }
+  if (use.kind === 'cisco') {
+    return location
+      ? t('pages.relays.psiphon.countries.useCiscoLocation', { inbound, location })
+      : t('pages.relays.psiphon.countries.useCisco', { inbound });
+  }
+  return t('pages.relays.psiphon.countries.useOpenvpn', { inbound });
+}
+
+// A country still leaving customers somewhere: locked while on, and named as broken
+// when it is off all the same, with exactly where in the tooltip.
+function inUseTag(country: PsiphonCountry | undefined, t: TFunction) {
+  if (!country?.usedBy.length) return null;
+  const uses = country.usedBy.map((u) => whereUsed(u, t)).join(' · ');
+  const on = country.enabled;
+  return (
+    <Tooltip title={t(`pages.relays.psiphon.countries.${on ? 'inUseHint' : 'inUseOff'}`, { uses })}>
+      <Tag
+        color={on ? 'gold' : 'error'}
+        icon={<LockOutlined aria-hidden />}
+        style={{ cursor: 'help', marginInlineEnd: 0 }}
+      >
+        {t('pages.relays.psiphon.countries.inUse')}
+      </Tag>
+    </Tooltip>
+  );
+}
+
 function CountriesSection({
   state,
   mutations,
@@ -216,7 +357,7 @@ function CountriesSection({
   mutations: PsiphonMutations;
 }) {
   const { t } = useTranslation();
-  const { refreshRegionsMut, saveCountriesMut } = mutations;
+  const { refreshRegionsMut, saveCountriesMut, testMut } = mutations;
   const byCode = useMemo(() => new Map(state.countries.map((c) => [c.code, c])), [state.countries]);
   // A country still enabled stays listed when a refresh no longer offers it,
   // so it can still be switched off.
@@ -238,10 +379,17 @@ function CountriesSection({
     if (!isDirty) methods.reset({ codes: enabledSig ? enabledSig.split(',') : [] });
   }, [enabledSig, isDirty, methods]);
   const picked = useWatch({ control: methods.control, name: 'codes' }) ?? [];
+  const now = useNow(AGE_TICK_MS);
+  const changed = useJustChanged(state.countries);
+  const [refusal, setRefusal] = useState('');
+  const locked = (country: PsiphonCountry | undefined) =>
+    Boolean(country?.enabled && country.usedBy.length);
 
+  // A refused save puts the ticks back on what runs, and says why beside the button.
   const onSave = methods.handleSubmit(async ({ codes: next }) => {
     const msg = await saveCountriesMut.mutateAsync(next);
-    if (msg?.success) methods.reset({ codes: next });
+    setRefusal(msg?.success ? '' : msg?.msg || t('somethingWentWrong'));
+    methods.reset({ codes: msg?.success ? next : enabledSig ? enabledSig.split(',') : [] });
   });
 
   return (
@@ -266,6 +414,7 @@ function CountriesSection({
         <Form layout="vertical">
           <FormField
             name="codes"
+            onAfterChange={() => setRefusal('')}
             extra={
               state.regionsAt
                 ? t('pages.relays.psiphon.countries.listedAt', {
@@ -282,11 +431,19 @@ function CountriesSection({
                     <Col key={code} xs={24} sm={12} lg={8} xl={6}>
                       <Space orientation="vertical" size={0}>
                         <Space size={4} wrap>
-                          <Checkbox value={code}>{psiphonCountryLabel(code, country)}</Checkbox>
+                          <Checkbox value={code} disabled={locked(country)}>
+                            {psiphonCountryLabel(code, country)}
+                          </Checkbox>
                           {phaseTag(country, t)}
+                          {inUseTag(country, t)}
                         </Space>
                         {countryDetail(country)}
-                        {countryTest(country, t)}
+                        <CountryTest
+                          country={country}
+                          testing={testMut.isPending}
+                          changed={changed.has(code)}
+                          now={now}
+                        />
                         {countryTraffic(country)}
                       </Space>
                     </Col>
@@ -296,7 +453,7 @@ function CountriesSection({
             </Checkbox.Group>
           </FormField>
           <TrafficTotal countries={state.countries} mutations={mutations} />
-          <Space wrap>
+          <Space wrap style={{ marginBottom: refusal ? 8 : 0 }}>
             <Button
               type="primary"
               disabled={!isDirty}
@@ -312,6 +469,7 @@ function CountriesSection({
               })}
             </span>
           </Space>
+          {refusal ? <Alert type="error" showIcon title={refusal} /> : null}
         </Form>
       </FormProvider>
     </Card>

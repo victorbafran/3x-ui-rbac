@@ -2961,7 +2961,15 @@
           "refresh": "一覧を更新",
           "listedAt": "一覧の取得: {time}",
           "save": "国を保存",
-          "memory": "{count} か国で約 {mb} MB のメモリ"
+          "memory": "{count} か国で約 {mb} MB のメモリ",
+          "inUse": "使用中",
+          "inUseHint": "ここから顧客が出ています: {uses}。オフにする前に、そちらから外してください。",
+          "inUseOff": "オフですが、まだ出口になっています: {uses}。再びオンにするかそちらから外すまで、その顧客はどこにも接続できません。",
+          "useHost": "{inbound} のホスト 1 件",
+          "useHosts": "{inbound} のホスト {count} 件",
+          "useCisco": "cisco {inbound}",
+          "useCiscoLocation": "cisco {inbound}、ロケーション {location}",
+          "useOpenvpn": "OpenVPN {inbound}"
         },
         "check": {
           "title": "テストとスキャン",
@@ -2982,7 +2990,10 @@
           "enable": "有効にする",
           "enabled": "有効",
           "measured": "⏱ {latency} ms · ↓ {speed}/s",
-          "testedAt": "テスト日時 {time}"
+          "testedAt": "テスト日時 {time}",
+          "testing": "テスト中…",
+          "testedAgo": "テスト: {age}",
+          "justNow": "たった今"
         },
         "inbounds": {
           "title": "インバウンドごとの国",

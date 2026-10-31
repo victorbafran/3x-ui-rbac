@@ -2961,7 +2961,15 @@
           "refresh": "Оновити список",
           "listedAt": "Список прочитано {time}",
           "save": "Зберегти країни",
-          "memory": "Близько {mb} МБ пам’яті на {count} країн"
+          "memory": "Близько {mb} МБ пам’яті на {count} країн",
+          "inUse": "Використовується",
+          "inUseHint": "Через неї виходять клієнти: {uses}. Приберіть її звідти, перш ніж вимикати.",
+          "inUseOff": "Вимкнена, але все ще є виходом для: {uses}. Ці клієнти нікуди не потраплять, доки її не ввімкнуть знову або не приберуть звідти.",
+          "useHost": "хост на {inbound}",
+          "useHosts": "хостів на {inbound}: {count}",
+          "useCisco": "cisco {inbound}",
+          "useCiscoLocation": "cisco {inbound}, локація {location}",
+          "useOpenvpn": "OpenVPN {inbound}"
         },
         "check": {
           "title": "Перевірка і сканування",
@@ -2982,7 +2990,10 @@
           "enable": "Увімкнути",
           "enabled": "Увімкнена",
           "measured": "⏱ {latency} мс · ↓ {speed}/s",
-          "testedAt": "Перевірено {time}"
+          "testedAt": "Перевірено {time}",
+          "testing": "Перевірка…",
+          "testedAgo": "Перевірено {age}",
+          "justNow": "щойно"
         },
         "inbounds": {
           "title": "Країни за інбаундами",

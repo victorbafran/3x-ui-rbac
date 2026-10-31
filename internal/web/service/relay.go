@@ -211,22 +211,38 @@ func (s *RelayService) usage() map[string][]string {
 // settingsExits is every exit an inbound's settings name: OpenVPN's own and
 // each cisco country's.
 func settingsExits(settings string) []string {
+	places := settingsExitPlaces(settings)
+	out := make([]string, 0, len(places))
+	for _, p := range places {
+		out = append(out, p.exit)
+	}
+	return out
+}
+
+// exitPlace is one exit an inbound's settings name, with the cisco location
+// naming it; location is empty for the inbound's own exit.
+type exitPlace struct {
+	exit, location string
+}
+
+func settingsExitPlaces(settings string) []exitPlace {
 	var parsed struct {
 		Exit      string `json:"exit"`
 		Locations []struct {
+			Name string `json:"name"`
 			Exit string `json:"exit"`
 		} `json:"locations"`
 	}
 	if json.Unmarshal([]byte(settings), &parsed) != nil {
 		return nil
 	}
-	var out []string
+	var out []exitPlace
 	if e := strings.TrimSpace(parsed.Exit); e != "" {
-		out = append(out, e)
+		out = append(out, exitPlace{exit: e})
 	}
 	for _, l := range parsed.Locations {
 		if e := strings.TrimSpace(l.Exit); e != "" {
-			out = append(out, e)
+			out = append(out, exitPlace{exit: e, location: l.Name})
 		}
 	}
 	return out

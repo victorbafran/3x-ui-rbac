@@ -276,6 +276,8 @@ export function createDefaultOpenVPNInboundSettings(): OpenVPNInboundSettings {
     maxSameClients: 2,
     useTcp: false,
     exit: '',
+    ipFamily: '',
+    address6: '',
   };
 }
 
@@ -306,6 +308,8 @@ export function createDefaultCiscoInboundSettings(): CiscoInboundSettings {
     locations: [],
     certFile: '',
     keyFile: '',
+    ipFamily: '',
+    address6: '',
   };
 }
 

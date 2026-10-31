@@ -6,8 +6,9 @@ description: 'Plain servers the panel reaches over SSH once. An exit (role
   out through it. An entry server (role "front") works the other way round:
   customers connect to its address, and the panel’s own inbounds reach it
   through a Backhaul tunnel that the panel dials. Nothing else is installed on
-  either: no panel and no accounts. Super admin only. All endpoints under
-  /panel/api/relays.'
+  either: no panel and no accounts. The psiphon routes run Psiphon on this
+  panel’s own server instead and offer its countries as exits for hosts. Super
+  admin only. All endpoints under /panel/api/relays.'
 full: true
 _openapi:
   preload:
@@ -33,8 +34,11 @@ _openapi:
     - depth: 2
       title: 'The smaller list a cisco inbound form needs: the interface to store and
         a name the operator recognises. Exit servers only; an entry server has
-        no interface to leave through.'
-      url: '#the-smaller-list-a-cisco-inbound-form-needs-the-interface-to-store-and-a-name-the-operator-recognises-exit-servers-only-an-entry-server-has-no-interface-to-leave-through'
+        no interface to leave through. Each option carries kind: "relay" for an
+        exit server, or "psiphon" for an enabled Psiphon country (interface
+        psi-<CC>, labelled with its flag and English name), which a host can
+        take as its exit but a cisco or OpenVPN inbound cannot.'
+      url: '#the-smaller-list-a-cisco-inbound-form-needs-the-interface-to-store-and-a-name-the-operator-recognises-exit-servers-only-an-entry-server-has-no-interface-to-leave-through-each-option-carries-kind-relay-for-an-exit-server-or-psiphon-for-an-enabled-psiphon-country-interface-psi-cc-labelled-with-its-flag-and-english-name-which-a-host-can-take-as-its-exit-but-a-cisco-or-openvpn-inbound-cannot'
     - depth: 2
       title: 'The enabled entry servers, as the inbound form offers them for the share
         address: id, name, label, address, publicName and whether the tunnel is
@@ -179,6 +183,64 @@ _openapi:
       title: Give a reserve IP back to ArvanCloud for good. The active IP is refused.
         Returns at once.
       url: '#give-a-reserve-ip-back-to-arvancloud-for-good-the-active-ip-is-refused-returns-at-once'
+    - depth: 2
+      title: 'Psiphon on this panel’s own server: whether it can run here (supported
+        is false on anything but x86_64 Linux), whether the binary is installed,
+        the countries Psiphon offers (regions, ISO codes, read at regionsAt),
+        every country with its state (code, name, flag, enabled, running,
+        connected, the region it connected through, the exitIp and exitLoc its
+        last check saw, lastError, its local socksPort, and trafficDown and
+        trafficUp: the bytes customers downloaded and uploaded through it since
+        the last reset, saved every 30 seconds and kept while the country is
+        off), and the WARP setting (mode "off", "sites" or "all", the site rules
+        one per line, and whether a WARP account is registered). Customers who
+        enter through an entry server reach the same countries, because their
+        traffic lands on this panel’s inbounds.'
+      url: '#psiphon-on-this-panels-own-server-whether-it-can-run-here-supported-is-false-on-anything-but-x86_64-linux-whether-the-binary-is-installed-the-countries-psiphon-offers-regions-iso-codes-read-at-regionsat-every-country-with-its-state-code-name-flag-enabled-running-connected-the-region-it-connected-through-the-exitip-and-exitloc-its-last-check-saw-lasterror-its-local-socksport-and-trafficdown-and-trafficup-the-bytes-customers-downloaded-and-uploaded-through-it-since-the-last-reset-saved-every-30-seconds-and-kept-while-the-country-is-off-and-the-warp-setting-mode-off-sites-or-all-the-site-rules-one-per-line-and-whether-a-warp-account-is-registered-customers-who-enter-through-an-entry-server-reach-the-same-countries-because-their-traffic-lands-on-this-panels-inbounds'
+    - depth: 2
+      title: Download the pinned Psiphon build (checked against its SHA-256) and read
+        the live list of countries by starting it once. Returns when done,
+        within about three minutes. Nothing keeps running until a country is
+        enabled; each enabled country runs its own process of about 36 MB.
+      url: '#download-the-pinned-psiphon-build-checked-against-its-sha-256-and-read-the-live-list-of-countries-by-starting-it-once-returns-when-done-within-about-three-minutes-nothing-keeps-running-until-a-country-is-enabled-each-enabled-country-runs-its-own-process-of-about-36-mb'
+    - depth: 2
+      title: Read the list of countries Psiphon offers again. When it cannot be read,
+        the fixed list of 26 countries is kept.
+      url: '#read-the-list-of-countries-psiphon-offers-again-when-it-cannot-be-read-the-fixed-list-of-26-countries-is-kept'
+    - depth: 2
+      title: 'Set which countries run: each code must be one Psiphon offers. A country
+        still given to an inbound cannot be switched off; the refusal names
+        those inbounds. Xray restarts so the exits follow.'
+      url: '#set-which-countries-run-each-code-must-be-one-psiphon-offers-a-country-still-given-to-an-inbound-cannot-be-switched-off-the-refusal-names-those-inbounds-xray-restarts-so-the-exits-follow'
+    - depth: 2
+      title: 'The inbounds that can take a Psiphon country: every VLESS, Hysteria and
+        WireGuard inbound of this panel (not a node’s), with inboundId, remark,
+        protocol and the countries its hosts carry now.'
+      url: '#the-inbounds-that-can-take-a-psiphon-country-every-vless-hysteria-and-wireguard-inbound-of-this-panel-not-a-nodes-with-inboundid-remark-protocol-and-the-countries-its-hosts-carry-now'
+    - depth: 2
+      title: Set the Psiphon countries an inbound offers. Each country becomes one
+        host on the inbound, a copy of its first host that has no Psiphon exit,
+        named with the country’s flag and name, so the subscription carries one
+        more config per country; an inbound with no host first gets a plain one,
+        so its own config stays. Hosts of countries left out are removed. Every
+        code must be enabled, and a WireGuard inbound takes at most one, which
+        all its traffic leaves through. A Hysteria inbound whose clients’ auths
+        cannot carry a route is refused.
+      url: '#set-the-psiphon-countries-an-inbound-offers-each-country-becomes-one-host-on-the-inbound-a-copy-of-its-first-host-that-has-no-psiphon-exit-named-with-the-countrys-flag-and-name-so-the-subscription-carries-one-more-config-per-country-an-inbound-with-no-host-first-gets-a-plain-one-so-its-own-config-stays-hosts-of-countries-left-out-are-removed-every-code-must-be-enabled-and-a-wireguard-inbound-takes-at-most-one-which-all-its-traffic-leaves-through-a-hysteria-inbound-whose-clients-auths-cannot-carry-a-route-is-refused'
+    - depth: 2
+      title: 'Put Cloudflare WARP behind the Psiphon countries, for sites that refuse
+        Psiphon’s addresses: the country stays, the site sees a Cloudflare
+        address. mode "off" turns it off, "sites" sends only the sites listed
+        (one Xray domain rule per line: a bare domain, or domain:, full:,
+        keyword:, regexp: or geosite: and a value) and "all" sends everything. A
+        WARP account is registered on the first save that turns it on.'
+      url: '#put-cloudflare-warp-behind-the-psiphon-countries-for-sites-that-refuse-psiphons-addresses-the-country-stays-the-site-sees-a-cloudflare-address-mode-off-turns-it-off-sites-sends-only-the-sites-listed-one-xray-domain-rule-per-line-a-bare-domain-or-domain-full-keyword-regexp-or-geosite-and-a-value-and-all-sends-everything-a-warp-account-is-registered-on-the-first-save-that-turns-it-on'
+    - depth: 2
+      title: 'Set the traffic counters (trafficDown, trafficUp) of one Psiphon country
+        back to zero, or of every country with "all": true. Bytes counted but
+        not yet saved are dropped with them. A code with no country, and a body
+        naming neither a code nor all, are refused.'
+      url: '#set-the-traffic-counters-trafficdown-trafficup-of-one-psiphon-country-back-to-zero-or-of-every-country-with-all-true-bytes-counted-but-not-yet-saved-are-dropped-with-them-a-code-with-no-country-and-a-body-naming-neither-a-code-nor-all-are-refused'
   structuredData:
     headings:
       - content: 'Every server with the live state of its tunnel. An exit carries which
@@ -199,8 +261,11 @@ _openapi:
         id: every-server-with-the-live-state-of-its-tunnel-an-exit-carries-which-cisco-inbounds-already-offer-it-as-a-country-an-entry-server-carries-the-customer-ports-it-forwards-and-when-the-panel-is-not-dialling-it-what-its-client-last-said-an-entry-server-also-carries-address6-its-public-ipv6-read-off-the-server-during-setup-unless-typed-publicname6-the-name-with-only-an-aaaa-record-to-address6-that-its-ipv6-configs-carry-empty-hands-out-the-bracketed-address6-ipfamily-what-its-customers-are-handed--ipv4-v6-or-both-and-address6error-while-address6-is-empty-why-the-panel-could-not-read-the-servers-ipv6-once-it-is-set-the-problems-found-joined-with---first-when-there-is-one-why-the-panel-could-not-reach-address6-on-one-of-the-ports-the-front-forwards-then-each-finding-of-the-dns-check-of-publicname6-every-one-naming-it-no-aaaa-record-for-address6-an-a-record-beside-it-or-a-lookup-that-failed-empty-once-all-is-fine-and-not-checked-yet-until-it-has-tried
       - content: 'The smaller list a cisco inbound form needs: the interface to store
           and a name the operator recognises. Exit servers only; an entry server
-          has no interface to leave through.'
-        id: the-smaller-list-a-cisco-inbound-form-needs-the-interface-to-store-and-a-name-the-operator-recognises-exit-servers-only-an-entry-server-has-no-interface-to-leave-through
+          has no interface to leave through. Each option carries kind: "relay"
+          for an exit server, or "psiphon" for an enabled Psiphon country
+          (interface psi-<CC>, labelled with its flag and English name), which a
+          host can take as its exit but a cisco or OpenVPN inbound cannot.'
+        id: the-smaller-list-a-cisco-inbound-form-needs-the-interface-to-store-and-a-name-the-operator-recognises-exit-servers-only-an-entry-server-has-no-interface-to-leave-through-each-option-carries-kind-relay-for-an-exit-server-or-psiphon-for-an-enabled-psiphon-country-interface-psi-cc-labelled-with-its-flag-and-english-name-which-a-host-can-take-as-its-exit-but-a-cisco-or-openvpn-inbound-cannot
       - content: 'The enabled entry servers, as the inbound form offers them for the
           share address: id, name, label, address, publicName and whether the
           tunnel is ready. An inbound whose share address is a front’s public
@@ -330,6 +395,58 @@ _openapi:
       - content: Give a reserve IP back to ArvanCloud for good. The active IP is
           refused. Returns at once.
         id: give-a-reserve-ip-back-to-arvancloud-for-good-the-active-ip-is-refused-returns-at-once
+      - content: 'Psiphon on this panel’s own server: whether it can run here (supported
+          is false on anything but x86_64 Linux), whether the binary is
+          installed, the countries Psiphon offers (regions, ISO codes, read at
+          regionsAt), every country with its state (code, name, flag, enabled,
+          running, connected, the region it connected through, the exitIp and
+          exitLoc its last check saw, lastError, its local socksPort, and
+          trafficDown and trafficUp: the bytes customers downloaded and uploaded
+          through it since the last reset, saved every 30 seconds and kept while
+          the country is off), and the WARP setting (mode "off", "sites" or
+          "all", the site rules one per line, and whether a WARP account is
+          registered). Customers who enter through an entry server reach the
+          same countries, because their traffic lands on this panel’s inbounds.'
+        id: psiphon-on-this-panels-own-server-whether-it-can-run-here-supported-is-false-on-anything-but-x86_64-linux-whether-the-binary-is-installed-the-countries-psiphon-offers-regions-iso-codes-read-at-regionsat-every-country-with-its-state-code-name-flag-enabled-running-connected-the-region-it-connected-through-the-exitip-and-exitloc-its-last-check-saw-lasterror-its-local-socksport-and-trafficdown-and-trafficup-the-bytes-customers-downloaded-and-uploaded-through-it-since-the-last-reset-saved-every-30-seconds-and-kept-while-the-country-is-off-and-the-warp-setting-mode-off-sites-or-all-the-site-rules-one-per-line-and-whether-a-warp-account-is-registered-customers-who-enter-through-an-entry-server-reach-the-same-countries-because-their-traffic-lands-on-this-panels-inbounds
+      - content: Download the pinned Psiphon build (checked against its SHA-256) and
+          read the live list of countries by starting it once. Returns when
+          done, within about three minutes. Nothing keeps running until a
+          country is enabled; each enabled country runs its own process of about
+          36 MB.
+        id: download-the-pinned-psiphon-build-checked-against-its-sha-256-and-read-the-live-list-of-countries-by-starting-it-once-returns-when-done-within-about-three-minutes-nothing-keeps-running-until-a-country-is-enabled-each-enabled-country-runs-its-own-process-of-about-36-mb
+      - content: Read the list of countries Psiphon offers again. When it cannot be
+          read, the fixed list of 26 countries is kept.
+        id: read-the-list-of-countries-psiphon-offers-again-when-it-cannot-be-read-the-fixed-list-of-26-countries-is-kept
+      - content: 'Set which countries run: each code must be one Psiphon offers. A
+          country still given to an inbound cannot be switched off; the refusal
+          names those inbounds. Xray restarts so the exits follow.'
+        id: set-which-countries-run-each-code-must-be-one-psiphon-offers-a-country-still-given-to-an-inbound-cannot-be-switched-off-the-refusal-names-those-inbounds-xray-restarts-so-the-exits-follow
+      - content: 'The inbounds that can take a Psiphon country: every VLESS, Hysteria
+          and WireGuard inbound of this panel (not a node’s), with inboundId,
+          remark, protocol and the countries its hosts carry now.'
+        id: the-inbounds-that-can-take-a-psiphon-country-every-vless-hysteria-and-wireguard-inbound-of-this-panel-not-a-nodes-with-inboundid-remark-protocol-and-the-countries-its-hosts-carry-now
+      - content: Set the Psiphon countries an inbound offers. Each country becomes one
+          host on the inbound, a copy of its first host that has no Psiphon
+          exit, named with the country’s flag and name, so the subscription
+          carries one more config per country; an inbound with no host first
+          gets a plain one, so its own config stays. Hosts of countries left out
+          are removed. Every code must be enabled, and a WireGuard inbound takes
+          at most one, which all its traffic leaves through. A Hysteria inbound
+          whose clients’ auths cannot carry a route is refused.
+        id: set-the-psiphon-countries-an-inbound-offers-each-country-becomes-one-host-on-the-inbound-a-copy-of-its-first-host-that-has-no-psiphon-exit-named-with-the-countrys-flag-and-name-so-the-subscription-carries-one-more-config-per-country-an-inbound-with-no-host-first-gets-a-plain-one-so-its-own-config-stays-hosts-of-countries-left-out-are-removed-every-code-must-be-enabled-and-a-wireguard-inbound-takes-at-most-one-which-all-its-traffic-leaves-through-a-hysteria-inbound-whose-clients-auths-cannot-carry-a-route-is-refused
+      - content: 'Put Cloudflare WARP behind the Psiphon countries, for sites that
+          refuse Psiphon’s addresses: the country stays, the site sees a
+          Cloudflare address. mode "off" turns it off, "sites" sends only the
+          sites listed (one Xray domain rule per line: a bare domain, or
+          domain:, full:, keyword:, regexp: or geosite: and a value) and "all"
+          sends everything. A WARP account is registered on the first save that
+          turns it on.'
+        id: put-cloudflare-warp-behind-the-psiphon-countries-for-sites-that-refuse-psiphons-addresses-the-country-stays-the-site-sees-a-cloudflare-address-mode-off-turns-it-off-sites-sends-only-the-sites-listed-one-xray-domain-rule-per-line-a-bare-domain-or-domain-full-keyword-regexp-or-geosite-and-a-value-and-all-sends-everything-a-warp-account-is-registered-on-the-first-save-that-turns-it-on
+      - content: 'Set the traffic counters (trafficDown, trafficUp) of one Psiphon
+          country back to zero, or of every country with "all": true. Bytes
+          counted but not yet saved are dropped with them. A code with no
+          country, and a body naming neither a code nor all, are refused.'
+        id: set-the-traffic-counters-trafficdown-trafficup-of-one-psiphon-country-back-to-zero-or-of-every-country-with-all-true-bytes-counted-but-not-yet-saved-are-dropped-with-them-a-code-with-no-country-and-a-body-naming-neither-a-code-nor-all-are-refused
     contents: []
 ---
 
@@ -340,7 +457,7 @@ export default function Layout(props) {
   return (
     <>
       {props.children}
-      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/relays/list","method":"get"},{"path":"/panel/api/relays/options","method":"get"},{"path":"/panel/api/relays/fronts","method":"get"},{"path":"/panel/api/relays/add","method":"post"},{"path":"/panel/api/relays/update/{id}","method":"post"},{"path":"/panel/api/relays/del/{id}","method":"post"},{"path":"/panel/api/relays/setEnable/{id}","method":"post"},{"path":"/panel/api/relays/probe/{id}","method":"post"},{"path":"/panel/api/relays/arvan/key","method":"get"},{"path":"/panel/api/relays/arvan/key","method":"post"},{"path":"/panel/api/relays/arvan/key/clear","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}","method":"get"},{"path":"/panel/api/relays/arvan/front/{id}/detect","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/save","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/prepare","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/refill","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/test","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/swap","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/release","method":"post"}]} showTitle />
+      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/relays/list","method":"get"},{"path":"/panel/api/relays/options","method":"get"},{"path":"/panel/api/relays/fronts","method":"get"},{"path":"/panel/api/relays/add","method":"post"},{"path":"/panel/api/relays/update/{id}","method":"post"},{"path":"/panel/api/relays/del/{id}","method":"post"},{"path":"/panel/api/relays/setEnable/{id}","method":"post"},{"path":"/panel/api/relays/probe/{id}","method":"post"},{"path":"/panel/api/relays/arvan/key","method":"get"},{"path":"/panel/api/relays/arvan/key","method":"post"},{"path":"/panel/api/relays/arvan/key/clear","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}","method":"get"},{"path":"/panel/api/relays/arvan/front/{id}/detect","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/save","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/prepare","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/refill","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/test","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/swap","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/release","method":"post"},{"path":"/panel/api/relays/psiphon/state","method":"get"},{"path":"/panel/api/relays/psiphon/install","method":"post"},{"path":"/panel/api/relays/psiphon/regions/refresh","method":"post"},{"path":"/panel/api/relays/psiphon/countries","method":"post"},{"path":"/panel/api/relays/psiphon/inbounds","method":"get"},{"path":"/panel/api/relays/psiphon/inbound/{id}","method":"post"},{"path":"/panel/api/relays/psiphon/warp","method":"post"},{"path":"/panel/api/relays/psiphon/traffic/reset","method":"post"}]} showTitle />
     </>
   );
 }

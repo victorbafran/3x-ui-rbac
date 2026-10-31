@@ -447,6 +447,12 @@ export const EXAMPLES: Record<string, unknown> = {
     "code": "tools",
     "detail": "awg"
   },
+  "CertCovers": {
+    "host": "vpn.example.com",
+    "uncovered": [
+      "ipv6.example.com"
+    ]
+  },
   "Client": {
     "adTag": "0123456789abcdef0123456789abcdef",
     "allowedIPs": [

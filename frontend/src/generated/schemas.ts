@@ -1858,6 +1858,31 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "CertCovers": {
+    "description": "CertCovers is what an inbound form learns about a certificate file it uses.",
+    "properties": {
+      "host": {
+        "description": "Host is the name the file was issued for that a client can dial; \"\" for none.",
+        "example": "vpn.example.com",
+        "type": "string"
+      },
+      "uncovered": {
+        "description": "Uncovered are the names asked about that a client checking the file refuses.",
+        "example": [
+          "ipv6.example.com"
+        ],
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "host",
+      "uncovered"
+    ],
+    "type": "object"
+  },
   "Client": {
     "description": "Client represents a client configuration for Xray inbounds with traffic limits and settings.",
     "properties": {

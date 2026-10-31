@@ -60,6 +60,10 @@ type Instance struct {
 	// account. A front sets this low.
 	MobileDPD int
 
+	// IPv6 answers on this host's IPv6 too, for an inbound handing it out. Off,
+	// ocserv listens on IPv4 alone, as every inbound did before the setting.
+	IPv6 bool
+
 	// CertFile/KeyFile point at an operator-supplied TLS keypair. When empty
 	// the manager generates and reuses a self-signed RSA keypair.
 	//
@@ -93,7 +97,7 @@ func (inst Instance) listenAddr() string {
 		return "127.0.0.1"
 	}
 	if inst.Listen == "" {
-		if hostHasIPv6() {
+		if inst.IPv6 && hostHasIPv6() {
 			return ""
 		}
 		return "0.0.0.0"

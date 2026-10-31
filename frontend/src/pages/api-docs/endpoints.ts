@@ -645,6 +645,29 @@ export const sections: readonly Section[] = [
         body: '{\n  "names": ["tun.example.com", "vpn.example.com"]\n}',
       },
       {
+        method: 'POST',
+        path: '/panel/api/server/certCovers',
+        summary:
+          'Say which of the given names a certificate file the panel already uses is not valid for, as a client checking it would decide (wildcards and IP addresses included), and the name the file was issued for. The cisco form asks it about the IPv6 name an inbound hands out, which AnyConnect refuses unless the certificate carries it. Only a file an inbound or a panel setting points at is read.',
+        params: [
+          {
+            name: 'certFile',
+            in: 'body (json)',
+            type: 'string',
+            desc: 'Path of the certificate file on this server, as an inbound or panel setting names it.',
+          },
+          {
+            name: 'names',
+            in: 'body (json)',
+            type: 'string[]',
+            desc: 'Names or IP addresses to check; an IPv6 address may be bracketed.',
+            optional: true,
+          },
+        ],
+        body: '{\n  "certFile": "/root/cert/vpn.example.com/fullchain.pem",\n  "names": ["ipv6.example.com"]\n}',
+        responseSchema: 'CertCovers',
+      },
+      {
         method: 'GET',
         path: '/panel/api/server/descendants',
         summary:

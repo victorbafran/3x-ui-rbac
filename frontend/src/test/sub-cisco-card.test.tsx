@@ -38,6 +38,24 @@ describe('the cisco card on the subscription page', () => {
     expect(second).toContain('tun.example.ir:4443');
   });
 
+  // A pair labelled by family says it in the page's own language rather than the
+  // panel's English mark; a numbered pair keeps the numbers it was sent.
+  it('names a login’s family in its own words when the panel says which', () => {
+    renderWithProviders(
+      <SubCiscoCard
+        logins={[
+          { ...LOGIN, server: 'ipv6.example.ir', label: 'IPv6', family: 'v6' },
+          { ...LOGIN, server: 'vpn.example.ir', label: 'IPv4', family: 'v4' },
+          { ...LOGIN, server: 'tun.example.ir', label: '2' },
+        ]}
+      />,
+    );
+    const [v6, v4, numbered] = blocks();
+    expect(v6.startsWith('Over IPv6')).toBe(true);
+    expect(v4.startsWith('Over IPv4')).toBe(true);
+    expect(numbered.startsWith('2')).toBe(true);
+  });
+
   // One login, or the "off" setting, carries no label, and the card adds none.
   it('adds no heading to a login that has no label', () => {
     renderWithProviders(<SubCiscoCard logins={[{ ...LOGIN, server: 'tun.example.ir' }]} />);

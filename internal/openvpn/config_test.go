@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 )
 
 func configFor(t *testing.T, inst Instance) string {
@@ -142,9 +144,9 @@ func hostWithIPv6(t *testing.T, has bool) {
 	t.Cleanup(func() { hostHasIPv6 = saved })
 }
 
-// "proto udp" binds 0.0.0.0 alone (OpenVPN 2.6.19, measured), so an IPv6 address
-// never reached the server; udp6 with no "local" line is one socket for both.
-func TestAnInboundWithNoListenAddressServesBothFamilies(t *testing.T) {
+// "proto udp" binds 0.0.0.0 alone (OpenVPN 2.6.19, measured); udp6 with no "local" is
+// one socket for both. Only an inbound handing out IPv6 takes it; the rest stay IPv4.
+func TestOnlyAnInboundHandingOutIPv6ServesBothFamilies(t *testing.T) {
 	cases := []struct {
 		name    string
 		ipv6    bool
@@ -152,10 +154,12 @@ func TestAnInboundWithNoListenAddressServesBothFamilies(t *testing.T) {
 		want    []string
 		without string
 	}{
-		{"udp", true, Instance{Id: 1, Port: 1194}, []string{"proto udp6\n"}, "local "},
-		{"tcp", true, Instance{Id: 1, Port: 443, UseTCP: true}, []string{"proto tcp6-server\n"}, "local "},
-		{"explicit IPv4 listen", true, Instance{Id: 1, Port: 1194, Listen: "203.0.113.7"}, []string{"local 203.0.113.7\n", "proto udp\n"}, "proto udp6"},
-		{"host without IPv6", false, Instance{Id: 1, Port: 1194}, []string{"local 0.0.0.0\n", "proto udp\n"}, "proto udp6"},
+		{"IPv4 udp", true, Instance{Id: 1, Port: 1194}, []string{"local 0.0.0.0\n", "proto udp\n"}, "proto udp6"},
+		{"IPv4 tcp", true, Instance{Id: 1, Port: 443, UseTCP: true}, []string{"local 0.0.0.0\n", "proto tcp-server\n"}, "tcp6"},
+		{"IPv6 udp", true, Instance{Id: 1, Port: 1194, IPv6: true}, []string{"proto udp6\n"}, "local "},
+		{"IPv6 tcp", true, Instance{Id: 1, Port: 443, UseTCP: true, IPv6: true}, []string{"proto tcp6-server\n"}, "local "},
+		{"explicit IPv4 listen", true, Instance{Id: 1, Port: 1194, Listen: "203.0.113.7", IPv6: true}, []string{"local 203.0.113.7\n", "proto udp\n"}, "proto udp6"},
+		{"host without IPv6", false, Instance{Id: 1, Port: 1194, IPv6: true}, []string{"local 0.0.0.0\n", "proto udp\n"}, "proto udp6"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -173,6 +177,44 @@ func TestAnInboundWithNoListenAddressServesBothFamilies(t *testing.T) {
 	}
 }
 
+// The family the operator picks on the inbound is what decides the socket; an
+// inbound saved before the setting existed, or with a typo, stays IPv4.
+func TestTheInboundsIPFamilyDecidesTheListenFamily(t *testing.T) {
+	hostWithIPv6(t, true)
+	for _, tc := range []struct{ family, want string }{
+		{"", "proto udp\n"},
+		{"v6", "proto udp6\n"},
+		{"both", "proto udp6\n"},
+		{"v7", "proto udp\n"},
+	} {
+		t.Run(tc.family, func(t *testing.T) {
+			inst, ok := InstanceFromInbound(&model.Inbound{Id: 2, Port: 1194, Protocol: model.OpenVPN, Settings: `{
+				"clients":[{"email":"ann","password":"p","enable":true}],
+				"ipFamily":"` + tc.family + `","address6":"v6.example.com"}`})
+			if !ok {
+				t.Fatal("the inbound was not served")
+			}
+			if cfg := configFor(t, inst); !strings.Contains(cfg, tc.want) {
+				t.Fatalf("family %q: config lacks %q:\n%s", tc.family, tc.want, cfg)
+			}
+		})
+	}
+}
+
+// The socket is opened once at start: turning IPv6 on or off must restart the
+// server, or it keeps listening on the family it had.
+func TestTurningIPv6OnRestartsTheServer(t *testing.T) {
+	hostWithIPv6(t, true)
+	for _, tcp := range []bool{false, true} {
+		v4 := Instance{Id: 1, Port: 1194, UseTCP: tcp}
+		v6 := v4
+		v6.IPv6 = true
+		if v4.structuralFingerprint() == v6.structuralFingerprint() {
+			t.Errorf("tcp=%v: turning IPv6 on leaves the fingerprint alone, so the server keeps its IPv4 socket", tcp)
+		}
+	}
+}
+
 // Seen live on a dual-stack box: a reply left from fd00:91::1, not the address
 // dialed, and the client rejected it. Hosts with several addresses all do this.
 func TestAUdpServerAnswersFromTheAddressItWasSentTo(t *testing.T) {
@@ -182,10 +224,10 @@ func TestAUdpServerAnswersFromTheAddressItWasSentTo(t *testing.T) {
 		inst Instance
 		want bool
 	}{
-		{"dual-stack udp", true, Instance{Id: 1, Port: 1194}, true},
-		{"udp on every IPv4 address", false, Instance{Id: 1, Port: 1194}, true},
+		{"dual-stack udp", true, Instance{Id: 1, Port: 1194, IPv6: true}, true},
+		{"udp on every IPv4 address", true, Instance{Id: 1, Port: 1194}, true},
 		{"udp on one address", true, Instance{Id: 1, Port: 1194, Listen: "203.0.113.7"}, true},
-		{"dual-stack tcp", true, Instance{Id: 1, Port: 443, UseTCP: true}, false},
+		{"dual-stack tcp", true, Instance{Id: 1, Port: 443, UseTCP: true, IPv6: true}, false},
 		{"tcp", false, Instance{Id: 1, Port: 443, UseTCP: true}, false},
 	}
 	for _, tc := range cases {

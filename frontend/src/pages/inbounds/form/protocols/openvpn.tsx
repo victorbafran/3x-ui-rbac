@@ -6,6 +6,7 @@ import { useFormContext, useWatch } from 'react-hook-form';
 import { FormField } from '@/components/form/rhf';
 import { useRelayOptions } from '@/api/queries/useRelaysQuery';
 import type { RelayOption } from '@/schemas/relay';
+import SidecarIPv6Fields from './SidecarIPv6Fields';
 
 // An OpenVPN inbound is one country. The protocol has no way to offer a
 // choice before connecting — that is a cisco feature, built for corporate
@@ -94,6 +95,7 @@ export default function OpenVPNFields() {
           description={t('pages.inbounds.form.openvpnTcpWarningHint')}
         />
       )}
+      <SidecarIPv6Fields />
 
       <FormField
         name={['settings', 'network']}

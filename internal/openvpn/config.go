@@ -35,6 +35,10 @@ type Instance struct {
 	// the default; TCP is for a network that drops UDP outright.
 	UseTCP bool
 
+	// IPv6 answers on this host's IPv6 too, for an inbound handing it out. Off,
+	// the server listens on IPv4 alone, as every inbound did before the setting.
+	IPv6 bool
+
 	// Exit is the interface this inbound's traffic leaves through — a tunnel
 	// to a server in another country. Empty leaves through this host.
 	Exit string
@@ -56,7 +60,7 @@ var hostHasIPv6 = sidecar.HostHasIPv6
 // dualStack serves both families from one socket on [::] (OpenVPN 2.6.19,
 // measured: udp6 takes IPv4 too). An explicit listen keeps the family it names.
 func (inst Instance) dualStack() bool {
-	return strings.TrimSpace(inst.Listen) == "" && hostHasIPv6()
+	return inst.IPv6 && strings.TrimSpace(inst.Listen) == "" && hostHasIPv6()
 }
 
 // listenAddr is "" for a dual-stack server: a "local" line would pin one family.

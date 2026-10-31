@@ -72,6 +72,7 @@ func (a *ServerController) initRouter(g *gin.RouterGroup) {
 	g.GET("/standby", a.getStandby)
 
 	g.POST("/issueCert", a.issueCert)
+	g.POST("/certCovers", a.certCovers)
 	g.POST("/stopXrayService", a.stopXrayService)
 	g.POST("/restartXrayService", a.restartXrayService)
 	g.POST("/installXray/:version", a.installXray)
@@ -482,6 +483,27 @@ func (a *ServerController) issueCert(c *gin.Context) {
 	if err != nil {
 		logger.Warningf("certificate for %v: %v", req.Names, err)
 		jsonMsg(c, I18nWeb(c, "pages.inbounds.certIssue.toast"), err)
+		return
+	}
+	jsonObj(c, res, nil)
+}
+
+// certCoversRequest asks which of names a certificate file the panel uses is not valid for.
+type certCoversRequest struct {
+	CertFile string   `json:"certFile" validate:"required"`
+	Names    []string `json:"names"`
+}
+
+// certCovers tells the cisco form that its certificate lacks the IPv6 name it hands
+// out. Super admin only, as issueCert: it reads a file on this server.
+func (a *ServerController) certCovers(c *gin.Context) {
+	req, ok := middleware.BindJSONAndValidate[certCoversRequest](c)
+	if !ok {
+		return
+	}
+	res, err := a.serverService.CertCovers(req.CertFile, req.Names)
+	if err != nil {
+		jsonMsg(c, "cert covers", err)
 		return
 	}
 	jsonObj(c, res, nil)

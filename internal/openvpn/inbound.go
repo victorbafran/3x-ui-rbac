@@ -6,6 +6,7 @@ import (
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
+	"github.com/mhsanaei/3x-ui/v3/internal/sidecar"
 )
 
 // openvpnSettings is the stored shape of an OpenVPN inbound's settings.
@@ -136,6 +137,7 @@ func InstanceFromInbound(ib *model.Inbound) (Instance, bool) {
 		MaxClients:     parsed.MaxClients,
 		MaxSameClients: parsed.MaxSameClients,
 		UseTCP:         parsed.UseTCP,
+		IPv6:           sidecar.IPv6SettingsOf(ib.Settings).ServesIPv6(),
 		Exit:           strings.TrimSpace(parsed.Exit),
 	}, true
 }

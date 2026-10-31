@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { IP_FAMILIES } from '@/schemas/relay';
+
 // An OpenVPN inbound is served by a sidecar process, not by xray-core, so its
 // settings describe the VPN server: who may log in, what addresses they are
 // handed, and where their traffic leaves from.
@@ -52,6 +54,11 @@ export const OpenVPNInboundSettingsSchema = z
     // time, so one inbound is one country and a customer with several holds
     // several profiles.
     exit: z.string().default(''),
+    // IPv6 served by this server itself: "" keeps customers on IPv4 as before,
+    // "v6" hands them address6 instead, "both" hands it out first and IPv4 after.
+    ipFamily: z.enum(IP_FAMILIES).default(''),
+    // A name whose only record is AAAA to this server, or the IPv6 itself.
+    address6: z.string().default(''),
   })
   // Loose for the reason cisco is: a setting the panel reads but this form
   // does not show must survive a save through the form.

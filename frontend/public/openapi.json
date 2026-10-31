@@ -1884,6 +1884,31 @@
         ],
         "type": "object"
       },
+      "CertCovers": {
+        "description": "CertCovers is what an inbound form learns about a certificate file it uses.",
+        "properties": {
+          "host": {
+            "description": "Host is the name the file was issued for that a client can dial; \"\" for none.",
+            "example": "vpn.example.com",
+            "type": "string"
+          },
+          "uncovered": {
+            "description": "Uncovered are the names asked about that a client checking the file refuses.",
+            "example": [
+              "ipv6.example.com"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "host",
+          "uncovered"
+        ],
+        "type": "object"
+      },
       "Client": {
         "description": "Client represents a client configuration for Xray inbounds with traffic limits and settings.",
         "properties": {
@@ -7605,6 +7630,79 @@
                       "type": "string"
                     },
                     "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/server/certCovers": {
+      "post": {
+        "tags": [
+          "Server"
+        ],
+        "summary": "Say which of the given names a certificate file the panel already uses is not valid for, as a client checking it would decide (wildcards and IP addresses included), and the name the file was issued for. The cisco form asks it about the IPv6 name an inbound hands out, which AnyConnect refuses unless the certificate carries it. Only a file an inbound or a panel setting points at is read.",
+        "operationId": "post_panel_api_server_certCovers",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "certFile": {
+                    "type": "string",
+                    "description": "Path of the certificate file on this server, as an inbound or panel setting names it."
+                  },
+                  "names": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Names or IP addresses to check; an IPv6 address may be bracketed."
+                  }
+                },
+                "required": [
+                  "certFile"
+                ]
+              },
+              "example": {
+                "certFile": "/root/cert/vpn.example.com/fullchain.pem",
+                "names": [
+                  "ipv6.example.com"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/CertCovers"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "host": "vpn.example.com",
+                    "uncovered": [
+                      "ipv6.example.com"
+                    ]
                   }
                 }
               }

@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { Button, Card, Space, Tooltip, Typography } from 'antd';
 import { AndroidOutlined, AppleOutlined, CopyOutlined, DownloadOutlined } from '@ant-design/icons';
 
@@ -10,8 +11,10 @@ export interface CiscoLogin {
   port?: number;
   username?: string;
   password?: string;
-  // Tells a front's IPv6 and IPv4 logins apart, as their config names are.
+  // Tells a pair's IPv6 and IPv4 logins apart, as their config names are.
   label?: string;
+  // "v6" or "v4" when the label names the family, which the page then says itself.
+  family?: string;
 }
 
 // Where a customer gets a client that speaks AnyConnect. The V2Ray-family
@@ -79,9 +82,9 @@ export default function SubCiscoCard({ logins }: { logins: CiscoLogin[] }) {
 
       {logins.map((login, idx) => (
         <div className="sub-cisco-login" key={`${login.email ?? 'cisco'}-${idx}`}>
-          {login.label ? (
+          {headingOf(login, t) ? (
             <Typography.Text strong>
-              <bdi>{login.label}</bdi>
+              <bdi>{headingOf(login, t)}</bdi>
             </Typography.Text>
           ) : null}
           <dl className="sub-cisco-rows">
@@ -93,6 +96,14 @@ export default function SubCiscoCard({ logins }: { logins: CiscoLogin[] }) {
       ))}
     </Card>
   );
+}
+
+// The panel's mark is English ("IPv6"); a pair it labels by family is named in the
+// page's language instead, and any other label ("1", "2") is shown as sent.
+function headingOf(login: CiscoLogin, t: TFunction): string {
+  if (login.family === 'v6') return t('subscription.ciscoFamilyV6');
+  if (login.family === 'v4') return t('subscription.ciscoFamilyV4');
+  return login.label ?? '';
 }
 
 // An AnyConnect client dials 443 when no port is given, so an inbound on 443

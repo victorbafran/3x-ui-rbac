@@ -4,6 +4,8 @@ export const keys = {
     status: () => ['server', 'status'] as const,
     fail2banStatus: () => ['server', 'fail2banStatus'] as const,
     standby: () => ['server', 'standby'] as const,
+    certCovers: (certFile: string, names: string[]) =>
+      ['server', 'certCovers', certFile, names] as const,
   },
   clones: {
     root: () => ['clones'] as const,

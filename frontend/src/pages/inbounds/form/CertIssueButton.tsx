@@ -12,7 +12,15 @@ import { useMeQuery } from '@/api/queries/useMeQuery';
 // opens port 80 on this server and writes under the panel's own directory.
 // Hidden for an inbound served by a node too, since the certificate would be
 // issued here while the node reads its files from its own disk.
-export function CertIssueButton({ certField, keyField }: { certField: string; keyField: string }) {
+export function CertIssueButton({
+  certField,
+  keyField,
+  initialNames,
+}: {
+  certField: string;
+  keyField: string;
+  initialNames?: string[];
+}) {
   const { t } = useTranslation();
   const { me } = useMeQuery();
   const { control, setValue } = useFormContext();
@@ -22,6 +30,7 @@ export function CertIssueButton({ certField, keyField }: { certField: string; ke
 
   return (
     <CertIssueControl
+      initialNames={initialNames}
       explain={t('pages.inbounds.certIssue.explain')}
       explainHint={t('pages.inbounds.certIssue.explainHint')}
       namesHint={t('pages.inbounds.certIssue.namesHint')}

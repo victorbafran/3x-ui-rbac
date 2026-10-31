@@ -791,10 +791,10 @@ func TestFrontCiscoLoginsFollowTheFront(t *testing.T) {
 		want    []CiscoLogin
 	}{
 		{"v6", testFront("v6"), "", testFrontName, []CiscoLogin{{Server: v6}}},
-		{"both", testFront("both"), "", testFrontName, []CiscoLogin{{Server: v6, Label: "IPv6"}, {Server: testFrontName, Label: "IPv4"}}},
+		{"both", testFront("both"), "", testFrontName, []CiscoLogin{{Server: v6, Label: "IPv6", Family: "v6"}, {Server: testFrontName, Label: "IPv4", Family: "v4"}}},
 		{"both numbered", testFront("both"), "number", testFrontName, []CiscoLogin{{Server: v6, Label: "1"}, {Server: testFrontName, Label: "2"}}},
 		{"IPv6 name", withName6(testFront("v6")), "", testFrontName, []CiscoLogin{{Server: testFrontName6}}},
-		{"inbound on the IPv6", testFront("both"), "", v6, []CiscoLogin{{Server: v6, Label: "IPv6"}, {Server: testFrontName, Label: "IPv4"}}},
+		{"inbound on the IPv6", testFront("both"), "", v6, []CiscoLogin{{Server: v6, Label: "IPv6", Family: "v6"}, {Server: testFrontName, Label: "IPv4", Family: "v4"}}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			s := requestFor(t, tc.front)

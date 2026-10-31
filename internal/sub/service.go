@@ -3430,12 +3430,14 @@ type CiscoLogin struct {
 	Port     int    `json:"port"`
 	Username string `json:"username"`
 	Password string `json:"password"`
-	// Label tells a front's IPv6 and IPv4 logins apart, as config names are; "" for one.
+	// Label tells a pair's IPv6 and IPv4 logins apart, as config names are; "" for one.
 	Label string `json:"label,omitempty"`
+	// Family is "v6" or "v4" when Label names the family, so the page says it in its own words.
+	Family string `json:"family,omitempty"`
 }
 
-// ciscoLoginsFor is one cisco client's login per address its front hands out, IPv6 first.
-// The username is ocserv's, not the email: its colon-separated file rewrites a reseller's colon.
+// ciscoLoginsFor is one cisco client's login per address handed out, its front's or
+// its own, IPv6 first. The username is ocserv's: its colon-separated file rewrites a colon.
 func (s *SubService) ciscoLoginsFor(inbound *model.Inbound, client model.Client) []CiscoLogin {
 	if client.Password == "" {
 		return nil
@@ -3447,7 +3449,7 @@ func (s *SubService) ciscoLoginsFor(inbound *model.Inbound, client model.Client)
 		Username: ocserv.LoginFor(client.Email),
 		Password: client.Password,
 	}
-	front := s.frontNamed(login.Server)
+	front := s.ipv6Front(inbound, login.Server)
 	if front == nil {
 		return []CiscoLogin{login}
 	}
@@ -3458,6 +3460,9 @@ func (s *SubService) ciscoLoginsFor(inbound *model.Inbound, client model.Client)
 	}
 	mark6, mark4 := familyMarks(s.remarkIPFamily)
 	v6.Label, v4.Label = familyLabel(mark6), familyLabel(mark4)
+	if mark6 == remarkSuffixV6 {
+		v6.Family, v4.Family = familyV6, familyV4
+	}
 	return []CiscoLogin{v6, v4}
 }
 
@@ -3503,7 +3508,7 @@ func (s *SubService) openvpnProfileFor(inbound *model.Inbound, client model.Clie
 	label = withCountry(label, openvpnCountry(inbound))
 	address, address6 := s.resolveInboundAddress(inbound), ""
 	// One file either way: "both" is a second remote the client tries first.
-	if front := s.frontNamed(address); front != nil {
+	if front := s.ipv6Front(inbound, address); front != nil {
 		if front.both {
 			address, address6 = front.ipv4Address(address), front.address6
 		} else {

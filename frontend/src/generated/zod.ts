@@ -479,6 +479,12 @@ export const BlockerSchema = z.object({
 });
 export type Blocker = z.infer<typeof BlockerSchema>;
 
+export const CertCoversSchema = z.object({
+  host: z.string(),
+  uncovered: z.array(z.string()),
+});
+export type CertCovers = z.infer<typeof CertCoversSchema>;
+
 export const ClientSchema = z.object({
   adTag: z.string().optional(),
   allowedIPs: z.array(z.string()).optional(),

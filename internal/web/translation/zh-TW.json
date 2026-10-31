@@ -2989,10 +2989,9 @@
           "noConnect": "未連線",
           "enable": "啟用",
           "enabled": "已啟用",
-          "measured": "⏱ {latency} ms · ↓ {speed}/s",
           "testedAt": "測試於 {time}",
           "testing": "測試中…",
-          "testedAgo": "測試於{age}",
+          "tested": "測試時間",
           "justNow": "剛剛"
         },
         "inbounds": {

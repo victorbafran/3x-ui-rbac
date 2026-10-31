@@ -983,6 +983,20 @@ function renderPage() {
   return screen.getByText('Psiphon country exits').closest('.ant-card') as HTMLElement;
 }
 
+// A country's box in the countries list, by its tick rather than its name, which the
+// test results table below repeats.
+function listedCountry(card: HTMLElement, code: string): HTMLElement {
+  const box = card.querySelector(`input[type="checkbox"][value="${code}"]`) as HTMLElement;
+  return box.closest('.ant-col') as HTMLElement;
+}
+
+// A row of the test results table under the test button, apart from the scan's own table.
+function testResultRow(card: HTMLElement, code: string): HTMLElement | null {
+  const header = within(card).getByRole('columnheader', { name: 'Tested' });
+  const table = header.closest('.ant-table') as HTMLElement;
+  return table.querySelector(`tr[data-row-key="${code}"]`);
+}
+
 function fieldIdOf(label: string): string {
   return screen.getByText(label).closest('label')?.getAttribute('for') ?? '';
 }
@@ -1179,8 +1193,8 @@ describe('the Psiphon card', () => {
     );
   });
 
-  // The test reads the running countries through their own clients; each shows how
-  // long a request took and how fast the download went, or why the test failed.
+  // The test reads the running countries through their own clients; its table beside the
+  // scan shows each one's exit, round trip and download speed, or why the test failed.
   it('tests the running countries and shows each one’s speed or failure', () => {
     testMut.mutate.mockClear();
     psiphonState = {
@@ -1204,11 +1218,18 @@ describe('the Psiphon card', () => {
       ],
     };
     const card = renderPage();
-    const cell = (label: string) =>
-      within(card).getByText(label).closest('.ant-col') as HTMLElement;
-    expect(cell('🇩🇪 Germany').textContent).toContain('⏱ 412 ms · ↓ 1.2 MB/s');
-    expect(cell('🇺🇸 United States').textContent).toContain('socks connect tcp 127.0.0.1:11182');
-    expect(cell('🇬🇧 United Kingdom').textContent).not.toContain('⏱');
+    const row = (code: string) => testResultRow(card, code);
+    expect(row('DE')?.textContent).toContain('🇩🇪 Germany');
+    expect(row('DE')?.textContent).toContain('164.92.130.120 · DE');
+    expect(row('DE')?.textContent).toContain('412 ms');
+    expect(row('DE')?.textContent).toContain('1.2 MB/s');
+    expect(row('US')?.textContent).toContain('socks connect tcp 127.0.0.1:11182');
+    expect(row('GB')).toBeNull();
+    // The countries list above keeps only the tick, the state and the traffic.
+    expect(listedCountry(card, 'DE').textContent).toContain('🇩🇪 Germany');
+    expect(listedCountry(card, 'DE').textContent).not.toContain('412 ms');
+    expect(listedCountry(card, 'DE').textContent).not.toContain('Tested');
+    expect(listedCountry(card, 'US').textContent).not.toContain('socks connect');
     fireEvent.click(
       within(card).getByText('Test enabled countries').closest('button') as HTMLElement,
     );
@@ -1436,32 +1457,37 @@ describe('the Psiphon card', () => {
       );
     }
     renderWithProviders(<Polled />);
-    const cell = (label: string) => screen.getByText(label).closest('.ant-col') as HTMLElement;
+    const card = screen.getByText('Psiphon country exits').closest('.ant-card') as HTMLElement;
+    const row = (code: string) => testResultRow(card, code);
     try {
-      expect(cell('🇺🇸 United States').textContent).toContain('Tested 2 minutes ago');
+      expect(row('US')?.textContent).toContain('2 minutes ago');
       testMut.isPending = true;
       act(() => poll.again());
-      expect(cell('🇩🇪 Germany').textContent).toContain('Testing…');
-      expect(cell('🇺🇸 United States').textContent).toContain('Testing…');
-      expect(cell('🇬🇧 United Kingdom').textContent).not.toContain('Testing…');
-      expect(cell('🇦🇹 Austria').textContent).not.toContain('Testing…');
+      expect(row('DE')?.textContent).toContain('Testing…');
+      expect(row('US')?.textContent).toContain('Testing…');
+      // Only the enabled countries with a running client are tested.
+      expect(row('GB')).toBeNull();
+      expect(row('AT')).toBeNull();
+      expect(listedCountry(card, 'DE').textContent).not.toContain('Testing…');
 
       testMut.isPending = false;
       psiphonState = tested({ latencyMs: 300, speed: 2097152, at: now }, { ...before, at: now });
       act(() => poll.again());
-      expect(cell('🇩🇪 Germany').textContent).not.toContain('Testing…');
-      expect(cell('🇩🇪 Germany').textContent).toContain('⏱ 300 ms');
-      expect(cell('🇩🇪 Germany').textContent).toContain('Tested just now');
-      expect(cell('🇺🇸 United States').textContent).toContain('Tested just now');
+      expect(row('DE')?.textContent).not.toContain('Testing…');
+      expect(row('DE')?.textContent).toContain('300 ms');
+      expect(row('DE')?.textContent).toContain('just now');
+      expect(row('US')?.textContent).toContain('just now');
+      expect(listedCountry(card, 'DE').textContent).not.toContain('just now');
       // Germany's numbers moved; the United States measured the same again.
-      expect(cell('🇩🇪 Germany').querySelector('.psiphon-test-changed')).not.toBeNull();
-      expect(cell('🇺🇸 United States').querySelector('.psiphon-test-changed')).toBeNull();
+      expect(row('DE')?.querySelector('.psiphon-test-changed')).not.toBeNull();
+      expect(row('US')?.querySelector('.psiphon-test-changed')).toBeNull();
+      expect(listedCountry(card, 'DE').querySelector('.psiphon-test-changed')).toBeNull();
 
       await act(async () => {
         vi.advanceTimersByTime(3 * 60_000);
       });
-      expect(cell('🇩🇪 Germany').textContent).toContain('Tested 3 minutes ago');
-      expect(cell('🇩🇪 Germany').querySelector('.psiphon-test-changed')).toBeNull();
+      expect(row('DE')?.textContent).toContain('3 minutes ago');
+      expect(row('DE')?.querySelector('.psiphon-test-changed')).toBeNull();
     } finally {
       testMut.isPending = false;
       vi.useRealTimers();

@@ -2989,10 +2989,9 @@
           "noConnect": "Không kết nối được",
           "enable": "Bật",
           "enabled": "Đã bật",
-          "measured": "⏱ {latency} ms · ↓ {speed}/s",
           "testedAt": "Đã kiểm tra {time}",
           "testing": "Đang kiểm tra…",
-          "testedAgo": "Đã kiểm tra {age}",
+          "tested": "Đã kiểm tra",
           "justNow": "vừa xong"
         },
         "inbounds": {

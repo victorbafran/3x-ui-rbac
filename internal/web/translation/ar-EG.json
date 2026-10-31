@@ -2989,10 +2989,9 @@
           "noConnect": "لم يتصل",
           "enable": "تفعيل",
           "enabled": "مفعّلة",
-          "measured": "⏱ {latency} مللي ثانية · ↓ {speed}/s",
           "testedAt": "اختُبرت في {time}",
           "testing": "جارٍ الاختبار…",
-          "testedAgo": "اختُبرت {age}",
+          "tested": "وقت الاختبار",
           "justNow": "الآن"
         },
         "inbounds": {

@@ -2989,10 +2989,9 @@
           "noConnect": "Tidak terhubung",
           "enable": "Aktifkan",
           "enabled": "Aktif",
-          "measured": "⏱ {latency} md · ↓ {speed}/s",
           "testedAt": "Diuji {time}",
           "testing": "Menguji…",
-          "testedAgo": "Diuji {age}",
+          "tested": "Diuji",
           "justNow": "baru saja"
         },
         "inbounds": {

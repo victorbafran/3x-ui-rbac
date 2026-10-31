@@ -2989,10 +2989,9 @@
           "noConnect": "未连接",
           "enable": "启用",
           "enabled": "已启用",
-          "measured": "⏱ {latency} ms · ↓ {speed}/s",
           "testedAt": "测试于 {time}",
           "testing": "测试中…",
-          "testedAgo": "测试于{age}",
+          "tested": "测试时间",
           "justNow": "刚刚"
         },
         "inbounds": {

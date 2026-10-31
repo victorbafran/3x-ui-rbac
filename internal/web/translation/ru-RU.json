@@ -2989,10 +2989,9 @@
           "noConnect": "Не подключилась",
           "enable": "Включить",
           "enabled": "Включена",
-          "measured": "⏱ {latency} мс · ↓ {speed}/s",
           "testedAt": "Проверено {time}",
           "testing": "Проверка…",
-          "testedAgo": "Проверено {age}",
+          "tested": "Проверено",
           "justNow": "только что"
         },
         "inbounds": {

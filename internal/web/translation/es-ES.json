@@ -2989,10 +2989,9 @@
           "noConnect": "No conectó",
           "enable": "Activar",
           "enabled": "Activado",
-          "measured": "⏱ {latency} ms · ↓ {speed}/s",
           "testedAt": "Probado {time}",
           "testing": "Probando…",
-          "testedAgo": "Probado {age}",
+          "tested": "Probado",
           "justNow": "ahora mismo"
         },
         "inbounds": {

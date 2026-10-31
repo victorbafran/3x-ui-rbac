@@ -95,13 +95,6 @@ function countryDetail(country: PsiphonCountry | undefined) {
   );
 }
 
-function measuredText(test: PsiphonExitTest, t: TFunction): string {
-  return t('pages.relays.psiphon.check.measured', {
-    latency: test.latencyMs,
-    speed: bytes(test.speed),
-  });
-}
-
 // How long ago a test ran, in the panel's language; the card re-renders it as time passes.
 function testAge(at: number, now: number, t: TFunction): string {
   const secs = Math.max(0, Math.round(now / 1000 - at));
@@ -159,68 +152,6 @@ function useJustChanged(countries: PsiphonCountry[]): Set<string> {
     return () => clearTimeout(timer);
   }, [changed]);
   return changed;
-}
-
-// The card's last test of a running country: its round trip and download speed, or why
-// it failed, how long ago underneath; a spinner instead while a test is under way.
-function CountryTest({
-  country,
-  testing,
-  changed,
-  now,
-}: {
-  country: PsiphonCountry | undefined;
-  testing: boolean;
-  changed: boolean;
-  now: number;
-}) {
-  const { t } = useTranslation();
-  const { token } = theme.useToken();
-  if (!country?.enabled) return null;
-  const { test } = country;
-  let result = null;
-  if (test) {
-    result = psiphonExitWorks(test) ? (
-      <span style={{ fontSize: 12, opacity: 0.7 }}>{measuredText(test, t)}</span>
-    ) : (
-      clipped(test.error || t('pages.relays.psiphon.check.noTest'), 'danger')
-    );
-  }
-  const age = test ? (
-    <Tooltip
-      title={t('pages.relays.psiphon.check.testedAt', {
-        time: IntlUtil.formatDate(test.at * 1000),
-      })}
-    >
-      <span style={{ fontSize: 12, opacity: 0.6, cursor: 'help' }}>
-        {t('pages.relays.psiphon.check.testedAgo', { age: testAge(test.at, now, t) })}
-      </span>
-    </Tooltip>
-  ) : null;
-  return (
-    <>
-      {result ? (
-        <span
-          className={changed ? 'psiphon-test-changed' : undefined}
-          style={{
-            borderRadius: 4,
-            transition: 'background-color 0.6s',
-            background: changed ? token.colorWarningBg : 'transparent',
-          }}
-        >
-          {result}
-        </span>
-      ) : null}
-      {testing && country.running ? (
-        <Space size={4} style={{ fontSize: 12 }}>
-          <Spin size="small" />
-          <span>{t('pages.relays.psiphon.check.testing')}</span>
-        </Space>
-      ) : (
-        age
-      )}
-    </>
-  );
 }
 
 function trafficText(down: number, up: number): string {
@@ -357,7 +288,7 @@ function CountriesSection({
   mutations: PsiphonMutations;
 }) {
   const { t } = useTranslation();
-  const { refreshRegionsMut, saveCountriesMut, testMut } = mutations;
+  const { refreshRegionsMut, saveCountriesMut } = mutations;
   const byCode = useMemo(() => new Map(state.countries.map((c) => [c.code, c])), [state.countries]);
   // A country still enabled stays listed when a refresh no longer offers it,
   // so it can still be switched off.
@@ -379,8 +310,6 @@ function CountriesSection({
     if (!isDirty) methods.reset({ codes: enabledSig ? enabledSig.split(',') : [] });
   }, [enabledSig, isDirty, methods]);
   const picked = useWatch({ control: methods.control, name: 'codes' }) ?? [];
-  const now = useNow(AGE_TICK_MS);
-  const changed = useJustChanged(state.countries);
   const [refusal, setRefusal] = useState('');
   const locked = (country: PsiphonCountry | undefined) =>
     Boolean(country?.enabled && country.usedBy.length);
@@ -438,12 +367,6 @@ function CountriesSection({
                           {inUseTag(country, t)}
                         </Space>
                         {countryDetail(country)}
-                        <CountryTest
-                          country={country}
-                          testing={testMut.isPending}
-                          changed={changed.has(code)}
-                          now={now}
-                        />
                         {countryTraffic(country)}
                       </Space>
                     </Col>
@@ -497,6 +420,108 @@ function resultTag(test: PsiphonExitTest, t: TFunction) {
   );
 }
 
+function exitCell(test: PsiphonExitTest | null) {
+  return test?.exitIp ? (
+    <span>
+      <bdi>{test.exitIp}</bdi>
+      {test.exitLoc ? ` · ${test.exitLoc}` : ''}
+    </span>
+  ) : null;
+}
+
+function testAgeCell(test: PsiphonExitTest, now: number, t: TFunction) {
+  return (
+    <Tooltip
+      title={t('pages.relays.psiphon.check.testedAt', {
+        time: IntlUtil.formatDate(test.at * 1000),
+      })}
+    >
+      <span style={{ cursor: 'help' }}>{testAge(test.at, now, t)}</span>
+    </Tooltip>
+  );
+}
+
+// The last test of each enabled country through its own client: a spinner on the running
+// ones while a test is under way, and a few seconds' highlight on numbers it changed.
+function TestResults({ state, testing }: { state: PsiphonState; testing: boolean }) {
+  const { t } = useTranslation();
+  const { token } = theme.useToken();
+  const now = useNow(AGE_TICK_MS);
+  const changed = useJustChanged(state.countries);
+  const rows = state.countries.filter((c) => c.enabled && (c.test || (testing && c.running)));
+  if (!rows.length) return null;
+
+  const failed = (row: PsiphonCountry) => Boolean(row.test && !psiphonExitWorks(row.test));
+  const measuredCell = (row: PsiphonCountry, colSpan = 1) => ({
+    colSpan,
+    className: changed.has(row.code) ? 'psiphon-test-changed' : undefined,
+    style: {
+      transition: 'background-color 0.6s',
+      ...(changed.has(row.code) ? { background: token.colorWarningBg } : {}),
+    },
+  });
+
+  const columns = [
+    {
+      title: t('pages.relays.psiphon.check.country'),
+      key: 'country',
+      render: (_: unknown, row: PsiphonCountry) => psiphonCountryLabel(row.code, row),
+    },
+    {
+      title: t('pages.relays.psiphon.check.exit'),
+      key: 'exit',
+      onCell: (row: PsiphonCountry) => measuredCell(row),
+      render: (_: unknown, row: PsiphonCountry) => exitCell(row.test),
+    },
+    {
+      title: t('pages.relays.psiphon.check.latency'),
+      key: 'latency',
+      onCell: (row: PsiphonCountry) => measuredCell(row, failed(row) ? 2 : 1),
+      render: (_: unknown, row: PsiphonCountry) => {
+        if (!row.test) return null;
+        if (failed(row)) {
+          return clipped(row.test.error || t('pages.relays.psiphon.check.noTest'), 'danger', 64);
+        }
+        return row.test.latencyMs ? `${row.test.latencyMs} ms` : null;
+      },
+    },
+    {
+      title: t('pages.relays.psiphon.check.speed'),
+      key: 'speed',
+      onCell: (row: PsiphonCountry) => measuredCell(row, failed(row) ? 0 : 1),
+      render: (_: unknown, row: PsiphonCountry) =>
+        row.test?.speed ? `${bytes(row.test.speed)}/s` : null,
+    },
+    {
+      title: t('pages.relays.psiphon.check.tested'),
+      key: 'tested',
+      render: (_: unknown, row: PsiphonCountry) => {
+        if (testing && row.running) {
+          return (
+            <Space size={4}>
+              <Spin size="small" />
+              <span>{t('pages.relays.psiphon.check.testing')}</span>
+            </Space>
+          );
+        }
+        return row.test ? testAgeCell(row.test, now, t) : null;
+      },
+    },
+  ];
+
+  return (
+    <Table
+      rowKey="code"
+      size="small"
+      dataSource={rows}
+      columns={columns}
+      pagination={false}
+      scroll={{ x: 'max-content' }}
+      style={{ marginBottom: 12 }}
+    />
+  );
+}
+
 function scanSummary(state: PsiphonState, t: TFunction): string | null {
   const { scan } = state;
   const done = scan.results.length;
@@ -545,13 +570,7 @@ function CheckSection({ state, mutations }: { state: PsiphonState; mutations: Ps
     {
       title: t('pages.relays.psiphon.check.exit'),
       key: 'exit',
-      render: (_: unknown, row: PsiphonExitTest) =>
-        row.exitIp ? (
-          <span>
-            <bdi>{row.exitIp}</bdi>
-            {row.exitLoc ? ` · ${row.exitLoc}` : ''}
-          </span>
-        ) : null,
+      render: (_: unknown, row: PsiphonExitTest) => exitCell(row),
     },
     {
       title: t('pages.relays.psiphon.check.latency'),
@@ -593,24 +612,27 @@ function CheckSection({ state, mutations }: { state: PsiphonState; mutations: Ps
       <Typography.Paragraph type="secondary">
         {t('pages.relays.psiphon.check.hint', { mb: SCAN_PARALLEL * PSIPHON_MB_PER_COUNTRY })}
       </Typography.Paragraph>
-      <Space wrap style={{ marginBottom: 12 }}>
-        <Button
-          icon={<DashboardOutlined aria-hidden />}
-          disabled={!state.countries.some((c) => c.enabled && c.running)}
-          loading={testMut.isPending}
-          onClick={() => testMut.mutate()}
-        >
-          {t('pages.relays.psiphon.check.test')}
-        </Button>
+      <Button
+        icon={<DashboardOutlined aria-hidden />}
+        disabled={!state.countries.some((c) => c.enabled && c.running)}
+        loading={testMut.isPending}
+        onClick={() => testMut.mutate()}
+        style={{ marginBottom: 12 }}
+      >
+        {t('pages.relays.psiphon.check.test')}
+      </Button>
+      <TestResults state={state} testing={testMut.isPending} />
+      <div>
         <Button
           icon={<RadarChartOutlined aria-hidden />}
           disabled={scan.running}
           loading={scanMut.isPending}
           onClick={() => scanMut.mutate()}
+          style={{ marginBottom: 12 }}
         >
           {t('pages.relays.psiphon.check.scan')}
         </Button>
-      </Space>
+      </div>
       {summary ? (
         <Typography.Paragraph type={scan.stopped && !scan.running ? 'warning' : undefined}>
           {summary}

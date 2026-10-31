@@ -2989,10 +2989,9 @@
           "noConnect": "接続できず",
           "enable": "有効にする",
           "enabled": "有効",
-          "measured": "⏱ {latency} ms · ↓ {speed}/s",
           "testedAt": "テスト日時 {time}",
           "testing": "テスト中…",
-          "testedAgo": "テスト: {age}",
+          "tested": "テスト日時",
           "justNow": "たった今"
         },
         "inbounds": {

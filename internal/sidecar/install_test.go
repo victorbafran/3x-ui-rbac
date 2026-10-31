@@ -2,6 +2,7 @@ package sidecar
 
 import (
 	"context"
+	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -103,7 +104,8 @@ func runScriptWithStubs(t *testing.T, withApt, firstInstallFails bool) (string, 
 	cmd.Env = append(os.Environ(), "PATH="+dir)
 	out, err := cmd.CombinedOutput()
 	code := 0
-	if exit, ok := err.(*exec.ExitError); ok {
+	var exit *exec.ExitError
+	if errors.As(err, &exit) {
 		code = exit.ExitCode()
 	} else if err != nil {
 		t.Fatalf("run the script: %v: %s", err, out)

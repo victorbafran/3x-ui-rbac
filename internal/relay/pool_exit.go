@@ -157,7 +157,7 @@ func (r ipRule) sendsToMain(cidr string, sel []string) bool {
 	}
 	for i, m := range r.match {
 		// ip prints a protocol /etc/protocols does not name by its number.
-		if m != sel[i] && !(i > 0 && sel[i-1] == "ipproto" && sel[i] == "udp" && m == "17") {
+		if m != sel[i] && (i == 0 || sel[i-1] != "ipproto" || sel[i] != "udp" || m != "17") {
 			return false
 		}
 	}
@@ -222,7 +222,7 @@ func poolSteps(p PoolExit, have poolTable, rules []ipRule, deviceUp, reassert bo
 			steps = append(steps, poolStep{args: []string{"route", "del", "default", "dev", dev, "table", table}, mayFail: true})
 		}
 	}
-	if !psi && deviceUp && !slices.Contains(have.devs, p.Exit) && !(reassert && other) {
+	if !psi && deviceUp && !slices.Contains(have.devs, p.Exit) && (!reassert || !other) {
 		steps = append(steps, poolStep{args: []string{"route", "replace", "default", "dev", p.Exit, "table", table}, mayFail: true, toExit: true})
 	}
 	if !slices.ContainsFunc(rules, func(r ipRule) bool { return r.steers(p.CIDR, p.Table) }) {

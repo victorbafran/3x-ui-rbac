@@ -120,6 +120,9 @@
     "openvpnUsername": "Nama pengguna",
     "openvpnPassword": "Kata sandi",
     "openvpnNotReady": "Profil ini belum siap — server belum menjalankan koneksi ini. Coba lagi sebentar.",
+    "openvpnNotInstalled": "OpenVPN belum disiapkan di server ini, jadi profil ini tidak dapat dibuat. Silakan hubungi dukungan.",
+    "openvpnNoAddress": "Profil ini tidak dapat dibuat: server tidak memiliki alamat untuk koneksi ini. Silakan hubungi dukungan.",
+    "openvpnInvalid": "Profil ini tidak dapat dibuat: pengaturan server untuk koneksi ini tidak valid. Silakan hubungi dukungan.",
     "openvpnAppAndroid": "OpenVPN Connect (Android)",
     "openvpnAppIos": "OpenVPN Connect (iPhone)",
     "openvpnAppDesktop": "OpenVPN Connect (desktop)"

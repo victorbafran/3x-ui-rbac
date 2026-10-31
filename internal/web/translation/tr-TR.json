@@ -120,6 +120,9 @@
     "openvpnUsername": "Kullanıcı adı",
     "openvpnPassword": "Parola",
     "openvpnNotReady": "Bu profil henüz hazır değil — sunucu bu bağlantıyı başlatmadı. Bir dakika sonra tekrar deneyin.",
+    "openvpnNotInstalled": "Bu sunucuda OpenVPN kurulu değil, bu yüzden bu profil oluşturulamıyor. Lütfen destekle iletişime geçin.",
+    "openvpnNoAddress": "Bu profil oluşturulamıyor: sunucuda bu bağlantı için bir adres tanımlı değil. Lütfen destekle iletişime geçin.",
+    "openvpnInvalid": "Bu profil oluşturulamıyor: sunucunun bu bağlantı için ayarları geçersiz. Lütfen destekle iletişime geçin.",
     "openvpnAppAndroid": "OpenVPN Connect (Android)",
     "openvpnAppIos": "OpenVPN Connect (iPhone)",
     "openvpnAppDesktop": "OpenVPN Connect (masaüstü)"

@@ -79,6 +79,22 @@ func fakeClient(scenario string, args []string) int {
 		fmt.Println(notice("Tunnels", `{"count":1}`))
 		_ = os.MkdirAll(filepath.Dir(list), 0o750)
 		_ = os.WriteFile(list, []byte("servers"), 0o600)
+	case "partial":
+		// Measured 2026-10-28: a fresh directory lists a few countries; the next
+		// start announces the whole list between short ones.
+		list := filepath.Join(dataDir, "ca.psiphon.PsiphonTunnel.tunnel-core", "remote_server_list")
+		if _, err := os.Stat(list); err == nil {
+			fmt.Println(notice("AvailableEgressRegions", `{"regions":["DE"]}`))
+			time.Sleep(300 * time.Millisecond)
+			fmt.Println(notice("AvailableEgressRegions", `{"regions":["US","PL","JP","DE","AT"]}`))
+			fmt.Println(notice("AvailableEgressRegions", `{"regions":["DE"]}`))
+			break
+		}
+		fmt.Println(notice("AvailableEgressRegions", `{"regions":["NL","DE"]}`))
+		fmt.Println(notice("Tunnels", `{"count":1}`))
+		time.Sleep(300 * time.Millisecond)
+		_ = os.MkdirAll(filepath.Dir(list), 0o750)
+		_ = os.WriteFile(list, []byte("servers"), 0o600)
 	case "silent":
 		fmt.Println(notice("AvailableEgressRegions", `{"regions":[]}`))
 	}

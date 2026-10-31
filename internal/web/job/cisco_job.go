@@ -50,6 +50,10 @@ func (j *CiscoJob) Run() {
 		return
 	}
 
+	if len(desired) > 0 {
+		requestPackage(ocserv.DistroPackage)
+	}
+
 	activeTags := make([]string, 0, len(desired))
 	for _, inst := range desired {
 		activeTags = append(activeTags, inst.Tag)

@@ -120,6 +120,9 @@
     "openvpnUsername": "ユーザー名",
     "openvpnPassword": "パスワード",
     "openvpnNotReady": "このプロファイルはまだ準備できていません。サーバーがこの接続を開始していません。少し待ってからもう一度お試しください。",
+    "openvpnNotInstalled": "このサーバーではOpenVPNが設定されていないため、このプロファイルを作成できません。サポートにお問い合わせください。",
+    "openvpnNoAddress": "このプロファイルを作成できません。この接続のアドレスがサーバーに設定されていません。サポートにお問い合わせください。",
+    "openvpnInvalid": "このプロファイルを作成できません。この接続のサーバー設定が無効です。サポートにお問い合わせください。",
     "openvpnAppAndroid": "OpenVPN Connect (Android)",
     "openvpnAppIos": "OpenVPN Connect (iPhone)",
     "openvpnAppDesktop": "OpenVPN Connect (デスクトップ)"

@@ -4,6 +4,13 @@ import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import SubOpenVPNCard from '@/pages/sub/SubOpenVPNCard';
 import { renderWithProviders } from './test-utils';
 
+// The page shows these through antd's static message, whose holder does not
+// survive a test's cleanup; the text handed to it is what the customer reads.
+const { shown } = vi.hoisted(() => ({ shown: [] as string[] }));
+vi.mock('@/utils/messageBus', () => ({
+  getMessage: () => ({ error: (text: string) => shown.push(text) }),
+}));
+
 const PROFILE = {
   email: 'customer@example.com',
   label: 'Germany',
@@ -38,6 +45,7 @@ describe('the OpenVPN card on the subscription page', () => {
   });
 
   afterEach(() => {
+    shown.length = 0;
     cleanup();
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
@@ -123,10 +131,33 @@ describe('the OpenVPN card on the subscription page', () => {
       renderWithProviders(<SubOpenVPNCard profiles={[PROFILE]} />);
       fireEvent.click(screen.getByRole('button', { name: /download/i }));
 
-      await waitFor(() => expect(screen.getByText(/not ready yet/i)).toBeTruthy());
+      await waitFor(() => expect(shown.join()).toMatch(/not ready yet/i));
       expect(clicked.length).toBe(0);
     } finally {
       HTMLAnchorElement.prototype.click = realClick;
     }
+  });
+
+  // A server without openvpn told the customer to try again in a minute, forever;
+  // a reason no wait will fix sends them to support instead.
+  it.each([
+    ['notInstalled', 503, /not set up on this server/i],
+    ['noAddress', 500, /no address set/i],
+    ['invalid', 500, /settings for this connection are invalid/i],
+  ])('says why when the server answers %s', async (reason, status, text) => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ reason }), {
+          status,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      ),
+    );
+    renderWithProviders(<SubOpenVPNCard profiles={[PROFILE]} />);
+    fireEvent.click(screen.getByRole('button', { name: /download/i }));
+
+    await waitFor(() => expect(shown).toHaveLength(1));
+    expect(shown[0]).toMatch(text);
   });
 });

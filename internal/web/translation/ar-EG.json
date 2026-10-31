@@ -120,6 +120,9 @@
     "openvpnUsername": "اسم المستخدم",
     "openvpnPassword": "كلمة المرور",
     "openvpnNotReady": "هذا الملف غير جاهز بعد — لم يبدأ الخادم هذا الاتصال. حاول مرة أخرى بعد دقيقة.",
+    "openvpnNotInstalled": "لم يتم إعداد OpenVPN على هذا الخادم، لذا لا يمكن إنشاء هذا الملف. يرجى التواصل مع الدعم.",
+    "openvpnNoAddress": "لا يمكن إنشاء هذا الملف: لا يوجد عنوان محدد لهذا الاتصال على الخادم. يرجى التواصل مع الدعم.",
+    "openvpnInvalid": "لا يمكن إنشاء هذا الملف: إعدادات الخادم لهذا الاتصال غير صالحة. يرجى التواصل مع الدعم.",
     "openvpnAppAndroid": "OpenVPN Connect (أندرويد)",
     "openvpnAppIos": "OpenVPN Connect (آيفون)",
     "openvpnAppDesktop": "OpenVPN Connect (الكمبيوتر)"

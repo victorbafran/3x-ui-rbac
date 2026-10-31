@@ -12640,7 +12640,7 @@
         "tags": [
           "Exit and entry servers"
         ],
-        "summary": "Psiphon on this panel’s own server: whether it can run here (supported is false on anything but x86_64 Linux), whether the binary is installed, the countries Psiphon offers (regions, ISO codes, read at regionsAt), every country with its state (code, name, flag, enabled, running, connected, the region it connected through, the exitIp and exitLoc its last check saw, lastError and its local socksPort), and the WARP setting (mode \"off\", \"sites\" or \"all\", the site rules one per line, and whether a WARP account is registered). Customers who enter through an entry server reach the same countries, because their traffic lands on this panel’s inbounds.",
+        "summary": "Psiphon on this panel’s own server: whether it can run here (supported is false on anything but x86_64 Linux), whether the binary is installed, the countries Psiphon offers (regions, ISO codes, read at regionsAt), every country with its state (code, name, flag, enabled, running, connected, the region it connected through, the exitIp and exitLoc its last check saw, lastError, its local socksPort, and trafficDown and trafficUp: the bytes customers downloaded and uploaded through it since the last reset, saved every 30 seconds and kept while the country is off), and the WARP setting (mode \"off\", \"sites\" or \"all\", the site rules one per line, and whether a WARP account is registered). Customers who enter through an entry server reach the same countries, because their traffic lands on this panel’s inbounds.",
         "operationId": "get_panel_api_relays_psiphon_state",
         "responses": {
           "200": {
@@ -12875,6 +12875,49 @@
               "example": {
                 "mode": "sites",
                 "sites": "domain:gemini.google.com\ndomain:chatgpt.com"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/relays/psiphon/traffic/reset": {
+      "post": {
+        "tags": [
+          "Exit and entry servers"
+        ],
+        "summary": "Set the traffic counters (trafficDown, trafficUp) of one Psiphon country back to zero, or of every country with \"all\": true. Bytes counted but not yet saved are dropped with them. A code with no country, and a body naming neither a code nor all, are refused.",
+        "operationId": "post_panel_api_relays_psiphon_traffic_reset",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "code": "DE"
               }
             }
           }

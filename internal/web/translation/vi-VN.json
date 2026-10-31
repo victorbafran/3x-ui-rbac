@@ -120,6 +120,9 @@
     "openvpnUsername": "Tên người dùng",
     "openvpnPassword": "Mật khẩu",
     "openvpnNotReady": "Hồ sơ này chưa sẵn sàng — máy chủ chưa khởi động kết nối này. Hãy thử lại sau một phút.",
+    "openvpnNotInstalled": "OpenVPN chưa được cài đặt trên máy chủ này nên không thể tạo hồ sơ này. Vui lòng liên hệ bộ phận hỗ trợ.",
+    "openvpnNoAddress": "Không thể tạo hồ sơ này: máy chủ chưa có địa chỉ cho kết nối này. Vui lòng liên hệ bộ phận hỗ trợ.",
+    "openvpnInvalid": "Không thể tạo hồ sơ này: cài đặt máy chủ cho kết nối này không hợp lệ. Vui lòng liên hệ bộ phận hỗ trợ.",
     "openvpnAppAndroid": "OpenVPN Connect (Android)",
     "openvpnAppIos": "OpenVPN Connect (iPhone)",
     "openvpnAppDesktop": "OpenVPN Connect (máy tính)"

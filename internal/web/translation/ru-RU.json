@@ -120,6 +120,9 @@
     "openvpnUsername": "Имя пользователя",
     "openvpnPassword": "Пароль",
     "openvpnNotReady": "Этот профиль ещё не готов — сервер не запустил это подключение. Попробуйте через минуту.",
+    "openvpnNotInstalled": "OpenVPN не настроен на этом сервере, поэтому профиль нельзя создать. Обратитесь в поддержку.",
+    "openvpnNoAddress": "Профиль нельзя создать: на сервере не задан адрес для этого подключения. Обратитесь в поддержку.",
+    "openvpnInvalid": "Профиль нельзя создать: настройки сервера для этого подключения неверны. Обратитесь в поддержку.",
     "openvpnAppAndroid": "OpenVPN Connect (Android)",
     "openvpnAppIos": "OpenVPN Connect (iPhone)",
     "openvpnAppDesktop": "OpenVPN Connect (компьютер)"

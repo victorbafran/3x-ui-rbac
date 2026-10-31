@@ -120,6 +120,9 @@
     "openvpnUsername": "Používateľské meno",
     "openvpnPassword": "Heslo",
     "openvpnNotReady": "Tento profil ešte nie je pripravený — server toto pripojenie zatiaľ nespustil. Skúste to znova o minútu.",
+    "openvpnNotInstalled": "OpenVPN nie je na tomto serveri nastavený, preto tento profil nemožno vytvoriť. Kontaktujte podporu.",
+    "openvpnNoAddress": "Tento profil nemožno vytvoriť: server nemá pre toto pripojenie nastavenú adresu. Kontaktujte podporu.",
+    "openvpnInvalid": "Tento profil nemožno vytvoriť: nastavenia servera pre toto pripojenie sú neplatné. Kontaktujte podporu.",
     "openvpnAppAndroid": "OpenVPN Connect (Android)",
     "openvpnAppIos": "OpenVPN Connect (iPhone)",
     "openvpnAppDesktop": "OpenVPN Connect (počítač)"

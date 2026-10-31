@@ -99,8 +99,10 @@ export default function SubCiscoCard({ logins }: { logins: CiscoLogin[] }) {
 // is typed as a bare hostname. Printing ":443" would have the customer type a
 // port they do not need and make the address look more fragile than it is.
 function serverValue(login: CiscoLogin): string {
-  const host = login.server ?? '';
-  if (!host) return '';
+  const raw = login.server ?? '';
+  if (!raw) return '';
+  // A bare IPv6 address is bracketed, or the port would read as one more group of it.
+  const host = raw.includes(':') && !raw.startsWith('[') ? `[${raw}]` : raw;
   return login.port && login.port !== 443 ? `${host}:${login.port}` : host;
 }
 

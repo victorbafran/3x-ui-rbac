@@ -120,6 +120,9 @@
     "openvpnUsername": "نام کاربری",
     "openvpnPassword": "رمز عبور",
     "openvpnNotReady": "این فایل هنوز آماده نیست — سرور این اتصال را راه نینداخته. یک دقیقه‌ی دیگر دوباره امتحان کنید.",
+    "openvpnNotInstalled": "OpenVPN روی این سرور راه‌اندازی نشده و این فایل ساخته نمی‌شود. لطفاً با پشتیبانی تماس بگیرید.",
+    "openvpnNoAddress": "این فایل ساخته نمی‌شود: برای این اتصال روی سرور آدرسی تعیین نشده. لطفاً با پشتیبانی تماس بگیرید.",
+    "openvpnInvalid": "این فایل ساخته نمی‌شود: تنظیمات سرور برای این اتصال نادرست است. لطفاً با پشتیبانی تماس بگیرید.",
     "openvpnAppAndroid": "OpenVPN Connect (اندروید)",
     "openvpnAppIos": "OpenVPN Connect (آیفون)",
     "openvpnAppDesktop": "OpenVPN Connect (کامپیوتر)"

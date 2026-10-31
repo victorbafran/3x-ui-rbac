@@ -120,6 +120,9 @@
     "openvpnUsername": "Username",
     "openvpnPassword": "Password",
     "openvpnNotReady": "This profile is not ready yet — the server has not started this connection. Try again in a minute.",
+    "openvpnNotInstalled": "OpenVPN is not set up on this server, so this profile cannot be made. Please contact support.",
+    "openvpnNoAddress": "This profile cannot be made: the server has no address set for this connection. Please contact support.",
+    "openvpnInvalid": "This profile cannot be made: the server's settings for this connection are invalid. Please contact support.",
     "openvpnAppAndroid": "OpenVPN Connect (Android)",
     "openvpnAppIos": "OpenVPN Connect (iPhone)",
     "openvpnAppDesktop": "OpenVPN Connect (desktop)"

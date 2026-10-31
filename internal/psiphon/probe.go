@@ -21,19 +21,20 @@ const (
 	probeHTTPPort  = 11379
 )
 
-// probeBudget, probeGrace and probeTick are variables so a test need not wait
-// minutes for a fallback.
+// probeBudget, probeGrace, probeSettle and probeTick are variables so a test
+// need not wait minutes for a fallback.
 var (
 	probeBudget = 120 * time.Second
 	probeGrace  = 15 * time.Second
+	probeSettle = 10 * time.Second
 	probeTick   = 250 * time.Millisecond
 )
 
 // probeMu keeps two probes off the same ports and data directory.
 var probeMu sync.Mutex
 
-// DiscoverRegions asks Psiphon which countries it serves. A first start in an
-// empty data directory lists none, so the probe is started a second time.
+// DiscoverRegions asks Psiphon which countries it serves. A fresh data directory
+// lists some or none (14 of 26 on 2026-10-28), so it starts twice and keeps all.
 func DiscoverRegions(ctx context.Context) ([]string, error) {
 	probeMu.Lock()
 	defer probeMu.Unlock()
@@ -58,14 +59,13 @@ func DiscoverRegions(ctx context.Context) ([]string, error) {
 	budget, cancel := context.WithTimeout(ctx, probeBudget)
 	defer cancel()
 	said := "it listed no country"
+	var all []string
 	for _, first := range []bool{true, false} {
 		regions, last, err := probeOnce(budget, bin, dir, path, first)
 		if err != nil {
 			return nil, err
 		}
-		if len(regions) > 0 {
-			return regions, nil
-		}
+		all = mergeRegions(all, regions)
 		if last != "" {
 			said = last
 		}
@@ -76,16 +76,30 @@ func DiscoverRegions(ctx context.Context) ([]string, error) {
 			break
 		}
 	}
+	if len(all) > 0 {
+		return all, nil
+	}
 	logger.Warningf("psiphon: no live country list (%s); offering the %d known countries", said, len(FallbackRegions))
 	return slices.Clone(FallbackRegions), nil
 }
 
-// probeOnce runs the probe until it lists countries. The first run also ends
-// once the server list is in, since only a fresh start lists what it fetched.
+// mergeRegions is the sorted union of two country lists.
+func mergeRegions(have, more []string) []string {
+	for _, code := range more {
+		if !slices.Contains(have, code) {
+			have = append(have, code)
+		}
+	}
+	slices.Sort(have)
+	return have
+}
+
+// probeOnce returns every country one run announced. The first run ends once the
+// server list is in; the second once its list stopped growing for probeSettle.
 func probeOnce(ctx context.Context, bin, dir, path string, first bool) ([]string, string, error) {
 	var mu sync.Mutex
 	var found []string
-	var connectedAt time.Time
+	var connectedAt, grewAt time.Time
 	wake := make(chan struct{}, 1)
 	proc := sidecar.New(bin, "psiphon probe", "-config", path, "-dataRootDirectory", dir)
 	proc.SetNoise(noticeNoise...)
@@ -95,8 +109,10 @@ func probeOnce(ctx context.Context, bin, dir, path string, first bool) ([]string
 			return
 		}
 		mu.Lock()
-		if regions := Regions(n); len(regions) > 0 && len(found) == 0 {
-			found = regions
+		if regions := Regions(n); len(regions) > 0 {
+			if merged := mergeRegions(slices.Clone(found), regions); len(merged) > len(found) {
+				found, grewAt = merged, time.Now()
+			}
 		}
 		if up, _ := Connected(n); up && connectedAt.IsZero() {
 			connectedAt = time.Now()
@@ -118,20 +134,21 @@ func probeOnce(ctx context.Context, bin, dir, path string, first bool) ([]string
 		// Read after IsRunning: a child seen gone has delivered every line.
 		running := proc.IsRunning()
 		mu.Lock()
-		regions, upSince := found, connectedAt
+		regions, upSince, grew := found, connectedAt, grewAt
 		mu.Unlock()
-		if len(regions) > 0 {
+		if !running {
+			return regions, proc.Result(), nil
+		}
+		connectedLongEnough := !upSince.IsZero() && time.Since(upSince) >= probeGrace
+		if first && (serverListFetched(dir) || connectedLongEnough) {
 			return regions, "", nil
 		}
-		if !running {
-			return nil, proc.Result(), nil
-		}
-		if first && (serverListFetched(dir) || (!upSince.IsZero() && time.Since(upSince) >= probeGrace)) {
-			return nil, "", nil
+		if !first && (connectedLongEnough || (len(regions) > 0 && time.Since(grew) >= probeSettle)) {
+			return regions, "", nil
 		}
 		select {
 		case <-ctx.Done():
-			return nil, proc.Result(), nil
+			return regions, proc.Result(), nil
 		case <-wake:
 		case <-tick.C:
 		}

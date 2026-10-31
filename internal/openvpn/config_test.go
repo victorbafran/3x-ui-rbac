@@ -127,11 +127,49 @@ func TestTcpIsOfferedWithoutTheUdpOnlyOptions(t *testing.T) {
 		t.Fatalf("the udp inbound is wrong:\n%s", udp)
 	}
 	tcp := configFor(t, Instance{Id: 1, Port: 443, UseTCP: true})
-	if !strings.Contains(tcp, "proto tcp-server") {
+	if !strings.Contains(tcp, "proto tcp") {
 		t.Fatalf("the tcp inbound did not switch protocol:\n%s", tcp)
 	}
 	if strings.Contains(tcp, "explicit-exit-notify") {
 		t.Fatalf("explicit-exit-notify was written for tcp, where openvpn refuses it:\n%s", tcp)
+	}
+}
+
+func hostWithIPv6(t *testing.T, has bool) {
+	t.Helper()
+	saved := hostHasIPv6
+	hostHasIPv6 = func() bool { return has }
+	t.Cleanup(func() { hostHasIPv6 = saved })
+}
+
+// "proto udp" binds 0.0.0.0 alone (OpenVPN 2.6.19, measured), so an IPv6 address
+// never reached the server; udp6 with no "local" line is one socket for both.
+func TestAnInboundWithNoListenAddressServesBothFamilies(t *testing.T) {
+	cases := []struct {
+		name    string
+		ipv6    bool
+		inst    Instance
+		want    []string
+		without string
+	}{
+		{"udp", true, Instance{Id: 1, Port: 1194}, []string{"proto udp6\n"}, "local "},
+		{"tcp", true, Instance{Id: 1, Port: 443, UseTCP: true}, []string{"proto tcp6-server\n"}, "local "},
+		{"explicit IPv4 listen", true, Instance{Id: 1, Port: 1194, Listen: "203.0.113.7"}, []string{"local 203.0.113.7\n", "proto udp\n"}, "proto udp6"},
+		{"host without IPv6", false, Instance{Id: 1, Port: 1194}, []string{"local 0.0.0.0\n", "proto udp\n"}, "proto udp6"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			hostWithIPv6(t, tc.ipv6)
+			cfg := configFor(t, tc.inst)
+			for _, want := range tc.want {
+				if !strings.Contains(cfg, want) {
+					t.Errorf("config lacks %q:\n%s", want, cfg)
+				}
+			}
+			if strings.Contains(cfg, tc.without) {
+				t.Errorf("config holds %q:\n%s", tc.without, cfg)
+			}
+		})
 	}
 }
 

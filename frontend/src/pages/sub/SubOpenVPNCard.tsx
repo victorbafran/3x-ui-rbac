@@ -46,6 +46,27 @@ const CLIENT_APPS = [
   },
 ] as const;
 
+// Why the server has no file, as it answers; only an inbound that has not
+// started yet is worth trying again in a minute.
+const REASON_KEYS: Record<string, string> = {
+  notStarted: 'subscription.openvpnNotReady',
+  notInstalled: 'subscription.openvpnNotInstalled',
+  noAddress: 'subscription.openvpnNoAddress',
+  invalid: 'subscription.openvpnInvalid',
+};
+
+async function failureKey(response: Response): Promise<string> {
+  try {
+    const body: unknown = await response.json();
+    const reason = (body as { reason?: unknown } | null)?.reason;
+    if (typeof reason === 'string' && Object.hasOwn(REASON_KEYS, reason))
+      return REASON_KEYS[reason];
+  } catch {
+    // An older panel or a proxy answered with no reason; the generic text stays.
+  }
+  return 'subscription.openvpnNotReady';
+}
+
 // An OpenVPN client imports a file, not a link, so there is nothing for the
 // subscription URL to carry. The file is fetched on click rather than built
 // into this page: it embeds the server's shared key, and a page a customer
@@ -66,7 +87,10 @@ export default function SubOpenVPNCard({ profiles }: { profiles: OpenVPNProfile[
     setBusy(url);
     try {
       const response = await fetch(url, { credentials: 'same-origin' });
-      if (!response.ok) throw new Error(String(response.status));
+      if (!response.ok) {
+        getMessage().error(t(await failureKey(response)));
+        return;
+      }
       const blob = await response.blob();
       const href = URL.createObjectURL(blob);
       const anchor = document.createElement('a');
@@ -79,9 +103,7 @@ export default function SubOpenVPNCard({ profiles }: { profiles: OpenVPNProfile[
       // read the blob yet when click() returns.
       window.setTimeout(() => URL.revokeObjectURL(href), 1000);
     } catch {
-      // The one failure a customer can actually hit: the inbound has never
-      // started, so the server has no certificate to put in the file yet.
-      // Saying so beats a download that silently does not happen.
+      // The request itself failed; saying so beats a download that silently does not happen.
       getMessage().error(t('subscription.openvpnNotReady'));
     } finally {
       setBusy('');

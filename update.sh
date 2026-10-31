@@ -180,6 +180,133 @@ install_base() {
     esac
 }
 
+# Cisco (ocserv) and OpenVPN inbounds run distribution packages as sidecars.
+# Both are installed by default; XUI_WITH_CISCO=0 or XUI_WITH_OPENVPN=0 keeps
+# one off, and that choice is recorded so updates and the panel respect it.
+#
+# The distribution packages start their own servers the moment they are
+# installed: ocserv on port 443, openvpn for any config under /etc/openvpn.
+# The panel owns every process it runs, one per inbound, and a second server
+# competing for the port would make the inbound fail to bind, so the stock
+# units are stopped and masked here.
+#
+# The panel's unit withholds every capability it does not need, and both
+# servers drop to an unprivileged user after start (CAP_SETGID, CAP_SETUID);
+# ocserv also hands its worker the sec-mod socket (CAP_CHOWN). Measured on
+# ocserv 1.2.4 under the shipped sandbox: without them the port listens, the
+# client reaches the server, and the worker dies before the TLS handshake.
+# Each grant is a drop-in rather than an edit to the unit, so an update that
+# rewrites the unit does not undo it; CapabilityBoundingSet entries from
+# drop-ins are merged with the unit's. The grant is written even when the
+# package install fails, so the panel can install the package later and run it.
+
+# _sidecar_wanted VAR succeeds unless the operator set VAR to 0, false or no.
+_sidecar_wanted() {
+    local value="${!1:-}"
+    case "${value,,}" in
+        0 | false | no) return 1 ;;
+    esac
+    return 0
+}
+
+# _install_sandbox_dropin FILE WHAT CAPS grants CAPS to the panel's unit.
+_install_sandbox_dropin() {
+    local dir="${xui_service}/x-ui.service.d"
+    local file="${dir}/$1"
+    mkdir -p "$dir" 2> /dev/null || return 0
+    cat > "$file" << DROPIN
+# Added by install.sh/update.sh because this panel serves $2 inbounds.
+# Remove this file if you stop using them.
+[Service]
+CapabilityBoundingSet=$3
+DROPIN
+    chmod 644 "$file" 2> /dev/null
+    if command -v systemctl > /dev/null 2>&1; then
+        systemctl daemon-reload > /dev/null 2>&1 || true
+    fi
+}
+
+# _install_distro_package PKG installs PKG with the system's package manager.
+# Never fatal: the panel reports a missing package, and installs it on apt.
+_install_distro_package() {
+    local pkg="$1"
+    case "${release}" in
+        ubuntu | debian | armbian)
+            DEBIAN_FRONTEND=noninteractive apt-get install -y -q "$pkg" < /dev/null
+            ;;
+        fedora | amzn | virtuozzo | rhel | almalinux | rocky | ol | centos)
+            dnf install -y -q "$pkg" || yum install -y "$pkg"
+            ;;
+        arch | manjaro | parch)
+            pacman -Sy --noconfirm "$pkg"
+            ;;
+        opensuse-tumbleweed | opensuse-leap)
+            zypper -q install -y "$pkg"
+            ;;
+        alpine)
+            apk add "$pkg"
+            ;;
+        *)
+            DEBIAN_FRONTEND=noninteractive apt-get install -y -q "$pkg" < /dev/null
+            ;;
+    esac
+}
+
+_ocserv_present() {
+    command -v ocserv > /dev/null 2>&1 || [[ -x /usr/sbin/ocserv ]]
+}
+
+_openvpn_present() {
+    command -v openvpn > /dev/null 2>&1 || [[ -x /usr/sbin/openvpn ]]
+}
+
+_mask_ocserv_units() {
+    systemctl stop ocserv 2> /dev/null
+    systemctl disable ocserv 2> /dev/null
+    systemctl mask ocserv 2> /dev/null
+    rc-service ocserv stop 2> /dev/null
+    rc-update del ocserv 2> /dev/null
+}
+
+# A template mask (openvpn@.service) covers every instance of it; the globs
+# stop instances already running.
+_mask_openvpn_units() {
+    systemctl stop openvpn.service 'openvpn@*' 'openvpn-server@*' 2> /dev/null
+    systemctl disable openvpn.service 2> /dev/null
+    systemctl mask openvpn.service openvpn@.service openvpn-server@.service 2> /dev/null
+    rc-service openvpn stop 2> /dev/null
+    rc-update del openvpn 2> /dev/null
+}
+
+# update_sidecars gives a panel installed before cisco and OpenVPN came by
+# default the packages it lacks, unless the operator opted out at install.
+update_sidecars() {
+    if _sidecar_wanted XUI_WITH_CISCO; then
+        _install_sandbox_dropin 20-cisco.conf "Cisco/AnyConnect" "CAP_SETGID CAP_SETUID CAP_CHOWN"
+        if ! _ocserv_present; then
+            echo -e "${green}Installing ocserv for Cisco/AnyConnect inbounds...${plain}"
+            _install_distro_package ocserv > /dev/null 2>&1
+            if _ocserv_present; then
+                _mask_ocserv_units
+            else
+                echo -e "${yellow}ocserv could not be installed; cisco inbounds will report it as missing.${plain}"
+            fi
+        fi
+    fi
+    if _sidecar_wanted XUI_WITH_OPENVPN; then
+        _install_sandbox_dropin 21-openvpn.conf "OpenVPN" "CAP_SETGID CAP_SETUID"
+        if ! _openvpn_present; then
+            echo -e "${green}Installing openvpn for OpenVPN inbounds...${plain}"
+            _install_distro_package openvpn > /dev/null 2>&1
+            if _openvpn_present; then
+                _mask_openvpn_units
+            else
+                echo -e "${yellow}openvpn could not be installed; OpenVPN inbounds will report it as missing.${plain}"
+            fi
+        fi
+    fi
+}
+
 config_after_update() {
     local panel_needs_restart=0
 
@@ -911,4 +1038,5 @@ update_x-ui() {
 echo -e "${green}Running...${plain}"
 require_writable_update_paths
 install_base
+update_sidecars
 update_x-ui $1

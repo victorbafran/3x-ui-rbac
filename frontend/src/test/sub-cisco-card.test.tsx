@@ -44,4 +44,21 @@ describe('the cisco card on the subscription page', () => {
     expect(blocks()).toHaveLength(1);
     expect(blocks()[0].startsWith('Server')).toBe(true);
   });
+
+  // cisco now listens on IPv6 too, and "2001:db8::7:4443" is a different address,
+  // not a port; a front's address arrives bracketed already and stays as it is.
+  it('brackets an IPv6 address before its port', () => {
+    renderWithProviders(
+      <SubCiscoCard
+        logins={[
+          { ...LOGIN, server: '2001:db8::7' },
+          { ...LOGIN, server: '[2001:db8::8]' },
+        ]}
+      />,
+    );
+    const [bare, bracketed] = blocks();
+    expect(bare).toContain('[2001:db8::7]:4443');
+    expect(bracketed).toContain('[2001:db8::8]:4443');
+    expect(bracketed).not.toContain('[[');
+  });
 });

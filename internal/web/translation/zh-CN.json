@@ -120,6 +120,9 @@
     "openvpnUsername": "用户名",
     "openvpnPassword": "密码",
     "openvpnNotReady": "该配置文件尚未就绪——服务器还没有启动这个连接。请一分钟后再试。",
+    "openvpnNotInstalled": "此服务器尚未配置 OpenVPN，无法生成该配置文件。请联系客服。",
+    "openvpnNoAddress": "无法生成该配置文件：服务器没有为这个连接设置地址。请联系客服。",
+    "openvpnInvalid": "无法生成该配置文件：服务器上这个连接的设置无效。请联系客服。",
     "openvpnAppAndroid": "OpenVPN Connect（安卓）",
     "openvpnAppIos": "OpenVPN Connect（iPhone）",
     "openvpnAppDesktop": "OpenVPN Connect（电脑）"

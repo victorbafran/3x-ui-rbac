@@ -293,7 +293,7 @@ func TestRealClientIPReadsTheHeaderOnLoopbackOnly(t *testing.T) {
 			t.Errorf("config lacks %q:\n%s", want, cfg)
 		}
 	}
-	plain := configFor(t, Instance{Id: 1, Port: 443})
+	plain := configFor(t, Instance{Id: 1, Port: 443, Listen: "0.0.0.0"})
 	if strings.Contains(plain, "listen-proxy-proto") || !strings.Contains(plain, "listen-host = 0.0.0.0\n") {
 		t.Errorf("an ordinary inbound was told to expect a header:\n%s", plain)
 	}
@@ -302,6 +302,41 @@ func TestRealClientIPReadsTheHeaderOnLoopbackOnly(t *testing.T) {
 	withHeader.ProxyProtocol = true
 	if loop.structuralFingerprint() == withHeader.structuralFingerprint() {
 		t.Error("switching real client IP does not restart ocserv, which reads it once")
+	}
+}
+
+func hostWithIPv6(t *testing.T, has bool) {
+	t.Helper()
+	saved := hostHasIPv6
+	hostHasIPv6 = func() bool { return has }
+	t.Cleanup(func() { hostHasIPv6 = saved })
+}
+
+// listen-host = 0.0.0.0 left an IPv6 address no way in; with none written ocserv
+// listens on every address of both families. An explicit address stays as typed.
+func TestAnInboundWithNoListenAddressServesBothFamilies(t *testing.T) {
+	cases := []struct {
+		name string
+		ipv6 bool
+		inst Instance
+		want string
+	}{
+		{"no listen", true, Instance{Id: 1, Port: 443}, ""},
+		{"explicit IPv4 listen", true, Instance{Id: 1, Port: 443, Listen: "203.0.113.7"}, "listen-host = 203.0.113.7\n"},
+		{"real client IP", true, Instance{Id: 1, Port: 443, ProxyProtocol: true}, "listen-host = 127.0.0.1\n"},
+		{"host without IPv6", false, Instance{Id: 1, Port: 443}, "listen-host = 0.0.0.0\n"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			hostWithIPv6(t, tc.ipv6)
+			cfg := configFor(t, tc.inst)
+			if tc.want == "" && strings.Contains(cfg, "listen-host") {
+				t.Fatalf("config pins a listen address:\n%s", cfg)
+			}
+			if tc.want != "" && !strings.Contains(cfg, tc.want) {
+				t.Fatalf("config lacks %q:\n%s", tc.want, cfg)
+			}
+		})
 	}
 }
 

@@ -5,6 +5,7 @@ import (
 
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 	"github.com/mhsanaei/3x-ui/v3/internal/openvpn"
+	"github.com/mhsanaei/3x-ui/v3/internal/sidecar"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 	"github.com/mhsanaei/3x-ui/v3/internal/xray"
 )
@@ -34,6 +35,10 @@ type openvpnSidecars interface {
 // openvpnManager is the openvpn manager; a variable so a test can see what a tick does.
 var openvpnManager = func() openvpnSidecars { return openvpn.GetManager() }
 
+// requestPackage installs a sidecar's missing package once per panel run; a
+// variable so a test can see what a tick asked for.
+var requestPackage = func(p sidecar.Package) { sidecar.Installs.Request(p) }
+
 func NewOpenVPNJob() *OpenVPNJob { return new(OpenVPNJob) }
 
 func (j *OpenVPNJob) Run() {
@@ -49,6 +54,10 @@ func (j *OpenVPNJob) Run() {
 	// feature it is not using.
 	if len(desired) == 0 && !mgr.HasRunning() {
 		return
+	}
+
+	if len(desired) > 0 {
+		requestPackage(openvpn.DistroPackage)
 	}
 
 	activeTags := make([]string, 0, len(desired))

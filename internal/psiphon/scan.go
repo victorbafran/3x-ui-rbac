@@ -209,20 +209,25 @@ func (m *Manager) runScan(ctx context.Context, bin string, plan ScanPlan, runnin
 
 	s := &m.scan
 	s.mu.Lock()
-	s.state.Running, s.state.Stopped, s.state.Finished = false, ctx.Err() != nil, time.Now()
+	final := s.state
+	final.Running, final.Stopped, final.Finished = false, ctx.Err() != nil, time.Now()
+	final.Results = slices.Clone(final.Results)
+	s.mu.Unlock()
 	worked := 0
-	for _, r := range s.state.Results {
+	for _, r := range final.Results {
 		if r.Exit.Works() {
 			worked++
 		}
 	}
-	final := s.state
-	final.Results = slices.Clone(final.Results)
-	s.mu.Unlock()
 	logger.Infof("psiphon: scan done, %d of %d countries work", worked, final.Total)
+	// The finds are saved before the scan shows as done, so a card that sees it done
+	// also sees them offered; a second scan stays refused until then.
 	if !final.Stopped && plan.Finished != nil {
 		plan.Finished(final)
 	}
+	s.mu.Lock()
+	s.state.Running, s.state.Stopped, s.state.Finished = false, final.Stopped, final.Finished
+	s.mu.Unlock()
 }
 
 // next hands out the next country to try, waiting while the ones being tried may

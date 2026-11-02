@@ -32,8 +32,12 @@ const scanParallel = 3
 // minutes for a country that never connects.
 var (
 	scanConnectBudget = 90 * time.Second
-	scanMeasureBudget = 30 * time.Second
-	scanTick          = 250 * time.Millisecond
+	// A candidate no client announced gets less: fresh clients for a country Psiphon
+	// serves connected in 2-8 s on 2026-11-02, and the 23 candidates at 90 s each
+	// added nine minutes to a scan without one connecting.
+	scanCandidateBudget = 30 * time.Second
+	scanMeasureBudget   = 30 * time.Second
+	scanTick            = 250 * time.Millisecond
 )
 
 // ErrScanRunning refuses a second scan while one is still going.
@@ -86,6 +90,8 @@ type scanner struct {
 	closed  bool
 	wake    chan struct{}
 	known   map[string]bool
+	// quick are the candidates no client has announced, tried on the shorter budget.
+	quick map[string]bool
 }
 
 // StartScan tries each country in the background: a running one through its own client,
@@ -143,6 +149,7 @@ func (m *Manager) StartScan(plan ScanPlan) error {
 	for _, code := range plan.Known {
 		s.known[code] = true
 	}
+	s.quick = unannounced(list, s.known, running)
 	logger.Infof("psiphon: scanning %d countries, %d of them through their running client, %d new clients at a time", len(list), len(running), scanParallel)
 	go m.runScan(ctx, bin, plan, running, done)
 	return nil
@@ -261,6 +268,8 @@ func (s *scanner) heard(codes []string) {
 	}
 	var fresh []string
 	for _, code := range codes {
+		// A candidate a client announced is a country Psiphon serves: full budget.
+		delete(s.quick, code)
 		if countryCode.MatchString(code) && !s.queued[code] {
 			s.queued[code] = true
 			fresh = append(fresh, code)
@@ -279,6 +288,27 @@ func (s *scanner) heard(codes []string) {
 func (s *scanner) signal() {
 	close(s.wake)
 	s.wake = make(chan struct{})
+}
+
+// unannounced are the candidates in codes that are neither on offer nor running.
+func unannounced(codes []string, known map[string]bool, running map[string]int) map[string]bool {
+	out := map[string]bool{}
+	for _, code := range codes {
+		if _, isRunning := running[code]; slices.Contains(CandidateRegions, code) && !known[code] && !isRunning {
+			out[code] = true
+		}
+	}
+	return out
+}
+
+// budget is how long a throwaway client for code may take to connect.
+func (s *scanner) budget(code string) time.Duration {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.quick[code] {
+		return scanCandidateBudget
+	}
+	return scanConnectBudget
 }
 
 func (s *scanner) record(r ScanResult) {
@@ -332,7 +362,7 @@ func (m *Manager) scanOne(ctx context.Context, bin, root, code string, taken fun
 	}
 	defer func() { _ = proc.Stop() }()
 
-	r.Connected, r.Detail = waitConnected(ctx, proc, live)
+	r.Connected, r.Detail = waitConnected(ctx, proc, live, m.scan.budget(code))
 	if r.Connected {
 		measureCtx, cancel := context.WithTimeout(ctx, scanMeasureBudget)
 		r.Exit = Measure(measureCtx, socksPort)
@@ -343,8 +373,8 @@ func (m *Manager) scanOne(ctx context.Context, bin, root, code string, taken fun
 
 // waitConnected is whether the client's tunnel came up within the budget, and
 // if not, what the client said when it gave up.
-func waitConnected(ctx context.Context, proc *sidecar.Process, live *liveState) (bool, string) {
-	budget := time.NewTimer(scanConnectBudget)
+func waitConnected(ctx context.Context, proc *sidecar.Process, live *liveState, limit time.Duration) (bool, string) {
+	budget := time.NewTimer(limit)
 	defer budget.Stop()
 	tick := time.NewTicker(scanTick)
 	defer tick.Stop()

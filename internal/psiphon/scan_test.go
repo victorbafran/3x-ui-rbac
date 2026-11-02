@@ -23,9 +23,9 @@ func fakeRegions(t *testing.T, up string, connectBudget time.Duration) string {
 	t.Setenv(fakeUpEnv, up)
 	log := filepath.Join(t.TempDir(), "starts.log")
 	t.Setenv(fakeLogEnv, log)
-	savedBudget, savedTick := scanConnectBudget, scanTick
-	scanConnectBudget, scanTick = connectBudget, 20*time.Millisecond
-	t.Cleanup(func() { scanConnectBudget, scanTick = savedBudget, savedTick })
+	savedBudget, savedQuick, savedTick := scanConnectBudget, scanCandidateBudget, scanTick
+	scanConnectBudget, scanCandidateBudget, scanTick = connectBudget, connectBudget, 20*time.Millisecond
+	t.Cleanup(func() { scanConnectBudget, scanCandidateBudget, scanTick = savedBudget, savedQuick, savedTick })
 	return log
 }
 
@@ -401,5 +401,30 @@ func TestTestCountriesMeasuresTheRunningClients(t *testing.T) {
 	late := m.TestCountries(over, []Country{de, us})
 	if len(late) != 2 || !errors.Is(late[0].Exit.Err, ErrNotReached) || !errors.Is(late[1].Exit.Err, ErrNotReached) {
 		t.Fatalf("countries the test never reached: %+v; want ErrNotReached", late)
+	}
+}
+
+// A candidate no list carries gets the short wait; one a client announced, one on
+// offer, one running and one that is no candidate get the full one.
+func TestOnlyAnUnannouncedCandidateGetsTheShortWait(t *testing.T) {
+	codes := []string{"DE", "KR", "TR", "TW", "HK", "ZZ"}
+	known := map[string]bool{"DE": true, "HK": true}
+	s := &scanner{queued: map[string]bool{}, known: known, wake: make(chan struct{})}
+	for _, code := range codes {
+		s.queued[code] = true
+	}
+	s.quick = unannounced(codes, known, map[string]int{"TW": 11181})
+	s.heard([]string{"TR"})
+	want := map[string]time.Duration{
+		"DE": scanConnectBudget, "KR": scanCandidateBudget, "TR": scanConnectBudget,
+		"TW": scanConnectBudget, "HK": scanConnectBudget, "ZZ": scanConnectBudget,
+	}
+	for code, d := range want {
+		if got := s.budget(code); got != d {
+			t.Errorf("%s waits %v, want %v", code, got, d)
+		}
+	}
+	if scanCandidateBudget >= scanConnectBudget {
+		t.Errorf("a candidate waits %v, no less than a known country's %v", scanCandidateBudget, scanConnectBudget)
 	}
 }

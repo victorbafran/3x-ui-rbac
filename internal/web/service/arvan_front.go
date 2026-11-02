@@ -1084,18 +1084,12 @@ func (s *ArvanService) addOne(ctx context.Context, c *arvan.Client, r model.Rela
 		return ip, false, fmt.Errorf("could not record %s, so it was released: %w", ip, err)
 	}
 	logger.Infof("front %s: Arvan added %s; testing it", r.Name, ip)
-	select {
-	case <-ctx.Done():
-		return ip, false, ctx.Err()
-	case <-time.After(arvanHotplugWait):
-	}
-	// after the hotplug, not before it; the box's own timer does this too
 	if emergency {
-		// the active IP cannot be reached to do it, so wait for that timer
+		// the active IP cannot be reached to ask the front, so wait for the hotplug and then its timer
 		select {
 		case <-ctx.Done():
 			return ip, false, ctx.Err()
-		case <-time.After(arvanTimerWait):
+		case <-time.After(arvanHotplugWait + arvanTimerWait):
 		}
 	} else {
 		// a dead verdict is only fair once the front has the IP, its rule, and is done hot-plugging

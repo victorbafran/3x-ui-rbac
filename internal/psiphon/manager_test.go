@@ -24,6 +24,9 @@ const (
 	// is a file each start appends its country, ports and data directory to.
 	fakeUpEnv  = "XUI_FAKE_PSIPHON_UP"
 	fakeLogEnv = "XUI_FAKE_PSIPHON_LOG"
+	// fakeListsEnv is what each country's "regions" stand-in announces, as
+	// "HU=HU+PT;FI=FI+EE": every client knows the servers of a different few.
+	fakeListsEnv = "XUI_FAKE_PSIPHON_LISTS"
 )
 
 // TestMain lets the test binary stand in for Psiphon's client: with
@@ -113,6 +116,9 @@ func fakeClient(scenario string, args []string) int {
 			fmt.Println("fake psiphon:", err)
 			return 1
 		}
+		if heard := fakeHeard(cfg.EgressRegion); heard != "" {
+			fmt.Println(notice("AvailableEgressRegions", `{"regions":[`+heard+`]}`))
+		}
 		if !slices.Contains(strings.Split(os.Getenv(fakeUpEnv), ","), cfg.EgressRegion) {
 			fmt.Println(notice("Tunnels", `{"count":0}`))
 			break
@@ -130,6 +136,18 @@ func fakeClient(scenario string, args []string) int {
 	}
 	time.Sleep(time.Minute)
 	return 0
+}
+
+// fakeHeard is the JSON list of countries fakeListsEnv gives region, "" for none.
+func fakeHeard(region string) string {
+	for entry := range strings.SplitSeq(os.Getenv(fakeListsEnv), ";") {
+		code, list, _ := strings.Cut(entry, "=")
+		if code != region || list == "" {
+			continue
+		}
+		return `"` + strings.ReplaceAll(list, "+", `","`) + `"`
+	}
+	return ""
 }
 
 // useFakeClient points the package at the stand-in; the returned pointer is

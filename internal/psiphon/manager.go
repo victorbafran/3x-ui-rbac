@@ -47,6 +47,8 @@ type liveState struct {
 	region    string
 	code      string
 	meter     *trafficMeter
+	// heard gets every country list a scan's client announces; nil on a country's own.
+	heard func(codes []string)
 }
 
 func (s *liveState) observe(line string) {
@@ -58,6 +60,12 @@ func (s *liveState) observe(line string) {
 		// A scan's client has no meter: what it moves is the test, not customers.
 		if s.meter != nil {
 			s.meter.add(s.code, moved)
+		}
+		return
+	}
+	if codes := Regions(n); len(codes) > 0 {
+		if s.heard != nil {
+			s.heard(codes)
 		}
 		return
 	}

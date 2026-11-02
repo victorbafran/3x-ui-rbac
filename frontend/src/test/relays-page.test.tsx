@@ -8,6 +8,7 @@ import {
   psiphonRefetchMs,
   type PsiphonCountryUse,
   type PsiphonExitTest,
+  type PsiphonScanResult,
   type PsiphonInbound,
   type PsiphonState,
 } from '@/schemas/psiphon';
@@ -948,6 +949,13 @@ const exitTest = (code: string, fields: Partial<PsiphonExitTest> = {}): PsiphonE
   ...fields,
 });
 
+const scanResult = (code: string, fields: Partial<PsiphonScanResult> = {}): PsiphonScanResult => ({
+  ...exitTest(code),
+  onRunning: false,
+  new: false,
+  ...fields,
+});
+
 // Measured on the live box: DE answered through Psiphon from 164.92.130.120.
 const psiphonReady: PsiphonState = {
   supported: true,
@@ -1261,14 +1269,14 @@ describe('the Psiphon card', () => {
         startedAt: 1793450000,
         total: 27,
         results: [
-          exitTest('FI', {
+          scanResult('FI', {
             connected: true,
             exitIp: '65.21.0.10',
             exitLoc: 'FI',
             latencyMs: 380,
             speed: 2097152,
           }),
-          exitTest('IT'),
+          scanResult('IT'),
         ],
       },
     };
@@ -1306,21 +1314,21 @@ describe('the Psiphon card', () => {
         finishedAt: 1793450600,
         total: 3,
         results: [
-          exitTest('FI', {
+          scanResult('FI', {
             connected: true,
             exitIp: '65.21.0.10',
             exitLoc: 'FI',
             latencyMs: 380,
             speed: 2097152,
           }),
-          exitTest('DE', {
+          scanResult('DE', {
             connected: true,
             exitIp: '164.92.130.120',
             exitLoc: 'DE',
             latencyMs: 300,
             speed: 1048576,
           }),
-          exitTest('PT', {
+          scanResult('PT', {
             connected: true,
             exitIp: '198.51.100.4',
             error: 'the download through Psiphon answered 403 Forbidden',
@@ -1341,6 +1349,140 @@ describe('the Psiphon card', () => {
     cleanup();
   });
 
+  // Czechia, running, scanned "did not connect" through a second client; now a running
+  // country is measured on its own client, and a country new to the list is named.
+  it('marks countries measured on their running client and the ones the scan found new', () => {
+    psiphonState = {
+      ...psiphonReady,
+      scan: {
+        ...noScan,
+        startedAt: 1793450000,
+        finishedAt: 1793450600,
+        total: 3,
+        results: [
+          scanResult('DE', {
+            connected: true,
+            exitIp: '164.92.130.120',
+            exitLoc: 'DE',
+            latencyMs: 66,
+            speed: 9017753,
+            onRunning: true,
+          }),
+          scanResult('KR', {
+            connected: true,
+            exitIp: '203.0.113.7',
+            exitLoc: 'KR',
+            latencyMs: 410,
+            speed: 1048576,
+            new: true,
+          }),
+          scanResult('PT'),
+        ],
+      },
+    };
+    const card = renderPage();
+    expect(card.textContent).toMatch(/Last scan .+: 2 of 3 countries work/);
+    expect(card.textContent).toContain('New since the last scan: 🇰🇷 South Korea');
+    const row = (code: string) => card.querySelector(`tr[data-row-key="${code}"]`) as HTMLElement;
+    expect(within(row('KR')).getByText('New')).toBeTruthy();
+    expect(within(row('KR')).queryByText('Running client')).toBeNull();
+    expect(within(row('DE')).getByText('Running client')).toBeTruthy();
+    expect(within(row('DE')).queryByText('New')).toBeNull();
+    expect(row('PT').textContent).toContain('Did not connect');
+    expect(within(row('PT')).queryByText('New')).toBeNull();
+    cleanup();
+
+    psiphonState = {
+      ...psiphonReady,
+      scan: { ...noScan, startedAt: 1, finishedAt: 2, total: 1, results: [scanResult('PT')] },
+    };
+    expect(renderPage().textContent).not.toContain('New since the last scan');
+    cleanup();
+  });
+
+  // The same order for the test of the enabled countries: fastest working one on top.
+  it('lists the tested countries that work fastest first, the failed ones after', () => {
+    psiphonState = {
+      ...psiphonReady,
+      countries: [
+        {
+          ...psiphonReady.countries[0],
+          test: exitTest('DE', {
+            connected: true,
+            exitIp: '198.51.100.2',
+            exitLoc: 'DE',
+            speed: 1000000,
+          }),
+        },
+        {
+          ...psiphonReady.countries[1],
+          test: exitTest('US', { error: 'socks connect tcp 127.0.0.1:11182: connection refused' }),
+        },
+        {
+          ...psiphonReady.countries[2],
+          test: exitTest('GB', {
+            connected: true,
+            exitIp: '198.51.100.4',
+            exitLoc: 'GB',
+            speed: 6000000,
+          }),
+        },
+      ],
+    };
+    const card = renderPage();
+    const table = testResultRow(card, 'DE')?.closest('table') as HTMLElement;
+    const order = [...table.querySelectorAll('tr[data-row-key]')].map((tr) =>
+      tr.getAttribute('data-row-key'),
+    );
+    expect(order).toEqual(['GB', 'DE', 'US']);
+    cleanup();
+  });
+
+  // The owner wants the countries that really connected on top, fastest first; the
+  // ones that did not go below, whatever is ticked in the list above.
+  it('lists the countries that work fastest first, the failed ones after', () => {
+    psiphonState = {
+      ...psiphonReady,
+      scan: {
+        ...noScan,
+        startedAt: 1793450000,
+        finishedAt: 1793450600,
+        total: 5,
+        results: [
+          scanResult('BR'),
+          scanResult('AT', {
+            connected: true,
+            exitIp: '198.51.100.1',
+            exitLoc: 'AT',
+            speed: 2000000,
+          }),
+          scanResult('ID'),
+          scanResult('DE', {
+            connected: true,
+            exitIp: '198.51.100.2',
+            exitLoc: 'DE',
+            speed: 9000000,
+          }),
+          scanResult('FR', {
+            connected: true,
+            exitIp: '198.51.100.3',
+            exitLoc: 'FR',
+            speed: 5000000,
+          }),
+        ],
+      },
+    };
+    const card = renderPage();
+    const table = [...card.querySelectorAll('table')].find((el) =>
+      el.querySelector('tr[data-row-key="BR"]'),
+    ) as HTMLElement;
+    const order = [...table.querySelectorAll('tr[data-row-key]')]
+      .map((tr) => tr.getAttribute('data-row-key'))
+      .filter((code) => ['AT', 'BR', 'DE', 'FR', 'ID'].includes(code ?? ''));
+    expect(order).toEqual(['DE', 'FR', 'AT', 'BR', 'ID']);
+    cleanup();
+  });
+
   // A restart or standby stops a scan midway; the card says so instead of passing the
   // countries it never reached off as tried.
   it('says when the last scan was cut short', () => {
@@ -1352,7 +1494,7 @@ describe('the Psiphon card', () => {
         startedAt: 1793450000,
         finishedAt: 1793450100,
         total: 27,
-        results: [exitTest('AT')],
+        results: [scanResult('AT')],
       },
     };
     const card = renderPage();

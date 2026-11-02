@@ -89,13 +89,17 @@ var defaultPsiphonWarpSites = []string{
 // psiphonCountryNames covers what Psiphon has served; a code missing here is
 // shown as itself. A table, since the x/text display tables cost 2.4 MB.
 var psiphonCountryNames = map[string]string{
-	"AT": "Austria", "AU": "Australia", "BE": "Belgium", "BG": "Bulgaria", "BR": "Brazil",
-	"CA": "Canada", "CH": "Switzerland", "CZ": "Czechia", "DE": "Germany", "DK": "Denmark",
-	"EE": "Estonia", "ES": "Spain", "FI": "Finland", "FR": "France", "GB": "United Kingdom",
-	"HK": "Hong Kong", "HU": "Hungary", "ID": "Indonesia", "IE": "Ireland", "IN": "India",
-	"IT": "Italy", "JP": "Japan", "LT": "Lithuania", "LV": "Latvia", "NL": "Netherlands",
-	"NO": "Norway", "PL": "Poland", "PT": "Portugal", "RO": "Romania", "RS": "Serbia",
-	"SE": "Sweden", "SG": "Singapore", "SK": "Slovakia", "US": "United States",
+	"AE": "United Arab Emirates", "AR": "Argentina", "AT": "Austria", "AU": "Australia",
+	"BE": "Belgium", "BG": "Bulgaria", "BR": "Brazil", "CA": "Canada", "CH": "Switzerland",
+	"CL": "Chile", "CZ": "Czechia", "DE": "Germany", "DK": "Denmark", "EE": "Estonia",
+	"ES": "Spain", "FI": "Finland", "FR": "France", "GB": "United Kingdom", "GR": "Greece",
+	"HK": "Hong Kong", "HR": "Croatia", "HU": "Hungary", "ID": "Indonesia", "IE": "Ireland",
+	"IL": "Israel", "IN": "India", "IS": "Iceland", "IT": "Italy", "JP": "Japan",
+	"KR": "South Korea", "LT": "Lithuania", "LU": "Luxembourg", "LV": "Latvia", "MD": "Moldova",
+	"MX": "Mexico", "NL": "Netherlands", "NO": "Norway", "PL": "Poland", "PT": "Portugal",
+	"RO": "Romania", "RS": "Serbia", "SE": "Sweden", "SG": "Singapore", "SI": "Slovenia",
+	"SK": "Slovakia", "TR": "Türkiye", "TW": "Taiwan", "UA": "Ukraine", "US": "United States",
+	"ZA": "South Africa",
 }
 
 // The two keys stay out of AllSetting, so the settings page never carries them.
@@ -110,6 +114,8 @@ var (
 	psiphonInstalling sync.Mutex
 	psiphonChecking   sync.Mutex
 	psiphonTesting    sync.Mutex
+	// psiphonRegionsSaving keeps a probe's list and a scan's finds from saving over each other.
+	psiphonRegionsSaving sync.Mutex
 )
 
 // psiphonTests is each country's last test from the card, kept in memory: it
@@ -185,15 +191,23 @@ type PsiphonExitTest struct {
 	At        int64  `json:"at"`
 }
 
-// PsiphonScanView is the running or last scan of every offered country, each
-// tried with a throwaway client; results grow as countries finish.
+// PsiphonScanView is the running or last scan of every offered country and the candidates,
+// results growing as countries finish and total as the clients announce more.
 type PsiphonScanView struct {
-	Running    bool              `json:"running"`
-	Stopped    bool              `json:"stopped"`
-	StartedAt  int64             `json:"startedAt"`
-	FinishedAt int64             `json:"finishedAt"`
-	Total      int               `json:"total"`
-	Results    []PsiphonExitTest `json:"results"`
+	Running    bool                `json:"running"`
+	Stopped    bool                `json:"stopped"`
+	StartedAt  int64               `json:"startedAt"`
+	FinishedAt int64               `json:"finishedAt"`
+	Total      int                 `json:"total"`
+	Results    []PsiphonScanResult `json:"results"`
+}
+
+// PsiphonScanResult is one country a scan tried; OnRunning, measured through the client
+// already running for it, and New, a country that connected and was not offered before.
+type PsiphonScanResult struct {
+	PsiphonExitTest
+	OnRunning bool `json:"onRunning"`
+	New       bool `json:"new"`
 }
 
 type PsiphonWarpView struct {
@@ -211,9 +225,12 @@ type PsiphonInboundChoice struct {
 	Countries []string       `json:"countries"`
 }
 
+// psiphonRegionsSetting is the probe's last list, and Found, every country a scan saw
+// connect: a probe replaces Regions and never touches Found.
 type psiphonRegionsSetting struct {
 	Regions []string `json:"regions"`
 	At      int64    `json:"at"`
+	Found   []string `json:"found,omitempty"`
 }
 
 type psiphonWarpSetting struct {
@@ -278,7 +295,7 @@ func (s *PsiphonService) State() (*PsiphonState, error) {
 	}
 	st.Regions, st.RegionsAt = append(st.Regions, saved.Regions...), saved.At
 	if st.Installed {
-		st.Regions = psiphonOffered(saved.Regions)
+		st.Regions = psiphonOffered(saved)
 	}
 
 	var rows []model.PsiphonCountry
@@ -392,29 +409,78 @@ func (s *PsiphonService) RefreshRegions(ctx context.Context) error {
 	return s.discoverRegions(ctx)
 }
 
-// psiphonOffered is the probe's countries and the known ones. A client lists only the countries
-// of the servers it was handed: Poland, Singapore and Canada, missing from one, still connected.
-func psiphonOffered(probed []string) []string {
-	out := slices.Clone(probed)
-	for _, code := range psiphon.FallbackRegions {
-		if !slices.Contains(out, code) {
-			out = append(out, code)
+// psiphonOffered is the probe's countries, the scans' finds and the known ones. A client lists only
+// the countries of the servers it was handed: Poland, Singapore and Canada, missing from one, connected.
+func psiphonOffered(saved psiphonRegionsSetting) []string {
+	out := slices.Clone(saved.Regions)
+	for _, more := range [][]string{saved.Found, psiphon.FallbackRegions} {
+		for _, code := range more {
+			if !slices.Contains(out, code) {
+				out = append(out, code)
+			}
 		}
 	}
 	slices.Sort(out)
 	return out
 }
 
+// discoverPsiphonRegions is a variable so a test can answer the probe without a client.
+var discoverPsiphonRegions = psiphon.DiscoverRegions
+
 func (s *PsiphonService) discoverRegions(ctx context.Context) error {
-	regions, err := psiphon.DiscoverRegions(ctx)
+	regions, err := discoverPsiphonRegions(ctx)
 	if err != nil {
 		return err
 	}
-	raw, err := json.Marshal(psiphonRegionsSetting{Regions: regions, At: time.Now().Unix()})
+	psiphonRegionsSaving.Lock()
+	defer psiphonRegionsSaving.Unlock()
+	saved, err := s.savedRegions()
+	if err != nil {
+		return err
+	}
+	return s.saveRegions(psiphonRegionsSetting{Regions: regions, At: time.Now().Unix(), Found: saved.Found})
+}
+
+func (s *PsiphonService) saveRegions(setting psiphonRegionsSetting) error {
+	raw, err := json.Marshal(setting)
 	if err != nil {
 		return err
 	}
 	return s.settings.setString(psiphonRegionsKey, string(raw))
+}
+
+// keepScanFinds adds every country the scan saw connect to the offered ones for good; a
+// country that did not connect this time stays offered, its row saying so.
+func (s *PsiphonService) keepScanFinds(st psiphon.ScanState) {
+	var connected []string
+	for _, r := range st.Results {
+		if r.Connected && !slices.Contains(psiphon.FallbackRegions, r.Code) {
+			connected = append(connected, r.Code)
+		}
+	}
+	if len(connected) == 0 || global.IsStandby() {
+		return
+	}
+	psiphonRegionsSaving.Lock()
+	defer psiphonRegionsSaving.Unlock()
+	saved, err := s.savedRegions()
+	if err == nil {
+		grown := slices.Clone(saved.Found)
+		for _, code := range connected {
+			if !slices.Contains(grown, code) {
+				grown = append(grown, code)
+			}
+		}
+		if len(grown) == len(saved.Found) {
+			return
+		}
+		slices.Sort(grown)
+		saved.Found = grown
+		err = s.saveRegions(saved)
+	}
+	if err != nil {
+		logger.Warning("psiphon: could not keep the countries the scan found:", err)
+	}
 }
 
 func (s *PsiphonService) savedRegions() (psiphonRegionsSetting, error) {
@@ -479,7 +545,7 @@ func (s *PsiphonService) SetCountries(codes []string) error {
 		return err
 	}
 	for _, code := range want {
-		if !slices.Contains(on, code) && !slices.Contains(saved.Regions, code) && !slices.Contains(psiphon.FallbackRegions, code) {
+		if !slices.Contains(on, code) && !slices.Contains(psiphonOffered(saved), code) {
 			return fmt.Errorf("Psiphon does not offer %s", code)
 		}
 	}
@@ -1150,7 +1216,7 @@ func psiphonExitTest(code string, connected bool, exit psiphon.Exit, detail stri
 }
 
 func psiphonScanView(st psiphon.ScanState) PsiphonScanView {
-	view := PsiphonScanView{Running: st.Running, Stopped: st.Stopped, Total: st.Total, Results: []PsiphonExitTest{}}
+	view := PsiphonScanView{Running: st.Running, Stopped: st.Stopped, Total: st.Total, Results: []PsiphonScanResult{}}
 	if !st.Started.IsZero() {
 		view.StartedAt = st.Started.Unix()
 	}
@@ -1158,13 +1224,17 @@ func psiphonScanView(st psiphon.ScanState) PsiphonScanView {
 		view.FinishedAt = st.Finished.Unix()
 	}
 	for _, r := range st.Results {
-		view.Results = append(view.Results, psiphonExitTest(r.Code, r.Connected, r.Exit, r.Detail, st.Started))
+		view.Results = append(view.Results, PsiphonScanResult{
+			PsiphonExitTest: psiphonExitTest(r.Code, r.Connected, r.Exit, r.Detail, st.Started),
+			OnRunning:       r.OnRunning,
+			New:             r.New,
+		})
 	}
 	return view
 }
 
-// StartScan tries every country the card lists, enabled or not, each with a throwaway
-// client on ports of its own; it runs in the background and answers at once.
+// StartScan tries every country the card lists and the candidates: an enabled one through
+// its running client, any other with a throwaway client; it answers at once.
 func (s *PsiphonService) StartScan() error {
 	if global.IsStandby() {
 		return global.ErrStandby
@@ -1187,9 +1257,20 @@ func (s *PsiphonService) StartScan() error {
 	if err != nil {
 		return err
 	}
+	running, err := s.Wanted()
+	if err != nil {
+		return err
+	}
+	known := psiphonListedCodes(psiphonOffered(saved), rows)
 	mgr := psiphon.GetManager()
-	codes := psiphonListedCodes(psiphonOffered(saved.Regions), rows)
-	if err := mgr.StartScan(codes, func(port int) bool { return taken[port] }); err != nil {
+	plan := psiphon.ScanPlan{
+		Codes:    append(slices.Clone(known), psiphon.CandidateRegions...),
+		Running:  running,
+		Known:    known,
+		Taken:    func(port int) bool { return taken[port] },
+		Finished: s.keepScanFinds,
+	}
+	if err := mgr.StartScan(plan); err != nil {
 		return err
 	}
 	// Standby set after the check above stood down before the scan existed, so the

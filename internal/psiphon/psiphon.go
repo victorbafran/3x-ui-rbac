@@ -27,6 +27,10 @@ const (
 // list carried but which connected and left from Finland on 2026-10-31.
 var FallbackRegions = []string{"AT", "AU", "BE", "BR", "CA", "CH", "CZ", "DE", "DK", "ES", "FI", "FR", "GB", "ID", "IE", "IN", "IT", "JP", "LT", "NL", "NO", "PL", "RO", "RS", "SE", "SG", "US"}
 
+// CandidateRegions are countries no list carried by 2026-11-02 that Psiphon may still
+// serve; a scan tries them, and one that connects is offered from then on.
+var CandidateRegions = []string{"AE", "AR", "BG", "CL", "EE", "GR", "HK", "HR", "HU", "IL", "IS", "KR", "LU", "LV", "MD", "MX", "PT", "SI", "SK", "TR", "TW", "UA", "ZA"}
+
 // Supported is nil where Psiphon publishes a client: it builds for linux/amd64
 // only, and an arm64 build from source was never measured.
 func Supported() error {

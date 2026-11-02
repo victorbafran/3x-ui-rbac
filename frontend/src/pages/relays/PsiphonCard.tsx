@@ -442,6 +442,13 @@ function testAgeCell(test: PsiphonExitTest, now: number, t: TFunction) {
   );
 }
 
+// The countries whose test worked, fastest first, then the rest in list order.
+function testedBySpeed(rows: PsiphonCountry[]): PsiphonCountry[] {
+  const works = (row: PsiphonCountry) => Boolean(row.test && psiphonExitWorks(row.test));
+  const fast = rows.filter(works).sort((a, b) => (b.test?.speed ?? 0) - (a.test?.speed ?? 0));
+  return [...fast, ...rows.filter((row) => !works(row))];
+}
+
 // The last test of each enabled country through its own client: a spinner on the running
 // ones while a test is under way, and a few seconds' highlight on numbers it changed.
 function TestResults({ state, testing }: { state: PsiphonState; testing: boolean }) {
@@ -449,7 +456,9 @@ function TestResults({ state, testing }: { state: PsiphonState; testing: boolean
   const { token } = theme.useToken();
   const now = useNow(AGE_TICK_MS);
   const changed = useJustChanged(state.countries);
-  const rows = state.countries.filter((c) => c.enabled && (c.test || (testing && c.running)));
+  const rows = testedBySpeed(
+    state.countries.filter((c) => c.enabled && (c.test || (testing && c.running))),
+  );
   if (!rows.length) return null;
 
   const failed = (row: PsiphonCountry) => Boolean(row.test && !psiphonExitWorks(row.test));
@@ -534,6 +543,12 @@ function scanSummary(state: PsiphonState, t: TFunction): string | null {
     works: scan.results.filter(psiphonExitWorks).length,
     total: scan.total,
   });
+}
+
+// The countries that work, fastest first, then the ones that did not, as tried.
+function scanResultsBySpeed(results: PsiphonScanResult[]): PsiphonScanResult[] {
+  const works = results.filter(psiphonExitWorks).sort((a, b) => b.speed - a.speed);
+  return [...works, ...results.filter((r) => !psiphonExitWorks(r))];
 }
 
 // The countries the scan saw connect that were not offered before it, by name.
@@ -676,7 +691,7 @@ function CheckSection({ state, mutations }: { state: PsiphonState; mutations: Ps
         <Table
           rowKey="code"
           size="small"
-          dataSource={scan.results}
+          dataSource={scanResultsBySpeed(scan.results)}
           columns={columns}
           pagination={false}
           scroll={{ x: 'max-content' }}

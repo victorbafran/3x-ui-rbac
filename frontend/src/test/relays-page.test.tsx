@@ -1400,6 +1400,89 @@ describe('the Psiphon card', () => {
     cleanup();
   });
 
+  // The same order for the test of the enabled countries: fastest working one on top.
+  it('lists the tested countries that work fastest first, the failed ones after', () => {
+    psiphonState = {
+      ...psiphonReady,
+      countries: [
+        {
+          ...psiphonReady.countries[0],
+          test: exitTest('DE', {
+            connected: true,
+            exitIp: '198.51.100.2',
+            exitLoc: 'DE',
+            speed: 1000000,
+          }),
+        },
+        {
+          ...psiphonReady.countries[1],
+          test: exitTest('US', { error: 'socks connect tcp 127.0.0.1:11182: connection refused' }),
+        },
+        {
+          ...psiphonReady.countries[2],
+          test: exitTest('GB', {
+            connected: true,
+            exitIp: '198.51.100.4',
+            exitLoc: 'GB',
+            speed: 6000000,
+          }),
+        },
+      ],
+    };
+    const card = renderPage();
+    const table = testResultRow(card, 'DE')?.closest('table') as HTMLElement;
+    const order = [...table.querySelectorAll('tr[data-row-key]')].map((tr) =>
+      tr.getAttribute('data-row-key'),
+    );
+    expect(order).toEqual(['GB', 'DE', 'US']);
+    cleanup();
+  });
+
+  // The owner wants the countries that really connected on top, fastest first; the
+  // ones that did not go below, whatever is ticked in the list above.
+  it('lists the countries that work fastest first, the failed ones after', () => {
+    psiphonState = {
+      ...psiphonReady,
+      scan: {
+        ...noScan,
+        startedAt: 1793450000,
+        finishedAt: 1793450600,
+        total: 5,
+        results: [
+          scanResult('BR'),
+          scanResult('AT', {
+            connected: true,
+            exitIp: '198.51.100.1',
+            exitLoc: 'AT',
+            speed: 2000000,
+          }),
+          scanResult('ID'),
+          scanResult('DE', {
+            connected: true,
+            exitIp: '198.51.100.2',
+            exitLoc: 'DE',
+            speed: 9000000,
+          }),
+          scanResult('FR', {
+            connected: true,
+            exitIp: '198.51.100.3',
+            exitLoc: 'FR',
+            speed: 5000000,
+          }),
+        ],
+      },
+    };
+    const card = renderPage();
+    const table = [...card.querySelectorAll('table')].find((el) =>
+      el.querySelector('tr[data-row-key="BR"]'),
+    ) as HTMLElement;
+    const order = [...table.querySelectorAll('tr[data-row-key]')]
+      .map((tr) => tr.getAttribute('data-row-key'))
+      .filter((code) => ['AT', 'BR', 'DE', 'FR', 'ID'].includes(code ?? ''));
+    expect(order).toEqual(['DE', 'FR', 'AT', 'BR', 'ID']);
+    cleanup();
+  });
+
   // A restart or standby stops a scan midway; the card says so instead of passing the
   // countries it never reached off as tried.
   it('says when the last scan was cut short', () => {

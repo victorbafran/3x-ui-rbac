@@ -43,8 +43,8 @@ const (
 const (
 	arvanMaxReserves   = 3
 	arvanMaxIPs        = 4 // Arvan's own cap per server, the active IP included
-	arvanMaxAddsPerDay = 12
-	arvanMaxDeadTries  = 3
+	arvanMaxAddsPerDay = 40
+	arvanMaxDeadTries  = 15 // ~30 s each, so one action stays inside arvanActionTimeout
 	arvanSwapAfter     = 3 // failed checks a minute apart before an auto swap
 	arvanActionTimeout = 10 * time.Minute
 	arvanCallTimeout   = 2 * time.Minute

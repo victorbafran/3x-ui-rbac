@@ -241,6 +241,38 @@ ip -4 route show default table main | awk -v ip="$1" '{for (i = 1; i < NF; i++) 
 }
 `
 
+// readyScript waits until a hot-plugged IP can be tested: it sits on a NIC, its
+// source rule stands, and cloud-init's hotplug hook, whose netplan re-apply
+// rewrites the network, has finished. $1 is the IP, $2 the seconds to wait.
+const readyScript = `#!/bin/sh
+ip="$1"; limit="${2:-60}"; waited=0; streak=0
+hook_busy() {
+	case "$(systemctl is-active cloud-init-hotplugd.service 2>/dev/null)" in
+	active | activating | reloading) return 0 ;;
+	esac
+	return 1
+}
+while :; do
+	if ip -4 -o addr show | grep -qF "inet $ip/" && ip -4 rule show | grep -qF "from $ip " && ! hook_busy; then
+		streak=$((streak + 1))
+		if [ "$streak" -ge 2 ]; then
+			echo ready
+			exit 0
+		fi
+	else
+		streak=0
+	fi
+	[ "$waited" -ge "$limit" ] && break
+	sleep 1
+	waited=$((waited + 1))
+done
+echo notready
+`
+
+// ReadyScript prints "ready" once the IP $1 is usable on the front, or
+// "notready" after $2 seconds.
+func ReadyScript() string { return readyScript }
+
 // InstallScript prepares a front for several IPs; $1 is the active IP. It
 // prints "x-ui-multi-ip ready" once the routes stand, and is safe to re-run.
 func InstallScript() string { return installScript }

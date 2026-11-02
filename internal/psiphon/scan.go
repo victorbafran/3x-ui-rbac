@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -38,17 +39,20 @@ var (
 // ErrScanRunning refuses a second scan while one is still going.
 var ErrScanRunning = errors.New("a Psiphon scan is already running")
 
-// ScanResult is one country tried with a client of its own: whether a tunnel
-// came up, what it measured, and, when none did, what the client last said.
+// ScanResult is one country tried, with a client of its own or, OnRunning, through
+// the one already carrying its customers; New is a country not offered before.
 type ScanResult struct {
 	Code      string
 	Connected bool
 	Exit      Exit
 	Detail    string
+	OnRunning bool
+	New       bool
 }
 
 // ScanState is the last scan, kept until the next one starts; Results grow as
-// countries finish, and Stopped marks a scan cut short by shutdown or standby.
+// countries finish, Total as clients announce countries not yet queued, and
+// Stopped marks a scan cut short by shutdown or standby.
 type ScanState struct {
 	Running           bool
 	Stopped           bool
@@ -57,19 +61,38 @@ type ScanState struct {
 	Results           []ScanResult
 }
 
+// ScanPlan is one scan: Codes to try, Running the enabled countries, measured through
+// their own client while it runs, and Known the countries offered before it.
+type ScanPlan struct {
+	Codes   []string
+	Running []Country
+	Known   []string
+	Taken   func(port int) bool
+	// Finished gets the scan's end state, unless a shutdown or standby cut it short.
+	Finished func(ScanState)
+}
+
 type scanner struct {
 	mu     sync.Mutex
 	state  ScanState
 	held   map[int]bool
 	cancel context.CancelFunc
 	done   chan struct{}
+	// The queue: codes waiting, every code ever queued, codes being tried now, and
+	// wake, closed and replaced whenever any of them changes.
+	pending []string
+	queued  map[string]bool
+	busy    int
+	closed  bool
+	wake    chan struct{}
+	known   map[string]bool
 }
 
-// StartScan tries each country in the background, a few at a time, each with a
-// throwaway client; taken names the ports something else of the panel holds.
-func (m *Manager) StartScan(codes []string, taken func(port int) bool) error {
+// StartScan tries each country in the background: a running one through its own client,
+// any other with a throwaway client, a few at a time, and the countries they announce too.
+func (m *Manager) StartScan(plan ScanPlan) error {
 	var list []string
-	for _, code := range codes {
+	for _, code := range plan.Codes {
 		if !countryCode.MatchString(code) {
 			return fmt.Errorf("psiphon country %q is not a two-letter upper-case code", code)
 		}
@@ -81,6 +104,22 @@ func (m *Manager) StartScan(codes []string, taken func(port int) bool) error {
 	if len(list) == 0 {
 		return errors.New("no Psiphon country to scan")
 	}
+	running := map[string]int{}
+	for _, c := range plan.Running {
+		running[c.Code] = c.SocksPort
+	}
+	// The running ones go first: they need no client, so nothing they wait on.
+	slices.SortStableFunc(list, func(a, b string) int {
+		_, ra := running[a]
+		_, rb := running[b]
+		switch {
+		case ra && !rb:
+			return -1
+		case rb && !ra:
+			return 1
+		}
+		return 0
+	})
 
 	bin, err := resolveBinary()
 	if err != nil {
@@ -96,39 +135,68 @@ func (m *Manager) StartScan(codes []string, taken func(port int) bool) error {
 	done := make(chan struct{})
 	s.state = ScanState{Running: true, Started: time.Now(), Total: len(list)}
 	s.cancel, s.done = cancel, done
-	logger.Infof("psiphon: scanning %d countries, %d at a time", len(list), scanParallel)
-	go m.runScan(ctx, bin, list, taken, done)
+	s.pending, s.queued, s.busy, s.closed, s.wake = list, map[string]bool{}, 0, false, make(chan struct{})
+	for _, code := range list {
+		s.queued[code] = true
+	}
+	s.known = map[string]bool{}
+	for _, code := range plan.Known {
+		s.known[code] = true
+	}
+	logger.Infof("psiphon: scanning %d countries, %d of them through their running client, %d new clients at a time", len(list), len(running), scanParallel)
+	go m.runScan(ctx, bin, plan, running, done)
 	return nil
 }
 
-func (m *Manager) runScan(ctx context.Context, bin string, codes []string, taken func(int) bool, done chan struct{}) {
+func (m *Manager) runScan(ctx context.Context, bin string, plan ScanPlan, running map[string]int, done chan struct{}) {
 	defer close(done)
 	root := filepath.Join(Root(), "_scan")
 	// Left by a panel that died mid-scan; only one scan runs, so none is in use.
 	_ = os.RemoveAll(root)
 
-	queue := make(chan string)
+	// Only the throwaway clients count against the three: a running one costs no memory.
+	clients := make(chan struct{}, scanParallel)
+	measuring := make(chan struct{}, testParallel)
 	var wg sync.WaitGroup
-	for range min(scanParallel, len(codes)) {
-		wg.Go(func() {
-			for code := range queue {
-				r := m.scanOne(ctx, bin, root, code, taken)
-				// A country cut off by a stop says nothing about the country.
+	for {
+		code, ok := m.scan.next(ctx)
+		if !ok {
+			break
+		}
+		if port, isRunning := running[code]; isRunning && m.Status(code).Running {
+			select {
+			case measuring <- struct{}{}:
+			case <-ctx.Done():
+				m.scan.finish()
+				continue
+			}
+			wg.Go(func() {
+				defer func() { <-measuring; m.scan.finish() }()
+				connected := m.Status(code).Connected
+				measureCtx, cancel := context.WithTimeout(ctx, scanMeasureBudget)
+				exit := measureRunning(measureCtx, port)
+				cancel()
 				if ctx.Err() == nil {
-					m.scan.record(r)
+					m.scan.record(ScanResult{Code: code, Connected: connected, Exit: exit, OnRunning: true})
 				}
+			})
+			continue
+		}
+		select {
+		case clients <- struct{}{}:
+		case <-ctx.Done():
+			m.scan.finish()
+			continue
+		}
+		wg.Go(func() {
+			defer func() { <-clients; m.scan.finish() }()
+			r := scanClient(m, ctx, bin, root, code, plan.Taken)
+			// A country cut off by a stop says nothing about the country.
+			if ctx.Err() == nil {
+				m.scan.record(r)
 			}
 		})
 	}
-feed:
-	for _, code := range codes {
-		select {
-		case queue <- code:
-		case <-ctx.Done():
-			break feed
-		}
-	}
-	close(queue)
 	wg.Wait()
 	_ = os.RemoveAll(root)
 
@@ -141,15 +209,87 @@ feed:
 			worked++
 		}
 	}
+	final := s.state
+	final.Results = slices.Clone(final.Results)
 	s.mu.Unlock()
-	logger.Infof("psiphon: scan done, %d of %d countries work", worked, len(codes))
+	logger.Infof("psiphon: scan done, %d of %d countries work", worked, final.Total)
+	if !final.Stopped && plan.Finished != nil {
+		plan.Finished(final)
+	}
+}
+
+// next hands out the next country to try, waiting while the ones being tried may
+// still announce more; false once none is left and none is being tried, or on a stop.
+func (s *scanner) next(ctx context.Context) (string, bool) {
+	for {
+		s.mu.Lock()
+		if ctx.Err() != nil || (len(s.pending) == 0 && s.busy == 0) {
+			s.closed = true
+			s.mu.Unlock()
+			return "", false
+		}
+		if len(s.pending) > 0 {
+			code := s.pending[0]
+			s.pending = s.pending[1:]
+			s.busy++
+			s.mu.Unlock()
+			return code, true
+		}
+		wake := s.wake
+		s.mu.Unlock()
+		select {
+		case <-wake:
+		case <-ctx.Done():
+		}
+	}
+}
+
+func (s *scanner) finish() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.busy--
+	s.signal()
+}
+
+// heard queues every country a scan's client announced that the scan has not met,
+// and counts it in the total, so the progress grows with what is left to try.
+func (s *scanner) heard(codes []string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.closed {
+		return
+	}
+	var fresh []string
+	for _, code := range codes {
+		if countryCode.MatchString(code) && !s.queued[code] {
+			s.queued[code] = true
+			fresh = append(fresh, code)
+		}
+	}
+	if len(fresh) == 0 {
+		return
+	}
+	s.pending = append(s.pending, fresh...)
+	s.state.Total += len(fresh)
+	s.signal()
+	logger.Infof("psiphon: the scan heard of %s too", strings.Join(fresh, ", "))
+}
+
+// signal wakes next; the caller holds s.mu.
+func (s *scanner) signal() {
+	close(s.wake)
+	s.wake = make(chan struct{})
 }
 
 func (s *scanner) record(r ScanResult) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	r.New = r.Connected && !s.known[r.Code]
 	s.state.Results = append(s.state.Results, r)
 }
+
+// scanClient is a variable so a test in another package can answer for the clients.
+var scanClient = (*Manager).scanOne
 
 // scanOne runs one throwaway client in a fresh directory, measures it if it
 // connects, and leaves neither the process nor the directory behind.
@@ -182,7 +322,7 @@ func (m *Manager) scanOne(ctx context.Context, bin, root, code string, taken fun
 		return r
 	}
 
-	live := &liveState{since: time.Now(), code: code}
+	live := &liveState{since: time.Now(), code: code, heard: m.scan.heard}
 	proc := sidecar.New(bin, "psiphon scan "+code, "-config", path, "-dataRootDirectory", dir)
 	proc.SetNoise(noticeNoise...)
 	proc.OnLine(live.observe)

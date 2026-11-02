@@ -159,15 +159,21 @@ func (m *Manager) TestCountries(ctx context.Context, countries []Country) []Coun
 				defer func() { <-slots }()
 			case <-ctx.Done():
 			}
-			exit := Measure(ctx, ports[i])
-			// Cut off by the test's own time, before or during, a failure says nothing
-			// about the country.
-			if exit.Err != nil && ctx.Err() != nil {
-				exit = Exit{Err: ErrNotReached}
-			}
-			out[i].Exit = exit
+			out[i].Exit = measureRunning(ctx, ports[i])
 		})
 	}
 	wg.Wait()
 	return out
+}
+
+// measureRunning measures a country through the SOCKS port of the client already
+// running for it, as the card's test and a scan both do.
+func measureRunning(ctx context.Context, socksPort int) Exit {
+	exit := Measure(ctx, socksPort)
+	// Cut off by the caller's own time, before or during, a failure says nothing
+	// about the country.
+	if exit.Err != nil && ctx.Err() != nil {
+		return Exit{Err: ErrNotReached}
+	}
+	return exit
 }

@@ -42,6 +42,7 @@ import {
   type PsiphonCountry,
   type PsiphonCountryUse,
   type PsiphonExitTest,
+  type PsiphonScanResult,
   type PsiphonInbound,
   type PsiphonPhase,
   type PsiphonState,
@@ -535,6 +536,16 @@ function scanSummary(state: PsiphonState, t: TFunction): string | null {
   });
 }
 
+// The countries the scan saw connect that were not offered before it, by name.
+function scanNewSummary(state: PsiphonState, t: TFunction): string | null {
+  const byCode = new Map(state.countries.map((c) => [c.code, c]));
+  const found = state.scan.results
+    .filter((r) => r.new)
+    .map((r) => psiphonCountryLabel(r.code, byCode.get(r.code)));
+  if (!found.length) return null;
+  return t('pages.relays.psiphon.check.newFound', { countries: found.join(', ') });
+}
+
 // Test measures the running countries through their own clients; scan tries every
 // country with a temporary client, and a working one is switched on from its row.
 function CheckSection({ state, mutations }: { state: PsiphonState; mutations: PsiphonMutations }) {
@@ -545,6 +556,7 @@ function CheckSection({ state, mutations }: { state: PsiphonState; mutations: Ps
   const enabledCodes = enabledCodesOf(state);
   const { scan } = state;
   const summary = scanSummary(state, t);
+  const newSummary = scanNewSummary(state, t);
 
   const onEnable = async (code: string) => {
     setEnabling(code);
@@ -559,36 +571,50 @@ function CheckSection({ state, mutations }: { state: PsiphonState; mutations: Ps
     {
       title: t('pages.relays.psiphon.check.country'),
       key: 'country',
-      render: (_: unknown, row: PsiphonExitTest) =>
-        psiphonCountryLabel(row.code, byCode.get(row.code)),
+      render: (_: unknown, row: PsiphonScanResult) => (
+        <Space size={4}>
+          <span>{psiphonCountryLabel(row.code, byCode.get(row.code))}</span>
+          {row.new ? <Tag color="green">{t('pages.relays.psiphon.check.new')}</Tag> : null}
+        </Space>
+      ),
     },
     {
       title: t('pages.relays.psiphon.check.result'),
       key: 'result',
-      render: (_: unknown, row: PsiphonExitTest) => resultTag(row, t),
+      render: (_: unknown, row: PsiphonScanResult) => (
+        <Space size={4}>
+          {resultTag(row, t)}
+          {row.onRunning ? (
+            <Tooltip title={t('pages.relays.psiphon.check.onRunningHint')}>
+              <Tag style={{ cursor: 'help' }}>{t('pages.relays.psiphon.check.onRunning')}</Tag>
+            </Tooltip>
+          ) : null}
+        </Space>
+      ),
     },
     {
       title: t('pages.relays.psiphon.check.exit'),
       key: 'exit',
-      render: (_: unknown, row: PsiphonExitTest) => exitCell(row),
+      render: (_: unknown, row: PsiphonScanResult) => exitCell(row),
     },
     {
       title: t('pages.relays.psiphon.check.latency'),
       key: 'latency',
-      sorter: (a: PsiphonExitTest, b: PsiphonExitTest) =>
+      sorter: (a: PsiphonScanResult, b: PsiphonScanResult) =>
         (a.latencyMs || Infinity) - (b.latencyMs || Infinity),
-      render: (_: unknown, row: PsiphonExitTest) => (row.latencyMs ? `${row.latencyMs} ms` : null),
+      render: (_: unknown, row: PsiphonScanResult) =>
+        row.latencyMs ? `${row.latencyMs} ms` : null,
     },
     {
       title: t('pages.relays.psiphon.check.speed'),
       key: 'speed',
-      sorter: (a: PsiphonExitTest, b: PsiphonExitTest) => a.speed - b.speed,
-      render: (_: unknown, row: PsiphonExitTest) => (row.speed ? `${bytes(row.speed)}/s` : null),
+      sorter: (a: PsiphonScanResult, b: PsiphonScanResult) => a.speed - b.speed,
+      render: (_: unknown, row: PsiphonScanResult) => (row.speed ? `${bytes(row.speed)}/s` : null),
     },
     {
       title: '',
       key: 'actions',
-      render: (_: unknown, row: PsiphonExitTest) => {
+      render: (_: unknown, row: PsiphonScanResult) => {
         if (enabledCodes.includes(row.code)) {
           return <Tag color="blue">{t('pages.relays.psiphon.check.enabled')}</Tag>;
         }
@@ -638,6 +664,7 @@ function CheckSection({ state, mutations }: { state: PsiphonState; mutations: Ps
           {summary}
         </Typography.Paragraph>
       ) : null}
+      {newSummary ? <Typography.Paragraph type="success">{newSummary}</Typography.Paragraph> : null}
       {scan.running ? (
         <Progress
           percent={scan.total ? Math.round((scan.results.length / scan.total) * 100) : 0}

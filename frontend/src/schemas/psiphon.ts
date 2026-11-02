@@ -69,8 +69,16 @@ export const PsiphonCountrySchema = z.object({
 });
 export type PsiphonCountry = z.infer<typeof PsiphonCountrySchema>;
 
-// The running or last scan; results grow in the order countries finish, and
-// stopped marks one a shutdown or standby cut short.
+// One country a scan tried: onRunning, measured through the client already running for
+// it; new, a country that connected and was not offered before this scan.
+export const PsiphonScanResultSchema = PsiphonExitTestSchema.extend({
+  onRunning: z.boolean().default(false),
+  new: z.boolean().default(false),
+});
+export type PsiphonScanResult = z.infer<typeof PsiphonScanResultSchema>;
+
+// The running or last scan; results grow in the order countries finish, total as the
+// clients announce countries not yet queued, and stopped marks one cut short.
 export const PsiphonScanSchema = z.object({
   running: z.boolean().default(false),
   stopped: z.boolean().default(false),
@@ -78,7 +86,7 @@ export const PsiphonScanSchema = z.object({
   finishedAt: z.number().default(0),
   total: z.number().default(0),
   results: z
-    .array(PsiphonExitTestSchema)
+    .array(PsiphonScanResultSchema)
     .nullish()
     .transform((v) => v ?? []),
 });

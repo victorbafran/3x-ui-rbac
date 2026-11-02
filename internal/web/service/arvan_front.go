@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"slices"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -44,9 +45,10 @@ const (
 	arvanMaxReserves   = 3
 	arvanMaxIPs        = 4 // Arvan's own cap per server, the active IP included
 	arvanMaxAddsPerDay = 40
-	arvanMaxDeadTries  = 15 // ~30 s each, so one action stays inside arvanActionTimeout
-	arvanSwapAfter     = 3 // failed checks a minute apart before an auto swap
-	arvanActionTimeout = 10 * time.Minute
+	arvanMaxDeadTries  = 15 // up to ~1 min each, so one action stays inside arvanActionTimeout
+	arvanSwapAfter     = 3  // failed checks a minute apart before an auto swap
+	arvanReadyWait     = 60 * time.Second
+	arvanActionTimeout = 20 * time.Minute
 	arvanCallTimeout   = 2 * time.Minute
 	arvanHotplugWait   = 8 * time.Second
 	arvanTimerWait     = 15 * time.Second // the front's routing timer runs every 10 s
@@ -875,6 +877,19 @@ func runOnFront(ctx context.Context, r model.Relay, via, name, body string, args
 	return cl.RunScript(ctx, name, body, args...)
 }
 
+// waitFrontReady returns once ip stands on the front's NIC with its source rule
+// and the hotplug hook is done, or says it did not within arvanReadyWait.
+func waitFrontReady(ctx context.Context, r model.Relay, ip string) error {
+	out, err := runOnFront(ctx, r, r.Address, "x-ui-multi-ip-ready.sh", arvan.ReadyScript(), ip, strconv.Itoa(int(arvanReadyWait/time.Second)))
+	if err != nil {
+		return err
+	}
+	if lines := strings.Fields(out); len(lines) == 0 || lines[len(lines)-1] != "ready" {
+		return fmt.Errorf("not ready after %s: %s", arvanReadyWait, strings.TrimSpace(out))
+	}
+	return nil
+}
+
 // setPrimary gives primary the box's main default route; UDP replies from
 // wildcard sockets leave by it, so it must be the active IP's.
 func setPrimary(ctx context.Context, r model.Relay, via, primary string) error {
@@ -1082,8 +1097,14 @@ func (s *ArvanService) addOne(ctx context.Context, c *arvan.Client, r model.Rela
 			return ip, false, ctx.Err()
 		case <-time.After(arvanTimerWait):
 		}
-	} else if err := setPrimary(ctx, r, r.Address, r.Address); err != nil {
-		logger.Warningf("front %s: could not re-assert the routes after adding %s: %v", r.Name, ip, err)
+	} else {
+		// a dead verdict is only fair once the front has the IP, its rule, and is done hot-plugging
+		if err := waitFrontReady(ctx, r, ip); err != nil {
+			logger.Warningf("front %s: %s was not ready on the front: %v", r.Name, ip, err)
+		}
+		if err := setPrimary(ctx, r, r.Address, r.Address); err != nil {
+			logger.Warningf("front %s: could not re-assert the routes after adding %s: %v", r.Name, ip, err)
+		}
 	}
 
 	ok, iranOk, iranTotal, perr := probeIP(ctx, ip, r.TunnelPort)

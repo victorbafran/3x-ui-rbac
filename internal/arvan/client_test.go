@@ -371,7 +371,7 @@ func TestAPIErrors(t *testing.T) {
 // The scripts reach the front inside RunScript's <<'XUIEOF' heredoc, and the
 // installer nests the routing script in its own <<'XUIROUTE'.
 func TestFrontScriptsParse(t *testing.T) {
-	scripts := map[string]string{"routing": routingScript, "install": InstallScript(), "set-primary": SetPrimaryScript()}
+	scripts := map[string]string{"routing": routingScript, "install": InstallScript(), "set-primary": SetPrimaryScript(), "ready": ReadyScript()}
 	for name, body := range scripts {
 		t.Run(name, func(t *testing.T) {
 			routeEnds := 0
@@ -396,6 +396,58 @@ func TestFrontScriptsParse(t *testing.T) {
 			}
 			if out, err := exec.Command(sh, "-n", filepath.ToSlash(path)).CombinedOutput(); err != nil {
 				t.Fatalf("sh -n: %v\n%s", err, out)
+			}
+		})
+	}
+}
+
+func TestReadyScriptWaitsForTheWholeSetup(t *testing.T) {
+	sh, err := exec.LookPath("sh")
+	if err != nil {
+		t.Skip("sh is not installed")
+	}
+	const (
+		addr = "3: eth1    inet 185.231.183.49/22 brd 185.231.183.255 scope global dynamic eth1"
+		rule = "1001:\tfrom 185.231.183.49 lookup 101"
+	)
+	cases := []struct {
+		name, addr, rule, hook, want string
+	}{
+		{"everything stands", addr, rule, "inactive", "ready"},
+		{"the source rule is missing", addr, "0:\tfrom all lookup local", "inactive", "notready"},
+		{"the IP is not on a NIC yet", "", rule, "inactive", "notready"},
+		{"the hotplug hook is still running", addr, rule, "activating", "notready"},
+		{"the hook has not been seen at all", addr, rule, "", "ready"},
+		{"another IP's rule does not count", addr, "1001:\tfrom 185.231.183.4 lookup 101", "inactive", "notready"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			dir := t.TempDir()
+			bin := filepath.Join(dir, "bin")
+			if err := os.MkdirAll(bin, 0o755); err != nil {
+				t.Fatal(err)
+			}
+			write := func(path, content string, mode os.FileMode) {
+				t.Helper()
+				if err := os.WriteFile(path, []byte(content), mode); err != nil {
+					t.Fatal(err)
+				}
+			}
+			write(filepath.Join(bin, "ip"), "#!/bin/sh\ncase \"$*\" in\n\"-4 -o addr show\") cat \"$FAKE/addr\";;\n\"-4 rule show\") cat \"$FAKE/rule\";;\nesac\n", 0o755)
+			write(filepath.Join(bin, "systemctl"), "#!/bin/sh\ncat \"$FAKE/hook\"\n", 0o755)
+			write(filepath.Join(dir, "addr"), tc.addr+"\n", 0o644)
+			write(filepath.Join(dir, "rule"), tc.rule+"\n", 0o644)
+			write(filepath.Join(dir, "hook"), tc.hook+"\n", 0o644)
+			script := filepath.Join(dir, "ready.sh")
+			write(script, ReadyScript(), 0o755)
+			cmd := exec.Command(sh, filepath.ToSlash(script), "185.231.183.49", "2")
+			cmd.Env = append(os.Environ(), "FAKE="+filepath.ToSlash(dir), "PATH="+bin+string(os.PathListSeparator)+os.Getenv("PATH"))
+			out, err := cmd.CombinedOutput()
+			if err != nil {
+				t.Fatalf("exit: %v\n%s", err, out)
+			}
+			if got := strings.TrimSpace(string(out)); got != tc.want {
+				t.Fatalf("printed %q, want %q", got, tc.want)
 			}
 		})
 	}

@@ -231,6 +231,14 @@ type psiphonRegionsSetting struct {
 	Regions []string `json:"regions"`
 	At      int64    `json:"at"`
 	Found   []string `json:"found,omitempty"`
+	Scanned bool     `json:"scanned,omitempty"`
+}
+
+// listFromScans is true on a panel that never had a list: its card offers only the
+// countries a scan saw connect and those switched on. A panel that already listed the
+// announced and known countries keeps doing so.
+func (s psiphonRegionsSetting) listFromScans() bool {
+	return s.Scanned || (s.At == 0 && len(s.Regions) == 0 && len(s.Found) == 0)
 }
 
 type psiphonWarpSetting struct {
@@ -412,6 +420,11 @@ func (s *PsiphonService) RefreshRegions(ctx context.Context) error {
 // psiphonOffered is the probe's countries, the scans' finds and the known ones. A client lists only
 // the countries of the servers it was handed: Poland, Singapore and Canada, missing from one, connected.
 func psiphonOffered(saved psiphonRegionsSetting) []string {
+	if saved.listFromScans() {
+		out := append([]string{}, saved.Found...)
+		slices.Sort(out)
+		return out
+	}
 	out := slices.Clone(saved.Regions)
 	for _, more := range [][]string{saved.Found, psiphon.FallbackRegions} {
 		for _, code := range more {
@@ -438,7 +451,7 @@ func (s *PsiphonService) discoverRegions(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	return s.saveRegions(psiphonRegionsSetting{Regions: regions, At: time.Now().Unix(), Found: saved.Found})
+	return s.saveRegions(psiphonRegionsSetting{Regions: regions, At: time.Now().Unix(), Found: saved.Found, Scanned: saved.listFromScans()})
 }
 
 func (s *PsiphonService) saveRegions(setting psiphonRegionsSetting) error {
@@ -454,7 +467,7 @@ func (s *PsiphonService) saveRegions(setting psiphonRegionsSetting) error {
 func (s *PsiphonService) keepScanFinds(st psiphon.ScanState) {
 	var connected []string
 	for _, r := range st.Results {
-		if r.Connected && !slices.Contains(psiphon.FallbackRegions, r.Code) {
+		if r.Connected {
 			connected = append(connected, r.Code)
 		}
 	}
@@ -465,8 +478,13 @@ func (s *PsiphonService) keepScanFinds(st psiphon.ScanState) {
 	defer psiphonRegionsSaving.Unlock()
 	saved, err := s.savedRegions()
 	if err == nil {
+		fromScans := saved.listFromScans()
 		grown := slices.Clone(saved.Found)
 		for _, code := range connected {
+			// a panel that lists the known countries offers those already
+			if !fromScans && slices.Contains(psiphon.FallbackRegions, code) {
+				continue
+			}
 			if !slices.Contains(grown, code) {
 				grown = append(grown, code)
 			}
@@ -475,7 +493,7 @@ func (s *PsiphonService) keepScanFinds(st psiphon.ScanState) {
 			return
 		}
 		slices.Sort(grown)
-		saved.Found = grown
+		saved.Found, saved.Scanned = grown, fromScans
 		err = s.saveRegions(saved)
 	}
 	if err != nil {
@@ -1262,9 +1280,18 @@ func (s *PsiphonService) StartScan() error {
 		return err
 	}
 	known := psiphonListedCodes(psiphonOffered(saved), rows)
+	// The card may list few countries, but a scan always tries the announced and known ones too.
+	codes := slices.Clone(known)
+	for _, more := range [][]string{saved.Regions, psiphon.FallbackRegions, psiphon.CandidateRegions} {
+		for _, code := range more {
+			if !slices.Contains(codes, code) {
+				codes = append(codes, code)
+			}
+		}
+	}
 	mgr := psiphon.GetManager()
 	plan := psiphon.ScanPlan{
-		Codes:    append(slices.Clone(known), psiphon.CandidateRegions...),
+		Codes:    codes,
 		Running:  running,
 		Known:    known,
 		Taken:    func(port int) bool { return taken[port] },

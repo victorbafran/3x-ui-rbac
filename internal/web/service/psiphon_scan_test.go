@@ -121,6 +121,124 @@ func TestAScanTriesEveryListedCountry(t *testing.T) {
 	}
 }
 
+func waitForPsiphonScan(t *testing.T) {
+	t.Helper()
+	deadline := time.Now().Add(15 * time.Second)
+	for psiphon.GetManager().ScanState().Running {
+		if time.Now().After(deadline) {
+			t.Fatal("the scan did not finish")
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+}
+
+// A panel installed today offers no country at first, not the announced ones nor the
+// known 27. A scan tries them all and the candidates, and only those that connected join
+// the list; a refresh of the announced countries leaves the list as the scan made it.
+func TestAFreshPanelListsOnlyWhatAScanFound(t *testing.T) {
+	setupRelayDB(t)
+	installFakePsiphon(t)
+	t.Cleanup(psiphon.GetManager().StopScan)
+	svc := &PsiphonService{}
+	discover := func(regions ...string) {
+		t.Helper()
+		saved := discoverPsiphonRegions
+		discoverPsiphonRegions = func(context.Context) ([]string, error) { return regions, nil }
+		defer func() { discoverPsiphonRegions = saved }()
+		if err := svc.discoverRegions(t.Context()); err != nil {
+			t.Fatalf("read the countries Psiphon announces: %v", err)
+		}
+	}
+	discover("DE", "NL", "ZZ")
+	st, err := svc.State()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(st.Regions) != 0 || len(st.Countries) != 0 {
+		t.Fatalf("a fresh panel lists %v and %d countries before any scan; want none", st.Regions, len(st.Countries))
+	}
+	if st.Regions == nil {
+		t.Fatal("an empty list is sent as null; the API promises an array")
+	}
+
+	t.Cleanup(psiphon.AnswerScanForTest(func(code string) psiphon.ScanResult {
+		switch code {
+		case "DE", "KR":
+			return psiphon.ScanResult{Connected: true, Exit: psiphon.Exit{IP: "203.0.113.7", Loc: code, BytesPerSec: 1 << 20}}
+		}
+		return psiphon.ScanResult{Detail: "no tunnel"}
+	}))
+	if err := svc.StartScan(); err != nil {
+		t.Fatal(err)
+	}
+	waitForPsiphonScan(t)
+	want := append(slices.Clone(psiphon.FallbackRegions), psiphon.CandidateRegions...)
+	want = append(want, "ZZ")
+	if st, err = svc.State(); err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(st.Regions, []string{"DE", "KR"}) {
+		t.Fatalf("listed after a scan where DE and KR connected: %v; want just those", st.Regions)
+	}
+	if st.Scan.Total != len(want) {
+		t.Fatalf("the scan tried %d countries; want all %d the panel knows", st.Scan.Total, len(want))
+	}
+	for _, c := range st.Countries {
+		if c.Code == "DE" && (c.Name != "Germany" || c.Flag == "") {
+			t.Errorf("DE listed as %q %q; want its name and flag", c.Flag, c.Name)
+		}
+	}
+
+	discover("NL", "PL")
+	if st, err = svc.State(); err != nil || !slices.Equal(st.Regions, []string{"DE", "KR"}) {
+		t.Fatalf("after reading the announced countries again: %v, %v; want the scan's list untouched", st.Regions, err)
+	}
+
+	saveRuns := psiphonRunsHere
+	psiphonRunsHere = func() error { return errors.New("no client in tests") }
+	t.Cleanup(func() { psiphonRunsHere = saveRuns })
+	if err := svc.SetCountries([]string{"KR"}); err != nil {
+		t.Fatalf("switching on a country the scan found: %v", err)
+	}
+	if err := svc.SetCountries([]string{"KR", "NL"}); err == nil || !strings.Contains(err.Error(), "does not offer NL") {
+		t.Fatalf("switching on NL, which no scan found: %v; want it refused", err)
+	}
+}
+
+// Even when the announced countries were never read, the first scan's finds make a list of
+// their own: saving them must not turn the panel into one that lists the known 27.
+func TestAFirstScanFindWithNoSavedListStaysAScanList(t *testing.T) {
+	setupRelayDB(t)
+	installFakePsiphon(t)
+	svc := &PsiphonService{}
+	svc.keepScanFinds(psiphonScanOf(psiphon.ScanResult{Code: "KR", Connected: true}, psiphon.ScanResult{Code: "DE", Connected: true}))
+	st, err := svc.State()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(st.Regions, []string{"DE", "KR"}) {
+		t.Fatalf("listed after the first find: %v; want just DE and KR", st.Regions)
+	}
+}
+
+// A panel that already listed the announced and known countries keeps them.
+func TestAPanelThatAlreadyHadAListKeepsIt(t *testing.T) {
+	setupRelayDB(t)
+	installFakePsiphon(t)
+	if err := (&SettingService{}).setString(psiphonRegionsKey, `{"regions":["DE"],"at":1}`); err != nil {
+		t.Fatal(err)
+	}
+	st, err := (&PsiphonService{}).State()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, code := range append([]string{"DE"}, psiphon.FallbackRegions...) {
+		if !slices.Contains(st.Regions, code) {
+			t.Fatalf("an existing panel lost %s from its list: %v", code, st.Regions)
+		}
+	}
+}
+
 // A scan's finds reach the offered list by themselves: KR and PT, candidates no list
 // carried, connect and are kept and marked new; FI and DE, offered already, are not new.
 func TestAScanKeepsTheCountriesThatConnected(t *testing.T) {
@@ -248,6 +366,10 @@ func TestCountriesAScanFoundStayOffered(t *testing.T) {
 func TestEveryCandidateCountryHasAName(t *testing.T) {
 	setupRelayDB(t)
 	installFakePsiphon(t)
+	// a panel that already had a list, so the known countries are on it beside the finds
+	if err := (&SettingService{}).setString(psiphonRegionsKey, `{"regions":[],"at":1}`); err != nil {
+		t.Fatal(err)
+	}
 	var all []psiphon.ScanResult
 	for _, code := range psiphon.CandidateRegions {
 		all = append(all, psiphon.ScanResult{Code: code, Connected: true})

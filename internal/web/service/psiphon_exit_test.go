@@ -27,6 +27,10 @@ func seedPsiphonCountries(t *testing.T, rows ...model.PsiphonCountry) {
 func seedPsiphonWorld(t *testing.T) map[string]int {
 	t.Helper()
 	ids := seedExitWorld(t)
+	// a panel that already had a country list, which lists the known countries beside its finds
+	if err := (&SettingService{}).setString(psiphonRegionsKey, `{"regions":["DE"],"at":1}`); err != nil {
+		t.Fatal(err)
+	}
 	seedPsiphonCountries(t,
 		model.PsiphonCountry{Code: "DE", Enabled: true, SocksPort: 11181, HTTPPort: 11381},
 		model.PsiphonCountry{Code: "FR", Enabled: false, SocksPort: 11182, HTTPPort: 11382},

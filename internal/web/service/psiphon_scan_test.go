@@ -157,6 +157,9 @@ func TestAFreshPanelListsOnlyWhatAScanFound(t *testing.T) {
 	if len(st.Regions) != 0 || len(st.Countries) != 0 {
 		t.Fatalf("a fresh panel lists %v and %d countries before any scan; want none", st.Regions, len(st.Countries))
 	}
+	if st.Regions == nil {
+		t.Fatal("an empty list is sent as null; the API promises an array")
+	}
 
 	t.Cleanup(psiphon.AnswerScanForTest(func(code string) psiphon.ScanResult {
 		switch code {

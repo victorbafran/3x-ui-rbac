@@ -421,7 +421,7 @@ func (s *PsiphonService) RefreshRegions(ctx context.Context) error {
 // the countries of the servers it was handed: Poland, Singapore and Canada, missing from one, connected.
 func psiphonOffered(saved psiphonRegionsSetting) []string {
 	if saved.listFromScans() {
-		out := slices.Clone(saved.Found)
+		out := append([]string{}, saved.Found...)
 		slices.Sort(out)
 		return out
 	}

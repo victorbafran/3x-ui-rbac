@@ -25,12 +25,12 @@ func stubFrontAcct(t *testing.T, read func() map[int]map[string]tunnel.LegMetric
 	}
 	readFrontAcct = func(fronts []tunnel.Pair, _ time.Time) (map[int]map[string]tunnel.LegMetrics, error) {
 		if read == nil {
-			t.Error("the firewall was read with no enabled Backhaul front to count")
+			t.Error("the firewall was read with no enabled front to count")
 			return nil, nil
 		}
 		counters, named := read(), map[int]map[string]tunnel.LegMetrics{}
 		for _, f := range fronts {
-			if c, ok := counters[f.Id]; ok && f.Tool == tunnel.ToolBackhaul {
+			if c, ok := counters[f.Id]; ok {
 				named[f.Id] = c
 			}
 		}
@@ -77,10 +77,9 @@ func TestABackhaulFrontIsCountedFromTheFirewallEachDirectionOnItsOwn(t *testing.
 	}
 }
 
-// BackPack counts itself and a disabled front counts nothing, so neither is a
-// reason to run iptables twice a minute.
-func TestTheFirewallIsNotReadWithoutAnEnabledBackhaulFront(t *testing.T) {
-	seedBackPackFront(t)
+// A disabled front counts nothing, so it is no reason to run iptables twice a minute.
+func TestTheFirewallIsNotReadWithoutAnEnabledFront(t *testing.T) {
+	setupRelayDB(t)
 	seedRelays(t, model.Relay{Name: "off", Address: "203.0.113.2", Tunnel: "backhaul", Role: model.RelayFront, Enabled: true})
 	if err := database.GetDB().Model(&model.Relay{}).Where("name = ?", "off").Update("enabled", false).Error; err != nil {
 		t.Fatal(err)
@@ -135,4 +134,86 @@ func TestTheFirewallFollowsTheEnabledFronts(t *testing.T) {
 	t.Cleanup(func() { global.SetStandby(false) })
 	s.StandDown()
 	last("going on standby", nil)
+}
+
+// BackPack's own counters carry TCP only, so a front's UDP (Hysteria, OpenVPN on UDP,
+// WireGuard) never showed in its usage: 4.75 MB of it crossed the tunnel and the counters did
+// not move. The firewall counts the wire, so its readings are the totals and the client's own
+// counters, moving too, add nothing on top.
+func TestABackPackFrontIsCountedFromTheFirewallSoItsUDPCounts(t *testing.T) {
+	r := seedBackPackFront(t)
+	key := strconv.Itoa(r.Id)
+	var counters map[string]tunnel.LegMetrics
+	stubFrontAcct(t, func() map[int]map[string]tunnel.LegMetrics {
+		return map[int]map[string]tunnel.LegMetrics{r.Id: counters}
+	})
+	taken := time.Now().Add(-time.Minute)
+	reading := func(out, in int64) map[string]tunnel.LegMetrics {
+		taken = taken.Add(30 * time.Second)
+		return map[string]tunnel.LegMetrics{
+			key + ":out": {Taken: taken, BytesOut: out}, key + ":in": {Taken: taken, BytesIn: in},
+		}
+	}
+	writeLegSnapshot(t, key, taken, 9_000, 77_000)
+	counters = reading(6_000_000, 40_000)
+	(&RelayService{}).CollectFrontTraffic()
+	wantTotals(t, r.Id, 40_000, 6_000_000)
+
+	writeLegSnapshot(t, key, taken.Add(30*time.Second), 19_000, 99_000)
+	counters = reading(6_500_000, 45_000)
+	(&RelayService{}).CollectFrontTraffic()
+	wantTotals(t, r.Id, 45_000, 6_500_000)
+}
+
+// BackPack's own counters stand in where the firewall has never counted the front (no
+// iptables, a front named by a host name); once it has, a minute it cannot be read adds nothing,
+// and the client's counters, which began long before, are not counted in full on top.
+func TestBackPacksOwnCountersStandInOnlyUntilTheFirewallHasCounted(t *testing.T) {
+	r := seedBackPackFront(t)
+	key := strconv.Itoa(r.Id)
+	var counters map[string]tunnel.LegMetrics
+	stubFrontAcct(t, func() map[int]map[string]tunnel.LegMetrics {
+		return map[int]map[string]tunnel.LegMetrics{r.Id: counters}
+	})
+	taken := time.Now().Add(-time.Minute)
+	writeLegSnapshot(t, key, taken, 1000, 5000)
+	(&RelayService{}).CollectFrontTraffic()
+	wantTotals(t, r.Id, 1000, 5000)
+
+	taken = taken.Add(30 * time.Second)
+	counters = map[string]tunnel.LegMetrics{
+		key + ":out": {Taken: taken, BytesOut: 700}, key + ":in": {Taken: taken, BytesIn: 70},
+	}
+	(&RelayService{}).CollectFrontTraffic()
+	wantTotals(t, r.Id, 1070, 5700)
+
+	counters = nil
+	writeLegSnapshot(t, key, taken.Add(30*time.Second), 99_000, 99_000)
+	(&RelayService{}).CollectFrontTraffic()
+	wantTotals(t, r.Id, 1070, 5700)
+}
+
+// The ports the panel's own inbounds bind on UDP alone: a TCP knock on one is refused here by
+// design. A port any enabled inbound also binds on TCP is not one, nor is a disabled inbound's.
+func TestAFrontKnowsWhichForwardedPortsAreUDPOnly(t *testing.T) {
+	setupRelayDB(t)
+	for _, ib := range []*model.Inbound{
+		{Tag: "ovpn-udp", Enable: true, Port: 1194, Protocol: model.OpenVPN, Settings: `{"useTcp":false}`},
+		{Tag: "ovpn-tcp", Enable: true, Port: 1196, Protocol: model.OpenVPN, Settings: `{"useTcp":true}`},
+		{Tag: "hy", Enable: true, Port: 2576, Protocol: model.Hysteria},
+		{Tag: "hy-off", Enable: false, Port: 25000, Protocol: model.Hysteria},
+		{Tag: "vless", Enable: true, Port: 41330, Protocol: model.VLESS},
+		{Tag: "cisco", Enable: true, Port: 443, Protocol: model.Cisco, Settings: `{"udpPort":443}`},
+	} {
+		if err := database.GetDB().Create(ib).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+	got, err := (&RelayService{}).frontUDPOnlyPorts()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := []int{1194, 2576}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("UDP-only ports %v; want %v", got, want)
+	}
 }

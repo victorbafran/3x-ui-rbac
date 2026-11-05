@@ -648,7 +648,7 @@ func (s *RelayService) provisionFront(ctx context.Context, r *model.Relay) (read
 		}
 	}
 	tunnel.GetManager().Retain(r.Id, legs)
-	s.countBackhaulFronts()
+	s.countFronts()
 
 	fields := map[string]any{
 		"status": RelayReady, "last_error": "", "last_seen": time.Now().Unix(),
@@ -709,7 +709,33 @@ func (s *RelayService) frontPair(r *model.Relay, token string) (tunnel.Pair, err
 		return tunnel.Pair{}, err
 	}
 	pair.Ports, pair.ProxyPorts = plain, proxied
+	// only a log line depends on this, so a failure to read it costs nothing else
+	pair.UDPOnlyPorts, _ = s.frontUDPOnlyPorts()
 	return pair, nil
+}
+
+// frontUDPOnlyPorts are the ports the panel's enabled local inbounds bind on UDP alone: a
+// port any inbound also binds on TCP is not one.
+func (s *RelayService) frontUDPOnlyPorts() ([]int, error) {
+	var inbounds []*model.Inbound
+	if err := database.GetDB().Model(model.Inbound{}).
+		Where("node_id IS NULL AND enable = ?", true).Find(&inbounds).Error; err != nil {
+		return nil, err
+	}
+	bits := map[int]transportBits{}
+	for _, ib := range inbounds {
+		for _, c := range portClaims(ib) {
+			bits[c.port] |= c.bits
+		}
+	}
+	out := []int{}
+	for port, b := range bits {
+		if b&transportUDP != 0 && b&transportTCP == 0 {
+			out = append(out, port)
+		}
+	}
+	slices.Sort(out)
+	return out, nil
 }
 
 // frontTool is the tool a front's row records. Anything unreadable is read as
@@ -844,7 +870,7 @@ func (s *RelayService) Delete(id int) error {
 			}
 			return tx.Delete(&model.Relay{}, id).Error
 		})
-		s.countBackhaulFronts()
+		s.countFronts()
 		return err
 	}
 
@@ -899,7 +925,7 @@ var (
 // panel restarts would quietly stop working while still being offered.
 func (s *RelayService) Reconcile() {
 	// Before the fronts: provisioning one can take minutes, and a reboot left none counted.
-	s.countBackhaulFronts()
+	s.countFronts()
 	var rows []model.Relay
 	if err := database.GetDB().Where("enabled = ?", true).Find(&rows).Error; err != nil {
 		return
@@ -949,7 +975,7 @@ func (s *RelayService) ensureXrayExit(r model.Relay) {
 // its Psiphon countries, which run on the main panel only; the far ends keep serving it.
 func (s *RelayService) StandDown() {
 	tunnel.GetManager().Reconcile(nil)
-	s.countBackhaulFronts()
+	s.countFronts()
 	for _, id := range relay.LocalInterfaceIDs() {
 		relay.DownOrphan(id)
 	}

@@ -337,7 +337,7 @@ const (
 	cadenceCertRenew = "@every 12h"
 	// Three failed checks a minute apart trigger an automatic IP swap.
 	cadenceArvan = "@every 1m"
-	// BackPack rewrites each front's counters every 30s; reading as often keeps
+	// The firewall's counters move with the traffic; reading every 30s keeps
 	// the speed shown on the relays page within a minute of the truth.
 	cadenceFrontTraffic = "@every 30s"
 	// A dead Psiphon client is a country whose customers go nowhere; a tick

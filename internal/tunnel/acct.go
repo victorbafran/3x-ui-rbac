@@ -15,8 +15,9 @@ import (
 	"time"
 )
 
-// Backhaul's own counter needs its web port, which binds every address, so the panel
-// counts a Backhaul front's tunnel in its own netfilter: count-only rules in a chain of their own.
+// Backhaul's own counter needs its web port, which binds every address, and BackPack's counts
+// TCP only, so the panel counts a front's tunnel in its own netfilter: count-only rules in a
+// chain of their own. They see every byte on the tunnel's wire, UDP carried inside it included.
 const (
 	acctChain = "X_UI_FRONT_ACCT"
 	acctMark  = "3x-ui:front-acct"
@@ -28,7 +29,7 @@ var acctParents = []string{"INPUT", "OUTPUT"}
 // acctArgs waits for the lock: the Psiphon guards and the cisco/OpenVPN NAT write these tables too.
 func acctArgs(args ...string) []string { return append([]string{"-w", "5"}, args...) }
 
-// acctRule counts one direction of one Backhaul leg: out is what the panel sends the
+// acctRule counts one direction of one front leg: out is what the panel sends the
 // front, the customers' download (traffic_out); in is what comes back, their upload.
 type acctRule struct {
 	id    int
@@ -72,22 +73,44 @@ func (r acctRule) matches(l acctLine) bool {
 		l.value("--comment") == acctMark+":"+r.reading() && l.value("-j") == "RETURN"
 }
 
-// acctRules is every rule the Backhaul fronts among fronts need, by family. A front
-// given by name has none: which address it dials is the resolver's, as in Established.
+// wireLegs are the tunnels a front's rules count: its own legs, and for BackPack the PROXY
+// leg too, counted before any port needs it so a rule already stands when one does.
+func wireLegs(front Pair) []Pair {
+	legs := Legs(front)
+	if front.Tool.norm() == ToolBackPack && !slices.ContainsFunc(legs, func(l Pair) bool { return l.Leg == LegProxy }) {
+		px := legs[0]
+		px.Leg, px.TunnelPort = LegProxy, front.TunnelPort+1
+		legs = append(legs, px)
+	}
+	return legs
+}
+
+// wireProto is what a leg's bytes ride to the front. BackPack's kcp and quic ride datagrams;
+// its other carriers, stealth included, keep TCP connections open.
+func wireProto(leg Pair) string {
+	if leg.Tool.norm() == ToolBackPack {
+		switch leg.Transport {
+		case TransportKCP, TransportQUIC, TransportUDP:
+			return "udp"
+		}
+		return "tcp"
+	}
+	if tcpCarried(leg.Transport) {
+		return "tcp"
+	}
+	return "udp"
+}
+
+// acctRules is every rule the fronts need, by family. A front given by name has none:
+// which address it dials is the resolver's, as in Established.
 func acctRules(fronts []Pair) (v4, v6 []acctRule) {
 	for _, front := range fronts {
-		if front.Tool.norm() != ToolBackhaul {
-			continue
-		}
 		addr, err := netip.ParseAddr(strings.TrimSpace(front.FrontAddress))
 		if err != nil {
 			continue
 		}
-		for _, leg := range Legs(front) {
-			proto := "udp"
-			if tcpCarried(leg.Transport) {
-				proto = "tcp"
-			}
+		for _, leg := range wireLegs(front) {
+			proto := wireProto(leg)
 			for _, out := range []bool{true, false} {
 				rule := acctRule{id: front.Id, leg: leg.Key(), out: out, proto: proto, addr: addr, port: leg.TunnelPort}
 				if addr.Is4() {

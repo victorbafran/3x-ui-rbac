@@ -3,7 +3,7 @@ package service
 import (
 	"encoding/json"
 	"maps"
-	"slices"
+	"strings"
 	"sync"
 	"time"
 
@@ -33,8 +33,9 @@ var frontRates = struct {
 	byRelay map[int]map[string]legRate
 }{byRelay: map[int]map[string]legRate{}}
 
-// CollectFrontTraffic adds to each enabled front what its tunnel carried since the
-// last reading: a BackPack front's from its client's counters, a Backhaul one's from the firewall's.
+// CollectFrontTraffic adds to each enabled front what its tunnel carried since the last
+// reading, from the panel's firewall: it sees every byte on the wire, UDP included. BackPack's
+// own counters carry TCP only, so they stand in just where the firewall has nothing.
 func (s *RelayService) CollectFrontTraffic() {
 	if global.IsStandby() {
 		return
@@ -47,18 +48,34 @@ func (s *RelayService) CollectFrontTraffic() {
 	}
 	now := time.Now()
 	var counted map[int]map[string]tunnel.LegMetrics
-	if slices.ContainsFunc(fronts, func(r model.Relay) bool { return frontTool(r) == tunnel.ToolBackhaul }) {
+	if len(fronts) > 0 {
 		var err error
 		counted, err = readFrontAcct(frontAcctPairs(fronts), now)
-		frontAcctReadErr.note("front traffic: could not read the Backhaul fronts' counters:", err)
+		frontAcctReadErr.note("front traffic: could not read the fronts' counters:", err)
 	}
 	for _, r := range fronts {
 		read := counted[r.Id]
-		if frontTool(r) == tunnel.ToolBackPack {
+		// Never both: BackPack's counters are a part of what the firewall counts.
+		if frontTool(r) == tunnel.ToolBackPack && len(read) == 0 && !countedByFirewall(r.MetricsLast) {
 			read = tunnel.FrontMetrics(r.Id, now)
 		}
 		collectFrontTraffic(r, read)
 	}
+}
+
+// countedByFirewall is whether a front's last reading came from the firewall, whose keys
+// carry a direction after a colon, rather than from BackPack's own counters.
+func countedByFirewall(last string) bool {
+	var legs map[string]tunnel.LegMetrics
+	if json.Unmarshal([]byte(last), &legs) != nil {
+		return false
+	}
+	for key := range legs {
+		if strings.Contains(key, ":") {
+			return true
+		}
+	}
+	return false
 }
 
 // Variables so a test stands in for the panel's own netfilter.
@@ -67,9 +84,9 @@ var (
 	readFrontAcct = tunnel.ReadFrontAcct
 )
 
-// countBackhaulFronts has the firewall count every enabled Backhaul front's tunnel and
-// no other; a standby copy dials none, so it counts none.
-func (s *RelayService) countBackhaulFronts() {
+// countFronts has the firewall count every enabled front's tunnel and no other; a
+// standby copy dials none, so it counts none.
+func (s *RelayService) countFronts() {
 	var fronts []model.Relay
 	if !global.IsStandby() {
 		if err := database.GetDB().Where("enabled = ? AND role = ?", true, model.RelayFront).
@@ -78,7 +95,7 @@ func (s *RelayService) countBackhaulFronts() {
 			return
 		}
 	}
-	frontAcctFitErr.note("front traffic: the Backhaul fronts cannot be counted:", fitFrontAcct(frontAcctPairs(fronts)))
+	frontAcctFitErr.note("front traffic: the fronts cannot be counted:", fitFrontAcct(frontAcctPairs(fronts)))
 }
 
 // frontAcctPairs is what the firewall counts each front by: the address and port its rows name now.

@@ -155,8 +155,9 @@ var (
 )
 
 // What the panel sends a front is the customers' download and what comes back their
-// upload, on each Backhaul leg's own port and protocol; a BackPack front counts itself.
-func TestEachBackhaulLegIsCountedBothWaysAheadOfEveryOtherRule(t *testing.T) {
+// upload, on each leg's own port and protocol. BackPack's stealth rides TCP, and its PROXY
+// leg, one port up, is counted before any port needs it.
+func TestEachFrontLegIsCountedBothWaysAheadOfEveryOtherRule(t *testing.T) {
 	v4, v6 := newFakeNetfilter(t), newFakeNetfilter(t)
 	tables := &acctTables{v4: v4.run, v6: v6.run}
 	if err := tables.fit([]Pair{wsFront, bpFront, namedFront, v6Front, udpFront}); err != nil {
@@ -167,6 +168,10 @@ func TestEachBackhaulLegIsCountedBothWaysAheadOfEveryOtherRule(t *testing.T) {
 		`-s 203.0.113.9/32 -p tcp -m tcp --sport 3080 -m comment --comment "3x-ui:front-acct:7:in" -j RETURN`,
 		`-d 203.0.113.9/32 -p udp -m udp --dport 3081 -m comment --comment "3x-ui:front-acct:7-udp:out" -j RETURN`,
 		`-s 203.0.113.9/32 -p udp -m udp --sport 3081 -m comment --comment "3x-ui:front-acct:7-udp:in" -j RETURN`,
+		`-d 203.0.113.8/32 -p tcp -m tcp --dport 3080 -m comment --comment "3x-ui:front-acct:8:out" -j RETURN`,
+		`-s 203.0.113.8/32 -p tcp -m tcp --sport 3080 -m comment --comment "3x-ui:front-acct:8:in" -j RETURN`,
+		`-d 203.0.113.8/32 -p tcp -m tcp --dport 3081 -m comment --comment "3x-ui:front-acct:8-proxy:out" -j RETURN`,
+		`-s 203.0.113.8/32 -p tcp -m tcp --sport 3081 -m comment --comment "3x-ui:front-acct:8-proxy:in" -j RETURN`,
 		`-d 198.51.100.11/32 -p udp -m udp --dport 5000 -m comment --comment "3x-ui:front-acct:11:out" -j RETURN`,
 		`-s 198.51.100.11/32 -p udp -m udp --sport 5000 -m comment --comment "3x-ui:front-acct:11:in" -j RETURN`,
 	})
@@ -231,20 +236,20 @@ func TestARefitTouchesOnlyTheFrontsThatChanged(t *testing.T) {
 	}
 }
 
-// With no Backhaul front left the jumps and the chain go and every other rule
-// stays; after that, and on a panel that never had one, no iptables runs at all.
-func TestNoBackhaulFrontLeavesNothingAndThenRunsNothing(t *testing.T) {
+// With no front left the jumps and the chain go and every other rule stays; after
+// that, and on a panel that never had one, no iptables runs at all.
+func TestNoFrontLeavesNothingAndThenRunsNothing(t *testing.T) {
 	v4, v6 := newFakeNetfilter(t), newFakeNetfilter(t)
 	tables := &acctTables{v4: v4.run, v6: v6.run}
 	if err := tables.fit([]Pair{wsFront, v6Front}); err != nil {
 		t.Fatal(err)
 	}
-	if err := tables.fit([]Pair{bpFront}); err != nil {
+	if err := tables.fit(nil); err != nil {
 		t.Fatal(err)
 	}
 	for _, f := range []*fakeNetfilter{v4, v6} {
 		if _, ok := f.chains[acctChain]; ok {
-			t.Errorf("the chain outlived the last Backhaul front: %v", f.chains[acctChain])
+			t.Errorf("the chain outlived the last front: %v", f.chains[acctChain])
 		}
 		wantChain(t, f, "INPUT", []string{
 			`-p tcp -m tcp --dport 11583 -m conntrack ! --ctstate DNAT -m comment --comment "3x-ui:psiphon" -j DROP`,
@@ -352,6 +357,44 @@ func TestTheCountersAreReadByFrontLegAndDirection(t *testing.T) {
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("read %v\nwant %v", got, want)
+	}
+}
+
+// A BackPack front's bytes are counted on the wire like a Backhaul front's, which is what
+// gives its UDP a count: BackPack's own counters carry TCP only. The datagram carriers,
+// kcp and quic, are counted on UDP ports, stealth and the rest on TCP.
+func TestABackPackFrontIsCountedOnTheWireByItsCarrier(t *testing.T) {
+	kcpFront := Pair{Id: 12, FrontAddress: "203.0.113.12", TunnelPort: 4080, Transport: TransportKCP, Tool: ToolBackPack}
+	wsBackPack := Pair{Id: 13, FrontAddress: "203.0.113.13", TunnelPort: 5080, Transport: TransportWS, Tool: ToolBackPack}
+	v4, v6 := newFakeNetfilter(t), newFakeNetfilter(t)
+	tables := &acctTables{v4: v4.run, v6: v6.run}
+	if err := tables.fit([]Pair{bpFront, kcpFront, wsBackPack}); err != nil {
+		t.Fatal(err)
+	}
+	want := []string{
+		`-d 203.0.113.8/32 -p tcp -m tcp --dport 3080 -m comment --comment "3x-ui:front-acct:8:out" -j RETURN`,
+		`-s 203.0.113.8/32 -p tcp -m tcp --sport 3080 -m comment --comment "3x-ui:front-acct:8:in" -j RETURN`,
+		`-d 203.0.113.8/32 -p tcp -m tcp --dport 3081 -m comment --comment "3x-ui:front-acct:8-proxy:out" -j RETURN`,
+		`-s 203.0.113.8/32 -p tcp -m tcp --sport 3081 -m comment --comment "3x-ui:front-acct:8-proxy:in" -j RETURN`,
+		`-d 203.0.113.12/32 -p udp -m udp --dport 4080 -m comment --comment "3x-ui:front-acct:12:out" -j RETURN`,
+		`-s 203.0.113.12/32 -p udp -m udp --sport 4080 -m comment --comment "3x-ui:front-acct:12:in" -j RETURN`,
+		`-d 203.0.113.12/32 -p udp -m udp --dport 4081 -m comment --comment "3x-ui:front-acct:12-proxy:out" -j RETURN`,
+		`-s 203.0.113.12/32 -p udp -m udp --sport 4081 -m comment --comment "3x-ui:front-acct:12-proxy:in" -j RETURN`,
+		`-d 203.0.113.13/32 -p tcp -m tcp --dport 5080 -m comment --comment "3x-ui:front-acct:13:out" -j RETURN`,
+		`-s 203.0.113.13/32 -p tcp -m tcp --sport 5080 -m comment --comment "3x-ui:front-acct:13:in" -j RETURN`,
+		`-d 203.0.113.13/32 -p tcp -m tcp --dport 5081 -m comment --comment "3x-ui:front-acct:13-proxy:out" -j RETURN`,
+		`-s 203.0.113.13/32 -p tcp -m tcp --sport 5081 -m comment --comment "3x-ui:front-acct:13-proxy:in" -j RETURN`,
+	}
+	wantChain(t, v4, acctChain, want)
+
+	v4.count("8:out", 6_000_000)
+	v4.count("8:in", 40_000)
+	got, err := tables.read([]Pair{bpFront}, time.Unix(1_793_000_000, 0))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got[8]["8:out"].BytesOut != 6_000_000 || got[8]["8:in"].BytesIn != 40_000 {
+		t.Fatalf("read %v; want 6000000 out and 40000 in for front 8", got[8])
 	}
 }
 

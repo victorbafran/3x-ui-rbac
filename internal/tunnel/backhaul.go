@@ -103,6 +103,10 @@ type Pair struct {
 	ProxyPorts []int
 	// ProxyProtocol is set by Legs on the leg that sends that header.
 	ProxyProtocol bool
+	// UDPOnlyPorts are forwarded ports whose service listens on UDP alone. The front forwards
+	// every port both ways, so a stranger's TCP connection to one is refused on this side, as
+	// it should be, and the client's log of that refusal is folded.
+	UDPOnlyPorts []int
 }
 
 // ServerConfig is what runs on the front machine — the one customers reach.

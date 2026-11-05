@@ -152,7 +152,7 @@ func (m *Manager) Ensure(p Pair) error {
 	}
 
 	proc := sidecar.New(binary, "tunnel "+key, "-c", path)
-	proc.SetNoise(acmePortNoise...)
+	proc.SetNoise(refusalNoise(p)...)
 	if err := proc.Start(); err != nil {
 		return fmt.Errorf("start the tunnel client: %w", err)
 	}
@@ -161,15 +161,31 @@ func (m *Manager) Ensure(p Pair) error {
 	return nil
 }
 
-// acmePortNoise folds BackPack's six-line refusal for a scanner reaching
-// ACMEPort between issuances; the same refusal for any other port is a real fault.
-var acmePortNoise = []sidecar.NoiseRule{{
-	Kind: fmt.Sprintf("nothing on :%d", ACMEPort),
-	Line: regexp.MustCompile(`\[ERROR\] nothing is listening on 127\.0\.0\.1:` + strconv.Itoa(ACMEPort) + ` on THIS server\.$`),
-	Continuation: regexp.MustCompile(`^(The tunnel delivered the connection correctly|service being forwarded to\. Either it is not running|` +
-		`to a different address \(many panels bind a public IP|Check with:\s+ss -tlnp \| grep :?` + strconv.Itoa(ACMEPort) + `$|` +
-		`\(repeats are suppressed for \d+s\)$)`),
-}}
+// refusalRule folds BackPack's six-line refusal for a connection to port, which the front
+// forwards and nothing on this side answers.
+func refusalRule(port int) sidecar.NoiseRule {
+	p := strconv.Itoa(port)
+	return sidecar.NoiseRule{
+		Kind: "nothing on :" + p,
+		Line: regexp.MustCompile(`\[ERROR\] nothing is listening on 127\.0\.0\.1:` + p + ` on THIS server\.$`),
+		Continuation: regexp.MustCompile(`^(The tunnel delivered the connection correctly|service being forwarded to\. Either it is not running|` +
+			`to a different address \(many panels bind a public IP|Check with:\s+ss -tlnp \| grep :?` + p + `$|` +
+			`\(repeats are suppressed for \d+s\)$)`),
+	}
+}
+
+// refusalNoise is the refusals a stranger's knock makes, folded: the ACME port between
+// issuances, and a UDP-only service's port, which no TCP connection can reach. The same
+// refusal for a port a TCP service should answer is a real fault and stays.
+func refusalNoise(p Pair) []sidecar.NoiseRule {
+	rules := []sidecar.NoiseRule{refusalRule(ACMEPort)}
+	for _, port := range p.UDPOnlyPorts {
+		if port != ACMEPort {
+			rules = append(rules, refusalRule(port))
+		}
+	}
+	return rules
+}
 
 // ownedBy is whether a leg's key belongs to tunnel id.
 func ownedBy(key string, id int) bool {

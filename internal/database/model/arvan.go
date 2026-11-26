@@ -13,7 +13,7 @@ type ArvanFront struct {
 	RecordId      string `json:"recordId" gorm:"not null;default:''"`
 	ReserveTarget int    `json:"reserveTarget" gorm:"not null;default:0"`
 	AutoSwap      bool   `json:"autoSwap" gorm:"not null;default:false"`
-	DailySwapAt   string `json:"dailySwapAt" gorm:"not null;default:''"` // "" or "HH:MM" in the panel's time zone
+	DailySwapAt   string `json:"dailySwapAt" gorm:"not null;default:''"` // "" or "HH:MM, HH:MM" in the panel's time zone
 	Prepared      bool   `json:"prepared" gorm:"not null;default:false"`
 	ActiveFails   int    `json:"activeFails" gorm:"not null;default:0"`
 	LastCheck     int64  `json:"lastCheck"`

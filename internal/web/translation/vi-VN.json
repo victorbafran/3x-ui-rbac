@@ -2864,7 +2864,7 @@
           "autoSwap": "Tự động chuyển đổi",
           "autoSwapHint": "Sau khoảng 3 lần kiểm tra thất bại cách nhau một phút, chuyển sang IP dự phòng còn tốt. Nếu không có dự phòng, lấy IP mới từ Arvan, kiểm tra, chuyển sang rồi trả lại IP hỏng.",
           "dailySwapAt": "Chuyển đổi hằng ngày lúc",
-          "dailySwapAtHint": "HH:MM theo múi giờ của bảng điều khiển. Để trống là tắt.",
+          "dailySwapAtHint": "HH:MM theo múi giờ của bảng điều khiển; nhiều giờ cách nhau bằng dấu phẩy, ví dụ 04:30, 16:30 (tối đa 6). Mỗi lần đổi lấy một IP mới. Để trống là tắt.",
           "save": "Lưu cài đặt"
         },
         "prepare": {
@@ -2918,7 +2918,7 @@
         },
         "errors": {
           "reserveTarget": "Nhập một số nguyên từ 0 đến 3.",
-          "dailySwapAt": "Dùng dạng HH:MM, ví dụ 04:30, hoặc để trống."
+          "dailySwapAt": "Nhập giờ HH:MM cách nhau bằng dấu phẩy, ví dụ 04:30, 16:30, hoặc để trống."
         },
         "toasts": {
           "key": "Lưu khóa ArvanCloud",

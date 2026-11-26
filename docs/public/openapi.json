@@ -12449,7 +12449,7 @@
         "tags": [
           "Exit and entry servers"
         ],
-        "summary": "Save the DNS record to move on a swap and the reserve settings. reserveTarget is how many tested reserve IPs to keep (0–3: a server takes at most four IPs, and each costs money every hour it is held). autoSwap moves to a healthy reserve after three failed checks a minute apart; dailySwapAt swaps once a day at that time in the panel’s time zone (\"\" turns it off). Returns the state as the GET does.",
+        "summary": "Save the DNS record to move on a swap and the reserve settings. reserveTarget is how many tested reserve IPs to keep (0–3: a server takes at most four IPs, and each costs money every hour it is held). autoSwap moves to a healthy reserve after three failed checks a minute apart; dailySwapAt swaps every day at each of its times in the panel’s time zone: one or more HH:MM separated by commas, at most six, stored sorted as \"04:30, 16:30\" (\"\" turns it off). Returns the state as the GET does.",
         "operationId": "post_panel_api_relays_arvan_front_id_save",
         "parameters": [
           {
@@ -12474,7 +12474,7 @@
                 "recordName": "tun",
                 "reserveTarget": 1,
                 "autoSwap": true,
-                "dailySwapAt": "04:30"
+                "dailySwapAt": "04:30, 16:30"
               }
             }
           }

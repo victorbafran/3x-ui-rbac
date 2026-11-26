@@ -83,11 +83,15 @@ export const ArvanFrontFormSchema = z.object({
     .min(0, 'pages.relays.arvan.errors.reserveTarget')
     .max(ARVAN_MAX_RESERVES, 'pages.relays.arvan.errors.reserveTarget'),
   autoSwap: z.boolean(),
-  // "" turns the daily swap off; otherwise HH:MM in the panel's time zone.
+  // "" turns the daily swap off; otherwise one or more HH:MM in the panel's time zone,
+  // separated by commas (the Persian one too) or spaces. The server sorts them and caps the count.
   dailySwapAt: z
     .string()
     .trim()
-    .regex(/^(?:|(?:[01]\d|2[0-3]):[0-5]\d)$/, 'pages.relays.arvan.errors.dailySwapAt'),
+    .regex(
+      /^(?:|(?:[01]?\d|2[0-3]):[0-5]\d(?:\s*[,،\s]\s*(?:[01]?\d|2[0-3]):[0-5]\d)*)$/,
+      'pages.relays.arvan.errors.dailySwapAt',
+    ),
 });
 export type ArvanFrontFormValues = z.infer<typeof ArvanFrontFormSchema>;
 

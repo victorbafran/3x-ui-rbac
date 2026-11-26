@@ -498,7 +498,7 @@ export default function ArvanFrontModal({ relay, onClose }: ArvanFrontModalProps
                     extra={t('pages.relays.arvan.settings.dailySwapAtHint')}
                     rules={{ validate: rhfZodValidate(ArvanFrontFormSchema.shape.dailySwapAt) }}
                   >
-                    <Input placeholder="04:30" dir="ltr" style={{ width: 120 }} allowClear />
+                    <Input placeholder="04:30, 16:30" dir="ltr" style={{ width: 260 }} allowClear />
                   </FormField>
                   <Button
                     type="primary"

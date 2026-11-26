@@ -2864,7 +2864,7 @@
           "autoSwap": "自动切换",
           "autoSwapHint": "每隔一分钟检查一次，约 3 次失败后切换到健康的备用 IP。没有备用时，会向 Arvan 申请新 IP，测试后切换过去，并释放坏掉的 IP。",
           "dailySwapAt": "每天切换时间",
-          "dailySwapAtHint": "按面板时区填写 HH:MM。留空即关闭。",
+          "dailySwapAtHint": "面板时区的 HH:MM；多个时间用逗号分隔，例如 04:30, 16:30（最多 6 个）。每次切换都会获取一个新 IP。留空即关闭。",
           "save": "保存设置"
         },
         "prepare": {
@@ -2918,7 +2918,7 @@
         },
         "errors": {
           "reserveTarget": "请输入 0 到 3 之间的整数。",
-          "dailySwapAt": "请使用 HH:MM 格式，例如 04:30，或留空。"
+          "dailySwapAt": "请输入用逗号分隔的 HH:MM 时间，例如 04:30, 16:30，或留空。"
         },
         "toasts": {
           "key": "保存 ArvanCloud 密钥",

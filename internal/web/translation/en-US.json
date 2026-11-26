@@ -2864,7 +2864,7 @@
           "autoSwap": "Swap automatically",
           "autoSwapHint": "After about 3 failed checks a minute apart, moves to a healthy reserve. With no reserve it takes a fresh IP from Arvan, tests it, moves to it and releases the broken one.",
           "dailySwapAt": "Swap every day at",
-          "dailySwapAtHint": "HH:MM in the panel’s time zone. Empty turns it off.",
+          "dailySwapAtHint": "HH:MM in the panel’s time zone; several times separated by commas, such as 04:30, 16:30 (at most 6). Each swap takes a fresh IP. Empty turns it off.",
           "save": "Save settings"
         },
         "prepare": {
@@ -2918,7 +2918,7 @@
         },
         "errors": {
           "reserveTarget": "Enter a whole number from 0 to 3.",
-          "dailySwapAt": "Use HH:MM, such as 04:30, or leave it empty."
+          "dailySwapAt": "Use HH:MM times separated by commas, such as 04:30, 16:30, or leave it empty."
         },
         "toasts": {
           "key": "Save ArvanCloud key",

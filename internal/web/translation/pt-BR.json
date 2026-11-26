@@ -2864,7 +2864,7 @@
           "autoSwap": "Trocar automaticamente",
           "autoSwapHint": "Após cerca de 3 verificações com falha, com um minuto entre elas, passa para uma reserva saudável. Sem reserva, pega um IP novo na Arvan, testa, muda para ele e libera o que falhou.",
           "dailySwapAt": "Trocar todo dia às",
-          "dailySwapAtHint": "HH:MM no fuso horário do painel. Vazio desliga.",
+          "dailySwapAtHint": "HH:MM no fuso horário do painel; vários horários separados por vírgulas, como 04:30, 16:30 (no máximo 6). Cada troca pega um IP novo. Vazio desativa.",
           "save": "Salvar configurações"
         },
         "prepare": {
@@ -2918,7 +2918,7 @@
         },
         "errors": {
           "reserveTarget": "Informe um número inteiro de 0 a 3.",
-          "dailySwapAt": "Use HH:MM, como 04:30, ou deixe vazio."
+          "dailySwapAt": "Use horários HH:MM separados por vírgulas, como 04:30, 16:30, ou deixe vazio."
         },
         "toasts": {
           "key": "Salvar chave da ArvanCloud",

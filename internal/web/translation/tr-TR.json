@@ -2864,7 +2864,7 @@
           "autoSwap": "Otomatik geçiş",
           "autoSwapHint": "Bir dakika arayla yaklaşık 3 başarısız denetimden sonra sağlıklı bir yedeğe geçer. Yedek yoksa Arvan'dan yeni bir IP alır, test eder, ona geçer ve bozuk olanı bırakır.",
           "dailySwapAt": "Her gün şu saatte geçiş",
-          "dailySwapAtHint": "Panelin saat diliminde HH:MM. Boş bırakılırsa kapalıdır.",
+          "dailySwapAtHint": "Panelin saat diliminde HH:MM; birden çok saat virgülle ayrılır, örneğin 04:30, 16:30 (en fazla 6). Her değişim yeni bir IP alır. Boş bırakmak kapatır.",
           "save": "Ayarları kaydet"
         },
         "prepare": {
@@ -2918,7 +2918,7 @@
         },
         "errors": {
           "reserveTarget": "0 ile 3 arasında bir tam sayı girin.",
-          "dailySwapAt": "04:30 gibi HH:MM kullanın ya da boş bırakın."
+          "dailySwapAt": "Saatleri HH:MM biçiminde virgülle ayırarak yazın, örneğin 04:30, 16:30, ya da boş bırakın."
         },
         "toasts": {
           "key": "ArvanCloud anahtarını kaydetme",

@@ -2864,7 +2864,7 @@
           "autoSwap": "Tukar otomatis",
           "autoSwapHint": "Setelah sekitar 3 pemeriksaan gagal berjarak satu menit, pindah ke cadangan yang sehat. Tanpa cadangan, ambil IP baru dari Arvan, uji, pindah ke sana, lalu lepaskan IP yang rusak.",
           "dailySwapAt": "Tukar setiap hari pukul",
-          "dailySwapAtHint": "HH:MM menurut zona waktu panel. Kosong berarti mati.",
+          "dailySwapAtHint": "HH:MM dalam zona waktu panel; beberapa waktu dipisah koma, misalnya 04:30, 16:30 (maksimal 6). Setiap pergantian mengambil IP baru. Kosong berarti mati.",
           "save": "Simpan pengaturan"
         },
         "prepare": {
@@ -2918,7 +2918,7 @@
         },
         "errors": {
           "reserveTarget": "Masukkan bilangan bulat dari 0 sampai 3.",
-          "dailySwapAt": "Gunakan HH:MM, misalnya 04:30, atau biarkan kosong."
+          "dailySwapAt": "Gunakan waktu HH:MM yang dipisah koma, misalnya 04:30, 16:30, atau biarkan kosong."
         },
         "toasts": {
           "key": "Simpan kunci ArvanCloud",

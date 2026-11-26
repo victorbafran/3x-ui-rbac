@@ -2864,7 +2864,7 @@
           "autoSwap": "Prepínať automaticky",
           "autoSwapHint": "Po asi 3 neúspešných kontrolách s odstupom minúty prejde na zdravú rezervu. Bez rezervy si vezme novú IP z Arvanu, otestuje ju, prejde na ňu a uvoľní pokazenú.",
           "dailySwapAt": "Prepínať každý deň o",
-          "dailySwapAtHint": "HH:MM v časovom pásme panela. Prázdne ho vypne.",
+          "dailySwapAtHint": "HH:MM v časovom pásme panela; viac časov oddelených čiarkou, napríklad 04:30, 16:30 (najviac 6). Každá výmena berie novú IP. Prázdne ju vypne.",
           "save": "Uložiť nastavenia"
         },
         "prepare": {
@@ -2918,7 +2918,7 @@
         },
         "errors": {
           "reserveTarget": "Zadajte celé číslo od 0 do 3.",
-          "dailySwapAt": "Použite HH:MM, napríklad 04:30, alebo nechajte prázdne."
+          "dailySwapAt": "Zadajte časy HH:MM oddelené čiarkou, napríklad 04:30, 16:30, alebo nechajte prázdne."
         },
         "toasts": {
           "key": "Uložiť kľúč ArvanCloud",

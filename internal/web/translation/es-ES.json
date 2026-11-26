@@ -2864,7 +2864,7 @@
           "autoSwap": "Cambiar automáticamente",
           "autoSwapHint": "Tras unas 3 comprobaciones fallidas con un minuto de separación, pasa a una reserva sana. Sin reserva, pide una IP nueva a Arvan, la prueba, se cambia a ella y libera la averiada.",
           "dailySwapAt": "Cambiar cada día a las",
-          "dailySwapAtHint": "HH:MM en la zona horaria del panel. Vacío lo desactiva.",
+          "dailySwapAtHint": "HH:MM en la zona horaria del panel; varias horas separadas por comas, como 04:30, 16:30 (6 como máximo). Cada cambio toma una IP nueva. Vacío lo desactiva.",
           "save": "Guardar ajustes"
         },
         "prepare": {
@@ -2918,7 +2918,7 @@
         },
         "errors": {
           "reserveTarget": "Introduce un número entero de 0 a 3.",
-          "dailySwapAt": "Usa HH:MM, por ejemplo 04:30, o déjalo vacío."
+          "dailySwapAt": "Usa horas HH:MM separadas por comas, como 04:30, 16:30, o déjalo vacío."
         },
         "toasts": {
           "key": "Guardar clave de ArvanCloud",

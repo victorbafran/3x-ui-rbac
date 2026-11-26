@@ -153,9 +153,11 @@ _openapi:
         reserveTarget is how many tested reserve IPs to keep (0–3: a server
         takes at most four IPs, and each costs money every hour it is held).
         autoSwap moves to a healthy reserve after three failed checks a minute
-        apart; dailySwapAt swaps once a day at that time in the panel’s time
-        zone ("" turns it off). Returns the state as the GET does.'
-      url: '#save-the-dns-record-to-move-on-a-swap-and-the-reserve-settings-reservetarget-is-how-many-tested-reserve-ips-to-keep-03-a-server-takes-at-most-four-ips-and-each-costs-money-every-hour-it-is-held-autoswap-moves-to-a-healthy-reserve-after-three-failed-checks-a-minute-apart-dailyswapat-swaps-once-a-day-at-that-time-in-the-panels-time-zone--turns-it-off-returns-the-state-as-the-get-does'
+        apart; dailySwapAt swaps every day at each of its times in the panel’s
+        time zone: one or more HH:MM separated by commas, at most six, stored
+        sorted as "04:30, 16:30" ("" turns it off). Returns the state as the GET
+        does.'
+      url: '#save-the-dns-record-to-move-on-a-swap-and-the-reserve-settings-reservetarget-is-how-many-tested-reserve-ips-to-keep-03-a-server-takes-at-most-four-ips-and-each-costs-money-every-hour-it-is-held-autoswap-moves-to-a-healthy-reserve-after-three-failed-checks-a-minute-apart-dailyswapat-swaps-every-day-at-each-of-its-times-in-the-panels-time-zone-one-or-more-hhmm-separated-by-commas-at-most-six-stored-sorted-as-0430-1630--turns-it-off-returns-the-state-as-the-get-does'
     - depth: 2
       title: Install per-IP routing on the entry server over SSH, so an IP added later
         never takes the active IP’s replies or cuts it off; the active IP keeps
@@ -411,9 +413,11 @@ _openapi:
           reserveTarget is how many tested reserve IPs to keep (0–3: a server
           takes at most four IPs, and each costs money every hour it is held).
           autoSwap moves to a healthy reserve after three failed checks a minute
-          apart; dailySwapAt swaps once a day at that time in the panel’s time
-          zone ("" turns it off). Returns the state as the GET does.'
-        id: save-the-dns-record-to-move-on-a-swap-and-the-reserve-settings-reservetarget-is-how-many-tested-reserve-ips-to-keep-03-a-server-takes-at-most-four-ips-and-each-costs-money-every-hour-it-is-held-autoswap-moves-to-a-healthy-reserve-after-three-failed-checks-a-minute-apart-dailyswapat-swaps-once-a-day-at-that-time-in-the-panels-time-zone--turns-it-off-returns-the-state-as-the-get-does
+          apart; dailySwapAt swaps every day at each of its times in the panel’s
+          time zone: one or more HH:MM separated by commas, at most six, stored
+          sorted as "04:30, 16:30" ("" turns it off). Returns the state as the
+          GET does.'
+        id: save-the-dns-record-to-move-on-a-swap-and-the-reserve-settings-reservetarget-is-how-many-tested-reserve-ips-to-keep-03-a-server-takes-at-most-four-ips-and-each-costs-money-every-hour-it-is-held-autoswap-moves-to-a-healthy-reserve-after-three-failed-checks-a-minute-apart-dailyswapat-swaps-every-day-at-each-of-its-times-in-the-panels-time-zone-one-or-more-hhmm-separated-by-commas-at-most-six-stored-sorted-as-0430-1630--turns-it-off-returns-the-state-as-the-get-does
       - content: Install per-IP routing on the entry server over SSH, so an IP added
           later never takes the active IP’s replies or cuts it off; the active
           IP keeps the main default route. Needed once before reserves are

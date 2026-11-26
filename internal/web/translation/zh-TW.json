@@ -2827,6 +2827,56 @@
         "probe": "檢查出口伺服器",
         "deleted": "已移除"
       },
+      "arvanAdd": {
+        "button": "從 ArvanCloud",
+        "title": "來自 ArvanCloud 的入口伺服器",
+        "intro": "在你的 ArvanCloud 帳戶新建伺服器並免密碼加入為入口伺服器，或使用、刪除已有的伺服器。",
+        "keyHint": "貼上一個可建立、讀取和刪除伺服器的 ArvanCloud API 金鑰。面板會加密保存。",
+        "tabs": {
+          "new": "新伺服器",
+          "servers": "我的伺服器"
+        },
+        "new": {
+          "zone": "區域",
+          "size": "規格",
+          "sizeHint": "價格以 ArvanCloud 的列表為準。伺服器從建立起計費，直到刪除。",
+          "sizeOption": "{cpus} 核 · {ram} GB 記憶體 · {disk} GB · 每小時 {hour} · 每月 {month}",
+          "image": "作業系統",
+          "name": "名稱",
+          "nameHint": "用作 ArvanCloud 中的伺服器名和此處的入口伺服器名。不能有空格、冒號、逗號或斜線。",
+          "atLimit": "此區域已有你 {limit} 台上限中的 {count} 台伺服器。",
+          "create": "建立並加入",
+          "confirm": "在 ArvanCloud 建立伺服器 {name}？",
+          "confirmHint": "刪除前每小時 {hour}（每月 {month}）。之後面板會把它加入為 BackPack 入口伺服器並綁定以切換 IP。"
+        },
+        "progress": {
+          "title": "伺服器 {name}",
+          "steps": {
+            "key": "登記面板的金鑰",
+            "server": "建立伺服器",
+            "boot": "等待開機",
+            "ssh": "以面板金鑰連線",
+            "add": "加入為入口伺服器",
+            "bind": "建立隧道並綁定 ArvanCloud"
+          },
+          "ip": "IP：",
+          "done": "{name} 已就緒，並在入口伺服器列表中。"
+        },
+        "servers": {
+          "name": "名稱",
+          "zone": "區域",
+          "ips": "IP",
+          "status": "狀態",
+          "relay": "本面板",
+          "use": "用作入口伺服器",
+          "delete": "刪除",
+          "confirmDelete": "從 ArvanCloud 刪除 {name}？",
+          "confirmDeleteHint": "伺服器、磁碟和 IP 將永久消失，無法復原。",
+          "inUse": "{relay} 正在使用；請先在本面板刪除它。",
+          "refresh": "重新整理",
+          "hint": "「用作入口伺服器」會開啟帶有其位址的加入表單；需在那裡輸入一次 root 密碼。"
+        }
+      },
       "arvan": {
         "open": "ArvanCloud 備用 IP",
         "title": "ArvanCloud 備用 IP · {name}",
@@ -2930,7 +2980,11 @@
           "refill": "新增備用 IP",
           "test": "測試 IP",
           "swap": "切換使用中的 IP",
-          "release": "釋放 IP"
+          "release": "釋放 IP",
+          "catalog": "讀取 ArvanCloud 方案",
+          "servers": "列出 ArvanCloud 伺服器",
+          "create": "在 ArvanCloud 建立伺服器",
+          "deleteServer": "刪除 ArvanCloud 伺服器"
         }
       },
       "psiphon": {

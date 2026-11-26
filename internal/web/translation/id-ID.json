@@ -2827,6 +2827,56 @@
         "probe": "Periksa server keluar",
         "deleted": "Dihapus"
       },
+      "arvanAdd": {
+        "button": "Dari ArvanCloud",
+        "title": "Server masuk dari ArvanCloud",
+        "intro": "Buat server baru di akun ArvanCloud dan tambahkan sebagai server masuk tanpa kata sandi, atau pakai atau hapus server yang sudah ada.",
+        "keyHint": "Tempel kunci API ArvanCloud yang boleh membuat, membaca dan menghapus server. Panel menyimpannya terenkripsi.",
+        "tabs": {
+          "new": "Server baru",
+          "servers": "Server saya"
+        },
+        "new": {
+          "zone": "Zona",
+          "size": "Ukuran",
+          "sizeHint": "Harga sesuai daftar ArvanCloud. Server ditagih sejak dibuat hingga dihapus.",
+          "sizeOption": "{cpus} CPU · {ram} GB RAM · {disk} GB · {hour} per jam · {month} per bulan",
+          "image": "Sistem operasi",
+          "name": "Nama",
+          "nameHint": "Dipakai untuk server di ArvanCloud dan server masuk di sini. Tanpa spasi, titik dua, koma atau garis miring.",
+          "atLimit": "Zona ini sudah punya {count} dari {limit} server Anda, batas ArvanCloud.",
+          "create": "Buat dan tambahkan",
+          "confirm": "Buat server {name} di ArvanCloud?",
+          "confirmHint": "Biayanya {hour} per jam ({month} per bulan) sampai Anda menghapusnya. Lalu panel menambahkannya sebagai server masuk BackPack dan menautkannya untuk ganti IP."
+        },
+        "progress": {
+          "title": "Server {name}",
+          "steps": {
+            "key": "Daftarkan kunci panel",
+            "server": "Buat server",
+            "boot": "Tunggu hingga menyala",
+            "ssh": "Hubungi dengan kunci panel",
+            "add": "Tambahkan sebagai server masuk",
+            "bind": "Siapkan terowongan dan tautkan ke ArvanCloud"
+          },
+          "ip": "IP:",
+          "done": "{name} siap dan ada di daftar server masuk."
+        },
+        "servers": {
+          "name": "Nama",
+          "zone": "Zona",
+          "ips": "IP",
+          "status": "Status",
+          "relay": "Di panel ini",
+          "use": "Pakai sebagai server masuk",
+          "delete": "Hapus",
+          "confirmDelete": "Hapus {name} dari ArvanCloud?",
+          "confirmDeleteHint": "Server, disk dan IP-nya hilang selamanya. Tidak bisa dibatalkan.",
+          "inUse": "Dipakai oleh {relay}; hapus dulu di panel ini.",
+          "refresh": "Muat ulang",
+          "hint": "“Pakai sebagai server masuk” membuka formulir tambah dengan alamatnya; kata sandi root-nya diperlukan sekali di sana."
+        }
+      },
       "arvan": {
         "open": "IP cadangan di ArvanCloud",
         "title": "IP cadangan di ArvanCloud · {name}",
@@ -2930,7 +2980,11 @@
           "refill": "Tambah IP cadangan",
           "test": "Uji IP",
           "swap": "Tukar IP aktif",
-          "release": "Lepas IP"
+          "release": "Lepas IP",
+          "catalog": "Baca paket ArvanCloud",
+          "servers": "Daftar server ArvanCloud",
+          "create": "Buat server di ArvanCloud",
+          "deleteServer": "Hapus server ArvanCloud"
         }
       },
       "psiphon": {

@@ -2827,6 +2827,56 @@
         "probe": "Check the exit server",
         "deleted": "Removed"
       },
+      "arvanAdd": {
+        "button": "From ArvanCloud",
+        "title": "Entry server from ArvanCloud",
+        "intro": "Make a new server in your ArvanCloud account and add it as an entry server with no password, or use or delete a server that is already there.",
+        "keyHint": "Paste an ArvanCloud API key that may create, read and delete servers. The panel stores it encrypted.",
+        "tabs": {
+          "new": "New server",
+          "servers": "My servers"
+        },
+        "new": {
+          "zone": "Zone",
+          "size": "Size",
+          "sizeHint": "Prices as ArvanCloud lists them. A server is billed from the moment it is made until it is deleted.",
+          "sizeOption": "{cpus} CPU · {ram} GB RAM · {disk} GB · {hour} an hour · {month} a month",
+          "image": "Operating system",
+          "name": "Name",
+          "nameHint": "Used for the server in ArvanCloud and for the entry server here. No spaces, colons, commas or slashes.",
+          "atLimit": "This zone already has {count} of your {limit} servers, ArvanCloud’s limit.",
+          "create": "Make and add",
+          "confirm": "Make server {name} in ArvanCloud?",
+          "confirmHint": "It costs {hour} an hour ({month} a month) until you delete it. The panel then adds it as a BackPack entry server and binds it for IP swaps."
+        },
+        "progress": {
+          "title": "Server {name}",
+          "steps": {
+            "key": "Register the panel’s key",
+            "server": "Make the server",
+            "boot": "Wait for it to start",
+            "ssh": "Reach it with the panel’s key",
+            "add": "Add it as an entry server",
+            "bind": "Set up the tunnel and bind it to ArvanCloud"
+          },
+          "ip": "IP:",
+          "done": "{name} is ready and in the list of entry servers."
+        },
+        "servers": {
+          "name": "Name",
+          "zone": "Zone",
+          "ips": "IPs",
+          "status": "Status",
+          "relay": "On this panel",
+          "use": "Use as entry server",
+          "delete": "Delete",
+          "confirmDelete": "Delete {name} from ArvanCloud?",
+          "confirmDeleteHint": "The server, its disk and its IPs are gone for good. This cannot be undone.",
+          "inUse": "In use by {relay}; remove it on this panel first.",
+          "refresh": "Refresh",
+          "hint": "“Use as entry server” opens the add form with its address; its root password is needed there once."
+        }
+      },
       "arvan": {
         "open": "ArvanCloud reserve IPs",
         "title": "ArvanCloud reserve IPs · {name}",
@@ -2930,7 +2980,11 @@
           "refill": "Add reserve IPs",
           "test": "Test IPs",
           "swap": "Swap active IP",
-          "release": "Release IP"
+          "release": "Release IP",
+          "catalog": "Read ArvanCloud plans",
+          "servers": "List ArvanCloud servers",
+          "create": "Make a server in ArvanCloud",
+          "deleteServer": "Delete ArvanCloud server"
         }
       },
       "psiphon": {

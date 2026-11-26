@@ -186,6 +186,41 @@ _openapi:
         Returns at once.
       url: '#give-a-reserve-ip-back-to-arvancloud-for-good-the-active-ip-is-refused-returns-at-once'
     - depth: 2
+      title: 'What the ArvanCloud account offers a new entry server: zones (code,
+        city, dc, country) that take servers, and for one zone (?zone=, default
+        the first) its sizes cheapest first (id, cpus, memoryGb, diskGb,
+        pricePerHour and pricePerMonth as Arvan lists them), the Linux images
+        that take an SSH key at creation (id, distribution, version),
+        defaultImage (Ubuntu 24.04 when offered), and serverCount and
+        serverLimit for that zone.'
+      url: '#what-the-arvancloud-account-offers-a-new-entry-server-zones-code-city-dc-country-that-take-servers-and-for-one-zone-zone-default-the-first-its-sizes-cheapest-first-id-cpus-memorygb-diskgb-priceperhour-and-pricepermonth-as-arvan-lists-them-the-linux-images-that-take-an-ssh-key-at-creation-id-distribution-version-defaultimage-ubuntu-2404-when-offered-and-servercount-and-serverlimit-for-that-zone'
+    - depth: 2
+      title: 'Every server on the ArvanCloud account, zone by zone: zone, id, name,
+        status (lower case, such as "active" or "build"), its public ips, and
+        relay, the name of this panel’s relay at one of those addresses ("" when
+        none). A zone the key may not read is skipped.'
+      url: '#every-server-on-the-arvancloud-account-zone-by-zone-zone-id-name-status-lower-case-such-as-active-or-build-its-public-ips-and-relay-the-name-of-this-panels-relay-at-one-of-those-addresses--when-none-a-zone-the-key-may-not-read-is-skipped'
+    - depth: 2
+      title: Delete a server from the ArvanCloud account for good, with its disk and
+        IPs. Refused for a server whose public IP is the address of a relay on
+        this panel, and for the server a make is still working on.
+      url: '#delete-a-server-from-the-arvancloud-account-for-good-with-its-disk-and-ips-refused-for-a-server-whose-public-ip-is-the-address-of-a-relay-on-this-panel-and-for-the-server-a-make-is-still-working-on'
+    - depth: 2
+      title: 'The running or last make: running, step ("key", "server", "boot", "ssh",
+        "add", "bind", then "done"), error ("" while none), name, zone, serverId
+        and ip once known, relayId once added, startedAt and finishedAt.'
+      url: '#the-running-or-last-make-running-step-key-server-boot-ssh-add-bind-then-done-error--while-none-name-zone-serverid-and-ip-once-known-relayid-once-added-startedat-and-finishedat'
+    - depth: 2
+      title: 'Make a server in ArvanCloud and add it as an entry server, with no
+        password: the panel registers an SSH key it generated, makes the server
+        with it (billed from now on), waits for it to start and answer SSH on
+        that key, adds it as a BackPack (stealth, port 3080) entry server
+        enrolled with the same key, and once that is set up binds it to Arvan
+        and prepares it for IP swaps. size and image must be ones /arvan/catalog
+        offers for zone; name follows a relay name’s rules and must be unused.
+        Returns at once; one make runs at a time.'
+      url: '#make-a-server-in-arvancloud-and-add-it-as-an-entry-server-with-no-password-the-panel-registers-an-ssh-key-it-generated-makes-the-server-with-it-billed-from-now-on-waits-for-it-to-start-and-answer-ssh-on-that-key-adds-it-as-a-backpack-stealth-port-3080-entry-server-enrolled-with-the-same-key-and-once-that-is-set-up-binds-it-to-arvan-and-prepares-it-for-ip-swaps-size-and-image-must-be-ones-arvancatalog-offers-for-zone-name-follows-a-relay-names-rules-and-must-be-unused-returns-at-once-one-make-runs-at-a-time'
+    - depth: 2
       title: 'Psiphon on this panel’s own server: whether it can run here (supported
         is false on anything but x86_64 Linux), whether the binary is installed,
         the countries Psiphon offers (regions, ISO codes: the list read at
@@ -440,6 +475,37 @@ _openapi:
       - content: Give a reserve IP back to ArvanCloud for good. The active IP is
           refused. Returns at once.
         id: give-a-reserve-ip-back-to-arvancloud-for-good-the-active-ip-is-refused-returns-at-once
+      - content: 'What the ArvanCloud account offers a new entry server: zones (code,
+          city, dc, country) that take servers, and for one zone (?zone=,
+          default the first) its sizes cheapest first (id, cpus, memoryGb,
+          diskGb, pricePerHour and pricePerMonth as Arvan lists them), the Linux
+          images that take an SSH key at creation (id, distribution, version),
+          defaultImage (Ubuntu 24.04 when offered), and serverCount and
+          serverLimit for that zone.'
+        id: what-the-arvancloud-account-offers-a-new-entry-server-zones-code-city-dc-country-that-take-servers-and-for-one-zone-zone-default-the-first-its-sizes-cheapest-first-id-cpus-memorygb-diskgb-priceperhour-and-pricepermonth-as-arvan-lists-them-the-linux-images-that-take-an-ssh-key-at-creation-id-distribution-version-defaultimage-ubuntu-2404-when-offered-and-servercount-and-serverlimit-for-that-zone
+      - content: 'Every server on the ArvanCloud account, zone by zone: zone, id, name,
+          status (lower case, such as "active" or "build"), its public ips, and
+          relay, the name of this panel’s relay at one of those addresses (""
+          when none). A zone the key may not read is skipped.'
+        id: every-server-on-the-arvancloud-account-zone-by-zone-zone-id-name-status-lower-case-such-as-active-or-build-its-public-ips-and-relay-the-name-of-this-panels-relay-at-one-of-those-addresses--when-none-a-zone-the-key-may-not-read-is-skipped
+      - content: Delete a server from the ArvanCloud account for good, with its disk and
+          IPs. Refused for a server whose public IP is the address of a relay on
+          this panel, and for the server a make is still working on.
+        id: delete-a-server-from-the-arvancloud-account-for-good-with-its-disk-and-ips-refused-for-a-server-whose-public-ip-is-the-address-of-a-relay-on-this-panel-and-for-the-server-a-make-is-still-working-on
+      - content: 'The running or last make: running, step ("key", "server", "boot",
+          "ssh", "add", "bind", then "done"), error ("" while none), name, zone,
+          serverId and ip once known, relayId once added, startedAt and
+          finishedAt.'
+        id: the-running-or-last-make-running-step-key-server-boot-ssh-add-bind-then-done-error--while-none-name-zone-serverid-and-ip-once-known-relayid-once-added-startedat-and-finishedat
+      - content: 'Make a server in ArvanCloud and add it as an entry server, with no
+          password: the panel registers an SSH key it generated, makes the
+          server with it (billed from now on), waits for it to start and answer
+          SSH on that key, adds it as a BackPack (stealth, port 3080) entry
+          server enrolled with the same key, and once that is set up binds it to
+          Arvan and prepares it for IP swaps. size and image must be ones
+          /arvan/catalog offers for zone; name follows a relay name’s rules and
+          must be unused. Returns at once; one make runs at a time.'
+        id: make-a-server-in-arvancloud-and-add-it-as-an-entry-server-with-no-password-the-panel-registers-an-ssh-key-it-generated-makes-the-server-with-it-billed-from-now-on-waits-for-it-to-start-and-answer-ssh-on-that-key-adds-it-as-a-backpack-stealth-port-3080-entry-server-enrolled-with-the-same-key-and-once-that-is-set-up-binds-it-to-arvan-and-prepares-it-for-ip-swaps-size-and-image-must-be-ones-arvancatalog-offers-for-zone-name-follows-a-relay-names-rules-and-must-be-unused-returns-at-once-one-make-runs-at-a-time
       - content: 'Psiphon on this panel’s own server: whether it can run here (supported
           is false on anything but x86_64 Linux), whether the binary is
           installed, the countries Psiphon offers (regions, ISO codes: the list
@@ -542,7 +608,7 @@ export default function Layout(props) {
   return (
     <>
       {props.children}
-      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/relays/list","method":"get"},{"path":"/panel/api/relays/options","method":"get"},{"path":"/panel/api/relays/fronts","method":"get"},{"path":"/panel/api/relays/add","method":"post"},{"path":"/panel/api/relays/update/{id}","method":"post"},{"path":"/panel/api/relays/del/{id}","method":"post"},{"path":"/panel/api/relays/setEnable/{id}","method":"post"},{"path":"/panel/api/relays/probe/{id}","method":"post"},{"path":"/panel/api/relays/arvan/key","method":"get"},{"path":"/panel/api/relays/arvan/key","method":"post"},{"path":"/panel/api/relays/arvan/key/clear","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}","method":"get"},{"path":"/panel/api/relays/arvan/front/{id}/detect","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/save","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/prepare","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/refill","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/test","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/swap","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/release","method":"post"},{"path":"/panel/api/relays/psiphon/state","method":"get"},{"path":"/panel/api/relays/psiphon/install","method":"post"},{"path":"/panel/api/relays/psiphon/regions/refresh","method":"post"},{"path":"/panel/api/relays/psiphon/countries","method":"post"},{"path":"/panel/api/relays/psiphon/inbounds","method":"get"},{"path":"/panel/api/relays/psiphon/inbound/{id}","method":"post"},{"path":"/panel/api/relays/psiphon/warp","method":"post"},{"path":"/panel/api/relays/psiphon/traffic/reset","method":"post"},{"path":"/panel/api/relays/psiphon/test","method":"post"},{"path":"/panel/api/relays/psiphon/scan","method":"post"}]} showTitle />
+      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/relays/list","method":"get"},{"path":"/panel/api/relays/options","method":"get"},{"path":"/panel/api/relays/fronts","method":"get"},{"path":"/panel/api/relays/add","method":"post"},{"path":"/panel/api/relays/update/{id}","method":"post"},{"path":"/panel/api/relays/del/{id}","method":"post"},{"path":"/panel/api/relays/setEnable/{id}","method":"post"},{"path":"/panel/api/relays/probe/{id}","method":"post"},{"path":"/panel/api/relays/arvan/key","method":"get"},{"path":"/panel/api/relays/arvan/key","method":"post"},{"path":"/panel/api/relays/arvan/key/clear","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}","method":"get"},{"path":"/panel/api/relays/arvan/front/{id}/detect","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/save","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/prepare","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/refill","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/test","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/swap","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/release","method":"post"},{"path":"/panel/api/relays/arvan/catalog","method":"get"},{"path":"/panel/api/relays/arvan/servers","method":"get"},{"path":"/panel/api/relays/arvan/servers/delete","method":"post"},{"path":"/panel/api/relays/arvan/create","method":"get"},{"path":"/panel/api/relays/arvan/create","method":"post"},{"path":"/panel/api/relays/psiphon/state","method":"get"},{"path":"/panel/api/relays/psiphon/install","method":"post"},{"path":"/panel/api/relays/psiphon/regions/refresh","method":"post"},{"path":"/panel/api/relays/psiphon/countries","method":"post"},{"path":"/panel/api/relays/psiphon/inbounds","method":"get"},{"path":"/panel/api/relays/psiphon/inbound/{id}","method":"post"},{"path":"/panel/api/relays/psiphon/warp","method":"post"},{"path":"/panel/api/relays/psiphon/traffic/reset","method":"post"},{"path":"/panel/api/relays/psiphon/test","method":"post"},{"path":"/panel/api/relays/psiphon/scan","method":"post"}]} showTitle />
     </>
   );
 }

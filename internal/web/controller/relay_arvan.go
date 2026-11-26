@@ -22,6 +22,11 @@ type arvanIPRequest struct {
 	IP string `json:"ip"`
 }
 
+type arvanServerRequest struct {
+	Zone string `json:"zone"`
+	ID   string `json:"id"`
+}
+
 func (a *RelayController) initArvanRouter(g *gin.RouterGroup) {
 	g.GET("/arvan/key", a.arvanKey)
 	g.POST("/arvan/key", a.arvanSetKey)
@@ -34,6 +39,44 @@ func (a *RelayController) initArvanRouter(g *gin.RouterGroup) {
 	g.POST("/arvan/front/:id/test", a.arvanTest)
 	g.POST("/arvan/front/:id/swap", a.arvanSwap)
 	g.POST("/arvan/front/:id/release", a.arvanRelease)
+	g.GET("/arvan/catalog", a.arvanCatalog)
+	g.GET("/arvan/servers", a.arvanServers)
+	g.POST("/arvan/servers/delete", a.arvanDeleteServer)
+	g.GET("/arvan/create", a.arvanCreateState)
+	g.POST("/arvan/create", a.arvanCreate)
+}
+
+// arvanCatalog takes ?zone=; without one it answers for Arvan's first zone.
+func (a *RelayController) arvanCatalog(c *gin.Context) {
+	cat, err := a.arvanService.Catalog(c.Query("zone"))
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "pages.relays.arvan.toasts.catalog"), err)
+		return
+	}
+	jsonObj(c, cat, nil)
+}
+
+func (a *RelayController) arvanServers(c *gin.Context) {
+	servers, err := a.arvanService.Servers()
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "pages.relays.arvan.toasts.servers"), err)
+		return
+	}
+	jsonObj(c, servers, nil)
+}
+
+func (a *RelayController) arvanCreateState(c *gin.Context) {
+	jsonObj(c, a.arvanService.CreateState(), nil)
+}
+
+// arvanCreate starts making a server in Arvan and adding it as an entry server; it answers
+// at once, and GET /arvan/create follows the steps.
+func (a *RelayController) arvanCreate(c *gin.Context) {
+	req, ok := middleware.BindJSONAndValidate[service.ArvanCreateRequest](c)
+	if !ok {
+		return
+	}
+	jsonMsg(c, I18nWeb(c, "pages.relays.arvan.toasts.create"), a.arvanService.StartCreate(*req))
 }
 
 func (a *RelayController) arvanKey(c *gin.Context) {
@@ -141,4 +184,12 @@ func (a *RelayController) arvanRelease(c *gin.Context) {
 		return
 	}
 	a.arvanStart(c, I18nWeb(c, "pages.relays.arvan.toasts.release"), func(id int) error { return a.arvanService.Release(id, req.IP) })
+}
+
+func (a *RelayController) arvanDeleteServer(c *gin.Context) {
+	req, ok := middleware.BindJSONAndValidate[arvanServerRequest](c)
+	if !ok {
+		return
+	}
+	jsonMsg(c, I18nWeb(c, "pages.relays.arvan.toasts.deleteServer"), a.arvanService.DeleteServer(req.Zone, req.ID))
 }

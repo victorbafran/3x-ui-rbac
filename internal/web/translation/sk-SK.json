@@ -2827,6 +2827,56 @@
         "probe": "Skontrolovať výstupný server",
         "deleted": "Odstránené"
       },
+      "arvanAdd": {
+        "button": "Z ArvanCloud",
+        "title": "Vstupný server z ArvanCloud",
+        "intro": "Vytvorte nový server vo svojom účte ArvanCloud a pridajte ho ako vstupný server bez hesla, alebo použite či odstráňte server, ktorý tam už je.",
+        "keyHint": "Vložte API kľúč ArvanCloud, ktorý môže vytvárať, čítať a mazať servery. Panel ho uloží zašifrovaný.",
+        "tabs": {
+          "new": "Nový server",
+          "servers": "Moje servery"
+        },
+        "new": {
+          "zone": "Zóna",
+          "size": "Veľkosť",
+          "sizeHint": "Ceny podľa cenníka ArvanCloud. Server sa účtuje od vytvorenia až do zmazania.",
+          "sizeOption": "{cpus} CPU · {ram} GB RAM · {disk} GB · {hour} za hodinu · {month} za mesiac",
+          "image": "Operačný systém",
+          "name": "Názov",
+          "nameHint": "Použije sa pre server v ArvanCloud aj pre vstupný server tu. Bez medzier, dvojbodiek, čiarok a lomiek.",
+          "atLimit": "Táto zóna už má {count} z vašich {limit} serverov, limit ArvanCloud.",
+          "create": "Vytvoriť a pridať",
+          "confirm": "Vytvoriť server {name} v ArvanCloud?",
+          "confirmHint": "Stojí {hour} za hodinu ({month} za mesiac), kým ho nezmažete. Potom ho panel pridá ako vstupný server BackPack a naviaže na výmenu IP."
+        },
+        "progress": {
+          "title": "Server {name}",
+          "steps": {
+            "key": "Registrácia kľúča panela",
+            "server": "Vytvorenie servera",
+            "boot": "Čakanie na spustenie",
+            "ssh": "Pripojenie kľúčom panela",
+            "add": "Pridanie ako vstupný server",
+            "bind": "Nastavenie tunela a naviazanie na ArvanCloud"
+          },
+          "ip": "IP:",
+          "done": "{name} je pripravený a v zozname vstupných serverov."
+        },
+        "servers": {
+          "name": "Názov",
+          "zone": "Zóna",
+          "ips": "IP",
+          "status": "Stav",
+          "relay": "V tomto paneli",
+          "use": "Použiť ako vstupný server",
+          "delete": "Zmazať",
+          "confirmDelete": "Zmazať {name} z ArvanCloud?",
+          "confirmDeleteHint": "Server, jeho disk a IP zmiznú navždy. Nedá sa to vrátiť.",
+          "inUse": "Používa ho {relay}; najprv ho odstráňte v tomto paneli.",
+          "refresh": "Obnoviť",
+          "hint": "„Použiť ako vstupný server“ otvorí formulár s jeho adresou; heslo root je tam treba raz."
+        }
+      },
       "arvan": {
         "open": "Záložné IP v ArvanCloud",
         "title": "Záložné IP v ArvanCloud · {name}",
@@ -2930,7 +2980,11 @@
           "refill": "Pridať záložné IP",
           "test": "Otestovať IP",
           "swap": "Prepnúť aktívnu IP",
-          "release": "Uvoľniť IP"
+          "release": "Uvoľniť IP",
+          "catalog": "Načítanie plánov ArvanCloud",
+          "servers": "Zoznam serverov ArvanCloud",
+          "create": "Vytvorenie servera v ArvanCloud",
+          "deleteServer": "Zmazanie servera ArvanCloud"
         }
       },
       "psiphon": {

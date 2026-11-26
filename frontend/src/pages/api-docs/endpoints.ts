@@ -1891,6 +1891,38 @@ export const sections: readonly Section[] = [
       },
       {
         method: 'GET',
+        path: '/panel/api/relays/arvan/catalog',
+        summary:
+          'What the ArvanCloud account offers a new entry server: zones (code, city, dc, country) that take servers, and for one zone (?zone=, default the first) its sizes cheapest first (id, cpus, memoryGb, diskGb, pricePerHour and pricePerMonth as Arvan lists them), the Linux images that take an SSH key at creation (id, distribution, version), defaultImage (Ubuntu 24.04 when offered), and serverCount and serverLimit for that zone.',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/relays/arvan/servers',
+        summary:
+          'Every server on the ArvanCloud account, zone by zone: zone, id, name, status (lower case, such as "active" or "build"), its public ips, and relay, the name of this panel’s relay at one of those addresses ("" when none). A zone the key may not read is skipped.',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/relays/arvan/servers/delete',
+        summary:
+          'Delete a server from the ArvanCloud account for good, with its disk and IPs. Refused for a server whose public IP is the address of a relay on this panel, and for the server a make is still working on.',
+        body: '{\n  "zone": "ir-thr-fr1",\n  "id": "d0d4ad4d-…"\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/relays/arvan/create',
+        summary:
+          'Make a server in ArvanCloud and add it as an entry server, with no password: the panel registers an SSH key it generated, makes the server with it (billed from now on), waits for it to start and answer SSH on that key, adds it as a BackPack (stealth, port 3080) entry server enrolled with the same key, and once that is set up binds it to Arvan and prepares it for IP swaps. size and image must be ones /arvan/catalog offers for zone; name follows a relay name’s rules and must be unused. Returns at once; one make runs at a time.',
+        body: '{\n  "zone": "ir-thr-fr1",\n  "size": "eco-1-1-0",\n  "image": "f1cc8839-…",\n  "name": "ir2"\n}',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/relays/arvan/create',
+        summary:
+          'The running or last make: running, step ("key", "server", "boot", "ssh", "add", "bind", then "done"), error ("" while none), name, zone, serverId and ip once known, relayId once added, startedAt and finishedAt.',
+      },
+      {
+        method: 'GET',
         path: '/panel/api/relays/psiphon/state',
         summary:
           'Psiphon on this panel’s own server: whether it can run here (supported is false on anything but x86_64 Linux), whether the binary is installed, the countries Psiphon offers (regions, ISO codes: the list read at regionsAt, the fixed 27 and every country a scan saw connect), every country with its state (code, name, flag, enabled, running, connected, the region it connected through, the exitIp and exitLoc its last check saw, lastError, its local socksPort, and trafficDown and trafficUp: the bytes customers downloaded and uploaded through it since the last reset, saved every 30 seconds and kept while the country is off, test: its last test from the card, absent until one ran, and usedBy: what keeps it from being switched off, each entry a kind ("host", "cisco" or "openvpn"), the inbound by remark or tag, count (that inbound’s hosts leaving through it; 1 otherwise) and, for cisco, the location’s name; a disabled inbound counts, and an empty list means nothing holds it), the WARP setting (mode "off", "sites" or "all", the site rules one per line, and whether a WARP account is registered), and scan: the running or last scan of every country (running, stopped when a shutdown or standby cut it short, startedAt, finishedAt, total, which grows while the scan’s clients announce countries not yet queued, and results in the order the countries finished). A test or scan result has code, connected, exitIp, exitLoc, latencyMs (the trace request’s round trip), speed (the download in bytes per second), error and at; a scan result also has onRunning (measured through the client already running for that country) and new (it connected and was not offered before this scan). Customers who enter through an entry server reach the same countries, because their traffic lands on this panel’s inbounds.',

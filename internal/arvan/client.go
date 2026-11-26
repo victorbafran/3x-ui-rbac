@@ -71,6 +71,7 @@ func normaliseKey(key string) string {
 
 type Zone struct {
 	Code    string `json:"code"`
+	Country string `json:"country"`
 	City    string `json:"city"`
 	DC      string `json:"dc"`
 	Create  bool   `json:"create"`

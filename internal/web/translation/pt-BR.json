@@ -2827,6 +2827,56 @@
         "probe": "Verificar o servidor de saída",
         "deleted": "Removido"
       },
+      "arvanAdd": {
+        "button": "Do ArvanCloud",
+        "title": "Servidor de entrada do ArvanCloud",
+        "intro": "Crie um servidor novo na sua conta ArvanCloud e adicione-o como servidor de entrada sem senha, ou use ou exclua um servidor que já está lá.",
+        "keyHint": "Cole uma chave de API do ArvanCloud que possa criar, ler e excluir servidores. O painel a guarda criptografada.",
+        "tabs": {
+          "new": "Servidor novo",
+          "servers": "Meus servidores"
+        },
+        "new": {
+          "zone": "Zona",
+          "size": "Tamanho",
+          "sizeHint": "Preços conforme a lista do ArvanCloud. O servidor é cobrado desde a criação até ser excluído.",
+          "sizeOption": "{cpus} CPU · {ram} GB RAM · {disk} GB · {hour} por hora · {month} por mês",
+          "image": "Sistema operacional",
+          "name": "Nome",
+          "nameHint": "Usado para o servidor no ArvanCloud e para o servidor de entrada aqui. Sem espaços, dois-pontos, vírgulas ou barras.",
+          "atLimit": "Esta zona já tem {count} dos seus {limit} servidores, o limite do ArvanCloud.",
+          "create": "Criar e adicionar",
+          "confirm": "Criar o servidor {name} no ArvanCloud?",
+          "confirmHint": "Custa {hour} por hora ({month} por mês) até você excluí-lo. Depois o painel o adiciona como servidor de entrada BackPack e o vincula para troca de IP."
+        },
+        "progress": {
+          "title": "Servidor {name}",
+          "steps": {
+            "key": "Registrar a chave do painel",
+            "server": "Criar o servidor",
+            "boot": "Esperar ligar",
+            "ssh": "Conectar com a chave do painel",
+            "add": "Adicionar como servidor de entrada",
+            "bind": "Montar o túnel e vincular ao ArvanCloud"
+          },
+          "ip": "IP:",
+          "done": "{name} está pronto e na lista de servidores de entrada."
+        },
+        "servers": {
+          "name": "Nome",
+          "zone": "Zona",
+          "ips": "IPs",
+          "status": "Status",
+          "relay": "Neste painel",
+          "use": "Usar como servidor de entrada",
+          "delete": "Excluir",
+          "confirmDelete": "Excluir {name} do ArvanCloud?",
+          "confirmDeleteHint": "O servidor, o disco e os IPs somem para sempre. Não dá para desfazer.",
+          "inUse": "Em uso por {relay}; remova-o neste painel primeiro.",
+          "refresh": "Atualizar",
+          "hint": "“Usar como servidor de entrada” abre o formulário com o endereço; a senha root é pedida lá uma vez."
+        }
+      },
       "arvan": {
         "open": "IPs reserva na ArvanCloud",
         "title": "IPs reserva na ArvanCloud · {name}",
@@ -2930,7 +2980,11 @@
           "refill": "Adicionar IPs reserva",
           "test": "Testar IPs",
           "swap": "Trocar IP ativo",
-          "release": "Liberar IP"
+          "release": "Liberar IP",
+          "catalog": "Ler planos do ArvanCloud",
+          "servers": "Listar servidores do ArvanCloud",
+          "create": "Criar servidor no ArvanCloud",
+          "deleteServer": "Excluir servidor do ArvanCloud"
         }
       },
       "psiphon": {

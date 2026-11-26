@@ -3,8 +3,22 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { HttpUtil } from '@/utils';
 import type { Msg } from '@/utils';
 import { keys } from '@/api/queryKeys';
-import { ArvanFrontViewSchema, ArvanKeyStatusSchema } from '@/schemas/arvan';
-import type { ArvanFrontFormValues, ArvanFrontView, ArvanKeyStatus } from '@/schemas/arvan';
+import {
+  ArvanCatalogSchema,
+  ArvanCreateStateSchema,
+  ArvanFrontViewSchema,
+  ArvanKeyStatusSchema,
+  ArvanServerSchema,
+} from '@/schemas/arvan';
+import type {
+  ArvanCatalog,
+  ArvanCreateRequest,
+  ArvanCreateState,
+  ArvanFrontFormValues,
+  ArvanFrontView,
+  ArvanKeyStatus,
+  ArvanServer,
+} from '@/schemas/arvan';
 
 export type { ArvanFrontView, ArvanKeyStatus };
 
@@ -111,4 +125,68 @@ export function useArvanMutations(relayId: number) {
     swapMut: useStartedMutation(relayId, 'swap'),
     releaseMut: useStartedMutation(relayId, 'release'),
   };
+}
+
+// The account side: the key, what a zone offers, the servers there, and making a new entry
+// server. Nothing here is read until the window is open.
+
+async function fetchCatalog(zone: string): Promise<ArvanCatalog> {
+  const msg = await HttpUtil.get(`${BASE}/catalog`, zone ? { zone } : undefined, { silent: true });
+  if (!msg?.success) throw new Error(msg?.msg || 'Failed to read what ArvanCloud offers');
+  return ArvanCatalogSchema.parse(msg.obj ?? {});
+}
+
+export function useArvanCatalog(zone: string, enabled: boolean) {
+  return useQuery({
+    queryKey: keys.relays.arvan.catalog(zone),
+    queryFn: () => fetchCatalog(zone),
+    enabled,
+  });
+}
+
+async function fetchServers(): Promise<ArvanServer[]> {
+  const msg = await HttpUtil.get(`${BASE}/servers`, undefined, { silent: true });
+  if (!msg?.success) throw new Error(msg?.msg || 'Failed to list the ArvanCloud servers');
+  return ArvanServerSchema.array().parse(msg.obj ?? []);
+}
+
+export function useArvanServers(enabled: boolean) {
+  return useQuery({ queryKey: keys.relays.arvan.servers(), queryFn: fetchServers, enabled });
+}
+
+async function fetchCreateState(): Promise<ArvanCreateState> {
+  const msg = await HttpUtil.get(`${BASE}/create`, undefined, { silent: true });
+  if (!msg?.success) throw new Error(msg?.msg || 'Failed to read the new server');
+  return ArvanCreateStateSchema.parse(msg.obj ?? {});
+}
+
+// Read every 3 s while a server is being made, and not otherwise.
+export function useArvanCreateState(enabled: boolean) {
+  return useQuery({
+    queryKey: keys.relays.arvan.create(),
+    queryFn: fetchCreateState,
+    enabled,
+    refetchInterval: (q) => (q.state.data?.running ? 3000 : false),
+  });
+}
+
+export function useArvanAccountMutations() {
+  const queryClient = useQueryClient();
+  const refreshAll = () => queryClient.invalidateQueries({ queryKey: keys.relays.arvan.root() });
+  const saveKeyMut = useMutation({
+    mutationFn: (key: string) => HttpUtil.post(`${BASE}/key`, { key }, JSON_HEADERS),
+    onSuccess: (msg) => {
+      if (msg?.success) void refreshAll();
+    },
+  });
+  const createMut = useMutation({
+    mutationFn: (req: ArvanCreateRequest) => HttpUtil.post(`${BASE}/create`, req, JSON_HEADERS),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: keys.relays.arvan.create() }),
+  });
+  const deleteServerMut = useMutation({
+    mutationFn: (server: { zone: string; id: string }) =>
+      HttpUtil.post(`${BASE}/servers/delete`, server, JSON_HEADERS),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: keys.relays.arvan.servers() }),
+  });
+  return { saveKeyMut, createMut, deleteServerMut };
 }

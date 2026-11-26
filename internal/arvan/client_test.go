@@ -14,7 +14,9 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
+	"time"
 )
 
 type reply struct {
@@ -71,6 +73,7 @@ func replay(t *testing.T, key string, routes map[string]reply) (*Client, *replay
 	t.Cleanup(srv.Close)
 	old := Base
 	Base = srv.URL
+	ForgetZones()
 	c := New(key, srv.Client())
 	Base = old
 	return c, rs
@@ -673,5 +676,62 @@ func TestRoutingReconcilesRules(t *testing.T) {
 		if indexOf(calls, want) < 0 {
 			t.Errorf("missing %q\ncalls:\n%s", want, strings.Join(calls, "\n"))
 		}
+	}
+}
+
+// The region list is kept: asked once, answered from the kept copy while fresh, answered
+// at once and fetched again behind it when old, fetched before answering when very old, and
+// asked again after ForgetZones.
+func TestTheRegionListIsKept(t *testing.T) {
+	var asked atomic.Int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		asked.Add(1)
+		_, _ = io.WriteString(w, `{"data":[{"code":"ir-thr-fr1","visible":true}]}`)
+	}))
+	t.Cleanup(srv.Close)
+	old := Base
+	Base = srv.URL
+	ForgetZones()
+	c := New("kept-key", srv.Client())
+	Base = old
+	t.Cleanup(ForgetZones)
+	id := c.base + " " + c.key
+	age := func(d time.Duration) {
+		zoneCache.Lock()
+		k := zoneCache.byKey[id]
+		k.at = time.Now().Add(-d)
+		zoneCache.byKey[id] = k
+		zoneCache.Unlock()
+	}
+	zones := func() {
+		t.Helper()
+		got, err := c.Zones(context.Background())
+		if err != nil || len(got) != 1 || got[0].Code != "ir-thr-fr1" {
+			t.Fatalf("zones %+v, %v", got, err)
+		}
+	}
+	zones()
+	zones()
+	if n := asked.Load(); n != 1 {
+		t.Fatalf("a fresh list was asked for %d times", n)
+	}
+	age(zonesFresh + time.Minute)
+	zones()
+	deadline := time.Now().Add(3 * time.Second)
+	for asked.Load() != 2 && time.Now().Before(deadline) {
+		time.Sleep(5 * time.Millisecond)
+	}
+	if n := asked.Load(); n != 2 {
+		t.Fatalf("an old list was not fetched again behind the answer: asked %d times", n)
+	}
+	age(zonesStale + time.Minute)
+	zones()
+	if n := asked.Load(); n != 3 {
+		t.Fatalf("a very old list was answered without asking: asked %d times", n)
+	}
+	ForgetZones()
+	zones()
+	if n := asked.Load(); n != 4 {
+		t.Fatalf("a forgotten list was not asked again: asked %d times", n)
 	}
 }

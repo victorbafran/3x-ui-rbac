@@ -11,9 +11,11 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -161,11 +163,69 @@ func (w wireServer) server(zone string) Server {
 	return s
 }
 
+// Arvan answers its region list slowly (5 to 6 seconds from the panel, 2026-11) and the
+// list hardly changes, so it is kept per key: under zonesFresh old it is answered as it is,
+// under zonesStale old it is answered at once while a new copy is fetched behind it, and
+// older than that it is fetched again before answering.
+const (
+	zonesFresh = 10 * time.Minute
+	zonesStale = time.Hour
+)
+
+type keptZones struct {
+	zones      []Zone
+	at         time.Time
+	refreshing bool
+}
+
+var zoneCache = struct {
+	sync.Mutex
+	byKey map[string]keptZones
+}{byKey: map[string]keptZones{}}
+
+// ForgetZones drops every kept region list, so the next Zones asks Arvan.
+func ForgetZones() {
+	zoneCache.Lock()
+	defer zoneCache.Unlock()
+	clear(zoneCache.byKey)
+}
+
 func (c *Client) Zones(ctx context.Context) ([]Zone, error) {
+	id := c.base + " " + c.key
+	zoneCache.Lock()
+	kept, ok := zoneCache.byKey[id]
+	age := time.Since(kept.at)
+	if ok && age >= zonesFresh && age < zonesStale && !kept.refreshing {
+		kept.refreshing = true
+		zoneCache.byKey[id] = kept
+		go func() {
+			bg, cancel := context.WithTimeout(context.Background(), 90*time.Second)
+			defer cancel()
+			if _, err := c.fetchZones(bg, id); err != nil {
+				zoneCache.Lock()
+				if k, ok := zoneCache.byKey[id]; ok {
+					k.refreshing = false
+					zoneCache.byKey[id] = k
+				}
+				zoneCache.Unlock()
+			}
+		}()
+	}
+	zoneCache.Unlock()
+	if ok && age < zonesStale {
+		return slices.Clone(kept.zones), nil
+	}
+	return c.fetchZones(ctx, id)
+}
+
+func (c *Client) fetchZones(ctx context.Context, id string) ([]Zone, error) {
 	var env envelope[[]Zone]
 	if err := c.call(ctx, http.MethodGet, "/ecc/v1/regions", nil, &env); err != nil {
 		return nil, err
 	}
+	zoneCache.Lock()
+	zoneCache.byKey[id] = keptZones{zones: slices.Clone(env.Data), at: time.Now()}
+	zoneCache.Unlock()
 	return env.Data, nil
 }
 

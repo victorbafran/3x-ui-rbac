@@ -219,6 +219,8 @@ func (s *ArvanService) SetKey(key string) error {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), arvanCallTimeout)
 	defer cancel()
+	// a key is checked with Arvan itself, never a kept answer
+	arvan.ForgetZones()
 	if _, err := arvan.New(key, nil).Zones(ctx); err != nil {
 		return fmt.Errorf("the key was refused: %w", err)
 	}
@@ -230,6 +232,7 @@ func (s *ArvanService) SetKey(key string) error {
 }
 
 func (s *ArvanService) ClearKey() error {
+	arvan.ForgetZones()
 	return s.settings.SetArvanApiKey("")
 }
 

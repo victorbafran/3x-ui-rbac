@@ -173,6 +173,7 @@ func setupArvanCreate(t *testing.T, fake *fakeArvan) *createRun {
 	t.Cleanup(srv.Close)
 	oldBase := arvan.Base
 	arvan.Base = srv.URL
+	arvan.ForgetZones()
 	t.Cleanup(func() { arvan.Base = oldBase })
 	sealed, err := sealArvanKey("apikey test-key")
 	if err != nil {

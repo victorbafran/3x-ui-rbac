@@ -277,13 +277,30 @@ func (s *ArvanService) Servers() ([]ArvanServerView, error) {
 	for _, r := range relays {
 		byAddress[r.Address] = r.Name
 	}
-	out := []ArvanServerView{}
-	var refused error
-	for _, z := range zones {
+	// Every zone is asked at once: one at a time, a round trip each, the list took seconds.
+	// Results keep the zones' order.
+	type zoneServers struct {
+		servers []arvan.Server
+		err     error
+	}
+	got := make([]zoneServers, len(zones))
+	var wg sync.WaitGroup
+	for i, z := range zones {
 		if !z.Visible {
 			continue
 		}
-		servers, err := c.Servers(ctx, z.Code)
+		wg.Go(func() {
+			got[i].servers, got[i].err = c.Servers(ctx, z.Code)
+		})
+	}
+	wg.Wait()
+	out := []ArvanServerView{}
+	var refused error
+	for i, z := range zones {
+		if !z.Visible {
+			continue
+		}
+		servers, err := got[i].servers, got[i].err
 		if err != nil {
 			if ctx.Err() != nil {
 				return nil, ctx.Err()

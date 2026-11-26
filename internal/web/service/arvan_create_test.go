@@ -35,10 +35,25 @@ type fakeArvan struct {
 	staleKeys  []string // key names already in ir-thr-fr1
 	keysGone   []string // "zone/name" of every key deleted
 	records    []string
+	// set, each zone's server listing waits up to two seconds for the other zone's to arrive
+	together chan struct{}
+	alone    int // listings that waited in vain
 }
 
 func (f *fakeArvan) handler(t *testing.T) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if f.together != nil && r.Method == http.MethodGet && strings.HasSuffix(r.URL.Path, "/servers") {
+			f.together <- struct{}{}
+			deadline := time.Now().Add(2 * time.Second)
+			for len(f.together) < 2 && time.Now().Before(deadline) {
+				time.Sleep(5 * time.Millisecond)
+			}
+			if len(f.together) < 2 {
+				f.mu.Lock()
+				f.alone++
+				f.mu.Unlock()
+			}
+		}
 		f.mu.Lock()
 		defer f.mu.Unlock()
 		body, _ := io.ReadAll(r.Body)
@@ -381,6 +396,22 @@ func TestTheAccountsServersAreListedWithTheirRelay(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(got) != 1 || got[0].Zone != "ir-thr-fr1" || got[0].Status != "active" || got[0].Relay != "Ir" || len(got[0].IPs) != 1 {
+		t.Fatalf("servers %+v", got)
+	}
+}
+
+// The zones are asked at once, not one after another, and the list keeps the zones' order.
+func TestTheZonesAreAskedForTheirServersAtOnce(t *testing.T) {
+	fake := &fakeArvan{together: make(chan struct{}, 2)}
+	setupArvanCreate(t, fake)
+	got, err := (&ArvanService{}).Servers()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if fake.alone != 0 {
+		t.Fatalf("%d zone listings ran alone; the zones were asked one at a time", fake.alone)
+	}
+	if len(got) != 1 || got[0].Zone != "ir-thr-fr1" {
 		t.Fatalf("servers %+v", got)
 	}
 }

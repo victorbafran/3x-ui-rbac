@@ -2830,7 +2830,7 @@
       "arvanAdd": {
         "button": "Dari ArvanCloud",
         "title": "Server masuk dari ArvanCloud",
-        "intro": "Buat server baru di akun ArvanCloud dan tambahkan sebagai server masuk tanpa kata sandi, atau pakai atau hapus server yang sudah ada.",
+        "intro": "Masukkan kunci ArvanCloud, lalu lihat server di akun: tambahkan satu di sini dengan kata sandinya sekali, buat yang baru yang bergabung tanpa kata sandi, atau hapus satu. Anda memilih kegunaan masing-masing.",
         "keyHint": "Tempel kunci API ArvanCloud yang boleh membuat, membaca dan menghapus server. Panel menyimpannya terenkripsi.",
         "tabs": {
           "new": "Server baru",
@@ -2847,7 +2847,7 @@
           "atLimit": "Zona ini sudah punya {count} dari {limit} server Anda, batas ArvanCloud.",
           "create": "Buat dan tambahkan",
           "confirm": "Buat server {name} di ArvanCloud?",
-          "confirmHint": "Biayanya {hour} per jam ({month} per bulan) sampai Anda menghapusnya. Lalu panel menambahkannya sebagai server masuk BackPack dan menautkannya untuk ganti IP."
+          "confirmHint": "Biayanya {hour} per jam ({month} per bulan) sampai Anda menghapusnya. Lalu panel menambahkannya sesuai pilihan Anda."
         },
         "progress": {
           "title": "Server {name}",
@@ -2856,11 +2856,13 @@
             "server": "Buat server",
             "boot": "Tunggu hingga menyala",
             "ssh": "Hubungi dengan kunci panel",
-            "add": "Tambahkan sebagai server masuk",
-            "bind": "Siapkan terowongan dan tautkan ke ArvanCloud"
+            "add": "Tambahkan ke panel ini",
+            "bind": "Tautkan ke ArvanCloud untuk ganti IP",
+            "setup": "Tunggu hingga siap",
+            "dns": "Arahkan domain ke server"
           },
           "ip": "IP:",
-          "done": "{name} siap dan ada di daftar server masuk."
+          "done": "{name} siap dan ada di daftar."
         },
         "servers": {
           "name": "Nama",
@@ -2868,13 +2870,34 @@
           "ips": "IP",
           "status": "Status",
           "relay": "Di panel ini",
-          "use": "Pakai sebagai server masuk",
+          "use": "Pakai",
           "delete": "Hapus",
           "confirmDelete": "Hapus {name} dari ArvanCloud?",
           "confirmDeleteHint": "Server, disk dan IP-nya hilang selamanya. Tidak bisa dibatalkan.",
           "inUse": "Dipakai oleh {relay}; hapus dulu di panel ini.",
           "refresh": "Muat ulang",
-          "hint": "“Pakai sebagai server masuk” membuka formulir tambah dengan alamatnya; kata sandi root-nya diperlukan sekali di sana."
+          "hint": "“Pakai” menanyakan kegunaan server dan kata sandi root-nya sekali."
+        },
+        "changeKey": "Ganti kunci",
+        "keyReady": "Kunci tersimpan. Server Anda dan server baru ada di bawah.",
+        "purpose": {
+          "role": "Gunakan sebagai",
+          "front": "Server masuk",
+          "exit": "Server keluar",
+          "exitIran": "Hanya zona di luar Iran yang bisa jadi server keluar: pelanggan keluar lewat negaranya.",
+          "tool": "Terowongan",
+          "transport": "Transport",
+          "domain": "Domain",
+          "noDomain": "Tanpa domain",
+          "record": "Nama record",
+          "recordHint": "{fqdn} akan mengarah ke server ini dan menjadi nama yang dipindah saat ganti IP. Record yang sudah ada dipindah ke sini, kecuali dipakai server lain di sini."
+        },
+        "adopt": {
+          "title": "Tambah {name}",
+          "password": "Kata sandi root",
+          "passwordHint": "Dipakai sekali untuk memasang kunci panel; tidak disimpan.",
+          "submit": "Tambah",
+          "cancel": "Batal"
         }
       },
       "arvan": {
@@ -2984,7 +3007,9 @@
           "catalog": "Baca paket ArvanCloud",
           "servers": "Daftar server ArvanCloud",
           "create": "Buat server di ArvanCloud",
-          "deleteServer": "Hapus server ArvanCloud"
+          "deleteServer": "Hapus server ArvanCloud",
+          "adopt": "Tambah server ArvanCloud",
+          "domains": "Daftar domain ArvanCloud"
         }
       },
       "psiphon": {

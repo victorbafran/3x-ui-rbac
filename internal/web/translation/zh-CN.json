@@ -2830,7 +2830,7 @@
       "arvanAdd": {
         "button": "从 ArvanCloud",
         "title": "来自 ArvanCloud 的入口服务器",
-        "intro": "在你的 ArvanCloud 账户中新建服务器并免密码添加为入口服务器，或使用、删除已有的服务器。",
+        "intro": "输入 ArvanCloud 密钥后即可看到账户中的服务器：输入一次密码将其添加到这里、新建一台免密码加入的服务器，或删除服务器。每台的用途由你选择。",
         "keyHint": "粘贴一个可创建、读取和删除服务器的 ArvanCloud API 密钥。面板会加密保存。",
         "tabs": {
           "new": "新服务器",
@@ -2847,7 +2847,7 @@
           "atLimit": "此区域已有你 {limit} 台上限中的 {count} 台服务器。",
           "create": "创建并添加",
           "confirm": "在 ArvanCloud 创建服务器 {name}？",
-          "confirmHint": "删除前每小时 {hour}（每月 {month}）。随后面板会把它添加为 BackPack 入口服务器并绑定以切换 IP。"
+          "confirmHint": "删除前每小时 {hour}（每月 {month}）。随后面板会按你的选择添加它。"
         },
         "progress": {
           "title": "服务器 {name}",
@@ -2856,11 +2856,13 @@
             "server": "创建服务器",
             "boot": "等待启动",
             "ssh": "用面板密钥连接",
-            "add": "添加为入口服务器",
-            "bind": "建立隧道并绑定 ArvanCloud"
+            "add": "添加到本面板",
+            "bind": "绑定 ArvanCloud 以切换 IP",
+            "setup": "等待配置完成",
+            "dns": "将域名指向它"
           },
           "ip": "IP：",
-          "done": "{name} 已就绪，并在入口服务器列表中。"
+          "done": "{name} 已就绪，并在列表中。"
         },
         "servers": {
           "name": "名称",
@@ -2868,13 +2870,34 @@
           "ips": "IP",
           "status": "状态",
           "relay": "本面板",
-          "use": "用作入口服务器",
+          "use": "使用",
           "delete": "删除",
           "confirmDelete": "从 ArvanCloud 删除 {name}？",
           "confirmDeleteHint": "服务器、磁盘和 IP 将永久消失，无法撤销。",
           "inUse": "{relay} 正在使用；请先在本面板删除它。",
           "refresh": "刷新",
-          "hint": "“用作入口服务器”会打开带有其地址的添加表单；需在那里输入一次 root 密码。"
+          "hint": "“使用”会询问服务器的用途，并需输入一次 root 密码。"
+        },
+        "changeKey": "更换密钥",
+        "keyReady": "密钥已保存。你的服务器和新建服务器在下方。",
+        "purpose": {
+          "role": "用作",
+          "front": "入口服务器",
+          "exit": "出口服务器",
+          "exitIran": "只有伊朗以外的区域可以作为出口：用户会从该国出去。",
+          "tool": "隧道",
+          "transport": "传输方式",
+          "domain": "域名",
+          "noDomain": "不使用域名",
+          "record": "记录名",
+          "recordHint": "{fqdn} 将指向这台服务器，也是切换 IP 时移动的名称。已存在的记录会移到这台服务器，除非本面板另一台服务器在使用它。"
+        },
+        "adopt": {
+          "title": "添加 {name}",
+          "password": "root 密码",
+          "passwordHint": "仅用一次来安装面板自己的密钥，不会保存。",
+          "submit": "添加",
+          "cancel": "取消"
         }
       },
       "arvan": {
@@ -2984,7 +3007,9 @@
           "catalog": "读取 ArvanCloud 套餐",
           "servers": "列出 ArvanCloud 服务器",
           "create": "在 ArvanCloud 创建服务器",
-          "deleteServer": "删除 ArvanCloud 服务器"
+          "deleteServer": "删除 ArvanCloud 服务器",
+          "adopt": "添加 ArvanCloud 服务器",
+          "domains": "列出 ArvanCloud 域名"
         }
       },
       "psiphon": {

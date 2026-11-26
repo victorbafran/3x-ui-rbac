@@ -1912,14 +1912,26 @@ export const sections: readonly Section[] = [
         method: 'POST',
         path: '/panel/api/relays/arvan/create',
         summary:
-          'Make a server in ArvanCloud and add it as an entry server, with no password: the panel registers an SSH key it generated, makes the server with it (billed from now on), waits for it to start and answer SSH on that key, adds it as a BackPack (stealth, port 3080) entry server enrolled with the same key, and once that is set up binds it to Arvan and prepares it for IP swaps. size and image must be ones /arvan/catalog offers for zone; name follows a relay name’s rules and must be unused. Returns at once; one make runs at a time.',
-        body: '{\n  "zone": "ir-thr-fr1",\n  "size": "eco-1-1-0",\n  "image": "f1cc8839-…",\n  "name": "ir2"\n}',
+          'Make a server in ArvanCloud and add it here with no password: the panel registers an SSH key it generated, makes the server with it (billed from now on), waits for it to start and answer SSH on that key, and adds it with the same key for its purpose. role is "front" (default) or "exit" (only in a zone outside Iran); a front takes tool ("backpack", the default, or "backhaul") and transport (the tool’s first when empty), and with domain (one on the account) and record ("@" or a label) its IP is put behind that A record once it is set up: the record is made, or moved when it exists and points at no relay here; it becomes the front’s public name, and the front is then bound to Arvan and prepared for IP swaps. size and image must be ones /arvan/catalog offers for zone; name follows a relay name’s rules and must be unused. Returns at once; one make or add runs at a time.',
+        body: '{\n  "zone": "ir-thr-fr1",\n  "size": "eco-1-1-0",\n  "image": "f1cc8839-…",\n  "name": "ir2",\n  "role": "front",\n  "tool": "backpack",\n  "transport": "stealth",\n  "domain": "example.ir",\n  "record": "ir2"\n}',
       },
       {
         method: 'GET',
         path: '/panel/api/relays/arvan/create',
         summary:
-          'The running or last make: running, step ("key", "server", "boot", "ssh", "add", "bind", then "done"), error ("" while none), name, zone, serverId and ip once known, relayId once added, startedAt and finishedAt.',
+          'The running or last make or add: running, steps (this run’s steps in order, from "key", "server", "boot", "ssh", "add", "setup", "dns" and "bind"; adding a server already there starts at "add", an exit stops at "setup", and "dns" is there only with a domain), step (the current one, "done" at the end), error ("" while none), name, zone, serverId and ip once known, relayId once added, startedAt and finishedAt.',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/relays/arvan/adopt',
+        summary:
+          'Add a server already on the ArvanCloud account here, for the same purpose fields as /arvan/create (role, tool, transport, domain, record), with its root password used once to install the panel’s own key and not stored. A server whose public IPv4 a relay here already uses is refused. Returns at once; GET /arvan/create follows the steps.',
+        body: '{\n  "zone": "ir-thr-fr1",\n  "serverId": "d0d4ad4d-…",\n  "name": "ir3",\n  "password": "…",\n  "role": "front",\n  "domain": "example.ir",\n  "record": "ir3"\n}',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/relays/arvan/domains',
+        summary: 'The domains on the ArvanCloud account, sorted, for a server’s IP to go behind.',
       },
       {
         method: 'GET',

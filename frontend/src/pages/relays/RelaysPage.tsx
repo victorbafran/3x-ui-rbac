@@ -239,29 +239,6 @@ export default function RelaysPage() {
     setFormOpen(true);
   }, [form]);
 
-  // A server already on the Arvan account opens the ordinary add form as an entry server,
-  // its address filled in; its password is asked for there once.
-  const onUseArvanServer = useCallback(
-    (address: string, name: string) => {
-      setArvanAddOpen(false);
-      setEditing(null);
-      form.resetFields();
-      form.setFieldsValue({
-        name: name.replace(/[:,/\\\s]+/g, '-').slice(0, 40),
-        address,
-        sshPort: 22,
-        sshUser: 'root',
-        role: 'front',
-        tunnelPort: DEFAULT_TUNNEL_PORT,
-        transport: 'stealth',
-        tool: 'backpack',
-        ipFamily: '',
-      } as RelayFormValues);
-      setFormOpen(true);
-    },
-    [form],
-  );
-
   const onEdit = useCallback(
     (r: Relay) => {
       setEditing(r);
@@ -859,11 +836,7 @@ export default function RelaysPage() {
       {arvanRelay ? (
         <ArvanFrontModal relay={arvanRelay} onClose={() => setArvanRelayId(null)} />
       ) : null}
-      <ArvanAddModal
-        open={arvanAddOpen}
-        onClose={() => setArvanAddOpen(false)}
-        onUseServer={onUseArvanServer}
-      />
+      <ArvanAddModal open={arvanAddOpen} onClose={() => setArvanAddOpen(false)} />
     </ConfigProvider>
   );
 }

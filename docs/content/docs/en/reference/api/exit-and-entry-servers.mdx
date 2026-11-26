@@ -206,20 +206,39 @@ _openapi:
         this panel, and for the server a make is still working on.
       url: '#delete-a-server-from-the-arvancloud-account-for-good-with-its-disk-and-ips-refused-for-a-server-whose-public-ip-is-the-address-of-a-relay-on-this-panel-and-for-the-server-a-make-is-still-working-on'
     - depth: 2
-      title: 'The running or last make: running, step ("key", "server", "boot", "ssh",
-        "add", "bind", then "done"), error ("" while none), name, zone, serverId
-        and ip once known, relayId once added, startedAt and finishedAt.'
-      url: '#the-running-or-last-make-running-step-key-server-boot-ssh-add-bind-then-done-error--while-none-name-zone-serverid-and-ip-once-known-relayid-once-added-startedat-and-finishedat'
+      title: 'The running or last make or add: running, steps (this run’s steps in
+        order, from "key", "server", "boot", "ssh", "add", "setup", "dns" and
+        "bind"; adding a server already there starts at "add", an exit stops at
+        "setup", and "dns" is there only with a domain), step (the current one,
+        "done" at the end), error ("" while none), name, zone, serverId and ip
+        once known, relayId once added, startedAt and finishedAt.'
+      url: '#the-running-or-last-make-or-add-running-steps-this-runs-steps-in-order-from-key-server-boot-ssh-add-setup-dns-and-bind-adding-a-server-already-there-starts-at-add-an-exit-stops-at-setup-and-dns-is-there-only-with-a-domain-step-the-current-one-done-at-the-end-error--while-none-name-zone-serverid-and-ip-once-known-relayid-once-added-startedat-and-finishedat'
     - depth: 2
-      title: 'Make a server in ArvanCloud and add it as an entry server, with no
-        password: the panel registers an SSH key it generated, makes the server
-        with it (billed from now on), waits for it to start and answer SSH on
-        that key, adds it as a BackPack (stealth, port 3080) entry server
-        enrolled with the same key, and once that is set up binds it to Arvan
-        and prepares it for IP swaps. size and image must be ones /arvan/catalog
-        offers for zone; name follows a relay name’s rules and must be unused.
-        Returns at once; one make runs at a time.'
-      url: '#make-a-server-in-arvancloud-and-add-it-as-an-entry-server-with-no-password-the-panel-registers-an-ssh-key-it-generated-makes-the-server-with-it-billed-from-now-on-waits-for-it-to-start-and-answer-ssh-on-that-key-adds-it-as-a-backpack-stealth-port-3080-entry-server-enrolled-with-the-same-key-and-once-that-is-set-up-binds-it-to-arvan-and-prepares-it-for-ip-swaps-size-and-image-must-be-ones-arvancatalog-offers-for-zone-name-follows-a-relay-names-rules-and-must-be-unused-returns-at-once-one-make-runs-at-a-time'
+      title: 'Make a server in ArvanCloud and add it here with no password: the panel
+        registers an SSH key it generated, makes the server with it (billed from
+        now on), waits for it to start and answer SSH on that key, and adds it
+        with the same key for its purpose. role is "front" (default) or "exit"
+        (only in a zone outside Iran); a front takes tool ("backpack", the
+        default, or "backhaul") and transport (the tool’s first when empty), and
+        with domain (one on the account) and record ("@" or a label) its IP is
+        put behind that A record once it is set up: the record is made, or moved
+        when it exists and points at no relay here; it becomes the front’s
+        public name, and the front is then bound to Arvan and prepared for IP
+        swaps. size and image must be ones /arvan/catalog offers for zone; name
+        follows a relay name’s rules and must be unused. Returns at once; one
+        make or add runs at a time.'
+      url: '#make-a-server-in-arvancloud-and-add-it-here-with-no-password-the-panel-registers-an-ssh-key-it-generated-makes-the-server-with-it-billed-from-now-on-waits-for-it-to-start-and-answer-ssh-on-that-key-and-adds-it-with-the-same-key-for-its-purpose-role-is-front-default-or-exit-only-in-a-zone-outside-iran-a-front-takes-tool-backpack-the-default-or-backhaul-and-transport-the-tools-first-when-empty-and-with-domain-one-on-the-account-and-record--or-a-label-its-ip-is-put-behind-that-a-record-once-it-is-set-up-the-record-is-made-or-moved-when-it-exists-and-points-at-no-relay-here-it-becomes-the-fronts-public-name-and-the-front-is-then-bound-to-arvan-and-prepared-for-ip-swaps-size-and-image-must-be-ones-arvancatalog-offers-for-zone-name-follows-a-relay-names-rules-and-must-be-unused-returns-at-once-one-make-or-add-runs-at-a-time'
+    - depth: 2
+      title: Add a server already on the ArvanCloud account here, for the same purpose
+        fields as /arvan/create (role, tool, transport, domain, record), with
+        its root password used once to install the panel’s own key and not
+        stored. A server whose public IPv4 a relay here already uses is refused.
+        Returns at once; GET /arvan/create follows the steps.
+      url: '#add-a-server-already-on-the-arvancloud-account-here-for-the-same-purpose-fields-as-arvancreate-role-tool-transport-domain-record-with-its-root-password-used-once-to-install-the-panels-own-key-and-not-stored-a-server-whose-public-ipv4-a-relay-here-already-uses-is-refused-returns-at-once-get-arvancreate-follows-the-steps'
+    - depth: 2
+      title: The domains on the ArvanCloud account, sorted, for a server’s IP to go
+        behind.
+      url: '#the-domains-on-the-arvancloud-account-sorted-for-a-servers-ip-to-go-behind'
     - depth: 2
       title: 'Psiphon on this panel’s own server: whether it can run here (supported
         is false on anything but x86_64 Linux), whether the binary is installed,
@@ -492,20 +511,36 @@ _openapi:
           IPs. Refused for a server whose public IP is the address of a relay on
           this panel, and for the server a make is still working on.
         id: delete-a-server-from-the-arvancloud-account-for-good-with-its-disk-and-ips-refused-for-a-server-whose-public-ip-is-the-address-of-a-relay-on-this-panel-and-for-the-server-a-make-is-still-working-on
-      - content: 'The running or last make: running, step ("key", "server", "boot",
-          "ssh", "add", "bind", then "done"), error ("" while none), name, zone,
-          serverId and ip once known, relayId once added, startedAt and
-          finishedAt.'
-        id: the-running-or-last-make-running-step-key-server-boot-ssh-add-bind-then-done-error--while-none-name-zone-serverid-and-ip-once-known-relayid-once-added-startedat-and-finishedat
-      - content: 'Make a server in ArvanCloud and add it as an entry server, with no
-          password: the panel registers an SSH key it generated, makes the
-          server with it (billed from now on), waits for it to start and answer
-          SSH on that key, adds it as a BackPack (stealth, port 3080) entry
-          server enrolled with the same key, and once that is set up binds it to
-          Arvan and prepares it for IP swaps. size and image must be ones
+      - content: 'The running or last make or add: running, steps (this run’s steps in
+          order, from "key", "server", "boot", "ssh", "add", "setup", "dns" and
+          "bind"; adding a server already there starts at "add", an exit stops
+          at "setup", and "dns" is there only with a domain), step (the current
+          one, "done" at the end), error ("" while none), name, zone, serverId
+          and ip once known, relayId once added, startedAt and finishedAt.'
+        id: the-running-or-last-make-or-add-running-steps-this-runs-steps-in-order-from-key-server-boot-ssh-add-setup-dns-and-bind-adding-a-server-already-there-starts-at-add-an-exit-stops-at-setup-and-dns-is-there-only-with-a-domain-step-the-current-one-done-at-the-end-error--while-none-name-zone-serverid-and-ip-once-known-relayid-once-added-startedat-and-finishedat
+      - content: 'Make a server in ArvanCloud and add it here with no password: the
+          panel registers an SSH key it generated, makes the server with it
+          (billed from now on), waits for it to start and answer SSH on that
+          key, and adds it with the same key for its purpose. role is "front"
+          (default) or "exit" (only in a zone outside Iran); a front takes tool
+          ("backpack", the default, or "backhaul") and transport (the tool’s
+          first when empty), and with domain (one on the account) and record
+          ("@" or a label) its IP is put behind that A record once it is set up:
+          the record is made, or moved when it exists and points at no relay
+          here; it becomes the front’s public name, and the front is then bound
+          to Arvan and prepared for IP swaps. size and image must be ones
           /arvan/catalog offers for zone; name follows a relay name’s rules and
-          must be unused. Returns at once; one make runs at a time.'
-        id: make-a-server-in-arvancloud-and-add-it-as-an-entry-server-with-no-password-the-panel-registers-an-ssh-key-it-generated-makes-the-server-with-it-billed-from-now-on-waits-for-it-to-start-and-answer-ssh-on-that-key-adds-it-as-a-backpack-stealth-port-3080-entry-server-enrolled-with-the-same-key-and-once-that-is-set-up-binds-it-to-arvan-and-prepares-it-for-ip-swaps-size-and-image-must-be-ones-arvancatalog-offers-for-zone-name-follows-a-relay-names-rules-and-must-be-unused-returns-at-once-one-make-runs-at-a-time
+          must be unused. Returns at once; one make or add runs at a time.'
+        id: make-a-server-in-arvancloud-and-add-it-here-with-no-password-the-panel-registers-an-ssh-key-it-generated-makes-the-server-with-it-billed-from-now-on-waits-for-it-to-start-and-answer-ssh-on-that-key-and-adds-it-with-the-same-key-for-its-purpose-role-is-front-default-or-exit-only-in-a-zone-outside-iran-a-front-takes-tool-backpack-the-default-or-backhaul-and-transport-the-tools-first-when-empty-and-with-domain-one-on-the-account-and-record--or-a-label-its-ip-is-put-behind-that-a-record-once-it-is-set-up-the-record-is-made-or-moved-when-it-exists-and-points-at-no-relay-here-it-becomes-the-fronts-public-name-and-the-front-is-then-bound-to-arvan-and-prepared-for-ip-swaps-size-and-image-must-be-ones-arvancatalog-offers-for-zone-name-follows-a-relay-names-rules-and-must-be-unused-returns-at-once-one-make-or-add-runs-at-a-time
+      - content: Add a server already on the ArvanCloud account here, for the same
+          purpose fields as /arvan/create (role, tool, transport, domain,
+          record), with its root password used once to install the panel’s own
+          key and not stored. A server whose public IPv4 a relay here already
+          uses is refused. Returns at once; GET /arvan/create follows the steps.
+        id: add-a-server-already-on-the-arvancloud-account-here-for-the-same-purpose-fields-as-arvancreate-role-tool-transport-domain-record-with-its-root-password-used-once-to-install-the-panels-own-key-and-not-stored-a-server-whose-public-ipv4-a-relay-here-already-uses-is-refused-returns-at-once-get-arvancreate-follows-the-steps
+      - content: The domains on the ArvanCloud account, sorted, for a server’s IP to go
+          behind.
+        id: the-domains-on-the-arvancloud-account-sorted-for-a-servers-ip-to-go-behind
       - content: 'Psiphon on this panel’s own server: whether it can run here (supported
           is false on anything but x86_64 Linux), whether the binary is
           installed, the countries Psiphon offers (regions, ISO codes: the list
@@ -608,7 +643,7 @@ export default function Layout(props) {
   return (
     <>
       {props.children}
-      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/relays/list","method":"get"},{"path":"/panel/api/relays/options","method":"get"},{"path":"/panel/api/relays/fronts","method":"get"},{"path":"/panel/api/relays/add","method":"post"},{"path":"/panel/api/relays/update/{id}","method":"post"},{"path":"/panel/api/relays/del/{id}","method":"post"},{"path":"/panel/api/relays/setEnable/{id}","method":"post"},{"path":"/panel/api/relays/probe/{id}","method":"post"},{"path":"/panel/api/relays/arvan/key","method":"get"},{"path":"/panel/api/relays/arvan/key","method":"post"},{"path":"/panel/api/relays/arvan/key/clear","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}","method":"get"},{"path":"/panel/api/relays/arvan/front/{id}/detect","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/save","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/prepare","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/refill","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/test","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/swap","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/release","method":"post"},{"path":"/panel/api/relays/arvan/catalog","method":"get"},{"path":"/panel/api/relays/arvan/servers","method":"get"},{"path":"/panel/api/relays/arvan/servers/delete","method":"post"},{"path":"/panel/api/relays/arvan/create","method":"get"},{"path":"/panel/api/relays/arvan/create","method":"post"},{"path":"/panel/api/relays/psiphon/state","method":"get"},{"path":"/panel/api/relays/psiphon/install","method":"post"},{"path":"/panel/api/relays/psiphon/regions/refresh","method":"post"},{"path":"/panel/api/relays/psiphon/countries","method":"post"},{"path":"/panel/api/relays/psiphon/inbounds","method":"get"},{"path":"/panel/api/relays/psiphon/inbound/{id}","method":"post"},{"path":"/panel/api/relays/psiphon/warp","method":"post"},{"path":"/panel/api/relays/psiphon/traffic/reset","method":"post"},{"path":"/panel/api/relays/psiphon/test","method":"post"},{"path":"/panel/api/relays/psiphon/scan","method":"post"}]} showTitle />
+      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/relays/list","method":"get"},{"path":"/panel/api/relays/options","method":"get"},{"path":"/panel/api/relays/fronts","method":"get"},{"path":"/panel/api/relays/add","method":"post"},{"path":"/panel/api/relays/update/{id}","method":"post"},{"path":"/panel/api/relays/del/{id}","method":"post"},{"path":"/panel/api/relays/setEnable/{id}","method":"post"},{"path":"/panel/api/relays/probe/{id}","method":"post"},{"path":"/panel/api/relays/arvan/key","method":"get"},{"path":"/panel/api/relays/arvan/key","method":"post"},{"path":"/panel/api/relays/arvan/key/clear","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}","method":"get"},{"path":"/panel/api/relays/arvan/front/{id}/detect","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/save","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/prepare","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/refill","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/test","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/swap","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/release","method":"post"},{"path":"/panel/api/relays/arvan/catalog","method":"get"},{"path":"/panel/api/relays/arvan/servers","method":"get"},{"path":"/panel/api/relays/arvan/servers/delete","method":"post"},{"path":"/panel/api/relays/arvan/create","method":"get"},{"path":"/panel/api/relays/arvan/create","method":"post"},{"path":"/panel/api/relays/arvan/adopt","method":"post"},{"path":"/panel/api/relays/arvan/domains","method":"get"},{"path":"/panel/api/relays/psiphon/state","method":"get"},{"path":"/panel/api/relays/psiphon/install","method":"post"},{"path":"/panel/api/relays/psiphon/regions/refresh","method":"post"},{"path":"/panel/api/relays/psiphon/countries","method":"post"},{"path":"/panel/api/relays/psiphon/inbounds","method":"get"},{"path":"/panel/api/relays/psiphon/inbound/{id}","method":"post"},{"path":"/panel/api/relays/psiphon/warp","method":"post"},{"path":"/panel/api/relays/psiphon/traffic/reset","method":"post"},{"path":"/panel/api/relays/psiphon/test","method":"post"},{"path":"/panel/api/relays/psiphon/scan","method":"post"}]} showTitle />
     </>
   );
 }

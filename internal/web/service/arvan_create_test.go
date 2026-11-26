@@ -16,6 +16,7 @@ import (
 	"golang.org/x/crypto/ssh"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/arvan"
+	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/relay"
 )
@@ -32,6 +33,7 @@ type fakeArvan struct {
 	madeByName bool // the create's reply was lost but the server exists
 	relayOn    map[string]string
 	deleted    []string
+	records    []string
 }
 
 func (f *fakeArvan) handler(t *testing.T) http.Handler {
@@ -44,7 +46,25 @@ func (f *fakeArvan) handler(t *testing.T) http.Handler {
 		switch {
 		case route == "GET /ecc/v1/regions":
 			write(`{"data":[{"code":"ir-thr-fr1","country":"Iran","city":"Tehran","dc":"Foroogh","create":true,"visible":true},
-				{"code":"ir-thr-ba1","country":"Iran","city":"Tehran","dc":"Bamdad","create":false,"visible":true}]}`)
+				{"code":"ir-thr-ba1","country":"Iran","city":"Tehran","dc":"Bamdad","create":false,"visible":true},
+				{"code":"eu-west1-a","country":"Germany","city":"Karlsruhe","dc":"Goethe","create":true,"visible":false}]}`)
+		case route == "GET /ecc/v1/regions/eu-west1-a/servers/de1":
+			write(`{"data":{"id":"de1","name":"de","status":"ACTIVE","addresses":{"public":[{"addr":"185.226.1.9","version":"4","is_public":true}]}}}`)
+		case route == "GET /cdn/4.0/domains":
+			write(`{"data":[{"domain":"aliwoodbaf.ir"},{"domain":"video-epic.ir"}],"meta":{"current_page":1,"last_page":1}}`)
+		case route == "GET /cdn/4.0/domains/aliwoodbaf.ir/dns-records":
+			write(`{"data":[{"id":"r-milichi","type":"a","name":"milichi","value":[{"ip":"188.213.199.99","port":null,"weight":100,"country":""}],"ttl":120,"cloud":false},
+				{"id":"r-bem","type":"a","name":"bemanche","value":[{"ip":"212.95.35.41","port":80,"weight":100,"country":""}],"ttl":120,"cloud":false}],"meta":{"current_page":1,"last_page":1}}`)
+		case route == "POST /cdn/4.0/domains/aliwoodbaf.ir/dns-records":
+			var rec map[string]any
+			_ = json.Unmarshal(body, &rec)
+			f.records = append(f.records, "new "+rec["name"].(string)+" "+rec["value"].([]any)[0].(map[string]any)["ip"].(string))
+			write(`{"data":{"id":"r-new"}}`)
+		case r.Method == http.MethodPut && strings.HasPrefix(r.URL.Path, "/cdn/4.0/domains/aliwoodbaf.ir/dns-records/"):
+			var rec map[string]any
+			_ = json.Unmarshal(body, &rec)
+			f.records = append(f.records, "moved "+strings.TrimPrefix(r.URL.Path, "/cdn/4.0/domains/aliwoodbaf.ir/dns-records/")+" "+rec["value"].([]any)[0].(map[string]any)["ip"].(string))
+			write(`{"data":{}}`)
 		case route == "GET /ecc/v1/regions/ir-thr-fr1/sizes":
 			write(`{"data":[{"id":"g1-12-4-0","disk":75,"memory":12,"cpu_count":4,"price_per_hour":68700},
 				{"id":"eco-1-1-0","disk":25,"memory":1,"cpu_count":1,"price_per_hour":13860,"price_per_month":9977400}]}`)
@@ -366,5 +386,187 @@ func TestAServerInUseHereIsNotDeleted(t *testing.T) {
 	}
 	if len(fake.deleted) != 1 || fake.deleted[0] != "free?forceDelete=true" {
 		t.Fatalf("deleted %v", fake.deleted)
+	}
+}
+
+// The purpose is checked before anything is made: an exit only outside Iran, a transport the
+// tool knows, a domain on the account and a record name Arvan takes.
+func TestThePurposeIsCheckedBeforeAnythingIsMade(t *testing.T) {
+	fake := &fakeArvan{}
+	setupArvanCreate(t, fake)
+	svc := &ArvanService{}
+	c, err := svc.client()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, tc := range []struct {
+		p       ArvanPurpose
+		country string
+		want    string
+	}{
+		{ArvanPurpose{Role: "exit"}, "Iran", "out through Iran"},
+		{ArvanPurpose{Role: "relay"}, "Iran", `not "relay"`},
+		{ArvanPurpose{Tool: "backpack", Transport: "udpovertcp"}, "Iran", "not a transport"},
+		{ArvanPurpose{Tool: "backhaul", Transport: "udp"}, "Iran", "udp carries only UDP"},
+		{ArvanPurpose{Domain: "other.ir", Record: "ir2"}, "Iran", "not on this Arvan account"},
+		{ArvanPurpose{Domain: "aliwoodbaf.ir", Record: "ir 2"}, "Iran", "not a record name"},
+		{ArvanPurpose{Domain: "aliwoodbaf.ir", Record: "-ir"}, "Iran", "not a record name"},
+	} {
+		if _, err := svc.normalizePurpose(c, tc.p, tc.country); err == nil || !strings.Contains(err.Error(), tc.want) {
+			t.Errorf("%+v in %s: %v; want %q", tc.p, tc.country, err, tc.want)
+		}
+	}
+	got, err := svc.normalizePurpose(c, ArvanPurpose{}, "Iran")
+	if err != nil || got != (ArvanPurpose{Role: "front", Tool: "backpack", Transport: "stealth"}) {
+		t.Fatalf("the default purpose: %+v, %v", got, err)
+	}
+	got, err = svc.normalizePurpose(c, ArvanPurpose{Role: "front", Tool: "backhaul", Domain: "AliWoodBaf.ir", Record: "Ir2"}, "Iran")
+	if err != nil || got != (ArvanPurpose{Role: "front", Tool: "backhaul", Transport: "tcp", Domain: "aliwoodbaf.ir", Record: "ir2"}) {
+		t.Fatalf("Backhaul behind a record: %+v, %v", got, err)
+	}
+	got, err = svc.normalizePurpose(c, ArvanPurpose{Role: "exit", Tool: "backpack", Domain: "aliwoodbaf.ir", Record: "x"}, "Germany")
+	if err != nil || got != (ArvanPurpose{Role: "exit"}) {
+		t.Fatalf("an exit in Germany: %+v, %v", got, err)
+	}
+	if len(fake.creates)+len(fake.records) != 0 {
+		t.Fatal("checking a purpose wrote something")
+	}
+}
+
+// A made entry server behind a new record: the record is made, becomes the server's public
+// name, the run went through dns before bind, and the tool and transport chosen are the ones added.
+func TestAMadeFrontGoesBehindItsRecord(t *testing.T) {
+	fake := &fakeArvan{statuses: []string{"ACTIVE"}, ip: "37.152.190.9"}
+	run := setupArvanCreate(t, fake)
+	req := createReq
+	req.ArvanPurpose = ArvanPurpose{Tool: "backhaul", Transport: "wss", Domain: "aliwoodbaf.ir", Record: "ir2"}
+	var id int
+	arvanAddFront = func(_ *ArvanService, r RelayRequest) (int, error) {
+		run.added = append(run.added, r)
+		row := model.Relay{Name: r.Name, Address: r.Address, Role: model.RelayFront}
+		seedRelays(t, row)
+		var got model.Relay
+		if err := database.GetDB().Where("name = ?", r.Name).First(&got).Error; err != nil {
+			t.Fatal(err)
+		}
+		id = got.Id
+		return got.Id, nil
+	}
+	if err := (&ArvanService{}).StartCreate(req); err != nil {
+		t.Fatal(err)
+	}
+	st := waitCreateDone(t)
+	if st.Error != "" {
+		t.Fatalf("state %+v", st)
+	}
+	if want := "key,server,boot,ssh,add,setup,dns,bind"; strings.Join(st.Steps, ",") != want {
+		t.Fatalf("steps %v; want %s", st.Steps, want)
+	}
+	if a := run.added[0]; a.Tool != "backhaul" || a.Transport != "wss" || a.Role != "front" {
+		t.Fatalf("added as %+v", a)
+	}
+	if len(fake.records) != 1 || fake.records[0] != "new ir2 37.152.190.9" {
+		t.Fatalf("records %v", fake.records)
+	}
+	if r := frontRow(t, id); r.PublicName != "ir2.aliwoodbaf.ir" {
+		t.Fatalf("public name %q", r.PublicName)
+	}
+}
+
+// A record already there is moved to the new server when it points at an address no relay
+// here has, so configs customers already hold reach it, but never away from a relay here.
+func TestARecordIsMovedOnlyOffAnAddressNotInUseHere(t *testing.T) {
+	fake := &fakeArvan{}
+	setupArvanCreate(t, fake)
+	c, err := (&ArvanService{}).client()
+	if err != nil {
+		t.Fatal(err)
+	}
+	seedRelays(t, model.Relay{Name: "panel", Address: "212.95.35.41", Role: model.RelayExit})
+	if err := arvanPointRecord(c, 99, "aliwoodbaf.ir", "milichi", "37.152.190.9"); err != nil {
+		t.Fatal(err)
+	}
+	if err := arvanPointRecord(c, 99, "aliwoodbaf.ir", "bemanche", "37.152.190.9"); err == nil || !strings.Contains(err.Error(), "the address of panel here") {
+		t.Fatalf("moving a record off another relay: %v", err)
+	}
+	if err := arvanPointRecord(c, 99, "aliwoodbaf.ir", "bemanche", "212.95.35.41"); err != nil {
+		t.Fatalf("a record already on the address: %v", err)
+	}
+	if len(fake.records) != 1 || fake.records[0] != "moved r-milichi 37.152.190.9" {
+		t.Fatalf("records %v", fake.records)
+	}
+}
+
+// A failed DNS step leaves a working entry server, still bound for swaps, and says so.
+func TestAFailedRecordStillBindsTheFront(t *testing.T) {
+	run := setupArvanCreate(t, &fakeArvan{statuses: []string{"ACTIVE"}, ip: "37.152.190.9"})
+	saved := arvanPointRecord
+	arvanPointRecord = func(*arvan.Client, int, string, string, string) error { return errors.New("arvan: 403: no permission") }
+	t.Cleanup(func() { arvanPointRecord = saved })
+	req := createReq
+	req.ArvanPurpose = ArvanPurpose{Domain: "aliwoodbaf.ir", Record: "ir2"}
+	if err := (&ArvanService{}).StartCreate(req); err != nil {
+		t.Fatal(err)
+	}
+	st := waitCreateDone(t)
+	if !strings.Contains(st.Error, "bound for swaps, but ir2.aliwoodbaf.ir could not be pointed at it") || len(run.bound) != 1 {
+		t.Fatalf("state %+v, bound %v", st, run.bound)
+	}
+}
+
+// A server already on the account is added by its root password once, for the purpose
+// chosen; one in use here, or with no password, is refused.
+func TestAServerAlreadyThereIsAddedWithItsPassword(t *testing.T) {
+	fake := &fakeArvan{}
+	run := setupArvanCreate(t, fake)
+	svc := &ArvanService{}
+	adopt := ArvanAdoptRequest{Zone: "ir-thr-fr1", ServerID: "free", Name: "spare", Password: "pw"}
+	noPass := adopt
+	noPass.Password = ""
+	if err := svc.StartAdopt(noPass); err == nil || !strings.Contains(err.Error(), "password is needed") {
+		t.Fatalf("no password: %v", err)
+	}
+	seedRelays(t, model.Relay{Name: "Ir", Address: "37.152.187.164", Role: model.RelayFront})
+	inUse := adopt
+	inUse.ServerID, inUse.Name = "old", "again"
+	if err := svc.StartAdopt(inUse); err == nil || !strings.Contains(err.Error(), "already Ir on this panel") {
+		t.Fatalf("a server in use: %v", err)
+	}
+	if err := svc.StartAdopt(adopt); err != nil {
+		t.Fatal(err)
+	}
+	st := waitCreateDone(t)
+	if st.Error != "" || strings.Join(st.Steps, ",") != "add,setup,bind" || st.IP != "37.152.190.77" {
+		t.Fatalf("state %+v", st)
+	}
+	a := run.added
+	if len(a) != 1 || a[0].Password != "pw" || a[0].PrivateKey != "" || a[0].Address != "37.152.190.77" || a[0].Tool != "backpack" {
+		t.Fatalf("added %+v", a)
+	}
+	if len(fake.creates) != 0 || len(fake.keys) != 0 {
+		t.Fatal("adopting made a server or a key")
+	}
+}
+
+// An exit outside Iran has no tunnel, record or Arvan binding: it is added and set up, nothing more.
+func TestAnExitIsAddedWithoutTunnelRecordOrBinding(t *testing.T) {
+	fake := &fakeArvan{}
+	run := setupArvanCreate(t, fake)
+	err := (&ArvanService{}).StartAdopt(ArvanAdoptRequest{
+		Zone: "eu-west1-a", ServerID: "de1", Name: "de", Password: "pw",
+		ArvanPurpose: ArvanPurpose{Role: "exit", Tool: "backpack", Domain: "aliwoodbaf.ir", Record: "de"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	st := waitCreateDone(t)
+	if st.Error != "" || strings.Join(st.Steps, ",") != "add,setup" {
+		t.Fatalf("state %+v", st)
+	}
+	if a := run.added; len(a) != 1 || a[0].Role != "exit" || a[0].Tool != "" || a[0].Transport != "" || a[0].TunnelPort != 0 {
+		t.Fatalf("added %+v", a)
+	}
+	if len(run.bound) != 0 || len(fake.records) != 0 {
+		t.Fatalf("an exit was bound %v or given records %v", run.bound, fake.records)
 	}
 }

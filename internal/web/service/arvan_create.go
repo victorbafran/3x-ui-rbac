@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"regexp"
 	"slices"
 	"sort"
 	"strings"
@@ -17,6 +18,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 	"github.com/mhsanaei/3x-ui/v3/internal/ocserv"
 	"github.com/mhsanaei/3x-ui/v3/internal/relay"
+	"github.com/mhsanaei/3x-ui/v3/internal/tunnel"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/global"
 )
@@ -74,12 +76,33 @@ type ArvanServerView struct {
 	Relay  string   `json:"relay"`
 }
 
-// ArvanCreateRequest is a new entry server to make in Arvan.
+// ArvanPurpose is what a server from Arvan becomes here: an entry server ("front", the
+// default) carried by Tool and Transport, whose public IP goes behind Record.Domain when
+// Domain is set, or an exit ("exit"), which only a zone outside Iran makes sense for.
+type ArvanPurpose struct {
+	Role      string `json:"role"`
+	Tool      string `json:"tool"`
+	Transport string `json:"transport"`
+	Domain    string `json:"domain"`
+	Record    string `json:"record"`
+}
+
+// ArvanCreateRequest is a new server to make in Arvan and add here.
 type ArvanCreateRequest struct {
 	Zone  string `json:"zone"`
 	Size  string `json:"size"`
 	Image string `json:"image"`
 	Name  string `json:"name"`
+	ArvanPurpose
+}
+
+// ArvanAdoptRequest adds a server already on the account; its root password is used once.
+type ArvanAdoptRequest struct {
+	Zone     string `json:"zone"`
+	ServerID string `json:"serverId"`
+	Name     string `json:"name"`
+	Password string `json:"password"`
+	ArvanPurpose
 }
 
 // ArvanCreateState is the running or last make-and-add: its step, and what it has so far.
@@ -94,6 +117,9 @@ type ArvanCreateState struct {
 	RelayID    int    `json:"relayId"`
 	StartedAt  int64  `json:"startedAt"`
 	FinishedAt int64  `json:"finishedAt"`
+	// Steps are this run's steps in order: a make runs them all, adding a server that is
+	// already there starts at add, and an exit has no dns or bind.
+	Steps []string `json:"steps"`
 }
 
 // The steps of a make-and-add, in order, as the card names them.
@@ -103,9 +129,27 @@ const (
 	arvanStepBoot   = "boot"
 	arvanStepSSH    = "ssh"
 	arvanStepAdd    = "add"
+	arvanStepSetup  = "setup"
+	arvanStepDNS    = "dns"
 	arvanStepBind   = "bind"
 	arvanStepDone   = "done"
 )
+
+// arvanSteps is the steps of a run that makes the server or adopts one, for a purpose.
+func arvanSteps(makes bool, p ArvanPurpose) []string {
+	var steps []string
+	if makes {
+		steps = []string{arvanStepKey, arvanStepServer, arvanStepBoot, arvanStepSSH}
+	}
+	steps = append(steps, arvanStepAdd, arvanStepSetup)
+	if p.Role == string(model.RelayFront) {
+		if p.Domain != "" {
+			steps = append(steps, arvanStepDNS)
+		}
+		steps = append(steps, arvanStepBind)
+	}
+	return steps
+}
 
 var arvanCreate struct {
 	sync.Mutex
@@ -280,6 +324,124 @@ func setArvanCreate(update func(st *ArvanCreateState)) {
 	update(&arvanCreate.state)
 }
 
+// arvanRecordName is a record label as it is typed in Arvan: "@" for the domain itself, or
+// labels of letters, digits and hyphens joined by dots.
+var arvanRecordLabel = regexp.MustCompile(`^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$`)
+
+func validArvanRecord(name string) bool {
+	if name == "@" {
+		return true
+	}
+	if name == "" || len(name) > 200 {
+		return false
+	}
+	for _, label := range strings.Split(name, ".") {
+		if !arvanRecordLabel.MatchString(label) {
+			return false
+		}
+	}
+	return true
+}
+
+// normalizePurpose checks a purpose against what the zone is and the domains on the account,
+// filling the defaults: an entry server on BackPack stealth.
+func (s *ArvanService) normalizePurpose(c *arvan.Client, p ArvanPurpose, zoneCountry string) (ArvanPurpose, error) {
+	p.Role = strings.TrimSpace(p.Role)
+	if p.Role == "" {
+		p.Role = string(model.RelayFront)
+	}
+	p.Domain = strings.ToLower(strings.TrimSpace(p.Domain))
+	p.Record = strings.ToLower(strings.TrimSpace(p.Record))
+	switch model.RelayRole(p.Role) {
+	case model.RelayExit:
+		// customers leaving through an exit come out in its country
+		if strings.EqualFold(strings.TrimSpace(zoneCountry), "iran") {
+			return p, errors.New("an exit in Iran would send customers out through Iran; pick a zone outside Iran or make it an entry server")
+		}
+		return ArvanPurpose{Role: p.Role}, nil
+	case model.RelayFront:
+	default:
+		return p, fmt.Errorf("a server is an entry server or an exit, not %q", p.Role)
+	}
+	if strings.TrimSpace(p.Tool) == "" {
+		p.Tool = string(tunnel.ToolBackPack)
+	}
+	tool, err := tunnel.ParseTool(strings.TrimSpace(p.Tool))
+	if err != nil {
+		return p, err
+	}
+	p.Tool = string(tool)
+	if strings.TrimSpace(p.Transport) == "" {
+		p.Transport = string(tunnel.TransportsFor(tool)[0])
+	}
+	p.Transport = strings.TrimSpace(p.Transport)
+	if err := tunnel.ValidChoiceFor(tool, tunnel.Transport(p.Transport)); err != nil {
+		return p, err
+	}
+	if p.Domain == "" {
+		p.Record = ""
+		return p, nil
+	}
+	if !validArvanRecord(p.Record) {
+		return p, fmt.Errorf("%q is not a record name: use letters, digits and hyphens, or @ for the domain itself", p.Record)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), arvanCallTimeout)
+	defer cancel()
+	domains, err := c.Domains(ctx)
+	if err != nil {
+		return p, err
+	}
+	if !slices.Contains(domains, p.Domain) {
+		return p, fmt.Errorf("the domain %s is not on this Arvan account", p.Domain)
+	}
+	return p, nil
+}
+
+// Domains lists the domains on the Arvan account, for a server's IP to go behind.
+func (s *ArvanService) Domains() ([]string, error) {
+	c, err := s.client()
+	if err != nil {
+		return nil, err
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), arvanCallTimeout)
+	defer cancel()
+	domains, err := c.Domains(ctx)
+	if err != nil {
+		return nil, err
+	}
+	slices.Sort(domains)
+	return domains, nil
+}
+
+// relayNameFree refuses a name a relay here already has.
+func relayNameFree(name string) error {
+	if err := ocserv.ValidLocationName(name); err != nil {
+		return err
+	}
+	if len(name) > 40 {
+		return fmt.Errorf("the name %q is longer than 40 characters", name)
+	}
+	var taken int64
+	if err := database.GetDB().Model(&model.Relay{}).Where("name = ?", name).Count(&taken).Error; err != nil {
+		return err
+	}
+	if taken > 0 {
+		return fmt.Errorf("a relay is already named %q", name)
+	}
+	return nil
+}
+
+// claimArvanRun starts a run's state, or refuses while one runs.
+func claimArvanRun(name, zone string, steps []string) error {
+	arvanCreate.Lock()
+	defer arvanCreate.Unlock()
+	if arvanCreate.state.Running {
+		return errors.New("a server is already being made or added; wait for it to finish")
+	}
+	arvanCreate.state = ArvanCreateState{Running: true, Step: steps[0], Name: name, Zone: zone, StartedAt: time.Now().Unix(), Steps: steps}
+	return nil
+}
+
 // StartCreate checks the request against the zone's catalog and starts making the server;
 // the steps run behind it and CreateState follows them. One runs at a time.
 func (s *ArvanService) StartCreate(req ArvanCreateRequest) error {
@@ -287,18 +449,8 @@ func (s *ArvanService) StartCreate(req ArvanCreateRequest) error {
 		return global.ErrStandby
 	}
 	req.Name, req.Zone = strings.TrimSpace(req.Name), strings.TrimSpace(req.Zone)
-	if err := ocserv.ValidLocationName(req.Name); err != nil {
+	if err := relayNameFree(req.Name); err != nil {
 		return err
-	}
-	if len(req.Name) > 40 {
-		return fmt.Errorf("the name %q is longer than 40 characters", req.Name)
-	}
-	var taken int64
-	if err := database.GetDB().Model(&model.Relay{}).Where("name = ?", req.Name).Count(&taken).Error; err != nil {
-		return err
-	}
-	if taken > 0 {
-		return fmt.Errorf("a relay is already named %q", req.Name)
 	}
 	cat, err := s.Catalog(req.Zone)
 	if err != nil {
@@ -318,32 +470,24 @@ func (s *ArvanService) StartCreate(req ArvanCreateRequest) error {
 	if cat.ServerLimit > 0 && cat.ServerCount >= cat.ServerLimit {
 		return fmt.Errorf("the account already has %d servers in %s, Arvan's limit", cat.ServerCount, req.Zone)
 	}
-
-	arvanCreate.Lock()
-	if arvanCreate.state.Running {
-		arvanCreate.Unlock()
-		return errors.New("a server is already being made; wait for it to finish")
+	c, err := s.client()
+	if err != nil {
+		return err
 	}
-	arvanCreate.state = ArvanCreateState{Running: true, Step: arvanStepKey, Name: req.Name, Zone: req.Zone, StartedAt: time.Now().Unix()}
-	arvanCreate.Unlock()
+	zi := slices.IndexFunc(cat.Zones, func(z ArvanZoneView) bool { return z.Code == req.Zone })
+	if req.ArvanPurpose, err = s.normalizePurpose(c, req.ArvanPurpose, cat.Zones[zi].Country); err != nil {
+		return err
+	}
+	if err := claimArvanRun(req.Name, req.Zone, arvanSteps(true, req.ArvanPurpose)); err != nil {
+		return err
+	}
 
 	common.GoRecover("arvan-create", func() { s.runCreate(req, size) })
 	return nil
 }
 
 func (s *ArvanService) runCreate(req ArvanCreateRequest, size ArvanSizeView) {
-	err := s.makeAndAdd(req, size)
-	setArvanCreate(func(st *ArvanCreateState) {
-		st.Running, st.FinishedAt = false, time.Now().Unix()
-		if err != nil {
-			st.Error = err.Error()
-			return
-		}
-		st.Step = arvanStepDone
-	})
-	if err != nil {
-		logger.Warningf("arvan: making entry server %s failed: %v", req.Name, err)
-	}
+	finishArvanRun(req.Name, s.makeAndAdd(req, size))
 }
 
 func (s *ArvanService) makeAndAdd(req ArvanCreateRequest, size ArvanSizeView) error {
@@ -419,17 +563,27 @@ func (s *ArvanService) makeAndAdd(req ArvanCreateRequest, size ArvanSizeView) er
 		return fmt.Errorf("server %s at %s is up but did not take the panel's key over SSH: %w", req.Name, ip, err)
 	}
 
-	step(arvanStepAdd)
-	relayId, err := arvanAddFront(s, RelayRequest{
+	return s.addAndFinish(c, req.Name, ip, req.ArvanPurpose, RelayRequest{
 		Name: req.Name, Address: ip, SSHPort: 22, SSHUser: "root", PrivateKey: string(privatePEM),
-		Role: string(model.RelayFront), Tool: "backpack", Transport: "stealth", TunnelPort: 3080,
 	})
+}
+
+// addAndFinish adds the server here for its purpose, waits for it to be set up, puts its IP
+// behind the record when a domain was chosen, and binds an entry server to Arvan for swaps.
+func (s *ArvanService) addAndFinish(c *arvan.Client, name, ip string, p ArvanPurpose, req RelayRequest) error {
+	step := func(n string) { setArvanCreate(func(st *ArvanCreateState) { st.Step = n }) }
+	step(arvanStepAdd)
+	req.Role = p.Role
+	if p.Role == string(model.RelayFront) {
+		req.Tool, req.Transport, req.TunnelPort = p.Tool, p.Transport, 3080
+	}
+	relayId, err := arvanAddFront(s, req)
 	if err != nil {
-		return fmt.Errorf("server %s at %s is ready but could not be added as an entry server: %w", req.Name, ip, err)
+		return fmt.Errorf("server %s at %s could not be added here: %w", name, ip, err)
 	}
 	setArvanCreate(func(st *ArvanCreateState) { st.RelayID = relayId })
 
-	step(arvanStepBind)
+	step(arvanStepSetup)
 	deadline := time.Now().Add(arvanEnrollWait)
 	for {
 		status, lastErr := arvanFrontStatus(relayId)
@@ -437,17 +591,63 @@ func (s *ArvanService) makeAndAdd(req ArvanCreateRequest, size ArvanSizeView) er
 			break
 		}
 		if status == RelayError || status == "" {
-			return fmt.Errorf("entry server %s was added but setting it up failed: %s", req.Name, lastErr)
+			return fmt.Errorf("%s was added but setting it up failed: %s", name, lastErr)
 		}
 		if time.Now().After(deadline) {
-			return fmt.Errorf("entry server %s is still being set up; open it in a few minutes", req.Name)
+			return fmt.Errorf("%s is still being set up; open it in a few minutes", name)
 		}
 		time.Sleep(arvanCreatePoll)
 	}
-	if err := arvanBindFront(s, relayId); err != nil {
-		return fmt.Errorf("entry server %s works, but binding it to Arvan for IP swaps failed; press Detect in its Arvan window: %w", req.Name, err)
+	if p.Role != string(model.RelayFront) {
+		return nil
+	}
+	var dnsErr error
+	if p.Domain != "" {
+		step(arvanStepDNS)
+		if dnsErr = arvanPointRecord(c, relayId, p.Domain, p.Record, ip); dnsErr == nil {
+			// the record is the name customers reach it by, and the one a swap moves
+			_ = database.GetDB().Model(&model.Relay{}).Where("id = ?", relayId).Update("public_name", recordFQDN(p.Record, p.Domain)).Error
+		}
+	}
+	step(arvanStepBind)
+	bindErr := arvanBindFront(s, relayId)
+	switch {
+	case dnsErr != nil && bindErr != nil:
+		return fmt.Errorf("entry server %s works, but %s could not be pointed at it (%w) and binding it to Arvan failed (%w)", name, recordFQDN(p.Record, p.Domain), dnsErr, bindErr)
+	case dnsErr != nil:
+		return fmt.Errorf("entry server %s works and is bound for swaps, but %s could not be pointed at it: %w", name, recordFQDN(p.Record, p.Domain), dnsErr)
+	case bindErr != nil:
+		return fmt.Errorf("entry server %s works, but binding it to Arvan for IP swaps failed; press Detect in its Arvan window: %w", name, bindErr)
 	}
 	return nil
+}
+
+// arvanPointRecord puts ip behind domain's record name: the record is made when there is none,
+// and moved when there is, unless it points at the address of another relay here, which a move
+// would cut off.
+var arvanPointRecord = func(c *arvan.Client, relayId int, domain, name, ip string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), arvanCallTimeout)
+	defer cancel()
+	recs, err := c.ARecords(ctx, domain)
+	if err != nil {
+		return err
+	}
+	for _, rec := range recs {
+		if !strings.EqualFold(rec.Name, name) {
+			continue
+		}
+		for _, held := range rec.IPs {
+			if held == ip {
+				return nil
+			}
+			var other model.Relay
+			if database.GetDB().Where("address = ? AND id <> ?", held, relayId).First(&other).Error == nil {
+				return fmt.Errorf("%s points at %s, the address of %s here; pick another name", recordFQDN(name, domain), held, other.Name)
+			}
+		}
+		return c.SetARecordIP(ctx, domain, rec, ip)
+	}
+	return c.CreateARecord(ctx, domain, name, ip)
 }
 
 // findServerByName is the id of the zone's server named name, looked for a few times.
@@ -553,4 +753,74 @@ func (s *ArvanService) DeleteServer(zone, id string) error {
 	}
 	logger.Infof("arvan: deleted server %s (%s) in %s", server.Name, id, zone)
 	return nil
+}
+
+// StartAdopt adds a server already on the account, by its root password once, for a purpose;
+// the steps run behind it and CreateState follows them.
+func (s *ArvanService) StartAdopt(req ArvanAdoptRequest) error {
+	if global.IsStandby() {
+		return global.ErrStandby
+	}
+	req.Name, req.Zone, req.ServerID = strings.TrimSpace(req.Name), strings.TrimSpace(req.Zone), strings.TrimSpace(req.ServerID)
+	if err := relayNameFree(req.Name); err != nil {
+		return err
+	}
+	if req.Password == "" {
+		return errors.New("the server's root password is needed once, to install the panel's own key")
+	}
+	c, err := s.client()
+	if err != nil {
+		return err
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), arvanCallTimeout)
+	defer cancel()
+	zones, err := c.Zones(ctx)
+	if err != nil {
+		return err
+	}
+	zi := slices.IndexFunc(zones, func(z arvan.Zone) bool { return z.Code == req.Zone })
+	if zi < 0 {
+		return fmt.Errorf("zone %q is not on this account", req.Zone)
+	}
+	server, err := c.Server(ctx, req.Zone, req.ServerID)
+	if err != nil {
+		return err
+	}
+	ip := server.PublicIPv4()
+	if ip == "" {
+		return fmt.Errorf("%s has no public IPv4 to reach it by", server.Name)
+	}
+	var held model.Relay
+	if database.GetDB().Where("address = ?", ip).First(&held).Error == nil {
+		return fmt.Errorf("%s (%s) is already %s on this panel", server.Name, ip, held.Name)
+	}
+	if req.ArvanPurpose, err = s.normalizePurpose(c, req.ArvanPurpose, zones[zi].Country); err != nil {
+		return err
+	}
+	if err := claimArvanRun(req.Name, req.Zone, arvanSteps(false, req.ArvanPurpose)); err != nil {
+		return err
+	}
+	setArvanCreate(func(st *ArvanCreateState) { st.ServerID, st.IP = req.ServerID, ip })
+	common.GoRecover("arvan-adopt", func() {
+		err := s.addAndFinish(c, req.Name, ip, req.ArvanPurpose, RelayRequest{
+			Name: req.Name, Address: ip, SSHPort: 22, SSHUser: "root", Password: req.Password,
+		})
+		finishArvanRun(req.Name, err)
+	})
+	return nil
+}
+
+// finishArvanRun records how a run ended.
+func finishArvanRun(name string, err error) {
+	setArvanCreate(func(st *ArvanCreateState) {
+		st.Running, st.FinishedAt = false, time.Now().Unix()
+		if err != nil {
+			st.Error = err.Error()
+			return
+		}
+		st.Step = arvanStepDone
+	})
+	if err != nil {
+		logger.Warningf("arvan: %s: %v", name, err)
+	}
 }

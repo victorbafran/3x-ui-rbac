@@ -2830,7 +2830,7 @@
       "arvanAdd": {
         "button": "Từ ArvanCloud",
         "title": "Máy chủ vào từ ArvanCloud",
-        "intro": "Tạo máy chủ mới trong tài khoản ArvanCloud và thêm làm máy chủ vào mà không cần mật khẩu, hoặc dùng hay xóa máy chủ đã có ở đó.",
+        "intro": "Nhập khóa ArvanCloud rồi xem các máy chủ trong tài khoản: thêm một máy ở đây với mật khẩu một lần, tạo máy mới tham gia không cần mật khẩu, hoặc xóa một máy. Bạn chọn công dụng của từng máy.",
         "keyHint": "Dán khóa API ArvanCloud có quyền tạo, đọc và xóa máy chủ. Bảng điều khiển lưu nó dưới dạng mã hóa.",
         "tabs": {
           "new": "Máy chủ mới",
@@ -2847,7 +2847,7 @@
           "atLimit": "Vùng này đã có {count} trên {limit} máy chủ của bạn, giới hạn của ArvanCloud.",
           "create": "Tạo và thêm",
           "confirm": "Tạo máy chủ {name} trên ArvanCloud?",
-          "confirmHint": "Tốn {hour} mỗi giờ ({month} mỗi tháng) cho đến khi bạn xóa. Sau đó bảng điều khiển thêm nó làm máy chủ vào BackPack và gắn để đổi IP."
+          "confirmHint": "Tốn {hour} mỗi giờ ({month} mỗi tháng) cho đến khi bạn xóa. Sau đó bảng điều khiển thêm nó theo lựa chọn của bạn."
         },
         "progress": {
           "title": "Máy chủ {name}",
@@ -2856,11 +2856,13 @@
             "server": "Tạo máy chủ",
             "boot": "Chờ khởi động",
             "ssh": "Kết nối bằng khóa của bảng điều khiển",
-            "add": "Thêm làm máy chủ vào",
-            "bind": "Dựng đường hầm và gắn với ArvanCloud"
+            "add": "Thêm vào bảng này",
+            "bind": "Gắn với ArvanCloud để đổi IP",
+            "setup": "Chờ thiết lập xong",
+            "dns": "Trỏ tên miền tới máy"
           },
           "ip": "IP:",
-          "done": "{name} đã sẵn sàng và nằm trong danh sách máy chủ vào."
+          "done": "{name} đã sẵn sàng và có trong danh sách."
         },
         "servers": {
           "name": "Tên",
@@ -2868,13 +2870,34 @@
           "ips": "IP",
           "status": "Trạng thái",
           "relay": "Trên bảng này",
-          "use": "Dùng làm máy chủ vào",
+          "use": "Dùng",
           "delete": "Xóa",
           "confirmDelete": "Xóa {name} khỏi ArvanCloud?",
           "confirmDeleteHint": "Máy chủ, ổ đĩa và IP mất vĩnh viễn. Không thể hoàn tác.",
           "inUse": "{relay} đang dùng; hãy xóa nó trên bảng này trước.",
           "refresh": "Làm mới",
-          "hint": "“Dùng làm máy chủ vào” mở biểu mẫu thêm với địa chỉ của nó; mật khẩu root cần nhập một lần ở đó."
+          "hint": "“Dùng” hỏi công dụng của máy chủ và mật khẩu root một lần."
+        },
+        "changeKey": "Đổi khóa",
+        "keyReady": "Khóa đã được lưu. Máy chủ của bạn và máy chủ mới ở bên dưới.",
+        "purpose": {
+          "role": "Dùng làm",
+          "front": "Máy chủ vào",
+          "exit": "Máy chủ ra",
+          "exitIran": "Chỉ vùng ngoài Iran mới làm máy chủ ra được: khách đi ra qua quốc gia của nó.",
+          "tool": "Đường hầm",
+          "transport": "Giao thức truyền",
+          "domain": "Tên miền",
+          "noDomain": "Không có tên miền",
+          "record": "Tên bản ghi",
+          "recordHint": "{fqdn} sẽ trỏ tới máy chủ này và là tên được chuyển khi đổi IP. Bản ghi đã có sẽ được chuyển sang đây, trừ khi máy chủ khác ở đây đang dùng."
+        },
+        "adopt": {
+          "title": "Thêm {name}",
+          "password": "Mật khẩu root",
+          "passwordHint": "Chỉ dùng một lần để cài khóa của bảng điều khiển; không được lưu.",
+          "submit": "Thêm",
+          "cancel": "Hủy"
         }
       },
       "arvan": {
@@ -2984,7 +3007,9 @@
           "catalog": "Đọc gói ArvanCloud",
           "servers": "Liệt kê máy chủ ArvanCloud",
           "create": "Tạo máy chủ trên ArvanCloud",
-          "deleteServer": "Xóa máy chủ ArvanCloud"
+          "deleteServer": "Xóa máy chủ ArvanCloud",
+          "adopt": "Thêm máy chủ ArvanCloud",
+          "domains": "Liệt kê tên miền ArvanCloud"
         }
       },
       "psiphon": {

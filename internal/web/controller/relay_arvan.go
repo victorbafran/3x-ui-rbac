@@ -44,6 +44,8 @@ func (a *RelayController) initArvanRouter(g *gin.RouterGroup) {
 	g.POST("/arvan/servers/delete", a.arvanDeleteServer)
 	g.GET("/arvan/create", a.arvanCreateState)
 	g.POST("/arvan/create", a.arvanCreate)
+	g.POST("/arvan/adopt", a.arvanAdopt)
+	g.GET("/arvan/domains", a.arvanDomains)
 }
 
 // arvanCatalog takes ?zone=; without one it answers for Arvan's first zone.
@@ -192,4 +194,23 @@ func (a *RelayController) arvanDeleteServer(c *gin.Context) {
 		return
 	}
 	jsonMsg(c, I18nWeb(c, "pages.relays.arvan.toasts.deleteServer"), a.arvanService.DeleteServer(req.Zone, req.ID))
+}
+
+// arvanAdopt starts adding a server already on the Arvan account; like a make, it answers at
+// once and GET /arvan/create follows the steps.
+func (a *RelayController) arvanAdopt(c *gin.Context) {
+	req, ok := middleware.BindJSONAndValidate[service.ArvanAdoptRequest](c)
+	if !ok {
+		return
+	}
+	jsonMsg(c, I18nWeb(c, "pages.relays.arvan.toasts.adopt"), a.arvanService.StartAdopt(*req))
+}
+
+func (a *RelayController) arvanDomains(c *gin.Context) {
+	domains, err := a.arvanService.Domains()
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "pages.relays.arvan.toasts.domains"), err)
+		return
+	}
+	jsonObj(c, domains, nil)
 }

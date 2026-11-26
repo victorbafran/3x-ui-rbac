@@ -2830,7 +2830,7 @@
       "arvanAdd": {
         "button": "ArvanCloud'dan",
         "title": "ArvanCloud'dan giriş sunucusu",
-        "intro": "ArvanCloud hesabınızda yeni bir sunucu oluşturup parolasız giriş sunucusu olarak ekleyin, ya da orada olan bir sunucuyu kullanın veya silin.",
+        "intro": "ArvanCloud anahtarınızı girin, sonra hesaptaki sunucuları görün: birini parolasıyla bir kez buraya ekleyin, parolasız katılan yeni bir sunucu oluşturun ya da birini silin. Her birinin ne için olduğunu siz seçersiniz.",
         "keyHint": "Sunucu oluşturma, okuma ve silme izni olan bir ArvanCloud API anahtarı yapıştırın. Panel onu şifreli saklar.",
         "tabs": {
           "new": "Yeni sunucu",
@@ -2847,7 +2847,7 @@
           "atLimit": "Bu bölgede zaten {limit} sunucu sınırınızdan {count} tanesi var.",
           "create": "Oluştur ve ekle",
           "confirm": "{name} sunucusu ArvanCloud'da oluşturulsun mu?",
-          "confirmHint": "Silene kadar saatte {hour} (ayda {month}) tutar. Ardından panel onu BackPack giriş sunucusu olarak ekler ve IP değişimi için bağlar."
+          "confirmHint": "Silene kadar saatte {hour} (ayda {month}) tutar. Ardından panel onu seçtiğiniz gibi ekler."
         },
         "progress": {
           "title": "Sunucu {name}",
@@ -2856,11 +2856,13 @@
             "server": "Sunucuyu oluştur",
             "boot": "Açılmasını bekle",
             "ssh": "Panel anahtarıyla bağlan",
-            "add": "Giriş sunucusu olarak ekle",
-            "bind": "Tüneli kur ve ArvanCloud'a bağla"
+            "add": "Bu panele ekle",
+            "bind": "IP değişimi için ArvanCloud'a bağla",
+            "setup": "Kurulmasını bekle",
+            "dns": "Alan adını ona yönlendir"
           },
           "ip": "IP:",
-          "done": "{name} hazır ve giriş sunucuları listesinde."
+          "done": "{name} hazır ve listede."
         },
         "servers": {
           "name": "Ad",
@@ -2868,13 +2870,34 @@
           "ips": "IP'ler",
           "status": "Durum",
           "relay": "Bu panelde",
-          "use": "Giriş sunucusu olarak kullan",
+          "use": "Kullan",
           "delete": "Sil",
           "confirmDelete": "{name} ArvanCloud'dan silinsin mi?",
           "confirmDeleteHint": "Sunucu, diski ve IP'leri kalıcı olarak gider. Geri alınamaz.",
           "inUse": "{relay} kullanıyor; önce bu panelde kaldırın.",
           "refresh": "Yenile",
-          "hint": "“Giriş sunucusu olarak kullan” adresiyle ekleme formunu açar; orada bir kez root parolası gerekir."
+          "hint": "“Kullan” sunucunun ne için olduğunu ve root parolasını bir kez sorar."
+        },
+        "changeKey": "Anahtarı değiştir",
+        "keyReady": "Anahtar kayıtlı. Sunucularınız ve yeni sunucu aşağıda.",
+        "purpose": {
+          "role": "Şu olarak kullan",
+          "front": "Giriş sunucusu",
+          "exit": "Çıkış sunucusu",
+          "exitIran": "Yalnızca İran dışındaki bir bölge çıkış olabilir: müşteriler onun ülkesinden çıkar.",
+          "tool": "Tünel",
+          "transport": "Taşıma",
+          "domain": "Alan adı",
+          "noDomain": "Alan adı yok",
+          "record": "Kayıt adı",
+          "recordHint": "{fqdn} bu sunucuyu gösterecek ve IP değişiminin taşıdığı ad olacak. Var olan bir kayıt buraya taşınır; burada başka bir sunucu kullanıyorsa taşınmaz."
+        },
+        "adopt": {
+          "title": "{name} ekle",
+          "password": "Root parolası",
+          "passwordHint": "Panelin anahtarını kurmak için bir kez kullanılır; saklanmaz.",
+          "submit": "Ekle",
+          "cancel": "İptal"
         }
       },
       "arvan": {
@@ -2984,7 +3007,9 @@
           "catalog": "ArvanCloud planlarını oku",
           "servers": "ArvanCloud sunucularını listele",
           "create": "ArvanCloud'da sunucu oluştur",
-          "deleteServer": "ArvanCloud sunucusunu sil"
+          "deleteServer": "ArvanCloud sunucusunu sil",
+          "adopt": "ArvanCloud sunucusu ekle",
+          "domains": "ArvanCloud alan adlarını listele"
         }
       },
       "psiphon": {

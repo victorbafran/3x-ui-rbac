@@ -156,7 +156,6 @@ export const ArvanServerSchema = z.object({
 export type ArvanServer = z.infer<typeof ArvanServerSchema>;
 
 // The running or last make-and-add; step runs key → server → boot → ssh → add → bind → done.
-export const ARVAN_CREATE_STEPS = ['key', 'server', 'boot', 'ssh', 'add', 'bind', 'done'] as const;
 export const ArvanCreateStateSchema = z.object({
   running: z.boolean().default(false),
   step: z.string().default(''),
@@ -168,12 +167,31 @@ export const ArvanCreateStateSchema = z.object({
   relayId: z.number().default(0),
   startedAt: z.number().default(0),
   finishedAt: z.number().default(0),
+  // this run's steps in order; a server already there starts at "add", an exit stops at "setup"
+  steps: listOf(z.string()),
 });
 export type ArvanCreateState = z.infer<typeof ArvanCreateStateSchema>;
 
-export interface ArvanCreateRequest {
+// What a server from Arvan becomes here: an entry server carried by tool and transport, its IP
+// behind record.domain when a domain is chosen, or an exit (only outside Iran).
+export interface ArvanPurpose {
+  role: 'front' | 'exit';
+  tool: string;
+  transport: string;
+  domain: string;
+  record: string;
+}
+
+export interface ArvanCreateRequest extends ArvanPurpose {
   zone: string;
   size: string;
   image: string;
   name: string;
+}
+
+export interface ArvanAdoptRequest extends ArvanPurpose {
+  zone: string;
+  serverId: string;
+  name: string;
+  password: string;
 }

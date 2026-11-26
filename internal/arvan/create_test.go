@@ -142,3 +142,22 @@ func TestAServerIsDeletedByItsPath(t *testing.T) {
 		t.Fatal("a delete with no id was sent")
 	}
 }
+
+// A new A record carries the fields records made in Arvan's own panel carry.
+func TestANewARecordLooksLikeOneArvanMakes(t *testing.T) {
+	c, rs := replay(t, "k", map[string]reply{"POST /cdn/4.0/domains/aliwoodbaf.ir/dns-records": {status: 201, body: `{"data":{"id":"r1"}}`}})
+	if err := c.CreateARecord(context.Background(), "aliwoodbaf.ir", "ir2", "37.152.190.9"); err != nil {
+		t.Fatal(err)
+	}
+	var got map[string]any
+	if err := json.Unmarshal(rs.requests()[0].body, &got); err != nil {
+		t.Fatal(err)
+	}
+	want := `{"cloud":false,"ip_filter_mode":{"count":"single","geo_filter":"none","order":"none"},"name":"ir2","ttl":120,"type":"a","upstream_https":"default","value":[{"country":"","ip":"37.152.190.9","port":null,"weight":100}]}`
+	if canon, _ := json.Marshal(got); string(canon) != want {
+		t.Fatalf("body\n %s\nwant\n %s", canon, want)
+	}
+	if err := c.CreateARecord(context.Background(), "aliwoodbaf.ir", "ir2", "2001:db8::1"); err == nil {
+		t.Fatal("an IPv6 address was written into an A record")
+	}
+}

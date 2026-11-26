@@ -26,6 +26,7 @@ export const keys = {
       front: (relayId: number) => ['relays', 'arvan', 'front', relayId] as const,
       catalog: (zone: string) => ['relays', 'arvan', 'catalog', zone] as const,
       servers: () => ['relays', 'arvan', 'servers'] as const,
+      domains: () => ['relays', 'arvan', 'domains'] as const,
       create: () => ['relays', 'arvan', 'create'] as const,
     },
     psiphon: {

@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { z } from 'zod';
 
 import { HttpUtil } from '@/utils';
 import type { Msg } from '@/utils';
@@ -11,6 +12,7 @@ import {
   ArvanServerSchema,
 } from '@/schemas/arvan';
 import type {
+  ArvanAdoptRequest,
   ArvanCatalog,
   ArvanCreateRequest,
   ArvanCreateState,
@@ -154,6 +156,16 @@ export function useArvanServers(enabled: boolean) {
   return useQuery({ queryKey: keys.relays.arvan.servers(), queryFn: fetchServers, enabled });
 }
 
+async function fetchDomains(): Promise<string[]> {
+  const msg = await HttpUtil.get(`${BASE}/domains`, undefined, { silent: true });
+  if (!msg?.success) throw new Error(msg?.msg || 'Failed to list the ArvanCloud domains');
+  return z.array(z.string()).parse(msg.obj ?? []);
+}
+
+export function useArvanDomains(enabled: boolean) {
+  return useQuery({ queryKey: keys.relays.arvan.domains(), queryFn: fetchDomains, enabled });
+}
+
 async function fetchCreateState(): Promise<ArvanCreateState> {
   const msg = await HttpUtil.get(`${BASE}/create`, undefined, { silent: true });
   if (!msg?.success) throw new Error(msg?.msg || 'Failed to read the new server');
@@ -188,5 +200,9 @@ export function useArvanAccountMutations() {
       HttpUtil.post(`${BASE}/servers/delete`, server, JSON_HEADERS),
     onSettled: () => queryClient.invalidateQueries({ queryKey: keys.relays.arvan.servers() }),
   });
-  return { saveKeyMut, createMut, deleteServerMut };
+  const adoptMut = useMutation({
+    mutationFn: (req: ArvanAdoptRequest) => HttpUtil.post(`${BASE}/adopt`, req, JSON_HEADERS),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: keys.relays.arvan.create() }),
+  });
+  return { saveKeyMut, createMut, deleteServerMut, adoptMut };
 }

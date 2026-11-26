@@ -2830,7 +2830,7 @@
       "arvanAdd": {
         "button": "Desde ArvanCloud",
         "title": "Servidor de entrada desde ArvanCloud",
-        "intro": "Crea un servidor nuevo en tu cuenta de ArvanCloud y añádelo como servidor de entrada sin contraseña, o usa o borra uno que ya esté allí.",
+        "intro": "Introduce tu clave de ArvanCloud y verás los servidores de la cuenta: añade uno aquí con su contraseña una vez, crea uno nuevo que se una sin contraseña o borra uno. Tú eliges para qué sirve cada uno.",
         "keyHint": "Pega una clave API de ArvanCloud que pueda crear, leer y borrar servidores. El panel la guarda cifrada.",
         "tabs": {
           "new": "Servidor nuevo",
@@ -2847,7 +2847,7 @@
           "atLimit": "Esta zona ya tiene {count} de tus {limit} servidores, el límite de ArvanCloud.",
           "create": "Crear y añadir",
           "confirm": "¿Crear el servidor {name} en ArvanCloud?",
-          "confirmHint": "Cuesta {hour} por hora ({month} al mes) hasta que lo borres. Después el panel lo añade como servidor de entrada BackPack y lo vincula para cambiar de IP."
+          "confirmHint": "Cuesta {hour} por hora ({month} al mes) hasta que lo borres. Después el panel lo añade como elegiste."
         },
         "progress": {
           "title": "Servidor {name}",
@@ -2856,11 +2856,13 @@
             "server": "Crear el servidor",
             "boot": "Esperar a que arranque",
             "ssh": "Conectar con la clave del panel",
-            "add": "Añadirlo como servidor de entrada",
-            "bind": "Montar el túnel y vincularlo a ArvanCloud"
+            "add": "Añadirlo a este panel",
+            "bind": "Vincularlo a ArvanCloud para cambiar de IP",
+            "setup": "Esperar a que esté listo",
+            "dns": "Apuntar el dominio a él"
           },
           "ip": "IP:",
-          "done": "{name} está listo y en la lista de servidores de entrada."
+          "done": "{name} está listo y en la lista."
         },
         "servers": {
           "name": "Nombre",
@@ -2868,13 +2870,34 @@
           "ips": "IPs",
           "status": "Estado",
           "relay": "En este panel",
-          "use": "Usar como servidor de entrada",
+          "use": "Usar",
           "delete": "Borrar",
           "confirmDelete": "¿Borrar {name} de ArvanCloud?",
           "confirmDeleteHint": "El servidor, su disco y sus IPs desaparecen para siempre. No se puede deshacer.",
           "inUse": "Lo usa {relay}; quítalo antes en este panel.",
           "refresh": "Actualizar",
-          "hint": "«Usar como servidor de entrada» abre el formulario con su dirección; allí se pide una vez su contraseña de root."
+          "hint": "«Usar» pregunta para qué es el servidor y su contraseña de root una vez."
+        },
+        "changeKey": "Cambiar clave",
+        "keyReady": "La clave está guardada. Tus servidores y uno nuevo, abajo.",
+        "purpose": {
+          "role": "Usarlo como",
+          "front": "Servidor de entrada",
+          "exit": "Servidor de salida",
+          "exitIran": "Solo una zona fuera de Irán puede ser de salida: los clientes salen por su país.",
+          "tool": "Túnel",
+          "transport": "Transporte",
+          "domain": "Dominio",
+          "noDomain": "Sin dominio",
+          "record": "Nombre del registro",
+          "recordHint": "{fqdn} apuntará a este servidor y será el nombre que mueve un cambio de IP. Un registro que ya exista se mueve a él, salvo que lo use otro servidor de aquí."
+        },
+        "adopt": {
+          "title": "Añadir {name}",
+          "password": "Contraseña de root",
+          "passwordHint": "Se usa una vez para instalar la clave del panel; no se guarda.",
+          "submit": "Añadir",
+          "cancel": "Cancelar"
         }
       },
       "arvan": {
@@ -2984,7 +3007,9 @@
           "catalog": "Leer planes de ArvanCloud",
           "servers": "Listar servidores de ArvanCloud",
           "create": "Crear un servidor en ArvanCloud",
-          "deleteServer": "Borrar servidor de ArvanCloud"
+          "deleteServer": "Borrar servidor de ArvanCloud",
+          "adopt": "Añadir servidor de ArvanCloud",
+          "domains": "Listar dominios de ArvanCloud"
         }
       },
       "psiphon": {

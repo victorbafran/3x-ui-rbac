@@ -2827,6 +2827,79 @@
         "probe": "Check the exit server",
         "deleted": "Removed"
       },
+      "arvanAdd": {
+        "button": "From ArvanCloud",
+        "title": "Entry server from ArvanCloud",
+        "intro": "Enter your ArvanCloud key, then see the servers on the account: add one here with its password once, make a new one that joins with no password, or delete one. You choose what each is for.",
+        "keyHint": "Paste an ArvanCloud API key that may create, read and delete servers. The panel stores it encrypted.",
+        "tabs": {
+          "new": "New server",
+          "servers": "My servers"
+        },
+        "new": {
+          "zone": "Zone",
+          "size": "Size",
+          "sizeHint": "Prices as ArvanCloud lists them. A server is billed from the moment it is made until it is deleted.",
+          "sizeOption": "{cpus} CPU · {ram} GB RAM · {disk} GB · {hour} an hour · {month} a month",
+          "image": "Operating system",
+          "name": "Name",
+          "nameHint": "Used for the server in ArvanCloud and for the entry server here. No spaces, colons, commas or slashes.",
+          "atLimit": "This zone already has {count} of your {limit} servers, ArvanCloud’s limit.",
+          "create": "Make and add",
+          "confirm": "Make server {name} in ArvanCloud?",
+          "confirmHint": "It costs {hour} an hour ({month} a month) until you delete it. The panel then adds it as you chose."
+        },
+        "progress": {
+          "title": "Server {name}",
+          "steps": {
+            "key": "Register the panel’s key",
+            "server": "Make the server",
+            "boot": "Wait for it to start",
+            "ssh": "Reach it with the panel’s key",
+            "add": "Add it to this panel",
+            "bind": "Bind it to ArvanCloud for IP swaps",
+            "setup": "Wait for it to be set up",
+            "dns": "Point the domain at it"
+          },
+          "ip": "IP:",
+          "done": "{name} is ready and in the list."
+        },
+        "servers": {
+          "name": "Name",
+          "zone": "Zone",
+          "ips": "IPs",
+          "status": "Status",
+          "relay": "On this panel",
+          "use": "Use",
+          "delete": "Delete",
+          "confirmDelete": "Delete {name} from ArvanCloud?",
+          "confirmDeleteHint": "The server, its disk and its IPs are gone for good. This cannot be undone.",
+          "inUse": "In use by {relay}; remove it on this panel first.",
+          "refresh": "Refresh",
+          "hint": "“Use” asks what the server is for and its root password once."
+        },
+        "changeKey": "Change key",
+        "keyReady": "The key is saved. Your servers and new ones are below.",
+        "purpose": {
+          "role": "Use it as",
+          "front": "Entry server",
+          "exit": "Exit server",
+          "exitIran": "Only a zone outside Iran can be an exit: customers leave through its country.",
+          "tool": "Tunnel",
+          "transport": "Transport",
+          "domain": "Domain",
+          "noDomain": "No domain",
+          "record": "Record name",
+          "recordHint": "{fqdn} will point at this server and be the name a swap moves. A record already there is moved to it, unless another server here uses it."
+        },
+        "adopt": {
+          "title": "Add {name}",
+          "password": "Root password",
+          "passwordHint": "Used once to install the panel’s own key; it is not stored.",
+          "submit": "Add",
+          "cancel": "Cancel"
+        }
+      },
       "arvan": {
         "open": "ArvanCloud reserve IPs",
         "title": "ArvanCloud reserve IPs · {name}",
@@ -2864,7 +2937,7 @@
           "autoSwap": "Swap automatically",
           "autoSwapHint": "After about 3 failed checks a minute apart, moves to a healthy reserve. With no reserve it takes a fresh IP from Arvan, tests it, moves to it and releases the broken one.",
           "dailySwapAt": "Swap every day at",
-          "dailySwapAtHint": "HH:MM in the panel’s time zone. Empty turns it off.",
+          "dailySwapAtHint": "HH:MM in the panel’s time zone; several times separated by commas, such as 04:30, 16:30 (at most 6). Each swap takes a fresh IP. Empty turns it off.",
           "save": "Save settings"
         },
         "prepare": {
@@ -2918,7 +2991,7 @@
         },
         "errors": {
           "reserveTarget": "Enter a whole number from 0 to 3.",
-          "dailySwapAt": "Use HH:MM, such as 04:30, or leave it empty."
+          "dailySwapAt": "Use HH:MM times separated by commas, such as 04:30, 16:30, or leave it empty."
         },
         "toasts": {
           "key": "Save ArvanCloud key",
@@ -2930,7 +3003,13 @@
           "refill": "Add reserve IPs",
           "test": "Test IPs",
           "swap": "Swap active IP",
-          "release": "Release IP"
+          "release": "Release IP",
+          "catalog": "Read ArvanCloud plans",
+          "servers": "List ArvanCloud servers",
+          "create": "Make a server in ArvanCloud",
+          "deleteServer": "Delete ArvanCloud server",
+          "adopt": "Add an ArvanCloud server",
+          "domains": "List ArvanCloud domains"
         }
       },
       "psiphon": {

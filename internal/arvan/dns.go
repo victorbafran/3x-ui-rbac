@@ -120,3 +120,24 @@ func firstValue(raw json.RawMessage) map[string]json.RawMessage {
 	}
 	return values[0]
 }
+
+// CreateARecord adds an A record name → ip. The fields copy what records made in Arvan's own
+// panel carry (read 2026-11-26): no port, weight 100, no country, ttl 120, not proxied.
+func (c *Client) CreateARecord(ctx context.Context, domain, name, ip string) error {
+	if domain == "" || name == "" {
+		return errors.New("arvan: no domain or record name")
+	}
+	if parsed := net.ParseIP(ip); parsed == nil || parsed.To4() == nil {
+		return fmt.Errorf("arvan: %q is not an IPv4 address", ip)
+	}
+	body := map[string]any{
+		"type":           "a",
+		"name":           name,
+		"value":          []map[string]any{{"ip": ip, "port": nil, "weight": 100, "country": ""}},
+		"ttl":            120,
+		"cloud":          false,
+		"upstream_https": "default",
+		"ip_filter_mode": map[string]string{"count": "single", "order": "none", "geo_filter": "none"},
+	}
+	return c.call(ctx, http.MethodPost, "/cdn/4.0/domains/"+seg(domain)+"/dns-records", body, nil)
+}

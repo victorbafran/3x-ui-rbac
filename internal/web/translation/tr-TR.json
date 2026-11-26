@@ -2827,6 +2827,79 @@
         "probe": "Çıkış sunucusunu denetleme",
         "deleted": "Kaldırıldı"
       },
+      "arvanAdd": {
+        "button": "ArvanCloud'dan",
+        "title": "ArvanCloud'dan giriş sunucusu",
+        "intro": "ArvanCloud anahtarınızı girin, sonra hesaptaki sunucuları görün: birini parolasıyla bir kez buraya ekleyin, parolasız katılan yeni bir sunucu oluşturun ya da birini silin. Her birinin ne için olduğunu siz seçersiniz.",
+        "keyHint": "Sunucu oluşturma, okuma ve silme izni olan bir ArvanCloud API anahtarı yapıştırın. Panel onu şifreli saklar.",
+        "tabs": {
+          "new": "Yeni sunucu",
+          "servers": "Sunucularım"
+        },
+        "new": {
+          "zone": "Bölge",
+          "size": "Boyut",
+          "sizeHint": "Fiyatlar ArvanCloud listesindeki gibidir. Sunucu oluşturulduğu andan silinene kadar ücretlendirilir.",
+          "sizeOption": "{cpus} CPU · {ram} GB RAM · {disk} GB · saatte {hour} · ayda {month}",
+          "image": "İşletim sistemi",
+          "name": "Ad",
+          "nameHint": "ArvanCloud'daki sunucu ve buradaki giriş sunucusu için kullanılır. Boşluk, iki nokta, virgül veya eğik çizgi olmaz.",
+          "atLimit": "Bu bölgede zaten {limit} sunucu sınırınızdan {count} tanesi var.",
+          "create": "Oluştur ve ekle",
+          "confirm": "{name} sunucusu ArvanCloud'da oluşturulsun mu?",
+          "confirmHint": "Silene kadar saatte {hour} (ayda {month}) tutar. Ardından panel onu seçtiğiniz gibi ekler."
+        },
+        "progress": {
+          "title": "Sunucu {name}",
+          "steps": {
+            "key": "Panel anahtarını kaydet",
+            "server": "Sunucuyu oluştur",
+            "boot": "Açılmasını bekle",
+            "ssh": "Panel anahtarıyla bağlan",
+            "add": "Bu panele ekle",
+            "bind": "IP değişimi için ArvanCloud'a bağla",
+            "setup": "Kurulmasını bekle",
+            "dns": "Alan adını ona yönlendir"
+          },
+          "ip": "IP:",
+          "done": "{name} hazır ve listede."
+        },
+        "servers": {
+          "name": "Ad",
+          "zone": "Bölge",
+          "ips": "IP'ler",
+          "status": "Durum",
+          "relay": "Bu panelde",
+          "use": "Kullan",
+          "delete": "Sil",
+          "confirmDelete": "{name} ArvanCloud'dan silinsin mi?",
+          "confirmDeleteHint": "Sunucu, diski ve IP'leri kalıcı olarak gider. Geri alınamaz.",
+          "inUse": "{relay} kullanıyor; önce bu panelde kaldırın.",
+          "refresh": "Yenile",
+          "hint": "“Kullan” sunucunun ne için olduğunu ve root parolasını bir kez sorar."
+        },
+        "changeKey": "Anahtarı değiştir",
+        "keyReady": "Anahtar kayıtlı. Sunucularınız ve yeni sunucu aşağıda.",
+        "purpose": {
+          "role": "Şu olarak kullan",
+          "front": "Giriş sunucusu",
+          "exit": "Çıkış sunucusu",
+          "exitIran": "Yalnızca İran dışındaki bir bölge çıkış olabilir: müşteriler onun ülkesinden çıkar.",
+          "tool": "Tünel",
+          "transport": "Taşıma",
+          "domain": "Alan adı",
+          "noDomain": "Alan adı yok",
+          "record": "Kayıt adı",
+          "recordHint": "{fqdn} bu sunucuyu gösterecek ve IP değişiminin taşıdığı ad olacak. Var olan bir kayıt buraya taşınır; burada başka bir sunucu kullanıyorsa taşınmaz."
+        },
+        "adopt": {
+          "title": "{name} ekle",
+          "password": "Root parolası",
+          "passwordHint": "Panelin anahtarını kurmak için bir kez kullanılır; saklanmaz.",
+          "submit": "Ekle",
+          "cancel": "İptal"
+        }
+      },
       "arvan": {
         "open": "ArvanCloud yedek IP'leri",
         "title": "ArvanCloud yedek IP'leri · {name}",
@@ -2864,7 +2937,7 @@
           "autoSwap": "Otomatik geçiş",
           "autoSwapHint": "Bir dakika arayla yaklaşık 3 başarısız denetimden sonra sağlıklı bir yedeğe geçer. Yedek yoksa Arvan'dan yeni bir IP alır, test eder, ona geçer ve bozuk olanı bırakır.",
           "dailySwapAt": "Her gün şu saatte geçiş",
-          "dailySwapAtHint": "Panelin saat diliminde HH:MM. Boş bırakılırsa kapalıdır.",
+          "dailySwapAtHint": "Panelin saat diliminde HH:MM; birden çok saat virgülle ayrılır, örneğin 04:30, 16:30 (en fazla 6). Her değişim yeni bir IP alır. Boş bırakmak kapatır.",
           "save": "Ayarları kaydet"
         },
         "prepare": {
@@ -2918,7 +2991,7 @@
         },
         "errors": {
           "reserveTarget": "0 ile 3 arasında bir tam sayı girin.",
-          "dailySwapAt": "04:30 gibi HH:MM kullanın ya da boş bırakın."
+          "dailySwapAt": "Saatleri HH:MM biçiminde virgülle ayırarak yazın, örneğin 04:30, 16:30, ya da boş bırakın."
         },
         "toasts": {
           "key": "ArvanCloud anahtarını kaydetme",
@@ -2930,7 +3003,13 @@
           "refill": "Yedek IP ekleme",
           "test": "IP'leri test etme",
           "swap": "Etkin IP'yi değiştirme",
-          "release": "IP'yi bırakma"
+          "release": "IP'yi bırakma",
+          "catalog": "ArvanCloud planlarını oku",
+          "servers": "ArvanCloud sunucularını listele",
+          "create": "ArvanCloud'da sunucu oluştur",
+          "deleteServer": "ArvanCloud sunucusunu sil",
+          "adopt": "ArvanCloud sunucusu ekle",
+          "domains": "ArvanCloud alan adlarını listele"
         }
       },
       "psiphon": {

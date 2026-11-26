@@ -2827,6 +2827,79 @@
         "probe": "Periksa server keluar",
         "deleted": "Dihapus"
       },
+      "arvanAdd": {
+        "button": "Dari ArvanCloud",
+        "title": "Server masuk dari ArvanCloud",
+        "intro": "Masukkan kunci ArvanCloud, lalu lihat server di akun: tambahkan satu di sini dengan kata sandinya sekali, buat yang baru yang bergabung tanpa kata sandi, atau hapus satu. Anda memilih kegunaan masing-masing.",
+        "keyHint": "Tempel kunci API ArvanCloud yang boleh membuat, membaca dan menghapus server. Panel menyimpannya terenkripsi.",
+        "tabs": {
+          "new": "Server baru",
+          "servers": "Server saya"
+        },
+        "new": {
+          "zone": "Zona",
+          "size": "Ukuran",
+          "sizeHint": "Harga sesuai daftar ArvanCloud. Server ditagih sejak dibuat hingga dihapus.",
+          "sizeOption": "{cpus} CPU · {ram} GB RAM · {disk} GB · {hour} per jam · {month} per bulan",
+          "image": "Sistem operasi",
+          "name": "Nama",
+          "nameHint": "Dipakai untuk server di ArvanCloud dan server masuk di sini. Tanpa spasi, titik dua, koma atau garis miring.",
+          "atLimit": "Zona ini sudah punya {count} dari {limit} server Anda, batas ArvanCloud.",
+          "create": "Buat dan tambahkan",
+          "confirm": "Buat server {name} di ArvanCloud?",
+          "confirmHint": "Biayanya {hour} per jam ({month} per bulan) sampai Anda menghapusnya. Lalu panel menambahkannya sesuai pilihan Anda."
+        },
+        "progress": {
+          "title": "Server {name}",
+          "steps": {
+            "key": "Daftarkan kunci panel",
+            "server": "Buat server",
+            "boot": "Tunggu hingga menyala",
+            "ssh": "Hubungi dengan kunci panel",
+            "add": "Tambahkan ke panel ini",
+            "bind": "Tautkan ke ArvanCloud untuk ganti IP",
+            "setup": "Tunggu hingga siap",
+            "dns": "Arahkan domain ke server"
+          },
+          "ip": "IP:",
+          "done": "{name} siap dan ada di daftar."
+        },
+        "servers": {
+          "name": "Nama",
+          "zone": "Zona",
+          "ips": "IP",
+          "status": "Status",
+          "relay": "Di panel ini",
+          "use": "Pakai",
+          "delete": "Hapus",
+          "confirmDelete": "Hapus {name} dari ArvanCloud?",
+          "confirmDeleteHint": "Server, disk dan IP-nya hilang selamanya. Tidak bisa dibatalkan.",
+          "inUse": "Dipakai oleh {relay}; hapus dulu di panel ini.",
+          "refresh": "Muat ulang",
+          "hint": "“Pakai” menanyakan kegunaan server dan kata sandi root-nya sekali."
+        },
+        "changeKey": "Ganti kunci",
+        "keyReady": "Kunci tersimpan. Server Anda dan server baru ada di bawah.",
+        "purpose": {
+          "role": "Gunakan sebagai",
+          "front": "Server masuk",
+          "exit": "Server keluar",
+          "exitIran": "Hanya zona di luar Iran yang bisa jadi server keluar: pelanggan keluar lewat negaranya.",
+          "tool": "Terowongan",
+          "transport": "Transport",
+          "domain": "Domain",
+          "noDomain": "Tanpa domain",
+          "record": "Nama record",
+          "recordHint": "{fqdn} akan mengarah ke server ini dan menjadi nama yang dipindah saat ganti IP. Record yang sudah ada dipindah ke sini, kecuali dipakai server lain di sini."
+        },
+        "adopt": {
+          "title": "Tambah {name}",
+          "password": "Kata sandi root",
+          "passwordHint": "Dipakai sekali untuk memasang kunci panel; tidak disimpan.",
+          "submit": "Tambah",
+          "cancel": "Batal"
+        }
+      },
       "arvan": {
         "open": "IP cadangan di ArvanCloud",
         "title": "IP cadangan di ArvanCloud · {name}",
@@ -2864,7 +2937,7 @@
           "autoSwap": "Tukar otomatis",
           "autoSwapHint": "Setelah sekitar 3 pemeriksaan gagal berjarak satu menit, pindah ke cadangan yang sehat. Tanpa cadangan, ambil IP baru dari Arvan, uji, pindah ke sana, lalu lepaskan IP yang rusak.",
           "dailySwapAt": "Tukar setiap hari pukul",
-          "dailySwapAtHint": "HH:MM menurut zona waktu panel. Kosong berarti mati.",
+          "dailySwapAtHint": "HH:MM dalam zona waktu panel; beberapa waktu dipisah koma, misalnya 04:30, 16:30 (maksimal 6). Setiap pergantian mengambil IP baru. Kosong berarti mati.",
           "save": "Simpan pengaturan"
         },
         "prepare": {
@@ -2918,7 +2991,7 @@
         },
         "errors": {
           "reserveTarget": "Masukkan bilangan bulat dari 0 sampai 3.",
-          "dailySwapAt": "Gunakan HH:MM, misalnya 04:30, atau biarkan kosong."
+          "dailySwapAt": "Gunakan waktu HH:MM yang dipisah koma, misalnya 04:30, 16:30, atau biarkan kosong."
         },
         "toasts": {
           "key": "Simpan kunci ArvanCloud",
@@ -2930,7 +3003,13 @@
           "refill": "Tambah IP cadangan",
           "test": "Uji IP",
           "swap": "Tukar IP aktif",
-          "release": "Lepas IP"
+          "release": "Lepas IP",
+          "catalog": "Baca paket ArvanCloud",
+          "servers": "Daftar server ArvanCloud",
+          "create": "Buat server di ArvanCloud",
+          "deleteServer": "Hapus server ArvanCloud",
+          "adopt": "Tambah server ArvanCloud",
+          "domains": "Daftar domain ArvanCloud"
         }
       },
       "psiphon": {

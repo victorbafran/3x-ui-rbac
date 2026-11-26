@@ -56,6 +56,7 @@ import {
   udpLegPort,
 } from '@/schemas/relay';
 import type { IPFamily, Reachability, Relay, RelayFormValues } from '@/schemas/relay';
+import ArvanAddModal from './ArvanAddModal';
 import ArvanFrontModal from './ArvanFrontModal';
 import PsiphonCard from './PsiphonCard';
 import { bytes } from './bytes';
@@ -195,6 +196,7 @@ export default function RelaysPage() {
   const [editing, setEditing] = useState<Relay | null>(null);
   const [reach, setReach] = useState<{ relay: Relay; result: Reachability } | null>(null);
   const [arvanRelayId, setArvanRelayId] = useState<number | null>(null);
+  const [arvanAddOpen, setArvanAddOpen] = useState(false);
   const arvanRelay = relays.find((r) => r.id === arvanRelayId) ?? null;
   const [form] = Form.useForm<RelayFormValues>();
   const role = Form.useWatch('role', form);
@@ -515,9 +517,21 @@ export default function RelaysPage() {
                       size="small"
                       title={t('pages.relays.title')}
                       extra={
-                        <Button type="primary" icon={<PlusOutlined aria-hidden />} onClick={onAdd}>
-                          {t('pages.relays.add')}
-                        </Button>
+                        <Space wrap>
+                          <Button
+                            icon={<CloudServerOutlined aria-hidden />}
+                            onClick={() => setArvanAddOpen(true)}
+                          >
+                            {t('pages.relays.arvanAdd.button')}
+                          </Button>
+                          <Button
+                            type="primary"
+                            icon={<PlusOutlined aria-hidden />}
+                            onClick={onAdd}
+                          >
+                            {t('pages.relays.add')}
+                          </Button>
+                        </Space>
                       }
                     >
                       <Alert
@@ -822,6 +836,7 @@ export default function RelaysPage() {
       {arvanRelay ? (
         <ArvanFrontModal relay={arvanRelay} onClose={() => setArvanRelayId(null)} />
       ) : null}
+      <ArvanAddModal open={arvanAddOpen} onClose={() => setArvanAddOpen(false)} />
     </ConfigProvider>
   );
 }

@@ -1855,8 +1855,8 @@ export const sections: readonly Section[] = [
         method: 'POST',
         path: '/panel/api/relays/arvan/front/:id/save',
         summary:
-          'Save the DNS record to move on a swap and the reserve settings. reserveTarget is how many tested reserve IPs to keep (0–3: a server takes at most four IPs, and each costs money every hour it is held). autoSwap moves to a healthy reserve after three failed checks a minute apart; dailySwapAt swaps once a day at that time in the panel’s time zone ("" turns it off). Returns the state as the GET does.',
-        body: '{\n  "domain": "example.ir",\n  "recordName": "tun",\n  "reserveTarget": 1,\n  "autoSwap": true,\n  "dailySwapAt": "04:30"\n}',
+          'Save the DNS record to move on a swap and the reserve settings. reserveTarget is how many tested reserve IPs to keep (0–3: a server takes at most four IPs, and each costs money every hour it is held). autoSwap moves to a healthy reserve after three failed checks a minute apart; dailySwapAt swaps every day at each of its times in the panel’s time zone: one or more HH:MM separated by commas, at most six, stored sorted as "04:30, 16:30" ("" turns it off). Returns the state as the GET does.',
+        body: '{\n  "domain": "example.ir",\n  "recordName": "tun",\n  "reserveTarget": 1,\n  "autoSwap": true,\n  "dailySwapAt": "04:30, 16:30"\n}',
       },
       {
         method: 'POST',
@@ -1888,6 +1888,50 @@ export const sections: readonly Section[] = [
         summary:
           'Give a reserve IP back to ArvanCloud for good. The active IP is refused. Returns at once.',
         body: '{\n  "ip": "203.0.113.20"\n}',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/relays/arvan/catalog',
+        summary:
+          'What the ArvanCloud account offers a new entry server: zones (code, city, dc, country) that take servers, and for one zone (?zone=, default the first) its sizes cheapest first (id, cpus, memoryGb, diskGb, pricePerHour and pricePerMonth as Arvan lists them), the Linux images that take an SSH key at creation (id, distribution, version), defaultImage (Ubuntu 24.04 when offered), and serverCount and serverLimit for that zone.',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/relays/arvan/servers',
+        summary:
+          'Every server on the ArvanCloud account, zone by zone: zone, id, name, status (lower case, such as "active" or "build"), its public ips, and relay, the name of this panel’s relay at one of those addresses ("" when none). A zone the key may not read is skipped.',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/relays/arvan/servers/delete',
+        summary:
+          'Delete a server from the ArvanCloud account for good, with its disk and IPs. Refused for a server whose public IP is the address of a relay on this panel, and for the server a make is still working on.',
+        body: '{\n  "zone": "ir-thr-fr1",\n  "id": "d0d4ad4d-…"\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/relays/arvan/create',
+        summary:
+          'Make a server in ArvanCloud and add it here with no password: the panel registers an SSH key it generated, makes the server with it (billed from now on), waits for it to start and answer SSH on that key, and adds it with the same key for its purpose. role is "front" (default) or "exit" (only in a zone outside Iran); a front takes tool ("backpack", the default, or "backhaul") and transport (the tool’s first when empty), and with domain (one on the account) and record ("@" or a label) its IP is put behind that A record once it is set up: the record is made, or moved when it exists and points at no relay here; it becomes the front’s public name, and the front is then bound to Arvan and prepared for IP swaps. size and image must be ones /arvan/catalog offers for zone; name follows a relay name’s rules and must be unused. Returns at once; one make or add runs at a time.',
+        body: '{\n  "zone": "ir-thr-fr1",\n  "size": "eco-1-1-0",\n  "image": "f1cc8839-…",\n  "name": "ir2",\n  "role": "front",\n  "tool": "backpack",\n  "transport": "stealth",\n  "domain": "example.ir",\n  "record": "ir2"\n}',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/relays/arvan/create',
+        summary:
+          'The running or last make or add: running, steps (this run’s steps in order, from "key", "server", "boot", "ssh", "add", "setup", "dns" and "bind"; adding a server already there starts at "add", an exit stops at "setup", and "dns" is there only with a domain), step (the current one, "done" at the end), error ("" while none), name, zone, serverId and ip once known, relayId once added, startedAt and finishedAt.',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/relays/arvan/adopt',
+        summary:
+          'Add a server already on the ArvanCloud account here, for the same purpose fields as /arvan/create (role, tool, transport, domain, record), with its root password used once to install the panel’s own key and not stored. A server whose public IPv4 a relay here already uses is refused. Returns at once; GET /arvan/create follows the steps.',
+        body: '{\n  "zone": "ir-thr-fr1",\n  "serverId": "d0d4ad4d-…",\n  "name": "ir3",\n  "password": "…",\n  "role": "front",\n  "domain": "example.ir",\n  "record": "ir3"\n}',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/relays/arvan/domains',
+        summary: 'The domains on the ArvanCloud account, sorted, for a server’s IP to go behind.',
       },
       {
         method: 'GET',

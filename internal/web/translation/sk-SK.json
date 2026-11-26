@@ -2827,6 +2827,79 @@
         "probe": "Skontrolovať výstupný server",
         "deleted": "Odstránené"
       },
+      "arvanAdd": {
+        "button": "Z ArvanCloud",
+        "title": "Vstupný server z ArvanCloud",
+        "intro": "Zadajte kľúč ArvanCloud a uvidíte servery účtu: pridajte server sem raz s jeho heslom, vytvorte nový, ktorý sa pripojí bez hesla, alebo server zmažte. Na čo slúži každý, si zvolíte sami.",
+        "keyHint": "Vložte API kľúč ArvanCloud, ktorý môže vytvárať, čítať a mazať servery. Panel ho uloží zašifrovaný.",
+        "tabs": {
+          "new": "Nový server",
+          "servers": "Moje servery"
+        },
+        "new": {
+          "zone": "Zóna",
+          "size": "Veľkosť",
+          "sizeHint": "Ceny podľa cenníka ArvanCloud. Server sa účtuje od vytvorenia až do zmazania.",
+          "sizeOption": "{cpus} CPU · {ram} GB RAM · {disk} GB · {hour} za hodinu · {month} za mesiac",
+          "image": "Operačný systém",
+          "name": "Názov",
+          "nameHint": "Použije sa pre server v ArvanCloud aj pre vstupný server tu. Bez medzier, dvojbodiek, čiarok a lomiek.",
+          "atLimit": "Táto zóna už má {count} z vašich {limit} serverov, limit ArvanCloud.",
+          "create": "Vytvoriť a pridať",
+          "confirm": "Vytvoriť server {name} v ArvanCloud?",
+          "confirmHint": "Stojí {hour} za hodinu ({month} za mesiac), kým ho nezmažete. Potom ho panel pridá podľa vašej voľby."
+        },
+        "progress": {
+          "title": "Server {name}",
+          "steps": {
+            "key": "Registrácia kľúča panela",
+            "server": "Vytvorenie servera",
+            "boot": "Čakanie na spustenie",
+            "ssh": "Pripojenie kľúčom panela",
+            "add": "Pridanie do tohto panela",
+            "bind": "Naviazanie na ArvanCloud pre výmenu IP",
+            "setup": "Čakanie na nastavenie",
+            "dns": "Nasmerovanie domény naň"
+          },
+          "ip": "IP:",
+          "done": "{name} je pripravený a v zozname."
+        },
+        "servers": {
+          "name": "Názov",
+          "zone": "Zóna",
+          "ips": "IP",
+          "status": "Stav",
+          "relay": "V tomto paneli",
+          "use": "Použiť",
+          "delete": "Zmazať",
+          "confirmDelete": "Zmazať {name} z ArvanCloud?",
+          "confirmDeleteHint": "Server, jeho disk a IP zmiznú navždy. Nedá sa to vrátiť.",
+          "inUse": "Používa ho {relay}; najprv ho odstráňte v tomto paneli.",
+          "refresh": "Obnoviť",
+          "hint": "„Použiť“ sa spýta, na čo server slúži, a raz jeho heslo root."
+        },
+        "changeKey": "Zmeniť kľúč",
+        "keyReady": "Kľúč je uložený. Vaše servery a nový server sú nižšie.",
+        "purpose": {
+          "role": "Použiť ako",
+          "front": "Vstupný server",
+          "exit": "Výstupný server",
+          "exitIran": "Výstupom môže byť len zóna mimo Iránu: zákazníci vychádzajú cez jej krajinu.",
+          "tool": "Tunel",
+          "transport": "Transport",
+          "domain": "Doména",
+          "noDomain": "Bez domény",
+          "record": "Názov záznamu",
+          "recordHint": "{fqdn} bude ukazovať na tento server a bude to názov, ktorý presúva výmena IP. Existujúci záznam sa presunie naň, ak ho nepoužíva iný server tu."
+        },
+        "adopt": {
+          "title": "Pridať {name}",
+          "password": "Heslo root",
+          "passwordHint": "Použije sa raz na inštaláciu kľúča panela; neukladá sa.",
+          "submit": "Pridať",
+          "cancel": "Zrušiť"
+        }
+      },
       "arvan": {
         "open": "Záložné IP v ArvanCloud",
         "title": "Záložné IP v ArvanCloud · {name}",
@@ -2864,7 +2937,7 @@
           "autoSwap": "Prepínať automaticky",
           "autoSwapHint": "Po asi 3 neúspešných kontrolách s odstupom minúty prejde na zdravú rezervu. Bez rezervy si vezme novú IP z Arvanu, otestuje ju, prejde na ňu a uvoľní pokazenú.",
           "dailySwapAt": "Prepínať každý deň o",
-          "dailySwapAtHint": "HH:MM v časovom pásme panela. Prázdne ho vypne.",
+          "dailySwapAtHint": "HH:MM v časovom pásme panela; viac časov oddelených čiarkou, napríklad 04:30, 16:30 (najviac 6). Každá výmena berie novú IP. Prázdne ju vypne.",
           "save": "Uložiť nastavenia"
         },
         "prepare": {
@@ -2918,7 +2991,7 @@
         },
         "errors": {
           "reserveTarget": "Zadajte celé číslo od 0 do 3.",
-          "dailySwapAt": "Použite HH:MM, napríklad 04:30, alebo nechajte prázdne."
+          "dailySwapAt": "Zadajte časy HH:MM oddelené čiarkou, napríklad 04:30, 16:30, alebo nechajte prázdne."
         },
         "toasts": {
           "key": "Uložiť kľúč ArvanCloud",
@@ -2930,7 +3003,13 @@
           "refill": "Pridať záložné IP",
           "test": "Otestovať IP",
           "swap": "Prepnúť aktívnu IP",
-          "release": "Uvoľniť IP"
+          "release": "Uvoľniť IP",
+          "catalog": "Načítanie plánov ArvanCloud",
+          "servers": "Zoznam serverov ArvanCloud",
+          "create": "Vytvorenie servera v ArvanCloud",
+          "deleteServer": "Zmazanie servera ArvanCloud",
+          "adopt": "Pridanie servera ArvanCloud",
+          "domains": "Zoznam domén ArvanCloud"
         }
       },
       "psiphon": {

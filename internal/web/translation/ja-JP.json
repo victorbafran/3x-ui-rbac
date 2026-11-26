@@ -2827,6 +2827,79 @@
         "probe": "出口サーバーの確認",
         "deleted": "削除しました"
       },
+      "arvanAdd": {
+        "button": "ArvanCloud から",
+        "title": "ArvanCloud の入口サーバー",
+        "intro": "ArvanCloud の鍵を入力すると、アカウントのサーバーが表示されます。パスワードを一度入れて追加する、パスワードなしで参加する新しいサーバーを作る、または削除することができます。用途はそれぞれ選べます。",
+        "keyHint": "サーバーの作成・読み取り・削除ができる ArvanCloud の API キーを貼り付けてください。パネルは暗号化して保存します。",
+        "tabs": {
+          "new": "新しいサーバー",
+          "servers": "自分のサーバー"
+        },
+        "new": {
+          "zone": "ゾーン",
+          "size": "サイズ",
+          "sizeHint": "価格は ArvanCloud の一覧どおりです。サーバーは作成してから削除するまで課金されます。",
+          "sizeOption": "{cpus} CPU · {ram} GB RAM · {disk} GB · 1 時間 {hour} · 1 か月 {month}",
+          "image": "OS",
+          "name": "名前",
+          "nameHint": "ArvanCloud のサーバー名とここでの入口サーバー名に使います。空白・コロン・カンマ・スラッシュは使えません。",
+          "atLimit": "このゾーンにはすでに上限 {limit} 台のうち {count} 台のサーバーがあります。",
+          "create": "作成して追加",
+          "confirm": "ArvanCloud にサーバー {name} を作成しますか？",
+          "confirmHint": "削除するまで 1 時間 {hour}（1 か月 {month}）かかります。その後パネルが選んだとおりに追加します。"
+        },
+        "progress": {
+          "title": "サーバー {name}",
+          "steps": {
+            "key": "パネルの鍵を登録",
+            "server": "サーバーを作成",
+            "boot": "起動を待つ",
+            "ssh": "パネルの鍵で接続",
+            "add": "このパネルに追加",
+            "bind": "IP 切り替えのため ArvanCloud に紐付け",
+            "setup": "準備ができるまで待つ",
+            "dns": "ドメインを向ける"
+          },
+          "ip": "IP:",
+          "done": "{name} の準備ができ、一覧に入りました。"
+        },
+        "servers": {
+          "name": "名前",
+          "zone": "ゾーン",
+          "ips": "IP",
+          "status": "状態",
+          "relay": "このパネル",
+          "use": "使う",
+          "delete": "削除",
+          "confirmDelete": "{name} を ArvanCloud から削除しますか？",
+          "confirmDeleteHint": "サーバー、ディスク、IP は完全に消えます。元に戻せません。",
+          "inUse": "{relay} が使用中です。先にこのパネルで削除してください。",
+          "refresh": "更新",
+          "hint": "「使う」はサーバーの用途と root パスワードを一度だけ尋ねます。"
+        },
+        "changeKey": "鍵を変更",
+        "keyReady": "鍵は保存済みです。サーバー一覧と新規作成は下にあります。",
+        "purpose": {
+          "role": "用途",
+          "front": "入口サーバー",
+          "exit": "出口サーバー",
+          "exitIran": "出口にできるのはイラン国外のゾーンだけです。利用者はその国から出ていきます。",
+          "tool": "トンネル",
+          "transport": "トランスポート",
+          "domain": "ドメイン",
+          "noDomain": "ドメインなし",
+          "record": "レコード名",
+          "recordHint": "{fqdn} がこのサーバーを指し、IP 切り替えで移る名前になります。既存のレコードはこのサーバーへ移しますが、ここで別のサーバーが使っている場合は移しません。"
+        },
+        "adopt": {
+          "title": "{name} を追加",
+          "password": "root パスワード",
+          "passwordHint": "パネルの鍵を入れるために一度だけ使い、保存しません。",
+          "submit": "追加",
+          "cancel": "キャンセル"
+        }
+      },
       "arvan": {
         "open": "ArvanCloud の予備 IP",
         "title": "ArvanCloud の予備 IP · {name}",
@@ -2864,7 +2937,7 @@
           "autoSwap": "自動で切り替え",
           "autoSwapHint": "1分おきのチェックが約3回失敗すると、正常な予備IPに切り替えます。予備がない場合はArvanから新しいIPを取得してテストし、切り替えた後に壊れたIPを解放します。",
           "dailySwapAt": "毎日の切り替え時刻",
-          "dailySwapAtHint": "パネルのタイムゾーンで HH:MM。空欄でオフ。",
+          "dailySwapAtHint": "パネルのタイムゾーンで HH:MM。複数の時刻はカンマで区切ります（例: 04:30, 16:30、最大 6 つ）。切り替えごとに新しい IP を取得します。空欄で無効。",
           "save": "設定を保存"
         },
         "prepare": {
@@ -2918,7 +2991,7 @@
         },
         "errors": {
           "reserveTarget": "0 から 3 の整数を入力してください。",
-          "dailySwapAt": "04:30 のように HH:MM で入力するか、空欄にしてください。"
+          "dailySwapAt": "HH:MM の時刻をカンマで区切って入力してください（例: 04:30, 16:30）。空欄でも構いません。"
         },
         "toasts": {
           "key": "ArvanCloud キーの保存",
@@ -2930,7 +3003,13 @@
           "refill": "予備 IP の追加",
           "test": "IP のテスト",
           "swap": "アクティブな IP の切り替え",
-          "release": "IP の解放"
+          "release": "IP の解放",
+          "catalog": "ArvanCloud のプランを取得",
+          "servers": "ArvanCloud のサーバー一覧",
+          "create": "ArvanCloud にサーバーを作成",
+          "deleteServer": "ArvanCloud のサーバーを削除",
+          "adopt": "ArvanCloud のサーバーを追加",
+          "domains": "ArvanCloud のドメイン一覧"
         }
       },
       "psiphon": {

@@ -2827,6 +2827,79 @@
         "probe": "检查出口服务器",
         "deleted": "已移除"
       },
+      "arvanAdd": {
+        "button": "从 ArvanCloud",
+        "title": "来自 ArvanCloud 的入口服务器",
+        "intro": "输入 ArvanCloud 密钥后即可看到账户中的服务器：输入一次密码将其添加到这里、新建一台免密码加入的服务器，或删除服务器。每台的用途由你选择。",
+        "keyHint": "粘贴一个可创建、读取和删除服务器的 ArvanCloud API 密钥。面板会加密保存。",
+        "tabs": {
+          "new": "新服务器",
+          "servers": "我的服务器"
+        },
+        "new": {
+          "zone": "区域",
+          "size": "规格",
+          "sizeHint": "价格以 ArvanCloud 的列表为准。服务器从创建起计费，直到删除。",
+          "sizeOption": "{cpus} 核 · {ram} GB 内存 · {disk} GB · 每小时 {hour} · 每月 {month}",
+          "image": "操作系统",
+          "name": "名称",
+          "nameHint": "用作 ArvanCloud 中的服务器名和此处的入口服务器名。不能有空格、冒号、逗号或斜杠。",
+          "atLimit": "此区域已有你 {limit} 台上限中的 {count} 台服务器。",
+          "create": "创建并添加",
+          "confirm": "在 ArvanCloud 创建服务器 {name}？",
+          "confirmHint": "删除前每小时 {hour}（每月 {month}）。随后面板会按你的选择添加它。"
+        },
+        "progress": {
+          "title": "服务器 {name}",
+          "steps": {
+            "key": "登记面板的密钥",
+            "server": "创建服务器",
+            "boot": "等待启动",
+            "ssh": "用面板密钥连接",
+            "add": "添加到本面板",
+            "bind": "绑定 ArvanCloud 以切换 IP",
+            "setup": "等待配置完成",
+            "dns": "将域名指向它"
+          },
+          "ip": "IP：",
+          "done": "{name} 已就绪，并在列表中。"
+        },
+        "servers": {
+          "name": "名称",
+          "zone": "区域",
+          "ips": "IP",
+          "status": "状态",
+          "relay": "本面板",
+          "use": "使用",
+          "delete": "删除",
+          "confirmDelete": "从 ArvanCloud 删除 {name}？",
+          "confirmDeleteHint": "服务器、磁盘和 IP 将永久消失，无法撤销。",
+          "inUse": "{relay} 正在使用；请先在本面板删除它。",
+          "refresh": "刷新",
+          "hint": "“使用”会询问服务器的用途，并需输入一次 root 密码。"
+        },
+        "changeKey": "更换密钥",
+        "keyReady": "密钥已保存。你的服务器和新建服务器在下方。",
+        "purpose": {
+          "role": "用作",
+          "front": "入口服务器",
+          "exit": "出口服务器",
+          "exitIran": "只有伊朗以外的区域可以作为出口：用户会从该国出去。",
+          "tool": "隧道",
+          "transport": "传输方式",
+          "domain": "域名",
+          "noDomain": "不使用域名",
+          "record": "记录名",
+          "recordHint": "{fqdn} 将指向这台服务器，也是切换 IP 时移动的名称。已存在的记录会移到这台服务器，除非本面板另一台服务器在使用它。"
+        },
+        "adopt": {
+          "title": "添加 {name}",
+          "password": "root 密码",
+          "passwordHint": "仅用一次来安装面板自己的密钥，不会保存。",
+          "submit": "添加",
+          "cancel": "取消"
+        }
+      },
       "arvan": {
         "open": "ArvanCloud 备用 IP",
         "title": "ArvanCloud 备用 IP · {name}",
@@ -2864,7 +2937,7 @@
           "autoSwap": "自动切换",
           "autoSwapHint": "每隔一分钟检查一次，约 3 次失败后切换到健康的备用 IP。没有备用时，会向 Arvan 申请新 IP，测试后切换过去，并释放坏掉的 IP。",
           "dailySwapAt": "每天切换时间",
-          "dailySwapAtHint": "按面板时区填写 HH:MM。留空即关闭。",
+          "dailySwapAtHint": "面板时区的 HH:MM；多个时间用逗号分隔，例如 04:30, 16:30（最多 6 个）。每次切换都会获取一个新 IP。留空即关闭。",
           "save": "保存设置"
         },
         "prepare": {
@@ -2918,7 +2991,7 @@
         },
         "errors": {
           "reserveTarget": "请输入 0 到 3 之间的整数。",
-          "dailySwapAt": "请使用 HH:MM 格式，例如 04:30，或留空。"
+          "dailySwapAt": "请输入用逗号分隔的 HH:MM 时间，例如 04:30, 16:30，或留空。"
         },
         "toasts": {
           "key": "保存 ArvanCloud 密钥",
@@ -2930,7 +3003,13 @@
           "refill": "添加备用 IP",
           "test": "测试 IP",
           "swap": "切换活动 IP",
-          "release": "释放 IP"
+          "release": "释放 IP",
+          "catalog": "读取 ArvanCloud 套餐",
+          "servers": "列出 ArvanCloud 服务器",
+          "create": "在 ArvanCloud 创建服务器",
+          "deleteServer": "删除 ArvanCloud 服务器",
+          "adopt": "添加 ArvanCloud 服务器",
+          "domains": "列出 ArvanCloud 域名"
         }
       },
       "psiphon": {

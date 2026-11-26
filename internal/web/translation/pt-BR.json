@@ -2827,6 +2827,79 @@
         "probe": "Verificar o servidor de saída",
         "deleted": "Removido"
       },
+      "arvanAdd": {
+        "button": "Do ArvanCloud",
+        "title": "Servidor de entrada do ArvanCloud",
+        "intro": "Informe sua chave do ArvanCloud e veja os servidores da conta: adicione um aqui com a senha uma vez, crie um novo que entra sem senha ou exclua um. Você escolhe para que serve cada um.",
+        "keyHint": "Cole uma chave de API do ArvanCloud que possa criar, ler e excluir servidores. O painel a guarda criptografada.",
+        "tabs": {
+          "new": "Servidor novo",
+          "servers": "Meus servidores"
+        },
+        "new": {
+          "zone": "Zona",
+          "size": "Tamanho",
+          "sizeHint": "Preços conforme a lista do ArvanCloud. O servidor é cobrado desde a criação até ser excluído.",
+          "sizeOption": "{cpus} CPU · {ram} GB RAM · {disk} GB · {hour} por hora · {month} por mês",
+          "image": "Sistema operacional",
+          "name": "Nome",
+          "nameHint": "Usado para o servidor no ArvanCloud e para o servidor de entrada aqui. Sem espaços, dois-pontos, vírgulas ou barras.",
+          "atLimit": "Esta zona já tem {count} dos seus {limit} servidores, o limite do ArvanCloud.",
+          "create": "Criar e adicionar",
+          "confirm": "Criar o servidor {name} no ArvanCloud?",
+          "confirmHint": "Custa {hour} por hora ({month} por mês) até você excluí-lo. Depois o painel o adiciona como você escolheu."
+        },
+        "progress": {
+          "title": "Servidor {name}",
+          "steps": {
+            "key": "Registrar a chave do painel",
+            "server": "Criar o servidor",
+            "boot": "Esperar ligar",
+            "ssh": "Conectar com a chave do painel",
+            "add": "Adicionar a este painel",
+            "bind": "Vincular ao ArvanCloud para troca de IP",
+            "setup": "Esperar ficar pronto",
+            "dns": "Apontar o domínio para ele"
+          },
+          "ip": "IP:",
+          "done": "{name} está pronto e na lista."
+        },
+        "servers": {
+          "name": "Nome",
+          "zone": "Zona",
+          "ips": "IPs",
+          "status": "Status",
+          "relay": "Neste painel",
+          "use": "Usar",
+          "delete": "Excluir",
+          "confirmDelete": "Excluir {name} do ArvanCloud?",
+          "confirmDeleteHint": "O servidor, o disco e os IPs somem para sempre. Não dá para desfazer.",
+          "inUse": "Em uso por {relay}; remova-o neste painel primeiro.",
+          "refresh": "Atualizar",
+          "hint": "“Usar” pergunta para que serve o servidor e a senha root uma vez."
+        },
+        "changeKey": "Trocar chave",
+        "keyReady": "A chave está salva. Seus servidores e um novo ficam abaixo.",
+        "purpose": {
+          "role": "Usar como",
+          "front": "Servidor de entrada",
+          "exit": "Servidor de saída",
+          "exitIran": "Só uma zona fora do Irã pode ser de saída: os clientes saem pelo país dela.",
+          "tool": "Túnel",
+          "transport": "Transporte",
+          "domain": "Domínio",
+          "noDomain": "Sem domínio",
+          "record": "Nome do registro",
+          "recordHint": "{fqdn} vai apontar para este servidor e ser o nome que a troca de IP move. Um registro que já exista é movido para ele, a menos que outro servidor daqui o use."
+        },
+        "adopt": {
+          "title": "Adicionar {name}",
+          "password": "Senha root",
+          "passwordHint": "Usada uma vez para instalar a chave do painel; não é guardada.",
+          "submit": "Adicionar",
+          "cancel": "Cancelar"
+        }
+      },
       "arvan": {
         "open": "IPs reserva na ArvanCloud",
         "title": "IPs reserva na ArvanCloud · {name}",
@@ -2864,7 +2937,7 @@
           "autoSwap": "Trocar automaticamente",
           "autoSwapHint": "Após cerca de 3 verificações com falha, com um minuto entre elas, passa para uma reserva saudável. Sem reserva, pega um IP novo na Arvan, testa, muda para ele e libera o que falhou.",
           "dailySwapAt": "Trocar todo dia às",
-          "dailySwapAtHint": "HH:MM no fuso horário do painel. Vazio desliga.",
+          "dailySwapAtHint": "HH:MM no fuso horário do painel; vários horários separados por vírgulas, como 04:30, 16:30 (no máximo 6). Cada troca pega um IP novo. Vazio desativa.",
           "save": "Salvar configurações"
         },
         "prepare": {
@@ -2918,7 +2991,7 @@
         },
         "errors": {
           "reserveTarget": "Informe um número inteiro de 0 a 3.",
-          "dailySwapAt": "Use HH:MM, como 04:30, ou deixe vazio."
+          "dailySwapAt": "Use horários HH:MM separados por vírgulas, como 04:30, 16:30, ou deixe vazio."
         },
         "toasts": {
           "key": "Salvar chave da ArvanCloud",
@@ -2930,7 +3003,13 @@
           "refill": "Adicionar IPs reserva",
           "test": "Testar IPs",
           "swap": "Trocar IP ativo",
-          "release": "Liberar IP"
+          "release": "Liberar IP",
+          "catalog": "Ler planos do ArvanCloud",
+          "servers": "Listar servidores do ArvanCloud",
+          "create": "Criar servidor no ArvanCloud",
+          "deleteServer": "Excluir servidor do ArvanCloud",
+          "adopt": "Adicionar servidor do ArvanCloud",
+          "domains": "Listar domínios do ArvanCloud"
         }
       },
       "psiphon": {

@@ -17,6 +17,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/arvan"
 	"github.com/mhsanaei/3x-ui/v3/internal/config"
@@ -703,16 +704,29 @@ func pickArvanCandidate(cands []ArvanCandidate, publicName string, f model.Arvan
 	return ArvanCandidate{}, false
 }
 
+// arvanMaxDailySwaps bounds the daily times: each swap takes a fresh IP, and Arvan stops
+// handing them out after some a day, which a failing IP's own swap would then be short of.
+const arvanMaxDailySwaps = 6
+
+// normalizeDailySwapAt reads one or more HH:MM times separated by commas or spaces and
+// stores them sorted, each once, as "04:30, 16:30".
 func normalizeDailySwapAt(raw string) (string, error) {
-	raw = strings.TrimSpace(raw)
-	if raw == "" {
-		return "", nil
+	var times []string
+	// the Persian comma too: a Persian keyboard types it
+	for _, field := range strings.FieldsFunc(raw, func(r rune) bool { return r == ',' || r == '،' || unicode.IsSpace(r) }) {
+		t, err := time.Parse("15:04", field)
+		if err != nil {
+			return "", fmt.Errorf("the daily swap time %q is not HH:MM", field)
+		}
+		if hhmm := t.Format("15:04"); !slices.Contains(times, hhmm) {
+			times = append(times, hhmm)
+		}
 	}
-	t, err := time.Parse("15:04", raw)
-	if err != nil {
-		return "", fmt.Errorf("the daily swap time %q is not HH:MM", raw)
+	if len(times) > arvanMaxDailySwaps {
+		return "", fmt.Errorf("%d daily swap times is too many; at most %d, since each takes a fresh IP", len(times), arvanMaxDailySwaps)
 	}
-	return t.Format("15:04"), nil
+	slices.Sort(times)
+	return strings.Join(times, ", "), nil
 }
 
 // Save stores the operator's choices, resolving the record's id when its name moved.
@@ -1518,12 +1532,25 @@ func (s *ArvanService) Release(relayId int, ip string) error {
 
 // dailyMoment is today's HH:MM in loc.
 func dailyMoment(now time.Time, hhmm string, loc *time.Location) (time.Time, bool) {
-	t, err := time.Parse("15:04", hhmm)
+	t, err := time.Parse("15:04", strings.TrimSpace(hhmm))
 	if err != nil {
 		return time.Time{}, false
 	}
 	local := now.In(loc)
 	return time.Date(local.Year(), local.Month(), local.Day(), t.Hour(), t.Minute(), 0, 0, loc), true
+}
+
+// dailySwapDue is whether one of today's times has come within arvanDailyWindow and no swap
+// has run since it. A time missed by more than the window waits for tomorrow rather than
+// firing the moment it is saved.
+func dailySwapDue(now time.Time, times string, lastSwap int64, loc *time.Location) bool {
+	for _, hhmm := range strings.Split(times, ",") {
+		at, set := dailyMoment(now, hhmm, loc)
+		if set && !now.Before(at) && now.Sub(at) < arvanDailyWindow && lastSwap < at.Unix() {
+			return true
+		}
+	}
+	return false
 }
 
 // Watch is the minute job: check each bound front's active IP, swap when it
@@ -1583,10 +1610,7 @@ func (s *ArvanService) watchOne(st *arvanState, r model.Relay, f model.ArvanFron
 	if f.AutoSwap && fails >= arvanSwapAfter && st.due(&st.lastAuto, arvanAutoEvery, now) {
 		return "swap", swap
 	}
-	// a slot missed by more than the window waits for tomorrow rather than
-	// firing the moment the time is saved
-	if at, set := dailyMoment(now, f.DailySwapAt, loc); set && !now.Before(at) && now.Sub(at) < arvanDailyWindow &&
-		f.LastSwap < at.Unix() && st.due(&st.lastAuto, arvanAutoEvery, now) {
+	if dailySwapDue(now, f.DailySwapAt, f.LastSwap, loc) && st.due(&st.lastAuto, arvanAutoEvery, now) {
 		return "swap", swap
 	}
 	var reserves int64

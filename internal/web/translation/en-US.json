@@ -2928,7 +2928,10 @@
           "noRecord": "No DNS record is bound, so a swap moves no name and customers stay on the old IP.",
           "recordElsewhere": "The record points at {ip}, not at the active IP.",
           "pickRecord": "Record customers use",
-          "pickRecordHint": "Several records point at this IP. Pick the one in customers’ configs, then save the settings."
+          "pickRecordHint": "Several records point at this IP. Pick the one in customers’ configs, then save the settings.",
+          "pointTitle": "Point a domain at this server",
+          "point": "Point at this server",
+          "pointHint": "{fqdn} will point at {ip} and become the name customers use and the record a swap moves. A record already there is moved here, unless another server on this panel uses it."
         },
         "settings": {
           "title": "Settings",
@@ -2987,7 +2990,8 @@
           "refill": "adding reserve IPs",
           "test": "testing the IPs",
           "swap": "swapping the active IP",
-          "release": "releasing an IP"
+          "release": "releasing an IP",
+          "record": "pointing a domain"
         },
         "errors": {
           "reserveTarget": "Enter a whole number from 0 to 3.",
@@ -3009,7 +3013,8 @@
           "create": "Make a server in ArvanCloud",
           "deleteServer": "Delete ArvanCloud server",
           "adopt": "Add an ArvanCloud server",
-          "domains": "List ArvanCloud domains"
+          "domains": "List ArvanCloud domains",
+          "record": "Point a domain"
         }
       },
       "psiphon": {

@@ -2928,7 +2928,10 @@
           "noRecord": "未绑定 DNS 记录，切换不会迁移任何名称，客户仍停留在旧 IP。",
           "recordElsewhere": "该记录指向 {ip}，而不是当前活动 IP。",
           "pickRecord": "客户使用的记录",
-          "pickRecordHint": "有多条记录指向此 IP。请选择客户配置中使用的那条，然后保存设置。"
+          "pickRecordHint": "有多条记录指向此 IP。请选择客户配置中使用的那条，然后保存设置。",
+          "pointTitle": "将域名指向这台服务器",
+          "point": "指向这台服务器",
+          "pointHint": "{fqdn} 将指向 {ip}，成为用户使用的名称，也是切换 IP 时移动的记录。已存在的记录会移到这里，除非本面板另一台服务器在使用它。"
         },
         "settings": {
           "title": "设置",
@@ -2987,7 +2990,8 @@
           "refill": "正在添加备用 IP",
           "test": "正在测试 IP",
           "swap": "正在切换活动 IP",
-          "release": "正在释放 IP"
+          "release": "正在释放 IP",
+          "record": "正在指向域名"
         },
         "errors": {
           "reserveTarget": "请输入 0 到 3 之间的整数。",
@@ -3009,7 +3013,8 @@
           "create": "在 ArvanCloud 创建服务器",
           "deleteServer": "删除 ArvanCloud 服务器",
           "adopt": "添加 ArvanCloud 服务器",
-          "domains": "列出 ArvanCloud 域名"
+          "domains": "列出 ArvanCloud 域名",
+          "record": "指向域名"
         }
       },
       "psiphon": {

@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -315,4 +316,44 @@ func BinaryPath() string {
 		}
 	}
 	return ""
+}
+
+// clientFile matches a tunnel client's files in the runtime directory and captures the id.
+var clientFile = regexp.MustCompile(`^(?:backpack-)?client-(\d+)(?:-[a-z0-9]+)?\.(?:toml|metrics\.json)$`)
+
+// RemoveOrphans stops every client, and deletes every file, of a tunnel whose id keep refuses:
+// a front deleted while something started its client again left it dialling and its files
+// behind until the panel restarted. It returns the ids it removed.
+func (m *Manager) RemoveOrphans(keep func(id int) bool) []int {
+	gone := map[int]bool{}
+	m.mu.Lock()
+	for key := range m.procs {
+		head, _, _ := strings.Cut(key, "-")
+		if id, err := strconv.Atoi(head); err == nil && !keep(id) {
+			gone[id] = true
+		}
+	}
+	m.mu.Unlock()
+	entries, _ := os.ReadDir(runtimeDir())
+	var files []string
+	for _, e := range entries {
+		match := clientFile.FindStringSubmatch(e.Name())
+		if match == nil {
+			continue
+		}
+		if id, err := strconv.Atoi(match[1]); err == nil && !keep(id) {
+			gone[id] = true
+			files = append(files, filepath.Join(runtimeDir(), e.Name()))
+		}
+	}
+	ids := make([]int, 0, len(gone))
+	for id := range gone {
+		m.Remove(id)
+		ids = append(ids, id)
+	}
+	for _, f := range files {
+		_ = os.Remove(f)
+	}
+	slices.Sort(ids)
+	return ids
 }

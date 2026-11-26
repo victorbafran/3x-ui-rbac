@@ -155,7 +155,7 @@ func TestOnlyAnInboundHandingOutIPv6ServesBothFamilies(t *testing.T) {
 		without string
 	}{
 		{"IPv4 udp", true, Instance{Id: 1, Port: 1194}, []string{"local 0.0.0.0\n", "proto udp\n"}, "proto udp6"},
-		{"IPv4 tcp", true, Instance{Id: 1, Port: 443, UseTCP: true}, []string{"local 0.0.0.0\n", "proto tcp-server\n"}, "tcp6"},
+		{"IPv4 tcp", true, Instance{Id: 1, Port: 443, UseTCP: true}, []string{"local 0.0.0.0\n", "proto tcp-server\n"}, "proto tcp6"},
 		{"IPv6 udp", true, Instance{Id: 1, Port: 1194, IPv6: true}, []string{"proto udp6\n"}, "local "},
 		{"IPv6 tcp", true, Instance{Id: 1, Port: 443, UseTCP: true, IPv6: true}, []string{"proto tcp6-server\n"}, "local "},
 		{"explicit IPv4 listen", true, Instance{Id: 1, Port: 1194, Listen: "203.0.113.7", IPv6: true}, []string{"local 203.0.113.7\n", "proto udp\n"}, "proto udp6"},

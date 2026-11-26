@@ -2928,7 +2928,10 @@
           "noRecord": "Chưa gắn bản ghi DNS nào, nên việc chuyển đổi không dời tên nào và khách hàng vẫn ở IP cũ.",
           "recordElsewhere": "Bản ghi đang trỏ tới {ip}, không phải IP đang hoạt động.",
           "pickRecord": "Bản ghi khách hàng dùng",
-          "pickRecordHint": "Có nhiều bản ghi trỏ tới IP này. Hãy chọn bản ghi có trong cấu hình của khách hàng, rồi lưu cài đặt."
+          "pickRecordHint": "Có nhiều bản ghi trỏ tới IP này. Hãy chọn bản ghi có trong cấu hình của khách hàng, rồi lưu cài đặt.",
+          "pointTitle": "Trỏ một tên miền tới máy chủ này",
+          "point": "Trỏ tới máy chủ này",
+          "pointHint": "{fqdn} sẽ trỏ tới {ip}, thành tên khách dùng và bản ghi được chuyển khi đổi IP. Bản ghi đã có sẽ được chuyển về đây, trừ khi máy chủ khác trên bảng này đang dùng."
         },
         "settings": {
           "title": "Cài đặt",
@@ -2987,7 +2990,8 @@
           "refill": "đang thêm IP dự phòng",
           "test": "đang kiểm tra các IP",
           "swap": "đang chuyển IP hoạt động",
-          "release": "đang trả lại một IP"
+          "release": "đang trả lại một IP",
+          "record": "đang trỏ tên miền"
         },
         "errors": {
           "reserveTarget": "Nhập một số nguyên từ 0 đến 3.",
@@ -3009,7 +3013,8 @@
           "create": "Tạo máy chủ trên ArvanCloud",
           "deleteServer": "Xóa máy chủ ArvanCloud",
           "adopt": "Thêm máy chủ ArvanCloud",
-          "domains": "Liệt kê tên miền ArvanCloud"
+          "domains": "Liệt kê tên miền ArvanCloud",
+          "record": "Trỏ tên miền"
         }
       },
       "psiphon": {

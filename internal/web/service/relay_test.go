@@ -284,3 +284,35 @@ func TestTheReconcileStandsAsideWhileASaveProvisionsTheFront(t *testing.T) {
 		t.Errorf("with nothing in flight the reconcile did not run: status %q", got)
 	}
 }
+
+// A front being deleted is left alone by the minute's reconcile: its far end's teardown can
+// take minutes, and a reconcile from the row still there started the client dialling again.
+func TestTheReconcileLeavesAFrontBeingDeletedAlone(t *testing.T) {
+	setupRelayDB(t)
+	seedRelays(t, model.Relay{
+		Name: "iran-front", Address: "203.0.113.9", Role: model.RelayFront, Tunnel: "backpack", Enabled: true,
+		KeyPath: filepath.Join(t.TempDir(), "gone"), TunnelToken: "a-token", Status: RelayReady,
+	})
+	var r model.Relay
+	if err := database.GetDB().First(&r).Error; err != nil {
+		t.Fatal(err)
+	}
+	status := func() string {
+		t.Helper()
+		var got model.Relay
+		if err := database.GetDB().First(&got, r.Id).Error; err != nil {
+			t.Fatal(err)
+		}
+		return got.Status
+	}
+	frontDeleting.Store(r.Id, true)
+	(&RelayService{}).reconcileFront(r)
+	frontDeleting.Delete(r.Id)
+	if got := status(); got != RelayReady {
+		t.Fatalf("the reconcile ran on a front being deleted: status %q", got)
+	}
+	(&RelayService{}).reconcileFront(r)
+	if got := status(); got != RelayError {
+		t.Fatalf("with no delete in flight the reconcile did not run: status %q", got)
+	}
+}

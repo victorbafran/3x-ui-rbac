@@ -32,11 +32,28 @@ type fakeArvan struct {
 	creates    []map[string]any
 	madeByName bool // the create's reply was lost but the server exists
 	deleted    []string
+	staleKeys  []string // key names already in ir-thr-fr1
+	keysGone   []string // "zone/name" of every key deleted
 	records    []string
+	// set, each zone's server listing waits up to two seconds for the other zone's to arrive
+	together chan struct{}
+	alone    int // listings that waited in vain
 }
 
 func (f *fakeArvan) handler(t *testing.T) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if f.together != nil && r.Method == http.MethodGet && strings.HasSuffix(r.URL.Path, "/servers") {
+			f.together <- struct{}{}
+			deadline := time.Now().Add(2 * time.Second)
+			for len(f.together) < 2 && time.Now().Before(deadline) {
+				time.Sleep(5 * time.Millisecond)
+			}
+			if len(f.together) < 2 {
+				f.mu.Lock()
+				f.alone++
+				f.mu.Unlock()
+			}
+		}
 		f.mu.Lock()
 		defer f.mu.Unlock()
 		body, _ := io.ReadAll(r.Body)
@@ -52,8 +69,14 @@ func (f *fakeArvan) handler(t *testing.T) http.Handler {
 		case route == "GET /cdn/4.0/domains":
 			write(`{"data":[{"domain":"aliwoodbaf.ir"},{"domain":"video-epic.ir"}],"meta":{"current_page":1,"last_page":1}}`)
 		case route == "GET /cdn/4.0/domains/aliwoodbaf.ir/dns-records":
+			extra := ""
+			for _, rec := range f.records {
+				if fields := strings.Fields(rec); fields[0] == "new" {
+					extra += `,{"id":"r-` + fields[1] + `","type":"a","name":"` + fields[1] + `","value":[{"ip":"` + fields[2] + `"}],"ttl":120,"cloud":false}`
+				}
+			}
 			write(`{"data":[{"id":"r-milichi","type":"a","name":"milichi","value":[{"ip":"188.213.199.99","port":null,"weight":100,"country":""}],"ttl":120,"cloud":false},
-				{"id":"r-bem","type":"a","name":"bemanche","value":[{"ip":"212.95.35.41","port":80,"weight":100,"country":""}],"ttl":120,"cloud":false}],"meta":{"current_page":1,"last_page":1}}`)
+				{"id":"r-bem","type":"a","name":"bemanche","value":[{"ip":"212.95.35.41","port":80,"weight":100,"country":""}],"ttl":120,"cloud":false}` + extra + `],"meta":{"current_page":1,"last_page":1}}`)
 		case route == "POST /cdn/4.0/domains/aliwoodbaf.ir/dns-records":
 			var rec map[string]any
 			_ = json.Unmarshal(body, &rec)
@@ -74,6 +97,21 @@ func (f *fakeArvan) handler(t *testing.T) http.Handler {
 			write(`{"data":{"droplet_count":0,"droplet_limit":5,"network_id":"net-1"}}`)
 		case route == "GET /ecc/v1/regions/ir-thr-fr1/securities":
 			write(`{"data":[{"id":"sg-def","real_name":"centralized_arDefault","default":true}]}`)
+		case r.Method == http.MethodGet && strings.HasSuffix(r.URL.Path, "/ssh-keys"):
+			names := []string{}
+			if r.URL.Path == "/ecc/v1/regions/ir-thr-fr1/ssh-keys" {
+				names = append(names, f.staleKeys...)
+			}
+			rows := []map[string]string{}
+			for _, n := range names {
+				rows = append(rows, map[string]string{"name": n})
+			}
+			raw, _ := json.Marshal(map[string]any{"data": rows})
+			_, _ = w.Write(raw)
+		case r.Method == http.MethodDelete && strings.Contains(r.URL.Path, "/ssh-keys/"):
+			zone := strings.Split(strings.TrimPrefix(r.URL.Path, "/ecc/v1/regions/"), "/")[0]
+			f.keysGone = append(f.keysGone, zone+"/"+r.URL.Path[strings.LastIndex(r.URL.Path, "/")+1:])
+			w.WriteHeader(http.StatusNoContent)
 		case route == "POST /ecc/v1/regions/ir-thr-fr1/ssh-keys":
 			var k map[string]string
 			_ = json.Unmarshal(body, &k)
@@ -135,6 +173,7 @@ func setupArvanCreate(t *testing.T, fake *fakeArvan) *createRun {
 	t.Cleanup(srv.Close)
 	oldBase := arvan.Base
 	arvan.Base = srv.URL
+	arvan.ForgetZones()
 	t.Cleanup(func() { arvan.Base = oldBase })
 	sealed, err := sealArvanKey("apikey test-key")
 	if err != nil {
@@ -362,6 +401,22 @@ func TestTheAccountsServersAreListedWithTheirRelay(t *testing.T) {
 	}
 }
 
+// The zones are asked at once, not one after another, and the list keeps the zones' order.
+func TestTheZonesAreAskedForTheirServersAtOnce(t *testing.T) {
+	fake := &fakeArvan{together: make(chan struct{}, 2)}
+	setupArvanCreate(t, fake)
+	got, err := (&ArvanService{}).Servers()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if fake.alone != 0 {
+		t.Fatalf("%d zone listings ran alone; the zones were asked one at a time", fake.alone)
+	}
+	if len(got) != 1 || got[0].Zone != "ir-thr-fr1" {
+		t.Fatalf("servers %+v", got)
+	}
+}
+
 // A server is deleted from the account, but not one whose IP is a relay's address here, nor
 // the one being made.
 func TestAServerInUseHereIsNotDeleted(t *testing.T) {
@@ -567,5 +622,86 @@ func TestAnExitIsAddedWithoutTunnelRecordOrBinding(t *testing.T) {
 	}
 	if len(run.bound) != 0 || len(fake.records) != 0 {
 		t.Fatalf("an exit was bound %v or given records %v", run.bound, fake.records)
+	}
+}
+
+// Arvan caps the keys an account holds, and every make left its one-time key behind, until
+// a make was refused with "You have reached SSH key limit". A make now removes its own key
+// when it ends, made or failed, and first sweeps the ones earlier makes left; a key anybody
+// else registered stays.
+func TestAMakeLeavesNoSSHKeyBehind(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		fake *fakeArvan
+		ok   bool
+	}{
+		{"a make that works", &fakeArvan{statuses: []string{"ACTIVE"}, ip: "37.152.190.9"}, true},
+		{"a make Arvan refuses", &fakeArvan{createAs: 402, statuses: []string{"BUILD"}}, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			tc.fake.staleKeys = []string{"private", "iptest-claude", "x-ui-Germany-1795713308", "x-ui-uk-1795711724", "x-ui-notes"}
+			setupArvanCreate(t, tc.fake)
+			if err := (&ArvanService{}).StartCreate(createReq); err != nil {
+				t.Fatal(err)
+			}
+			st := waitCreateDone(t)
+			if (st.Error == "") != tc.ok {
+				t.Fatalf("state %+v", st)
+			}
+			gone := strings.Join(tc.fake.keysGone, ",")
+			for _, want := range []string{"ir-thr-fr1/x-ui-Germany-1795713308", "ir-thr-fr1/x-ui-uk-1795711724", "ir-thr-fr1/x-ui-ir2-"} {
+				if !strings.Contains(gone, want) {
+					t.Errorf("%s was not removed; removed %s", want, gone)
+				}
+			}
+			for _, keep := range []string{"private", "iptest-claude", "x-ui-notes"} {
+				if strings.Contains(gone, "/"+keep+",") || strings.HasSuffix(gone, "/"+keep) {
+					t.Errorf("%s, not the panel's, was removed", keep)
+				}
+			}
+		})
+	}
+}
+
+// A front's domain can be changed after it is made: the record chosen is made, or moved off
+// an address no relay here has, then bound to the front as its public name and the record a
+// swap moves. A record another relay here uses, or a domain not on the account, is refused.
+func TestAFrontsDomainCanBeChangedAfterwards(t *testing.T) {
+	fake := &fakeArvan{}
+	setupArvanCreate(t, fake)
+	seedRelays(t,
+		model.Relay{Name: "ir2", Address: "37.152.190.9", Role: model.RelayFront},
+		model.Relay{Name: "panel", Address: "212.95.35.41", Role: model.RelayExit},
+	)
+	var r model.Relay
+	if err := database.GetDB().Where("name = ?", "ir2").First(&r).Error; err != nil {
+		t.Fatal(err)
+	}
+	svc := &ArvanService{}
+	if _, err := svc.PointRecord(r.Id, "other.ir", "x"); err == nil || !strings.Contains(err.Error(), "not on this Arvan account") {
+		t.Fatalf("a domain not on the account: %v", err)
+	}
+	if _, err := svc.PointRecord(r.Id, "aliwoodbaf.ir", "bemanche"); err == nil || !strings.Contains(err.Error(), "the address of panel here") {
+		t.Fatalf("a record another relay uses: %v", err)
+	}
+	view, err := svc.PointRecord(r.Id, "aliwoodbaf.ir", "milichi")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if view.Domain != "aliwoodbaf.ir" || view.RecordName != "milichi" || view.RecordId != "r-milichi" {
+		t.Fatalf("bound %q %q %q", view.Domain, view.RecordName, view.RecordId)
+	}
+	if got := frontRow(t, r.Id).PublicName; got != "milichi.aliwoodbaf.ir" {
+		t.Fatalf("public name %q", got)
+	}
+	view, err = svc.PointRecord(r.Id, "aliwoodbaf.ir", "ir9")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if view.RecordId != "r-ir9" || frontRow(t, r.Id).PublicName != "ir9.aliwoodbaf.ir" {
+		t.Fatalf("a new record bound as %q, public name %q", view.RecordId, frontRow(t, r.Id).PublicName)
+	}
+	if want := "moved r-milichi 37.152.190.9,new ir9 37.152.190.9"; strings.Join(fake.records, ",") != want {
+		t.Fatalf("records %v; want %s", fake.records, want)
 	}
 }

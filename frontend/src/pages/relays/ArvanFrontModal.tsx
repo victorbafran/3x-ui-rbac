@@ -33,7 +33,12 @@ import { useQueryClient } from '@tanstack/react-query';
 
 import { FormField, rhfZodValidate } from '@/components/form/rhf';
 import { keys } from '@/api/queryKeys';
-import { useArvanFront, useArvanKeyStatus, useArvanMutations } from '@/api/queries/useArvanFront';
+import {
+  useArvanDomains,
+  useArvanFront,
+  useArvanKeyStatus,
+  useArvanMutations,
+} from '@/api/queries/useArvanFront';
 import {
   ARVAN_MAX_RESERVES,
   ArvanFrontFormSchema,
@@ -45,6 +50,10 @@ import {
 } from '@/schemas/arvan';
 import type { Relay } from '@/schemas/relay';
 import { IntlUtil, LanguageManager } from '@/utils';
+
+// "@" for the domain itself, or labels of letters, digits and hyphens joined by dots.
+const POINT_RECORD =
+  /^(@|[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*)$/;
 
 interface ArvanFrontModalProps {
   relay: Relay;
@@ -130,7 +139,11 @@ export default function ArvanFrontModal({ relay, onClose }: ArvanFrontModalProps
   const [modal, modalContextHolder] = Modal.useModal();
   const keyInputId = useId();
   const candidateId = useId();
+  const pointDomainId = useId();
+  const pointRecordId = useId();
   const [keyInput, setKeyInput] = useState('');
+  const [pointDomain, setPointDomain] = useState('');
+  const [pointRecord, setPointRecord] = useState('');
 
   const keyQuery = useArvanKeyStatus(true);
   const viewQuery = useArvanFront(relay.id, true);
@@ -139,6 +152,7 @@ export default function ArvanFrontModal({ relay, onClose }: ArvanFrontModalProps
     saveKeyMut,
     clearKeyMut,
     detectMut,
+    recordMut,
     saveMut,
     prepareMut,
     refillMut,
@@ -169,7 +183,11 @@ export default function ArvanFrontModal({ relay, onClose }: ArvanFrontModalProps
   }, [activeIp, relay.address, queryClient]);
 
   const keyOk = Boolean(keyQuery.data?.configured && keyQuery.data.readable);
+  const domainsQuery = useArvanDomains(keyOk);
   const busy = view?.busy ?? '';
+  // until the operator picks one, the domain the front is bound to is offered
+  const chosenDomain = pointDomain || view?.domain || '';
+  const recordOk = POINT_RECORD.test(pointRecord);
   const prepared = view?.prepared ?? false;
   const bound = view?.bound ?? false;
   const canWork = Boolean(view) && keyOk && bound && !busy;
@@ -195,6 +213,14 @@ export default function ArvanFrontModal({ relay, onClose }: ArvanFrontModalProps
     });
     if (saved) methods.reset(formValuesOf(saved));
   });
+
+  const onPointRecord = async () => {
+    const pointed = await recordMut.mutateAsync({ domain: chosenDomain, record: pointRecord });
+    if (pointed) {
+      setPointRecord('');
+      void queryClient.invalidateQueries({ queryKey: keys.relays.list() });
+    }
+  };
 
   const onPickCandidate = (value: string) => {
     const picked = view?.candidates.find((c) => `${c.name}.${c.domain}` === value);
@@ -466,6 +492,62 @@ export default function ArvanFrontModal({ relay, onClose }: ArvanFrontModalProps
                   </Form.Item>
                 </Form>
               ) : null}
+              <Form layout="vertical" style={{ marginTop: 12 }}>
+                <Typography.Text strong>
+                  {t('pages.relays.arvan.binding.pointTitle')}
+                </Typography.Text>
+                <Space wrap size={12} align="start" style={{ marginTop: 8 }}>
+                  <Form.Item
+                    label={t('pages.relays.arvanAdd.purpose.domain')}
+                    htmlFor={pointDomainId}
+                    style={{ marginBottom: 0 }}
+                  >
+                    <Select
+                      id={pointDomainId}
+                      style={{ width: 220 }}
+                      value={chosenDomain || undefined}
+                      loading={domainsQuery.isFetching}
+                      onChange={setPointDomain}
+                      options={(domainsQuery.data ?? []).map((d) => ({ value: d, label: d }))}
+                    />
+                  </Form.Item>
+                  <Form.Item
+                    label={t('pages.relays.arvanAdd.purpose.record')}
+                    htmlFor={pointRecordId}
+                    validateStatus={pointRecord && !recordOk ? 'error' : undefined}
+                    style={{ marginBottom: 0 }}
+                  >
+                    <Input
+                      id={pointRecordId}
+                      dir="ltr"
+                      style={{ width: 200 }}
+                      value={pointRecord}
+                      onChange={(e) => setPointRecord(e.target.value.trim().toLowerCase())}
+                    />
+                  </Form.Item>
+                  <Form.Item label=" " style={{ marginBottom: 0 }}>
+                    <Button
+                      type="primary"
+                      disabled={!keyOk || Boolean(busy) || !chosenDomain || !recordOk}
+                      loading={recordMut.isPending}
+                      onClick={onPointRecord}
+                    >
+                      {t('pages.relays.arvan.binding.point')}
+                    </Button>
+                  </Form.Item>
+                </Space>
+                {chosenDomain && recordOk ? (
+                  <Typography.Paragraph
+                    type="secondary"
+                    style={{ marginTop: 8, marginBottom: 0, fontSize: 12 }}
+                  >
+                    {t('pages.relays.arvan.binding.pointHint', {
+                      fqdn: arvanRecordHost(pointRecord, chosenDomain),
+                      ip: relay.address,
+                    })}
+                  </Typography.Paragraph>
+                ) : null}
+              </Form>
             </Card>
 
             <Card size="small" title={t('pages.relays.arvan.settings.title')}>

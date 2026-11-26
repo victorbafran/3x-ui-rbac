@@ -161,3 +161,21 @@ func TestANewARecordLooksLikeOneArvanMakes(t *testing.T) {
 		t.Fatal("an IPv6 address was written into an A record")
 	}
 }
+
+// Keys are listed by name and deleted by name, as the Terraform provider does it.
+func TestSSHKeysAreListedAndDeletedByName(t *testing.T) {
+	c, rs := replay(t, "k", map[string]reply{
+		"GET /ecc/v1/regions/ir-thr-fr1/ssh-keys":                        {body: `{"data":[{"name":"private","fingerprint":"aa"},{"name":"x-ui-ir2-1795709606","fingerprint":"bb"}]}`},
+		"DELETE /ecc/v1/regions/ir-thr-fr1/ssh-keys/x-ui-ir2-1795709606": {status: 204},
+	})
+	names, err := c.SSHKeyNames(context.Background(), "ir-thr-fr1")
+	if err != nil || len(names) != 2 || names[1] != "x-ui-ir2-1795709606" {
+		t.Fatalf("names %v, %v", names, err)
+	}
+	if err := c.DeleteSSHKey(context.Background(), "ir-thr-fr1", "x-ui-ir2-1795709606"); err != nil {
+		t.Fatal(err)
+	}
+	if n := len(rs.requests()); n != 2 {
+		t.Fatalf("%d requests", n)
+	}
+}

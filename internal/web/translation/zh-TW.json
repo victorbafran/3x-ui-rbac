@@ -2928,7 +2928,10 @@
           "noRecord": "未綁定 DNS 記錄，切換不會移動任何名稱，客戶仍停留在舊 IP。",
           "recordElsewhere": "該記錄指向 {ip}，而不是目前使用中的 IP。",
           "pickRecord": "客戶使用的記錄",
-          "pickRecordHint": "有多筆記錄指向此 IP。請選擇客戶設定中使用的那一筆，然後儲存設定。"
+          "pickRecordHint": "有多筆記錄指向此 IP。請選擇客戶設定中使用的那一筆，然後儲存設定。",
+          "pointTitle": "將網域指向這台伺服器",
+          "point": "指向這台伺服器",
+          "pointHint": "{fqdn} 將指向 {ip}，成為使用者使用的名稱，也是切換 IP 時移動的記錄。已存在的記錄會移到這裡，除非本面板另一台伺服器正在使用。"
         },
         "settings": {
           "title": "設定",
@@ -2987,7 +2990,8 @@
           "refill": "正在新增備用 IP",
           "test": "正在測試 IP",
           "swap": "正在切換使用中的 IP",
-          "release": "正在釋放 IP"
+          "release": "正在釋放 IP",
+          "record": "正在指向網域"
         },
         "errors": {
           "reserveTarget": "請輸入 0 到 3 之間的整數。",
@@ -3009,7 +3013,8 @@
           "create": "在 ArvanCloud 建立伺服器",
           "deleteServer": "刪除 ArvanCloud 伺服器",
           "adopt": "加入 ArvanCloud 伺服器",
-          "domains": "列出 ArvanCloud 網域"
+          "domains": "列出 ArvanCloud 網域",
+          "record": "指向網域"
         }
       },
       "psiphon": {

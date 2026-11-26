@@ -2928,7 +2928,10 @@
           "noRecord": "No hay ningún registro DNS vinculado, así que un cambio no mueve ningún nombre y los clientes siguen en la IP antigua.",
           "recordElsewhere": "El registro apunta a {ip}, no a la IP activa.",
           "pickRecord": "Registro que usan los clientes",
-          "pickRecordHint": "Varios registros apuntan a esta IP. Elige el que está en las configuraciones de los clientes y guarda los ajustes."
+          "pickRecordHint": "Varios registros apuntan a esta IP. Elige el que está en las configuraciones de los clientes y guarda los ajustes.",
+          "pointTitle": "Apuntar un dominio a este servidor",
+          "point": "Apuntar a este servidor",
+          "pointHint": "{fqdn} apuntará a {ip} y será el nombre que usan los clientes y el registro que mueve un cambio de IP. Un registro que ya exista se mueve aquí, salvo que lo use otro servidor de este panel."
         },
         "settings": {
           "title": "Ajustes",
@@ -2987,7 +2990,8 @@
           "refill": "añadiendo IP de reserva",
           "test": "probando las IP",
           "swap": "cambiando la IP activa",
-          "release": "liberando una IP"
+          "release": "liberando una IP",
+          "record": "apuntando un dominio"
         },
         "errors": {
           "reserveTarget": "Introduce un número entero de 0 a 3.",
@@ -3009,7 +3013,8 @@
           "create": "Crear un servidor en ArvanCloud",
           "deleteServer": "Borrar servidor de ArvanCloud",
           "adopt": "Añadir servidor de ArvanCloud",
-          "domains": "Listar dominios de ArvanCloud"
+          "domains": "Listar dominios de ArvanCloud",
+          "record": "Apuntar un dominio"
         }
       },
       "psiphon": {

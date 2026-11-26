@@ -109,6 +109,14 @@ export function useArvanMutations(relayId: number) {
     },
   });
 
+  // Points a domain record at the front's IP and binds it; the view comes back bound.
+  const recordMut = useMutation({
+    mutationFn: async (body: { domain: string; record: string }) => {
+      const msg = await HttpUtil.post(`${BASE}/front/${relayId}/record`, body, JSON_HEADERS);
+      return msg?.success ? putView(msg, 'relays/arvan/record') : null;
+    },
+  });
+
   const saveMut = useMutation({
     mutationFn: async (values: ArvanFrontFormValues) => {
       const msg = await HttpUtil.post(`${BASE}/front/${relayId}/save`, values, JSON_HEADERS);
@@ -120,6 +128,7 @@ export function useArvanMutations(relayId: number) {
     saveKeyMut,
     clearKeyMut,
     detectMut,
+    recordMut,
     saveMut,
     prepareMut: useStartedMutation(relayId, 'prepare'),
     refillMut: useStartedMutation(relayId, 'refill'),

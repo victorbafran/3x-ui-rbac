@@ -2928,7 +2928,10 @@
           "noRecord": "DNS レコードが紐付いていないため、切り替えても名前は移らず、顧客は古い IP のままです。",
           "recordElsewhere": "レコードはアクティブな IP ではなく {ip} を指しています。",
           "pickRecord": "顧客が使うレコード",
-          "pickRecordHint": "複数のレコードがこの IP を指しています。顧客の設定にあるものを選び、設定を保存してください。"
+          "pickRecordHint": "複数のレコードがこの IP を指しています。顧客の設定にあるものを選び、設定を保存してください。",
+          "pointTitle": "ドメインをこのサーバーに向ける",
+          "point": "このサーバーに向ける",
+          "pointHint": "{fqdn} が {ip} を指し、利用者が使う名前、そして IP 切り替えで移るレコードになります。既存のレコードはここへ移しますが、このパネルの別のサーバーが使っている場合は移しません。"
         },
         "settings": {
           "title": "設定",
@@ -2987,7 +2990,8 @@
           "refill": "予備 IP を追加中",
           "test": "IP をテスト中",
           "swap": "アクティブな IP を切り替え中",
-          "release": "IP を解放中"
+          "release": "IP を解放中",
+          "record": "ドメインを向けています"
         },
         "errors": {
           "reserveTarget": "0 から 3 の整数を入力してください。",
@@ -3009,7 +3013,8 @@
           "create": "ArvanCloud にサーバーを作成",
           "deleteServer": "ArvanCloud のサーバーを削除",
           "adopt": "ArvanCloud のサーバーを追加",
-          "domains": "ArvanCloud のドメイン一覧"
+          "domains": "ArvanCloud のドメイン一覧",
+          "record": "ドメインを向ける"
         }
       },
       "psiphon": {

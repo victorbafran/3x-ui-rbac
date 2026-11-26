@@ -140,11 +140,16 @@ function PurposeFields({
               />
             </Form.Item>
           </Space>
-          <Space wrap size={12} align="start">
-            <Form.Item label={t('pages.relays.arvanAdd.purpose.domain')} htmlFor={domainId}>
+          {/* the record stays beside its domain at any width; the hint goes under both */}
+          <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+            <Form.Item
+              label={t('pages.relays.arvanAdd.purpose.domain')}
+              htmlFor={domainId}
+              style={{ flex: '0 1 220px', minWidth: 0 }}
+            >
               <Select
                 id={domainId}
-                style={{ width: 220 }}
+                style={{ width: '100%' }}
                 value={value.domain}
                 onChange={(next: string) => set({ domain: next })}
                 options={[
@@ -160,24 +165,25 @@ function PurposeFields({
                 validateStatus={
                   value.record && !RECORD_PATTERN.test(value.record) ? 'error' : undefined
                 }
-                extra={
-                  RECORD_PATTERN.test(value.record)
-                    ? t('pages.relays.arvanAdd.purpose.recordHint', {
-                        fqdn: recordHost(value.record, value.domain),
-                      })
-                    : undefined
-                }
+                style={{ flex: '0 1 220px', minWidth: 0 }}
               >
                 <Input
                   id={recordId}
                   dir="ltr"
-                  style={{ width: 220 }}
+                  style={{ width: '100%' }}
                   value={value.record}
                   onChange={(e) => set({ record: e.target.value.trim().toLowerCase() })}
                 />
               </Form.Item>
             ) : null}
-          </Space>
+          </div>
+          {value.domain && RECORD_PATTERN.test(value.record) ? (
+            <Typography.Paragraph type="secondary" style={{ marginTop: -16, fontSize: 12 }}>
+              {t('pages.relays.arvanAdd.purpose.recordHint', {
+                fqdn: recordHost(value.record, value.domain),
+              })}
+            </Typography.Paragraph>
+          ) : null}
         </>
       ) : null}
     </>

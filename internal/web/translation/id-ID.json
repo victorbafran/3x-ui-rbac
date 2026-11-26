@@ -2928,7 +2928,10 @@
           "noRecord": "Tidak ada record DNS yang terikat, jadi pertukaran tidak memindahkan nama apa pun dan pelanggan tetap di IP lama.",
           "recordElsewhere": "Record mengarah ke {ip}, bukan ke IP aktif.",
           "pickRecord": "Record yang dipakai pelanggan",
-          "pickRecordHint": "Beberapa record mengarah ke IP ini. Pilih yang ada di konfigurasi pelanggan, lalu simpan pengaturan."
+          "pickRecordHint": "Beberapa record mengarah ke IP ini. Pilih yang ada di konfigurasi pelanggan, lalu simpan pengaturan.",
+          "pointTitle": "Arahkan domain ke server ini",
+          "point": "Arahkan ke server ini",
+          "pointHint": "{fqdn} akan mengarah ke {ip} dan menjadi nama yang dipakai pelanggan serta record yang dipindah saat ganti IP. Record yang sudah ada dipindah ke sini, kecuali dipakai server lain di panel ini."
         },
         "settings": {
           "title": "Pengaturan",
@@ -2987,7 +2990,8 @@
           "refill": "menambah IP cadangan",
           "test": "menguji IP",
           "swap": "menukar IP aktif",
-          "release": "melepas IP"
+          "release": "melepas IP",
+          "record": "mengarahkan domain"
         },
         "errors": {
           "reserveTarget": "Masukkan bilangan bulat dari 0 sampai 3.",
@@ -3009,7 +3013,8 @@
           "create": "Buat server di ArvanCloud",
           "deleteServer": "Hapus server ArvanCloud",
           "adopt": "Tambah server ArvanCloud",
-          "domains": "Daftar domain ArvanCloud"
+          "domains": "Daftar domain ArvanCloud",
+          "record": "Arahkan domain"
         }
       },
       "psiphon": {

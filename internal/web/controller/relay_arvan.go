@@ -22,6 +22,11 @@ type arvanIPRequest struct {
 	IP string `json:"ip"`
 }
 
+type arvanRecordRequest struct {
+	Domain string `json:"domain"`
+	Record string `json:"record"`
+}
+
 type arvanServerRequest struct {
 	Zone string `json:"zone"`
 	ID   string `json:"id"`
@@ -39,6 +44,7 @@ func (a *RelayController) initArvanRouter(g *gin.RouterGroup) {
 	g.POST("/arvan/front/:id/test", a.arvanTest)
 	g.POST("/arvan/front/:id/swap", a.arvanSwap)
 	g.POST("/arvan/front/:id/release", a.arvanRelease)
+	g.POST("/arvan/front/:id/record", a.arvanRecord)
 	g.GET("/arvan/catalog", a.arvanCatalog)
 	g.GET("/arvan/servers", a.arvanServers)
 	g.POST("/arvan/servers/delete", a.arvanDeleteServer)
@@ -213,4 +219,24 @@ func (a *RelayController) arvanDomains(c *gin.Context) {
 		return
 	}
 	jsonObj(c, domains, nil)
+}
+
+// arvanRecord points a domain record at the front's IP and binds it for swaps.
+func (a *RelayController) arvanRecord(c *gin.Context) {
+	msg := I18nWeb(c, "pages.relays.arvan.toasts.record")
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		jsonMsg(c, msg, err)
+		return
+	}
+	req, ok := middleware.BindJSONAndValidate[arvanRecordRequest](c)
+	if !ok {
+		return
+	}
+	view, err := a.arvanService.PointRecord(id, req.Domain, req.Record)
+	if err != nil {
+		jsonMsg(c, msg, err)
+		return
+	}
+	jsonMsgObj(c, msg, view, nil)
 }

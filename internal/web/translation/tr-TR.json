@@ -2928,7 +2928,10 @@
           "noRecord": "Bağlı DNS kaydı yok; geçiş hiçbir adı taşımaz ve müşteriler eski IP'de kalır.",
           "recordElsewhere": "Kayıt etkin IP'ye değil, {ip} adresine işaret ediyor.",
           "pickRecord": "Müşterilerin kullandığı kayıt",
-          "pickRecordHint": "Bu IP'ye birden çok kayıt işaret ediyor. Müşteri yapılandırmalarında olanı seçin, ardından ayarları kaydedin."
+          "pickRecordHint": "Bu IP'ye birden çok kayıt işaret ediyor. Müşteri yapılandırmalarında olanı seçin, ardından ayarları kaydedin.",
+          "pointTitle": "Bir alan adını bu sunucuya yönlendir",
+          "point": "Bu sunucuya yönlendir",
+          "pointHint": "{fqdn} {ip} adresini gösterecek; müşterilerin kullandığı ad ve IP değişiminin taşıdığı kayıt olacak. Var olan bir kayıt buraya taşınır; bu panelde başka bir sunucu kullanıyorsa taşınmaz."
         },
         "settings": {
           "title": "Ayarlar",
@@ -2987,7 +2990,8 @@
           "refill": "yedek IP'ler ekleniyor",
           "test": "IP'ler test ediliyor",
           "swap": "etkin IP değiştiriliyor",
-          "release": "bir IP bırakılıyor"
+          "release": "bir IP bırakılıyor",
+          "record": "alan adı yönlendiriliyor"
         },
         "errors": {
           "reserveTarget": "0 ile 3 arasında bir tam sayı girin.",
@@ -3009,7 +3013,8 @@
           "create": "ArvanCloud'da sunucu oluştur",
           "deleteServer": "ArvanCloud sunucusunu sil",
           "adopt": "ArvanCloud sunucusu ekle",
-          "domains": "ArvanCloud alan adlarını listele"
+          "domains": "ArvanCloud alan adlarını listele",
+          "record": "Alan adını yönlendir"
         }
       },
       "psiphon": {

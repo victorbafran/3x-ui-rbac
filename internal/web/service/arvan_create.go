@@ -506,12 +506,22 @@ func (s *ArvanService) makeAndAdd(req ArvanCreateRequest, size ArvanSizeView) er
 		return err
 	}
 	keyName := fmt.Sprintf("x-ui-%s-%d", req.Name, time.Now().Unix())
+	// Arvan caps the keys an account holds, and every make used to leave one behind.
+	arvanSweepKeys(c, "")
 	ctx, cancel := call()
 	err = c.AddSSHKey(ctx, req.Zone, keyName, line)
 	cancel()
 	if err != nil {
 		return fmt.Errorf("Arvan refused the panel's SSH key: %w", err)
 	}
+	// The key matters only while the server is made and first boots; it goes when this run ends.
+	defer func() {
+		ctx, cancel := call()
+		defer cancel()
+		if derr := c.DeleteSSHKey(ctx, req.Zone, keyName); derr != nil {
+			logger.Warningf("arvan: could not remove the one-time SSH key %s: %v", keyName, derr)
+		}
+	}()
 
 	step(arvanStepServer)
 	ctx, cancel = call()
@@ -823,4 +833,101 @@ func finishArvanRun(name string, err error) {
 	if err != nil {
 		logger.Warningf("arvan: %s: %v", name, err)
 	}
+}
+
+// arvanPanelKey is the name a make gives the one-time key it registers: x-ui-<name>-<unix time>.
+var arvanPanelKey = regexp.MustCompile(`^x-ui-.+-\d{10}$`)
+
+// arvanSweepKeys removes the one-time keys earlier makes left in every zone but the one named
+// keep; a key anybody else registered is never touched. Best effort: a zone it cannot read is
+// skipped.
+func arvanSweepKeys(c *arvan.Client, keep string) {
+	ctx, cancel := context.WithTimeout(context.Background(), arvanCallTimeout)
+	defer cancel()
+	zones, err := c.Zones(ctx)
+	if err != nil {
+		return
+	}
+	for _, z := range zones {
+		if !z.Visible {
+			continue
+		}
+		names, err := c.SSHKeyNames(ctx, z.Code)
+		if err != nil {
+			continue
+		}
+		for _, name := range names {
+			if name == keep || !arvanPanelKey.MatchString(name) {
+				continue
+			}
+			if err := c.DeleteSSHKey(ctx, z.Code, name); err != nil {
+				logger.Warningf("arvan: could not remove the leftover SSH key %s in %s: %v", name, z.Code, err)
+			}
+		}
+	}
+}
+
+// PointRecord puts a front's public IP behind domain's record name, made or moved as a new
+// server's is, and binds that record to the front: it becomes the name customers reach it by
+// and the one a swap moves. The record the front had before is left where it points.
+func (s *ArvanService) PointRecord(relayId int, domain, record string) (ArvanFrontView, error) {
+	if global.IsStandby() {
+		return ArvanFrontView{}, global.ErrStandby
+	}
+	r, err := arvanRelay(relayId)
+	if err != nil {
+		return ArvanFrontView{}, err
+	}
+	if net.ParseIP(r.Address) == nil || net.ParseIP(r.Address).To4() == nil {
+		return ArvanFrontView{}, fmt.Errorf("%s is not an IPv4 address; a record can only point at the front's IP", r.Address)
+	}
+	c, err := s.client()
+	if err != nil {
+		return ArvanFrontView{}, err
+	}
+	p, err := s.normalizePurpose(c, ArvanPurpose{Role: string(model.RelayFront), Tool: string(tunnel.ToolBackPack), Domain: domain, Record: record}, "")
+	if err != nil {
+		return ArvanFrontView{}, err
+	}
+	if p.Domain == "" {
+		return ArvanFrontView{}, errors.New("pick a domain")
+	}
+	st := arvanStateOf(relayId)
+	if busy, ok := st.claim("record"); !ok {
+		return ArvanFrontView{}, errArvanBusy(busy)
+	}
+	err = func() error {
+		defer st.done()
+		st.lock.Lock()
+		defer st.lock.Unlock()
+		if err := arvanPointRecord(c, relayId, p.Domain, p.Record, r.Address); err != nil {
+			return err
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), arvanCallTimeout)
+		defer cancel()
+		recs, err := c.ARecords(ctx, p.Domain)
+		if err != nil {
+			return err
+		}
+		i := slices.IndexFunc(recs, func(rec arvan.Record) bool { return strings.EqualFold(rec.Name, p.Record) })
+		if i < 0 {
+			return fmt.Errorf("%s was written but Arvan does not list it yet; press Find on ArvanCloud in a minute", recordFQDN(p.Record, p.Domain))
+		}
+		if err := ensureArvanFront(relayId); err != nil {
+			return err
+		}
+		fqdn := recordFQDN(p.Record, p.Domain)
+		if err := database.GetDB().Model(&model.Relay{}).Where("id = ?", relayId).Update("public_name", fqdn).Error; err != nil {
+			return err
+		}
+		st.setRecordIP(r.Address)
+		return updateArvanFront(relayId, map[string]any{
+			"domain": p.Domain, "record_name": recs[i].Name, "record_id": recs[i].ID,
+			"last_action": "record: " + fqdn + " → " + r.Address, "last_error": "",
+		})
+	}()
+	if err != nil {
+		return ArvanFrontView{}, err
+	}
+	return s.View(relayId)
 }

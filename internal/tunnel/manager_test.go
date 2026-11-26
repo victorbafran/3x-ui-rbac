@@ -3,6 +3,7 @@ package tunnel
 import (
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -118,5 +119,37 @@ func TestADirectoryIsNotMistakenForTheBinary(t *testing.T) {
 
 	if got := BinaryPath(); got != "" {
 		t.Fatalf("BinaryPath returned the directory %q", got)
+	}
+}
+
+// A front deleted while something started its client again kept dialling, and its files
+// stayed, until the panel restarted; the sweep removes both for every id no front has.
+func TestOrphanedTunnelClientsAndFilesAreRemoved(t *testing.T) {
+	dir := t.TempDir()
+	runtimeDirOverride = dir
+	t.Cleanup(func() { runtimeDirOverride = "" })
+	for _, f := range []string{
+		"backpack-client-7.toml", "backpack-client-7-proxy.toml", "backpack-client-7.metrics.json",
+		"client-9.toml", "client-9-udp.toml", "backpack-client-8.toml", "backpack-client-8.metrics.json", "notes.txt",
+	} {
+		if err := os.WriteFile(filepath.Join(dir, f), []byte("x"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	m := &Manager{procs: map[string]*managed{"7": {}, "7-proxy": {}, "8": {}, "12": {}}}
+	got := m.RemoveOrphans(func(id int) bool { return id == 8 })
+	if want := []int{7, 9, 12}; !slices.Equal(got, want) {
+		t.Fatalf("removed %v; want %v", got, want)
+	}
+	if _, ok := m.procs["8"]; !ok || len(m.procs) != 1 {
+		t.Fatalf("clients left %v; want only 8", m.procs)
+	}
+	entries, _ := os.ReadDir(dir)
+	var left []string
+	for _, e := range entries {
+		left = append(left, e.Name())
+	}
+	if want := []string{"backpack-client-8.metrics.json", "backpack-client-8.toml", "notes.txt"}; !slices.Equal(left, want) {
+		t.Fatalf("files left %v; want %v", left, want)
 	}
 }

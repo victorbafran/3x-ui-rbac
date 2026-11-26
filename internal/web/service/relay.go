@@ -53,6 +53,9 @@ type RelayService struct{}
 // operator produces simply by pressing save twice.
 var relayRunning sync.Map
 
+// frontDeleting holds the fronts being deleted, which the minute's reconcile leaves alone.
+var frontDeleting sync.Map
+
 // RelayView is one relay as the panel shows it: the row, plus what the tunnel
 // is actually doing. Secrets never appear.
 type RelayView struct {
@@ -851,6 +854,10 @@ func (s *RelayService) Delete(id int) error {
 	defer cancel()
 
 	if r.Role == model.RelayFront {
+		// The minute's reconcile stands aside, as it does for a save: the far end's teardown
+		// can take minutes, and it would start the client again from the row still there.
+		frontDeleting.Store(r.Id, true)
+		defer frontDeleting.Delete(r.Id)
 		// The panel's own end first, so it stops dialling a machine that is
 		// about to lose its tunnel. Then the far end, and the row.
 		tunnel.GetManager().Remove(r.Id)
@@ -870,6 +877,9 @@ func (s *RelayService) Delete(id int) error {
 			}
 			return tx.Delete(&model.Relay{}, id).Error
 		})
+		// once more with the row gone, whatever started the client while the far end was torn down
+		tunnel.GetManager().Remove(r.Id)
+		tunnel.RemoveFrontMetrics(r.Id)
 		s.countFronts()
 		return err
 	}
@@ -961,6 +971,20 @@ func (s *RelayService) Reconcile() {
 		s.mark(r.Id, RelayReady, "")
 	}
 	s.downOrphans()
+	s.removeOrphanFronts()
+}
+
+// removeOrphanFronts stops the tunnel client, and deletes the files, of any front that no
+// longer exists here.
+func (s *RelayService) removeOrphanFronts() {
+	var ids []int
+	if err := database.GetDB().Model(&model.Relay{}).Pluck("id", &ids).Error; err != nil {
+		return
+	}
+	for _, id := range tunnel.GetManager().RemoveOrphans(func(id int) bool { return slices.Contains(ids, id) }) {
+		tunnel.RemoveFrontMetrics(id)
+		logger.Warningf("front %d no longer exists; stopped its leftover tunnel client and removed its files", id)
+	}
 }
 
 // ensureXrayExit keeps the exit's source address, table and rule in place;
@@ -1010,6 +1034,9 @@ func (s *RelayService) reconcileFront(r model.Relay) {
 	// A save's own provisioning is running on this front: it does all of this,
 	// from the newer row, and two runs at once interleave their steps there.
 	if _, busy := relayRunning.Load(r.Id); busy {
+		return
+	}
+	if _, deleting := frontDeleting.Load(r.Id); deleting {
 		return
 	}
 	token, err := decryptRelaySecret(r.Id, r.TunnelToken)

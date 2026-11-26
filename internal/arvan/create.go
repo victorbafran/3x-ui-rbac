@@ -240,3 +240,27 @@ func (c *Client) DeleteServer(ctx context.Context, zone, id string) error {
 	}
 	return c.call(ctx, http.MethodDelete, "/ecc/v1/regions/"+seg(zone)+"/servers/"+seg(id)+"?forceDelete=true", nil, nil)
 }
+
+// SSHKeyNames lists the names of the SSH keys registered in a zone.
+func (c *Client) SSHKeyNames(ctx context.Context, zone string) ([]string, error) {
+	var env envelope[[]struct {
+		Name string `json:"name"`
+	}]
+	if err := c.call(ctx, http.MethodGet, "/ecc/v1/regions/"+seg(zone)+"/ssh-keys", nil, &env); err != nil {
+		return nil, err
+	}
+	out := make([]string, 0, len(env.Data))
+	for _, k := range env.Data {
+		out = append(out, k.Name)
+	}
+	return out, nil
+}
+
+// DeleteSSHKey removes a registered key by its name, which is how Arvan's own Terraform
+// provider addresses it; servers made with it keep it.
+func (c *Client) DeleteSSHKey(ctx context.Context, zone, name string) error {
+	if name == "" {
+		return errors.New("arvan: no key name")
+	}
+	return c.call(ctx, http.MethodDelete, "/ecc/v1/regions/"+seg(zone)+"/ssh-keys/"+seg(name), nil, nil)
+}

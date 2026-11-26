@@ -1890,6 +1890,13 @@ export const sections: readonly Section[] = [
         body: '{\n  "ip": "203.0.113.20"\n}',
       },
       {
+        method: 'POST',
+        path: '/panel/api/relays/arvan/front/:id/record',
+        summary:
+          'Point a domain record at the entry server’s IP and bind it: domain must be on the account and record is "@" or a label. The record is made, or moved when it exists and points at no relay here (one another relay uses is refused); it becomes the front’s public name and the record a swap moves. The record the front had before is left where it points. Returns the state as the GET does.',
+        body: '{\n  "domain": "example.ir",\n  "record": "ir5"\n}',
+      },
+      {
         method: 'GET',
         path: '/panel/api/relays/arvan/catalog',
         summary:

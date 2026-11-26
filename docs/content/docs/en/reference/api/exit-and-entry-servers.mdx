@@ -186,6 +186,14 @@ _openapi:
         Returns at once.
       url: '#give-a-reserve-ip-back-to-arvancloud-for-good-the-active-ip-is-refused-returns-at-once'
     - depth: 2
+      title: 'Point a domain record at the entry server’s IP and bind it: domain must
+        be on the account and record is "@" or a label. The record is made, or
+        moved when it exists and points at no relay here (one another relay uses
+        is refused); it becomes the front’s public name and the record a swap
+        moves. The record the front had before is left where it points. Returns
+        the state as the GET does.'
+      url: '#point-a-domain-record-at-the-entry-servers-ip-and-bind-it-domain-must-be-on-the-account-and-record-is--or-a-label-the-record-is-made-or-moved-when-it-exists-and-points-at-no-relay-here-one-another-relay-uses-is-refused-it-becomes-the-fronts-public-name-and-the-record-a-swap-moves-the-record-the-front-had-before-is-left-where-it-points-returns-the-state-as-the-get-does'
+    - depth: 2
       title: 'What the ArvanCloud account offers a new entry server: zones (code,
         city, dc, country) that take servers, and for one zone (?zone=, default
         the first) its sizes cheapest first (id, cpus, memoryGb, diskGb,
@@ -494,6 +502,13 @@ _openapi:
       - content: Give a reserve IP back to ArvanCloud for good. The active IP is
           refused. Returns at once.
         id: give-a-reserve-ip-back-to-arvancloud-for-good-the-active-ip-is-refused-returns-at-once
+      - content: 'Point a domain record at the entry server’s IP and bind it: domain
+          must be on the account and record is "@" or a label. The record is
+          made, or moved when it exists and points at no relay here (one another
+          relay uses is refused); it becomes the front’s public name and the
+          record a swap moves. The record the front had before is left where it
+          points. Returns the state as the GET does.'
+        id: point-a-domain-record-at-the-entry-servers-ip-and-bind-it-domain-must-be-on-the-account-and-record-is--or-a-label-the-record-is-made-or-moved-when-it-exists-and-points-at-no-relay-here-one-another-relay-uses-is-refused-it-becomes-the-fronts-public-name-and-the-record-a-swap-moves-the-record-the-front-had-before-is-left-where-it-points-returns-the-state-as-the-get-does
       - content: 'What the ArvanCloud account offers a new entry server: zones (code,
           city, dc, country) that take servers, and for one zone (?zone=,
           default the first) its sizes cheapest first (id, cpus, memoryGb,
@@ -643,7 +658,7 @@ export default function Layout(props) {
   return (
     <>
       {props.children}
-      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/relays/list","method":"get"},{"path":"/panel/api/relays/options","method":"get"},{"path":"/panel/api/relays/fronts","method":"get"},{"path":"/panel/api/relays/add","method":"post"},{"path":"/panel/api/relays/update/{id}","method":"post"},{"path":"/panel/api/relays/del/{id}","method":"post"},{"path":"/panel/api/relays/setEnable/{id}","method":"post"},{"path":"/panel/api/relays/probe/{id}","method":"post"},{"path":"/panel/api/relays/arvan/key","method":"get"},{"path":"/panel/api/relays/arvan/key","method":"post"},{"path":"/panel/api/relays/arvan/key/clear","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}","method":"get"},{"path":"/panel/api/relays/arvan/front/{id}/detect","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/save","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/prepare","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/refill","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/test","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/swap","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/release","method":"post"},{"path":"/panel/api/relays/arvan/catalog","method":"get"},{"path":"/panel/api/relays/arvan/servers","method":"get"},{"path":"/panel/api/relays/arvan/servers/delete","method":"post"},{"path":"/panel/api/relays/arvan/create","method":"get"},{"path":"/panel/api/relays/arvan/create","method":"post"},{"path":"/panel/api/relays/arvan/adopt","method":"post"},{"path":"/panel/api/relays/arvan/domains","method":"get"},{"path":"/panel/api/relays/psiphon/state","method":"get"},{"path":"/panel/api/relays/psiphon/install","method":"post"},{"path":"/panel/api/relays/psiphon/regions/refresh","method":"post"},{"path":"/panel/api/relays/psiphon/countries","method":"post"},{"path":"/panel/api/relays/psiphon/inbounds","method":"get"},{"path":"/panel/api/relays/psiphon/inbound/{id}","method":"post"},{"path":"/panel/api/relays/psiphon/warp","method":"post"},{"path":"/panel/api/relays/psiphon/traffic/reset","method":"post"},{"path":"/panel/api/relays/psiphon/test","method":"post"},{"path":"/panel/api/relays/psiphon/scan","method":"post"}]} showTitle />
+      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/relays/list","method":"get"},{"path":"/panel/api/relays/options","method":"get"},{"path":"/panel/api/relays/fronts","method":"get"},{"path":"/panel/api/relays/add","method":"post"},{"path":"/panel/api/relays/update/{id}","method":"post"},{"path":"/panel/api/relays/del/{id}","method":"post"},{"path":"/panel/api/relays/setEnable/{id}","method":"post"},{"path":"/panel/api/relays/probe/{id}","method":"post"},{"path":"/panel/api/relays/arvan/key","method":"get"},{"path":"/panel/api/relays/arvan/key","method":"post"},{"path":"/panel/api/relays/arvan/key/clear","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}","method":"get"},{"path":"/panel/api/relays/arvan/front/{id}/detect","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/save","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/prepare","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/refill","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/test","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/swap","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/release","method":"post"},{"path":"/panel/api/relays/arvan/front/{id}/record","method":"post"},{"path":"/panel/api/relays/arvan/catalog","method":"get"},{"path":"/panel/api/relays/arvan/servers","method":"get"},{"path":"/panel/api/relays/arvan/servers/delete","method":"post"},{"path":"/panel/api/relays/arvan/create","method":"get"},{"path":"/panel/api/relays/arvan/create","method":"post"},{"path":"/panel/api/relays/arvan/adopt","method":"post"},{"path":"/panel/api/relays/arvan/domains","method":"get"},{"path":"/panel/api/relays/psiphon/state","method":"get"},{"path":"/panel/api/relays/psiphon/install","method":"post"},{"path":"/panel/api/relays/psiphon/regions/refresh","method":"post"},{"path":"/panel/api/relays/psiphon/countries","method":"post"},{"path":"/panel/api/relays/psiphon/inbounds","method":"get"},{"path":"/panel/api/relays/psiphon/inbound/{id}","method":"post"},{"path":"/panel/api/relays/psiphon/warp","method":"post"},{"path":"/panel/api/relays/psiphon/traffic/reset","method":"post"},{"path":"/panel/api/relays/psiphon/test","method":"post"},{"path":"/panel/api/relays/psiphon/scan","method":"post"}]} showTitle />
     </>
   );
 }

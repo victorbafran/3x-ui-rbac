@@ -2928,7 +2928,10 @@
           "noRecord": "Nie je naviazaný žiadny DNS záznam, takže prepnutie nepresunie žiadne meno a zákazníci zostanú na starej IP.",
           "recordElsewhere": "Záznam ukazuje na {ip}, nie na aktívnu IP.",
           "pickRecord": "Záznam, ktorý používajú zákazníci",
-          "pickRecordHint": "Na túto IP ukazuje viac záznamov. Vyberte ten, ktorý je v konfiguráciách zákazníkov, a uložte nastavenia."
+          "pickRecordHint": "Na túto IP ukazuje viac záznamov. Vyberte ten, ktorý je v konfiguráciách zákazníkov, a uložte nastavenia.",
+          "pointTitle": "Nasmerovať doménu na tento server",
+          "point": "Nasmerovať na tento server",
+          "pointHint": "{fqdn} bude ukazovať na {ip} a bude to názov pre zákazníkov aj záznam, ktorý presúva výmena IP. Existujúci záznam sa presunie sem, ak ho nepoužíva iný server tohto panela."
         },
         "settings": {
           "title": "Nastavenia",
@@ -2987,7 +2990,8 @@
           "refill": "pridávanie záložných IP",
           "test": "testovanie IP",
           "swap": "prepínanie aktívnej IP",
-          "release": "uvoľňovanie IP"
+          "release": "uvoľňovanie IP",
+          "record": "smerovanie domény"
         },
         "errors": {
           "reserveTarget": "Zadajte celé číslo od 0 do 3.",
@@ -3009,7 +3013,8 @@
           "create": "Vytvorenie servera v ArvanCloud",
           "deleteServer": "Zmazanie servera ArvanCloud",
           "adopt": "Pridanie servera ArvanCloud",
-          "domains": "Zoznam domén ArvanCloud"
+          "domains": "Zoznam domén ArvanCloud",
+          "record": "Nasmerovať doménu"
         }
       },
       "psiphon": {

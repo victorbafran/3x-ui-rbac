@@ -31,7 +31,6 @@ type fakeArvan struct {
 	keys       []string
 	creates    []map[string]any
 	madeByName bool // the create's reply was lost but the server exists
-	relayOn    map[string]string
 	deleted    []string
 	records    []string
 }

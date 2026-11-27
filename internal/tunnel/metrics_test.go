@@ -148,6 +148,7 @@ func TestTheClientsOwnWordDecidesWhetherAFrontIsConnected(t *testing.T) {
 	}{
 		{"connected", snap("10m0s", "185.231.182.144:3080", "true"), now, true, true},
 		{"not connected", snap("10m0s", "185.231.182.144:3080", "false"), now, true, false},
+		{"not connected, naming no peer", snap("10m0s", "", "false"), now, true, false},
 		{"just started", snap("30s", "185.231.182.144:3080", "false"), now, false, false},
 		{"about the old address", snap("10m0s", "94.101.184.230:3080", "false"), now, false, false},
 		{"stale", snap("10m0s", "185.231.182.144:3080", "false"), now.Add(time.Hour), false, false},

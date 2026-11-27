@@ -1,12 +1,15 @@
 package service
 
 import (
+	"context"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
+	"github.com/mhsanaei/3x-ui/v3/internal/tunnel"
 )
 
 // A relay's name becomes a group in a VPN server's config, a filename, and a
@@ -314,5 +317,67 @@ func TestTheReconcileLeavesAFrontBeingDeletedAlone(t *testing.T) {
 	(&RelayService{}).reconcileFront(r)
 	if got := status(); got != RelayError {
 		t.Fatalf("with no delete in flight the reconcile did not run: status %q", got)
+	}
+}
+
+// The minute's reconcile leaves a front alone while an IP swap moves it, and a swap that
+// moved it while the reconcile provisioned it is not undone: the client is not pointed
+// back at the old address the swap releases.
+func TestTheReconcileDoesNotUndoAnIPSwap(t *testing.T) {
+	setupRelayDB(t)
+	key := filepath.Join(t.TempDir(), "key")
+	if err := os.WriteFile(key, []byte("not a real key"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	seedRelays(t, model.Relay{
+		Name: "iran-front", Address: "203.0.113.9", Role: model.RelayFront, Tunnel: "backpack", Enabled: true,
+		KeyPath: key, TunnelToken: "a-token", TunnelPort: 3080, Status: RelayReady,
+	})
+	var r model.Relay
+	if err := database.GetDB().First(&r).Error; err != nil {
+		t.Fatal(err)
+	}
+	var provisioned int
+	var dialled []string
+	moveDuring := ""
+	savedProvision, savedEnsure := provisionFront, ensureLeg
+	t.Cleanup(func() { provisionFront, ensureLeg = savedProvision, savedEnsure })
+	provisionFront = func(context.Context, tunnel.Front) error {
+		provisioned++
+		if moveDuring != "" {
+			return database.GetDB().Model(&model.Relay{}).Where("id = ?", r.Id).Update("address", moveDuring).Error
+		}
+		return nil
+	}
+	ensureLeg = func(p tunnel.Pair) error {
+		dialled = append(dialled, p.FrontAddress)
+		return nil
+	}
+	t.Cleanup(func() { tunnel.GetManager().Remove(r.Id) })
+
+	st := arvanStateOf(r.Id)
+	t.Cleanup(func() { arvanStates.Delete(r.Id) })
+	if _, ok := st.claim("swap"); !ok {
+		t.Fatal("could not mark the front busy")
+	}
+	(&RelayService{}).reconcileFront(r)
+	st.done()
+	if provisioned != 0 || len(dialled) != 0 {
+		t.Fatalf("the reconcile ran during a swap: provisioned %d times, dialled %v", provisioned, dialled)
+	}
+
+	moveDuring = "203.0.113.77"
+	(&RelayService{}).reconcileFront(r)
+	if provisioned != 1 || len(dialled) != 0 {
+		t.Fatalf("a front moved during the reconcile: provisioned %d times, dialled %v", provisioned, dialled)
+	}
+
+	moveDuring = ""
+	if err := database.GetDB().First(&r, r.Id).Error; err != nil {
+		t.Fatal(err)
+	}
+	(&RelayService{}).reconcileFront(r)
+	if len(dialled) == 0 || dialled[0] != "203.0.113.77" {
+		t.Fatalf("the next reconcile dialled %v, want the new address", dialled)
 	}
 }

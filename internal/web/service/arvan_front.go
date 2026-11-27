@@ -174,6 +174,12 @@ func (st *arvanState) done() {
 	st.mu.Unlock()
 }
 
+// arvanSwapping says whether an IP swap is moving the front now.
+func arvanSwapping(relayId int) bool {
+	st, ok := arvanStates.Load(relayId)
+	return ok && st.(*arvanState).busyLabel() == "swap"
+}
+
 func (st *arvanState) busyLabel() string {
 	st.mu.Lock()
 	defer st.mu.Unlock()

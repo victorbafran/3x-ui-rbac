@@ -1039,6 +1039,10 @@ func (s *RelayService) reconcileFront(r model.Relay) {
 	if _, deleting := frontDeleting.Load(r.Id); deleting {
 		return
 	}
+	// An IP swap moves the front and re-dials the client itself.
+	if arvanSwapping(r.Id) {
+		return
+	}
 	token, err := decryptRelaySecret(r.Id, r.TunnelToken)
 	if err != nil {
 		s.mark(r.Id, RelayError, err.Error())
@@ -1062,13 +1066,21 @@ func (s *RelayService) reconcileFront(r model.Relay) {
 	// inbound added since enrollment reaches the front without a re-save.
 	// The far side restarts only when its config actually changed, so this
 	// running every minute does not drop the customers on the tunnel.
-	if err := tunnel.Provision(ctx, tunnel.Front{Pair: pair, Credentials: creds}); err != nil {
+	if err := provisionFront(ctx, tunnel.Front{Pair: pair, Credentials: creds}); err != nil {
 		s.mark(r.Id, RelayError, err.Error())
+		return
+	}
+	// An IP swap that began after this run read the row, and so went unseen above, may
+	// have moved the front while it was provisioned. Dialling the address read then
+	// pointed the client back at the old IP, which the swap went on to release, and the
+	// tunnel stayed down until the next minute's run. That run starts from the new row.
+	var now model.Relay
+	if err := database.GetDB().Select("address").First(&now, r.Id).Error; err != nil || now.Address != r.Address {
 		return
 	}
 	legs := tunnel.Legs(pair)
 	for _, leg := range legs {
-		if err := tunnel.GetManager().Ensure(leg); err != nil {
+		if err := ensureLeg(leg); err != nil {
 			s.mark(r.Id, RelayError, err.Error())
 			return
 		}
@@ -1076,6 +1088,13 @@ func (s *RelayService) reconcileFront(r model.Relay) {
 	tunnel.GetManager().Retain(r.Id, legs)
 	s.mark(r.Id, RelayReady, "")
 }
+
+// provisionFront and ensureLeg are the reconcile's SSH to the front and its client
+// start; variables so a test can stand in for them.
+var (
+	provisionFront = tunnel.Provision
+	ensureLeg      = func(p tunnel.Pair) error { return tunnel.GetManager().Ensure(p) }
+)
 
 // banOnFront is tunnel.Ban; a variable so a test can stand in for the SSH.
 var banOnFront = tunnel.Ban

@@ -63,6 +63,7 @@ func backpackServerConfig(p Pair) string {
 	w("keepalive_period = 75")
 	w("heartbeat = 40")
 	w("nodelay = true")
+	backpackMSS(w, p.Transport)
 	w("accept_udp = true")
 	if p.ProxyProtocol {
 		// TCP only: UDP flows arrive bare, which is what ocserv's DTLS wants.
@@ -95,9 +96,29 @@ func backpackClientConfig(p Pair) string {
 	w("retry_interval = 3")
 	w("keepalive_period = 75")
 	w("nodelay = true")
+	backpackMSS(w, p.Transport)
 	w("skip_optz = true")
 	w("log_level = \"info\"")
 	return b.String()
+}
+
+// backpackSegment is the largest TCP payload the tunnel puts in one packet. On some
+// Iranian paths a full 1500-byte packet is dropped and the ICMP that would say so never
+// arrives: measured on 2026-11-27, a fresh Arvan front's path carried 1480 at most, and
+// every new tunnel connection then held its first large reply about 4.7 seconds until the
+// kernel's own probing found the size, so each connection's first exchange (a cisco or
+// TLS handshake, a client's first ping) took 5 s while its speed after was normal. With
+// this, the same front answered in 0.43 s. 1360 fits a path down to 1400 and costs about
+// 7% more packets for the same bytes.
+const backpackSegment = 1360
+
+// backpackMSS sets the segment on both ends of a transport that runs over TCP; kcp and
+// quic carry their own datagrams.
+func backpackMSS(w func(string, ...any), t Transport) {
+	if t == TransportKCP || t == TransportQUIC {
+		return
+	}
+	w("mss = %d", backpackSegment)
 }
 
 // backpackArchive is the release asset for one architecture.

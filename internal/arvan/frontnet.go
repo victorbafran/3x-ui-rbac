@@ -269,6 +269,36 @@ done
 echo notready
 `
 
+// carryProbeScript answers each connection to $1:$2 for $3 seconds: plain HTTP to a
+// request that begins "GET ", 64 random bytes to anything else. It prints "listening"
+// once the listener stands, and "nopython" on a box with no python3.
+const carryProbeScript = `#!/bin/sh
+command -v python3 >/dev/null 2>&1 || { echo nopython; exit 0; }
+cat >/tmp/x-ui-carry-probe.py <<'PY'
+import os, socket, sys
+s = socket.socket()
+s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+s.bind((sys.argv[1], int(sys.argv[2])))
+s.listen(8)
+while True:
+    c, _ = s.accept()
+    try:
+        c.settimeout(5)
+        d = c.recv(4096)
+        c.sendall(b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nok" if d.startswith(b"GET ") else os.urandom(64))
+        c.recv(1)
+    except Exception:
+        pass
+    c.close()
+PY
+nohup timeout "$3" python3 /tmp/x-ui-carry-probe.py "$1" "$2" >/dev/null 2>&1 &
+sleep 1
+if kill -0 $! 2>/dev/null; then echo listening; else echo nolistener; fi
+`
+
+// CarryProbeScript is carryProbeScript.
+func CarryProbeScript() string { return carryProbeScript }
+
 // ReadyScript prints "ready" once the IP $1 is usable on the front, or
 // "notready" after $2 seconds.
 func ReadyScript() string { return readyScript }

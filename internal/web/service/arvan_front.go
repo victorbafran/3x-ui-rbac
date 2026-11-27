@@ -1124,7 +1124,7 @@ func (s *ArvanService) addOne(ctx context.Context, c *arvan.Client, r model.Rela
 		}
 	}
 
-	ok, iranOk, iranTotal, perr := probeIP(ctx, ip, r.TunnelPort)
+	ok, iranOk, iranTotal, perr := probeCarries(ctx, r, ip)
 	if ctx.Err() != nil {
 		return ip, false, ctx.Err()
 	}
@@ -1265,7 +1265,7 @@ func testArvanIPs(ctx context.Context, r model.Relay) (activeOK bool, healthy, d
 		if row.IP == r.Address {
 			continue
 		}
-		ok, iranOk, iranTotal, perr := probeIP(ctx, row.IP, r.TunnelPort)
+		ok, iranOk, iranTotal, perr := probeCarries(ctx, r, row.IP)
 		if ctx.Err() != nil {
 			return activeOK, healthy, dead, ctx.Err()
 		}
@@ -1368,7 +1368,7 @@ func (s *ArvanService) swap(ctx context.Context, relayId int, target string, aut
 		return "", fmt.Errorf("%s is not a reserve of this front", target)
 	}
 	row := rows[i]
-	ok, iranOk, iranTotal, perr := probeIP(ctx, target, r.TunnelPort)
+	ok, iranOk, iranTotal, perr := probeCarries(ctx, r, target)
 	if ctx.Err() != nil {
 		return "", ctx.Err()
 	}

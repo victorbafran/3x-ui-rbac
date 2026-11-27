@@ -2,9 +2,11 @@ package service
 
 import (
 	"context"
+	crand "crypto/rand"
 	"encoding/json"
 	"fmt"
 	"io"
+	"math/rand/v2"
 	"net"
 	"net/http"
 	"net/url"
@@ -13,6 +15,10 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/mhsanaei/3x-ui/v3/internal/arvan"
+	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
+	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 )
 
 // check-host.net is asked from its own Iranian nodes; a plain client, never the
@@ -46,6 +52,89 @@ func probeIP(ctx context.Context, ip string, port int) (ok bool, iranOk, iranTot
 		return false, 0, iranTotal, fmt.Errorf("none of %d Iranian vantage points reached %s:%d", iranTotal, ip, port)
 	}
 	return true, iranOk, iranTotal, nil
+}
+
+// probeCarries is probeIP, and then whether ip carries traffic shaped like the tunnel's.
+func probeCarries(ctx context.Context, r model.Relay, ip string) (ok bool, iranOk, iranTotal int, err error) {
+	ok, iranOk, iranTotal, err = probeIP(ctx, ip, r.TunnelPort)
+	if !ok || ctx.Err() != nil {
+		return ok, iranOk, iranTotal, err
+	}
+	if cerr := carryProbe(ctx, r, ip); cerr != nil {
+		return false, iranOk, iranTotal, cerr
+	}
+	return true, iranOk, iranTotal, nil
+}
+
+const (
+	carryProbeBase  = 47000 // the listener's port is picked from the thousand above this
+	carryProbeLife  = 40 * time.Second
+	carryPlainTries = 2
+	carryTunTries   = 3
+)
+
+// carryReplyWait is how long one answer is waited for; a variable for the tests.
+var carryReplyWait = 5 * time.Second
+
+// carryProbe asks a short-lived listener on the front, reached over ip itself, for a
+// plain answer and for one shaped like the tunnel's. A filter that lets plain protocols
+// through and drops the rest passes a TCP dial and still kills a stealth tunnel: seen on
+// 2026-11-27, when 94.101.184.230 answered HTTP to the panel and dropped every random
+// byte, and a swap moved a front onto it. When the listener cannot be started or the plain
+// answer does not come either, nothing is learned and probeIP's verdict stands. A variable
+// so a test can stand in for the SSH.
+var carryProbe = func(ctx context.Context, r model.Relay, ip string) error {
+	port := carryProbeBase + rand.IntN(1000)
+	out, err := runOnFront(ctx, r, ip, "x-ui-carry-probe.sh", arvan.CarryProbeScript(),
+		ip, strconv.Itoa(port), strconv.Itoa(int(carryProbeLife/time.Second)))
+	if err != nil {
+		logger.Debugf("front %s: %s left to the dial test, the traffic check did not start: %v", r.Name, ip, err)
+		return nil
+	}
+	if f := strings.Fields(out); len(f) == 0 || f[len(f)-1] != "listening" {
+		logger.Debugf("front %s: %s left to the dial test, the traffic check did not start: %s", r.Name, ip, strings.TrimSpace(out))
+		return nil
+	}
+	return carries(ctx, ip, port)
+}
+
+// carries asks the listener at ip:port a plain request first: no answer to that says
+// nothing about ip, only that this check could not be made here.
+func carries(ctx context.Context, ip string, port int) error {
+	addr := net.JoinHostPort(ip, strconv.Itoa(port))
+	if !answers(ctx, addr, []byte("GET / HTTP/1.1\r\nHost: probe\r\n\r\n"), carryPlainTries) {
+		return nil
+	}
+	shaped := make([]byte, 64)
+	_, _ = crand.Read(shaped)
+	shaped[0] = 0x16 // never "GET "
+	if answers(ctx, addr, shaped, carryTunTries) {
+		return nil
+	}
+	return fmt.Errorf("%s answers plain traffic but drops traffic shaped like the tunnel's, so a filter on the way would cut the tunnel", ip)
+}
+
+// answers is whether any of tries connections to addr gets a byte back for msg.
+func answers(ctx context.Context, addr string, msg []byte, tries int) bool {
+	for range tries {
+		d := net.Dialer{Timeout: probeDialTimeout}
+		conn, err := d.DialContext(ctx, "tcp", addr)
+		if err != nil {
+			if ctx.Err() != nil {
+				return false
+			}
+			continue
+		}
+		_ = conn.SetDeadline(time.Now().Add(carryReplyWait))
+		buf := make([]byte, 1)
+		_, werr := conn.Write(msg)
+		n, _ := conn.Read(buf)
+		_ = conn.Close()
+		if werr == nil && n > 0 {
+			return true
+		}
+	}
+	return false
 }
 
 // dialTries opens and closes one TCP connection, retrying a dropped SYN.

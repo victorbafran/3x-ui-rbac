@@ -127,3 +127,40 @@ func TestALegCountsWhatMovedSinceTheLastReading(t *testing.T) {
 		})
 	}
 }
+
+// A front is called down on its client's own word only when that word is fresh, is about
+// the address the front has now, and comes from a client given time to connect.
+func TestTheClientsOwnWordDecidesWhetherAFrontIsConnected(t *testing.T) {
+	dir := metricsDir(t)
+	snap := func(uptime, peer, connected string) string {
+		c := ""
+		if connected != "" {
+			c = `"connected":` + connected + `,`
+		}
+		return `{"taken":"2026-10-27T18:25:18Z","uptime":"` + uptime + `",` + c + `"peer":"` + peer + `"}`
+	}
+	now := time.Date(2026, 10, 27, 18, 25, 48, 0, time.UTC)
+	for _, tc := range []struct {
+		name      string
+		body      string
+		at        time.Time
+		known, up bool
+	}{
+		{"connected", snap("10m0s", "185.231.182.144:3080", "true"), now, true, true},
+		{"not connected", snap("10m0s", "185.231.182.144:3080", "false"), now, true, false},
+		{"just started", snap("30s", "185.231.182.144:3080", "false"), now, false, false},
+		{"about the old address", snap("10m0s", "94.101.184.230:3080", "false"), now, false, false},
+		{"stale", snap("10m0s", "185.231.182.144:3080", "false"), now.Add(time.Hour), false, false},
+		{"says nothing", snap("10m0s", "185.231.182.144:3080", ""), now, false, false},
+	} {
+		writeMetrics(t, dir, "backpack-client-18.metrics.json", tc.body)
+		known, up := FrontConnected(18, "185.231.182.144", tc.at)
+		if known != tc.known || up != tc.up {
+			t.Errorf("%s: known %v up %v, want %v %v", tc.name, known, up, tc.known, tc.up)
+		}
+	}
+	_ = os.Remove(filepath.Join(dir, "backpack-client-18.metrics.json"))
+	if known, _ := FrontConnected(18, "185.231.182.144", now); known {
+		t.Error("a front with no snapshot was judged")
+	}
+}

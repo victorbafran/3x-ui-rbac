@@ -94,3 +94,28 @@ func TestTheTrafficCheckDecidesOnlyWhenItRan(t *testing.T) {
 		t.Fatalf("an IP whose traffic check found nothing failed: %v %v", ok, err)
 	}
 }
+
+// The active IP fails when its dial fails, or when the tunnel client says it holds no
+// control channel to it; with no word from the client the dial decides.
+func TestTheActiveIPIsJudgedByTheTunnelTooNotOnlyTheDial(t *testing.T) {
+	saved := frontConnected
+	t.Cleanup(func() { frontConnected = saved })
+	r := model.Relay{Id: 7, Address: "95.38.187.201"}
+	now := time.Now()
+	for _, tc := range []struct {
+		name      string
+		dialed    bool
+		known, up bool
+		want      bool
+	}{
+		{"dial and tunnel up", true, true, true, true},
+		{"dial up, tunnel down", true, true, false, false},
+		{"dial up, no word", true, false, false, true},
+		{"dial down", false, true, true, false},
+	} {
+		frontConnected = func(int, string, time.Time) (bool, bool) { return tc.known, tc.up }
+		if got := activeCarries(r, tc.dialed, now); got != tc.want {
+			t.Errorf("%s: %v, want %v", tc.name, got, tc.want)
+		}
+	}
+}

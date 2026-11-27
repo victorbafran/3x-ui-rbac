@@ -1164,6 +1164,21 @@ func saveArvanProbe(rowId int, ok bool, iranOk, iranTotal int, perr error) {
 }
 
 // recordActive counts the active IP's failed checks toward an auto swap.
+// activeCarries is the active IP's verdict: the dial's, unless the front's own tunnel
+// client, given time to connect, says it holds no control channel to that IP.
+func activeCarries(r model.Relay, dialed bool, now time.Time) bool {
+	if !dialed {
+		return false
+	}
+	if known, up := frontConnected(r.Id, r.Address, now); known && !up {
+		return false
+	}
+	return true
+}
+
+// frontConnected is tunnel.FrontConnected; a variable so a test can stand in for the file.
+var frontConnected = tunnel.FrontConnected
+
 func recordActive(relayId int, ok bool) {
 	fields := map[string]any{"last_check": time.Now().Unix(), "active_fails": 0}
 	if !ok {
@@ -1253,6 +1268,7 @@ func testSummary(active string, activeOK bool, healthy, dead int) string {
 // a probe cut short by the deadline records nothing.
 func testArvanIPs(ctx context.Context, r model.Relay) (activeOK bool, healthy, dead int, err error) {
 	activeOK, _, _, _ = probeIP(ctx, r.Address, r.TunnelPort)
+	activeOK = activeCarries(r, activeOK, time.Now())
 	if ctx.Err() != nil {
 		return false, 0, 0, ctx.Err()
 	}
@@ -1608,14 +1624,14 @@ func (s *ArvanService) Watch() {
 func (s *ArvanService) watchOne(st *arvanState, r model.Relay, f model.ArvanFront, loc *time.Location) (string, func(context.Context) (string, error)) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	ok := dialTries(ctx, r.Address, r.TunnelPort, 3*time.Second, 2) == nil
+	now := time.Now()
+	ok := activeCarries(r, dialTries(ctx, r.Address, r.TunnelPort, 3*time.Second, 2) == nil, now)
 	recordActive(r.Id, ok)
 	fails := 0
 	if !ok {
 		fails = f.ActiveFails + 1
 	}
 	swap := func(ctx context.Context) (string, error) { return s.swap(ctx, r.Id, "", true) }
-	now := time.Now()
 	if f.AutoSwap && fails >= arvanSwapAfter && st.due(&st.lastAuto, arvanAutoEvery, now) {
 		return "swap", swap
 	}

@@ -2,6 +2,7 @@ package tunnel
 
 import (
 	"encoding/json"
+	"net"
 	"os"
 	"strings"
 	"time"
@@ -52,6 +53,40 @@ func FrontMetrics(id int, now time.Time) map[string]LegMetrics {
 		}
 	}
 	return out
+}
+
+// connectGrace is how long a freshly started client is given to raise its control
+// channel before "not connected" counts against the front.
+const connectGrace = 90 * time.Second
+
+// FrontConnected is what BackPack front id's main client says of its own control
+// channel, from its latest snapshot. A front's tunnel port can take a TCP dial while
+// everything the tunnel sends is dropped on the way, as a protocol filter does to a
+// stealth tunnel (seen 2026-11-27): the dial alone then calls a dead front healthy.
+// known is false with no fresh snapshot, one taken against another address (a swap has
+// just moved the front), one from a client up for less than connectGrace, or one from a
+// binary that does not say; the dial alone decides then.
+func FrontConnected(id int, address string, now time.Time) (known, up bool) {
+	raw, err := os.ReadFile(Pair{Id: id, Tool: ToolBackPack}.metricsPath())
+	if err != nil {
+		return false, false
+	}
+	var snap struct {
+		Taken     time.Time `json:"taken"`
+		Uptime    string    `json:"uptime"`
+		Peer      string    `json:"peer"`
+		Connected *bool     `json:"connected"`
+	}
+	if json.Unmarshal(raw, &snap) != nil || snap.Connected == nil || now.Sub(snap.Taken) > metricsMaxAge {
+		return false, false
+	}
+	if host, _, err := net.SplitHostPort(snap.Peer); err != nil || host != strings.TrimSpace(address) {
+		return false, false
+	}
+	if up, err := time.ParseDuration(snap.Uptime); err != nil || up < connectGrace {
+		return false, false
+	}
+	return true, *snap.Connected
 }
 
 // RemoveFrontMetrics deletes a front's snapshots. One outlives its client by up

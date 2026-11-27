@@ -67,20 +67,31 @@ const connectGrace = 90 * time.Second
 // moved the front), one from a client up for less than connectGrace, or one from a
 // binary that does not say; the dial alone decides then. A client holding no channel
 // names no peer at all (seen live), so a missing peer is taken as this address: a swap
-// restarts the client, and connectGrace covers the restart.
+// restarts the client, and connectGrace covers the restart. One that has not connected
+// once since it started says nothing either (seen live, the filtered front after a
+// restart); a snapshot that carries the runtime block, which the binary the panel pins
+// writes alongside connected, and no connected is taken as never connected.
 func FrontConnected(id int, address string, now time.Time) (known, up bool) {
 	raw, err := os.ReadFile(Pair{Id: id, Tool: ToolBackPack}.metricsPath())
 	if err != nil {
 		return false, false
 	}
 	var snap struct {
-		Taken     time.Time `json:"taken"`
-		Uptime    string    `json:"uptime"`
-		Peer      string    `json:"peer"`
-		Connected *bool     `json:"connected"`
+		Taken     time.Time       `json:"taken"`
+		Uptime    string          `json:"uptime"`
+		Peer      string          `json:"peer"`
+		Connected *bool           `json:"connected"`
+		Runtime   json.RawMessage `json:"runtime"`
 	}
-	if json.Unmarshal(raw, &snap) != nil || snap.Connected == nil || now.Sub(snap.Taken) > metricsMaxAge {
+	if json.Unmarshal(raw, &snap) != nil || now.Sub(snap.Taken) > metricsMaxAge {
 		return false, false
+	}
+	if snap.Connected == nil {
+		if len(snap.Runtime) == 0 {
+			return false, false
+		}
+		never := false
+		snap.Connected = &never
 	}
 	if snap.Peer != "" {
 		if host, _, err := net.SplitHostPort(snap.Peer); err != nil || host != strings.TrimSpace(address) {

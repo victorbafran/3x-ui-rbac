@@ -153,6 +153,8 @@ func TestTheClientsOwnWordDecidesWhetherAFrontIsConnected(t *testing.T) {
 		{"about the old address", snap("10m0s", "94.101.184.230:3080", "false"), now, false, false},
 		{"stale", snap("10m0s", "185.231.182.144:3080", "false"), now.Add(time.Hour), false, false},
 		{"says nothing", snap("10m0s", "185.231.182.144:3080", ""), now, false, false},
+		{"never connected since it started", `{"taken":"2026-10-27T18:25:18Z","uptime":"6m0s","runtime":{"goroutines":11}}`, now, true, false},
+		{"never connected, just started", `{"taken":"2026-10-27T18:25:18Z","uptime":"20s","runtime":{"goroutines":11}}`, now, false, false},
 	} {
 		writeMetrics(t, dir, "backpack-client-18.metrics.json", tc.body)
 		known, up := FrontConnected(18, "185.231.182.144", tc.at)

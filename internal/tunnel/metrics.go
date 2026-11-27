@@ -2,6 +2,7 @@ package tunnel
 
 import (
 	"encoding/json"
+	"net"
 	"os"
 	"strings"
 	"time"
@@ -52,6 +53,55 @@ func FrontMetrics(id int, now time.Time) map[string]LegMetrics {
 		}
 	}
 	return out
+}
+
+// connectGrace is how long a freshly started client is given to raise its control
+// channel before "not connected" counts against the front.
+const connectGrace = 90 * time.Second
+
+// FrontConnected is what BackPack front id's main client says of its own control
+// channel, from its latest snapshot. A front's tunnel port can take a TCP dial while
+// everything the tunnel sends is dropped on the way, as a protocol filter does to a
+// stealth tunnel (seen 2026-11-27): the dial alone then calls a dead front healthy.
+// known is false with no fresh snapshot, one naming another address (a swap has just
+// moved the front), one from a client up for less than connectGrace, or one from a
+// binary that does not say; the dial alone decides then. A client holding no channel
+// names no peer at all (seen live), so a missing peer is taken as this address: a swap
+// restarts the client, and connectGrace covers the restart. One that has not connected
+// once since it started says nothing either (seen live, the filtered front after a
+// restart); a snapshot that carries the runtime block, which the binary the panel pins
+// writes alongside connected, and no connected is taken as never connected.
+func FrontConnected(id int, address string, now time.Time) (known, up bool) {
+	raw, err := os.ReadFile(Pair{Id: id, Tool: ToolBackPack}.metricsPath())
+	if err != nil {
+		return false, false
+	}
+	var snap struct {
+		Taken     time.Time       `json:"taken"`
+		Uptime    string          `json:"uptime"`
+		Peer      string          `json:"peer"`
+		Connected *bool           `json:"connected"`
+		Runtime   json.RawMessage `json:"runtime"`
+	}
+	if json.Unmarshal(raw, &snap) != nil || now.Sub(snap.Taken) > metricsMaxAge {
+		return false, false
+	}
+	if snap.Connected == nil {
+		if len(snap.Runtime) == 0 {
+			return false, false
+		}
+		never := false
+		snap.Connected = &never
+	}
+	if snap.Peer != "" {
+		if host, _, err := net.SplitHostPort(snap.Peer); err != nil || host != strings.TrimSpace(address) {
+			return false, false
+		}
+	}
+	if up, err := time.ParseDuration(snap.Uptime); err != nil || up < connectGrace {
+		return false, false
+	}
+	return true, *snap.Connected
 }
 
 // RemoveFrontMetrics deletes a front's snapshots. One outlives its client by up

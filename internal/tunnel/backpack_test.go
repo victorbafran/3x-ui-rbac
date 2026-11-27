@@ -61,6 +61,36 @@ func TestThePanelsBackPackEndDoesNotRetuneThePanel(t *testing.T) {
 	}
 }
 
+// Both ends of a tunnel over TCP keep their segments small enough for a path that drops
+// full-sized packets silently; kcp and quic, which carry their own datagrams, do not.
+func TestBothEndsOfATCPTunnelKeepTheirSegmentsSmall(t *testing.T) {
+	want := fmt.Sprintf("mss = %d\n", backpackSegment)
+	for _, tr := range []Transport{TransportStealth, TransportTCP, TransportWSSMux} {
+		p := backpackPair()
+		p.Transport = tr
+		server, err := ServerConfig(p)
+		if err != nil {
+			t.Fatal(err)
+		}
+		client, err := ClientConfig(p)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !strings.Contains(server, want) || !strings.Contains(client, want) {
+			t.Errorf("%s: an end lacks %q:\n%s\n%s", tr, want, server, client)
+		}
+	}
+	for _, tr := range []Transport{TransportKCP, TransportQUIC} {
+		p := backpackPair()
+		p.Transport = tr
+		server, _ := ServerConfig(p)
+		client, _ := ClientConfig(p)
+		if strings.Contains(server, "mss") || strings.Contains(client, "mss") {
+			t.Errorf("%s carries its own datagrams and was given a TCP segment size", tr)
+		}
+	}
+}
+
 // What is signed is the tag and the list together. A list signed for another
 // release, or altered by a mirror, must be refused.
 func TestOnlyAReleaseBackPackSignedIsAccepted(t *testing.T) {
